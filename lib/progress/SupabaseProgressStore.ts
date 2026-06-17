@@ -38,15 +38,14 @@ export class SupabaseProgressStore implements ProgressStore {
 
   async getDueCards(lang: LangCode, now: number, limit?: number): Promise<CardRecord[]> {
     const userId = await this.userId()
-    let q = this.supabase
+    const base = this.supabase
       .from('srs_state')
       .select('*')
       .eq('user_id', userId)
       .eq('lang', lang)
       .lte('due_at', new Date(now).toISOString())
       .order('due_at')
-    if (typeof limit === 'number') q = q.limit(limit)
-    const { data, error } = await q as { data: unknown[]; error: unknown }
+    const { data, error } = await (typeof limit === 'number' ? base.limit(limit) : base)
     if (error) throw error
     return (data ?? []).map(cardFromRow)
   }

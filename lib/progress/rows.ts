@@ -14,7 +14,7 @@ const srsRow = z.object({
 export function cardFromRow(r: unknown): CardRecord {
   const x = srsRow.parse(r)
   return {
-    vocabId: x.vocab_id, lang: x.lang as LangCode,
+    vocabId: x.vocab_id, lang: x.lang,
     intervalDays: x.interval_days, ease: x.ease, reps: x.reps, lapses: x.lapses,
     dueAt: Date.parse(x.due_at), lastReviewedAt: ms(x.last_reviewed_at),
   }
@@ -36,5 +36,5 @@ const lpRow = z.object({
 
 export function lessonProgressFromRow(r: unknown): LessonProgress {
   const x = lpRow.parse(r)
-  return { lessonId: x.lesson_id, status: x.status as LessonStatus, completedAt: ms(x.completed_at) }
+  return { lessonId: x.lesson_id, status: x.status, completedAt: ms(x.completed_at) }
 }

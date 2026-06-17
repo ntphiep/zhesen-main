@@ -107,7 +107,7 @@ Ghi chú ánh xạ kiểu: `due_at`/`last_reviewed_at` lưu `timestamptz`; phía
 
 - Bật RLS trên cả sáu bảng.
 - **Bảng nội dung** (`languages`, `vocab_items`, `lessons`, `lesson_vocab`): policy `SELECT` cho vai trò `authenticated`. Người dùng ẩn danh của Supabase mang vai trò `authenticated` (cờ `is_anonymous = true`), nên họ đọc được. Không có policy ghi từ client; nội dung chỉ được seed bằng migration (chạy quyền cao, bỏ qua RLS). *Cần xác minh lại bằng tài liệu Supabase rằng anonymous user có role `authenticated` khi bắt đầu code.*
-- **Bảng tiến độ** (`srs_state`, `lesson_progress`): policy `SELECT/INSERT/UPDATE/DELETE` với điều kiện `user_id = auth.uid()`, cho vai trò `authenticated`. Mỗi người chỉ thao tác trên dữ liệu của chính mình.
+- **Bảng tiến độ** (`srs_state`, `lesson_progress`): policy `SELECT/INSERT/UPDATE` với điều kiện `user_id = auth.uid()`, cho vai trò `authenticated`. Mỗi người chỉ thao tác trên dữ liệu của chính mình. Policy `DELETE` **chưa triển khai** vì ứng dụng hiện không có tính năng xóa tiến độ; sẽ bổ sung khi tính năng reset-progress được xây dựng.
 - Khóa dùng ở client là publishable/anon key; mọi quyền thực tế do RLS quyết định.
 
 ## 6. Xác thực ẩn danh và phiên SSR
