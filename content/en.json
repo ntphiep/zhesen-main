@@ -1,6 +1,6 @@
 {
   "lessons": [
-    { "id": "en-l1", "lang": "en", "title": "Basic greetings", "description": "Common greetings.", "position": 1, "vocabIds": ["en-1", "en-2", "en-3", "en-4", "en-5"] }
+    { "id": "en-l1", "lang": "en", "title": "Chào hỏi cơ bản", "description": "Những câu chào thông dụng.", "position": 1, "vocabIds": ["en-1", "en-2", "en-3", "en-4", "en-5"] }
   ],
   "vocab": [
     { "id": "en-1", "lang": "en", "term": "hello", "translation": { "vi": "xin chào" }, "level": "A1" },

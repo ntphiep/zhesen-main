@@ -35,8 +35,8 @@ const lessonSchema = z.object({
   lang: langCode,
   title: z.string().min(1),
   description: z.string(),
-  position: z.number().int().nonnegative(),
-  vocabIds: z.array(z.string().min(1)),
+  position: z.number().int().positive(),
+  vocabIds: z.array(z.string().min(1)).min(1),
 })
 
 const contentSchema = z.object({

@@ -26,4 +26,8 @@ describe('content schema', () => {
     const bad = { ...okContent, vocab: [{ id: 'x', lang: 'zh', term: 'a', translation: {} }] }
     expect(() => validateLanguageContent(bad)).toThrow()
   })
+  it('rejects vocab with empty vi translation', () => {
+    const bad = { ...okContent, vocab: [{ id: 'x', lang: 'zh', term: 'a', translation: { vi: '' } }] }
+    expect(() => validateLanguageContent(bad)).toThrow()
+  })
 })

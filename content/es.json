@@ -1,6 +1,6 @@
 {
   "lessons": [
-    { "id": "es-l1", "lang": "es", "title": "Saludos básicos", "description": "Cách chào hỏi cơ bản.", "position": 1, "vocabIds": ["es-1", "es-2", "es-3", "es-4", "es-5"] }
+    { "id": "es-l1", "lang": "es", "title": "Chào hỏi cơ bản", "description": "Những câu chào thông dụng.", "position": 1, "vocabIds": ["es-1", "es-2", "es-3", "es-4", "es-5"] }
   ],
   "vocab": [
     { "id": "es-1", "lang": "es", "term": "hola", "translation": { "vi": "xin chào" }, "level": "A1" },
