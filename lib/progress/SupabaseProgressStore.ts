@@ -5,7 +5,7 @@ import { initialSrsState, review } from './srs'
 import { cardFromRow, cardToRow, lessonProgressFromRow } from './rows'
 
 // Accepts the @supabase/ssr browser client with structural typing (no any).
-type QueryBuilder = {
+export type QueryBuilder = {
   select(col: string, opts?: { count?: 'exact'; head?: boolean }): QueryBuilder
   eq(col: string, val: unknown): QueryBuilder
   lte(col: string, val: unknown): QueryBuilder
@@ -15,7 +15,7 @@ type QueryBuilder = {
   upsert(vals: unknown, opts?: { onConflict?: string; ignoreDuplicates?: boolean }): Promise<{ error: unknown }>
   then(onFulfilled?: (val: { data: unknown; error: unknown }) => void): Promise<{ data: unknown; error: unknown }>
 }
-type Client = {
+export type Client = {
   from(table: string): QueryBuilder
   auth: { getUser(): Promise<{ data: { user?: { id?: string } | null } }> }
 }
