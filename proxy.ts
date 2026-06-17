@@ -30,12 +30,13 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    await supabase.auth.signInAnonymously()
+    const { error } = await supabase.auth.signInAnonymously()
+    if (error) console.error('[proxy] signInAnonymously failed:', error.message)
   }
 
   return response
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }
