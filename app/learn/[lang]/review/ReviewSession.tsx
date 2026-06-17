@@ -14,8 +14,8 @@ export function ReviewSession({ lang, vocab }: { lang: LangCode; vocab: VocabIte
   useEffect(() => {
     getProgressStore()
       .getDueCards(lang, Date.now())
-      .then((cards) => setQueue(cards.map((c) => c.vocabId)))
-  }, [lang])
+      .then((cards) => setQueue(cards.map((c) => c.vocabId).filter((id) => byId.has(id))))
+  }, [lang, byId])
 
   if (queue === null) return <main className="p-12 text-center">Đang tải…</main>
 
@@ -31,7 +31,8 @@ export function ReviewSession({ lang, vocab }: { lang: LangCode; vocab: VocabIte
   }
 
   const currentId = queue[0]
-  const current = byId.get(currentId)!
+  const current = byId.get(currentId)
+  if (!current) return null
 
   async function grade(g: Grade) {
     await getProgressStore().recordReview(currentId, g, Date.now())
