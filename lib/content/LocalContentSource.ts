@@ -17,12 +17,19 @@ const allVocab: VocabItem[] = Object.values(byLang).flatMap((c) => c.vocab)
 const vocabById = new Map(allVocab.map((v) => [v.id, v]))
 const allLessons: Lesson[] = Object.values(byLang).flatMap((c) => c.lessons)
 
+const lessonsByLang: Record<LangCode, Lesson[]> = Object.fromEntries(
+  Object.entries(byLang).map(([lang, c]) => [
+    lang,
+    [...c.lessons].sort((a, b) => a.position - b.position),
+  ]),
+) as Record<LangCode, Lesson[]>
+
 export class LocalContentSource implements ContentSource {
   async getLanguages(): Promise<Language[]> {
     return languages
   }
   async getLessons(lang: LangCode): Promise<Lesson[]> {
-    return allLessons.filter((l) => l.lang === lang).sort((a, b) => a.position - b.position)
+    return lessonsByLang[lang] ?? []
   }
   async getLesson(lessonId: string): Promise<Lesson | null> {
     return allLessons.find((l) => l.id === lessonId) ?? null
