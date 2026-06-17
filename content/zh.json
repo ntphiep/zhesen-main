@@ -1,0 +1,12 @@
+{
+  "lessons": [
+    { "id": "zh-l1", "lang": "zh", "title": "Chào hỏi cơ bản", "description": "Những câu chào thông dụng.", "position": 1, "vocabIds": ["zh-1", "zh-2", "zh-3", "zh-4", "zh-5"] }
+  ],
+  "vocab": [
+    { "id": "zh-1", "lang": "zh", "term": "你好", "reading": "nǐ hǎo", "translation": { "vi": "xin chào" }, "level": "HSK1" },
+    { "id": "zh-2", "lang": "zh", "term": "谢谢", "reading": "xiè xie", "translation": { "vi": "cảm ơn" }, "level": "HSK1" },
+    { "id": "zh-3", "lang": "zh", "term": "再见", "reading": "zài jiàn", "translation": { "vi": "tạm biệt" }, "level": "HSK1" },
+    { "id": "zh-4", "lang": "zh", "term": "对不起", "reading": "duì bu qǐ", "translation": { "vi": "xin lỗi" }, "level": "HSK1" },
+    { "id": "zh-5", "lang": "zh", "term": "请", "reading": "qǐng", "translation": { "vi": "làm ơn / mời" }, "level": "HSK1" }
+  ]
+}
