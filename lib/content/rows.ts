@@ -4,6 +4,12 @@ import type { Language, Lesson, VocabItem } from './types'
 const langCode = z.enum(['zh', 'es', 'en'])
 const translation = z.object({ vi: z.string().min(1) })
 
+const exampleSchema = z.object({
+  sentence: z.string().min(1),
+  reading: z.string().optional(),
+  translation: z.object({ vi: z.string().min(1) }),
+})
+
 const languageRow = z.object({
   code: langCode,
   name: z.string().min(1),
@@ -19,7 +25,7 @@ const vocabRow = z.object({
   translation,
   part_of_speech: z.string().nullable(),
   level: z.string().nullable(),
-  examples: z.array(z.unknown()).nullable(),
+  examples: z.array(exampleSchema).nullable(),
   audio: z.string().nullable(),
 })
 
@@ -46,7 +52,7 @@ export function parseVocabRow(r: unknown): VocabItem {
     translation: x.translation,
     partOfSpeech: x.part_of_speech ?? undefined,
     level: x.level ?? undefined,
-    examples: (x.examples ?? undefined) as VocabItem['examples'],
+    examples: x.examples ?? undefined,
     audio: x.audio ?? undefined,
   }
 }
