@@ -18,13 +18,18 @@ export function LangDashboard({ language, lessons }: { language: Language; lesso
 
       <div className="mt-6 flex items-center justify-between rounded-xl bg-black/5 p-4">
         <span>Thẻ cần ôn hôm nay: <b>{due ?? '…'}</b></span>
-        <Link
-          href={`/learn/${language.code}/review`}
-          className="rounded-lg bg-black px-4 py-2 text-white disabled:opacity-40"
-          aria-disabled={due === 0}
-        >
-          Ôn tập
-        </Link>
+        {due === 0 ? (
+          <span className="rounded-lg bg-black px-4 py-2 text-white opacity-40 cursor-not-allowed">
+            Ôn tập
+          </span>
+        ) : (
+          <Link
+            href={`/learn/${language.code}/review`}
+            className="rounded-lg bg-black px-4 py-2 text-white"
+          >
+            Ôn tập
+          </Link>
+        )}
       </div>
 
       <h2 className="mt-10 mb-3 text-xl font-semibold">Bài học</h2>
