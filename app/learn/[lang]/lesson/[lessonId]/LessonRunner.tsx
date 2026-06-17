@@ -10,9 +10,12 @@ type Phase = 'intro' | 'quiz' | 'done'
 
 export function LessonRunner({ lesson, vocab, pool }: { lesson: Lesson; vocab: VocabItem[]; pool: VocabItem[] }) {
   const [phase, setPhase] = useState<Phase>('intro')
+  const [finishing, setFinishing] = useState(false)
   const questions = useMemo(() => buildQuiz(vocab, pool), [vocab, pool])
 
   async function finish() {
+    if (finishing) return
+    setFinishing(true)
     const now = Date.now()
     const store = getProgressStore()
     await store.ensureCards(vocab.map((v) => ({ vocabId: v.id, lang: v.lang })), now)
