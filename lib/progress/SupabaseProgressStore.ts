@@ -4,8 +4,21 @@ import type { LangCode } from '@/lib/content/types'
 import { initialSrsState, review } from './srs'
 import { cardFromRow, cardToRow, lessonProgressFromRow } from './rows'
 
-// Accepts the @supabase/ssr browser client (typed loosely so tests can inject a fake).
-type Client = { from: (t: string) => any; auth?: any }
+// Accepts the @supabase/ssr browser client with structural typing (no any).
+type QueryBuilder = {
+  select(col: string, opts?: { count?: 'exact'; head?: boolean }): QueryBuilder
+  eq(col: string, val: unknown): QueryBuilder
+  lte(col: string, val: unknown): QueryBuilder
+  order(col: string): QueryBuilder
+  limit(n: number): QueryBuilder
+  maybeSingle(): Promise<{ data: unknown; error: unknown }>
+  upsert(vals: unknown, opts?: { onConflict?: string; ignoreDuplicates?: boolean }): Promise<{ error: unknown }>
+  then(onFulfilled?: (val: { data: unknown; error: unknown }) => void): Promise<{ data: unknown; error: unknown }>
+}
+type Client = {
+  from(table: string): QueryBuilder
+  auth: { getUser(): Promise<{ data: { user?: { id?: string } | null } }> }
+}
 
 export class SupabaseProgressStore implements ProgressStore {
   constructor(private supabase: Client, private userIdOverride?: string) {}
@@ -21,7 +34,19 @@ export class SupabaseProgressStore implements ProgressStore {
   async ensureCards(items: { vocabId: string; lang: LangCode }[], now: number): Promise<void> {
     if (items.length === 0) return
     const userId = await this.userId()
-    const rows = items.map((i) => cardToRow(userId, { ...initialSrsState(i.vocabId, now), lang: i.lang }))
+    const rows = items.map((i) => {
+      const s = initialSrsState(i.vocabId, now)
+      return cardToRow(userId, {
+        vocabId: s.vocabId,
+        lang: i.lang,
+        intervalDays: s.intervalDays,
+        ease: s.ease,
+        reps: s.reps,
+        lapses: s.lapses,
+        dueAt: s.dueAt,
+        lastReviewedAt: s.lastReviewedAt,
+      })
+    })
     const { error } = await this.supabase.from('srs_state').upsert(rows, { onConflict: 'user_id,vocab_id', ignoreDuplicates: true })
     if (error) throw error
   }
@@ -36,7 +61,7 @@ export class SupabaseProgressStore implements ProgressStore {
       .lte('due_at', new Date(now).toISOString())
       .order('due_at')
     if (typeof limit === 'number') q = q.limit(limit)
-    const { data, error } = await q
+    const { data, error } = await q as { data: unknown[]; error: unknown }
     if (error) throw error
     return (data ?? []).map(cardFromRow)
   }
