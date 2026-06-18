@@ -40,6 +40,7 @@ Commons image URL: https://commons.wikimedia.org/wiki/Special:FilePath/<urlencod
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import cast
 from urllib.parse import quote
 
