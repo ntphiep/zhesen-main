@@ -196,6 +196,41 @@ def test_gloss_vi_all_stored_in_attributes():
     assert entry.senses[0].gloss_vi_is_mt is False
 
 
+def test_cross_links_prefer_wiktionary_translation_over_wikidata_label():
+    """Wiktionary translation (common word 狗) wins over Wikidata label (formal 犬).
+    Wikidata QID is still carried as concept_id. One link per lang."""
+    e = "en:dog"
+    wik = EntryRec(
+        id=e, lang="en", headword="dog", headword_normalized="dog", source_id="wiktionary-en",
+        senses=[SenseRec(id=f"{e}#1", entry_id=e, pos="Noun", sense_order=1, gloss_en="a canine", source_id="wiktionary-en")],
+        pronunciations=[],
+        attributes={"translations": {"zh": ["狗"], "es": ["perro", "can"]}},
+    )
+    wd_links = [
+        CrossLinkRec(from_entry_id="", to_entry_id="zh:犬", concept_id="Q144", source_id="wikidata-lexemes"),
+    ]
+
+    entry = merge_entry("dog", (None, "common"), wik, None,
+                        {"level": None, "gloss_vi": [], "pronunciations": [], "examples": []},
+                        [], None, wd_links)
+
+    by_lang = {xl.to_entry_id.split(":")[0]: xl for xl in entry.cross_links}
+
+    # Wiktionary common word wins for zh
+    assert by_lang["zh"].to_entry_id == "zh:狗", "expected Wiktionary word 狗, not Wikidata label 犬"
+    # Wikidata QID is preserved
+    assert by_lang["zh"].concept_id == "Q144"
+    assert by_lang["zh"].source_id == "wiktionary-en"
+    # es comes from Wiktionary (first word)
+    assert by_lang["es"].to_entry_id == "es:perro"
+    assert by_lang["es"].concept_id is None  # no Wikidata link for es
+    assert by_lang["es"].source_id == "wiktionary-en"
+    # exactly one link per lang
+    assert len(entry.cross_links) == 2
+    # provenance reflects wiktionary source
+    assert entry.provenance["cross_links"] == "wiktionary-en"
+
+
 def test_pron_dedup_with_none_ipa():
     """Two pronunciations with the same accent and no IPA are deduped consistently."""
     e = "en:uh"

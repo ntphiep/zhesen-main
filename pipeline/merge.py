@@ -139,12 +139,43 @@ def merge_entry(
         # else: no senses — drop the image (images stays [])
 
     # ------------------------------------------------------------------ #
-    # 9. Cross-links — set from_entry_id and clear from_sense_id.        #
+    # 9. Cross-links — prefer Wiktionary translation word (common word), #
+    #    carry Wikidata QID as concept_id, dedup to one link per lang.   #
     # ------------------------------------------------------------------ #
-    merged_cross_links: list[CrossLinkRec] = [
-        xl.model_copy(update={"from_entry_id": entry_id, "from_sense_id": None})
-        for xl in cross_links
-    ]
+    translations: dict[str, list[str]] = wiktionary.attributes.get("translations", {})
+
+    # Build lookup maps from the Wikidata cross_links arg.
+    qid_by_lang: dict[str, str | None] = {}
+    word_by_lang_wd: dict[str, str] = {}
+    for xl in cross_links:
+        if xl.to_entry_id and ":" in xl.to_entry_id:
+            lang_part, word_part = xl.to_entry_id.split(":", 1)
+            if lang_part not in qid_by_lang:
+                qid_by_lang[lang_part] = xl.concept_id
+                word_by_lang_wd[lang_part] = word_part
+
+    # Union of langs from both sources, sorted for determinism.
+    all_langs: list[str] = sorted(set(translations.keys()) | set(qid_by_lang.keys()))
+
+    merged_cross_links: list[CrossLinkRec] = []
+    for lang in all_langs:
+        wik_words = translations.get(lang)
+        if wik_words:
+            word = wik_words[0]
+            source = "wiktionary-en"
+        else:
+            word = word_by_lang_wd[lang]
+            source = "wikidata-lexemes"
+        to_entry_id = f"{lang}:{word}"
+        concept_id = qid_by_lang.get(lang)
+        merged_cross_links.append(CrossLinkRec(
+            from_entry_id=entry_id,
+            from_sense_id=None,
+            to_entry_id=to_entry_id,
+            link_type="translation",
+            concept_id=concept_id,
+            source_id=source,
+        ))
 
     # 10. Relations — kept as-is from wiktionary (already on entry copy).
 
@@ -162,7 +193,8 @@ def merge_entry(
     if images:
         provenance["image"] = "wikimedia-commons"
     if merged_cross_links:
-        provenance["cross_links"] = "wikidata-lexemes"
+        any_wiktionary = any(xl.source_id == "wiktionary-en" for xl in merged_cross_links)
+        provenance["cross_links"] = "wiktionary-en" if any_wiktionary else "wikidata-lexemes"
 
     # ------------------------------------------------------------------ #
     # 12. source_id stays "wiktionary-en" (structural base, already set). #
