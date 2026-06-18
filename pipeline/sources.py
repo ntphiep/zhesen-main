@@ -71,6 +71,22 @@ SOURCES: dict[str, SourceRow] = {
         tier="open",
         notes="license varies per file; store per-image license on the image row"
     ),
+    "cc-cedict": SourceRow(
+        id="cc-cedict",
+        name="CC-CEDICT",
+        url="https://www.mdbg.net/chinese/dictionary?page=cc-cedict",
+        license="CC BY-SA 4.0",
+        tier="open",
+        notes=""
+    ),
+    "unihan": SourceRow(
+        id="unihan",
+        name="Unicode Han Database (Unihan)",
+        url="https://www.unicode.org/charts/unihan.html",
+        license="Unicode License",
+        tier="open",
+        notes=""
+    ),
 }
 
 
