@@ -5,7 +5,9 @@ a single flaky source never aborts a whole entry.
 from __future__ import annotations
 
 import json
+import os
 import sys
+import time
 from typing import TYPE_CHECKING
 
 from pipeline.acquire.frequency import frequency_for, select_headwords
@@ -22,6 +24,9 @@ from pipeline.qa.coverage import coverage_report
 
 if TYPE_CHECKING:
     from supabase import Client
+
+# Inter-word delay for bulk crawls; overridable via PIPELINE_REQUEST_DELAY env var.
+REQUEST_DELAY_SECONDS: float = float(os.environ.get("PIPELINE_REQUEST_DELAY", 1.0))
 
 
 def build_entry(headword: str) -> EntryRec:
@@ -99,6 +104,7 @@ def run_slice(limit: int) -> list[EntryRec]:
     for hw in headwords:
         entry = build_entry(hw)
         entries.append(entry)
+        time.sleep(REQUEST_DELAY_SECONDS)
 
     # Write interim JSONL
     out_path = settings.INTERIM_DIR / "entries.jsonl"

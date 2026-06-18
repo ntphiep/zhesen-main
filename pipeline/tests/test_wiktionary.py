@@ -103,3 +103,38 @@ def test_dog_translations_stashed_in_attributes() -> None:
     trans = e.attributes["translations"]
     assert isinstance(trans, dict), "Expected translations to be a dict"
     assert "zh" in trans and "es" in trans
+
+
+# ---------------------------------------------------------------------------
+# Phase 3b.3 — de-blob: no blobby multi-sense glosses, no duplicate glosses
+# ---------------------------------------------------------------------------
+
+
+def test_dog_no_blob_senses() -> None:
+    """No gloss_en should contain a newline (i.e. multi-sense blob)."""
+    e = parse_wiktionary("dog", _fixture())
+    blobs = [s.gloss_en for s in e.senses if "\n" in s.gloss_en]
+    assert not blobs, f"Found {len(blobs)} blobby senses: {blobs[:3]}"
+
+
+def test_dog_no_duplicate_senses() -> None:
+    """No two senses should have identical gloss_en."""
+    e = parse_wiktionary("dog", _fixture())
+    glosses = [s.gloss_en for s in e.senses]
+    seen: set[str] = set()
+    dups: list[str] = []
+    for g in glosses:
+        if g in seen:
+            dups.append(g)
+        seen.add(g)
+    assert not dups, f"Found {len(dups)} duplicate senses: {dups[:3]}"
+
+
+def test_dog_senses_count_sane() -> None:
+    """After de-blob, 'dog' should have at most 35 distinct senses.
+
+    The fixture has 33 genuine distinct senses (noun + verb + adjective) once
+    blobs are split into lead + sub-senses and duplicates are removed.
+    """
+    e = parse_wiktionary("dog", _fixture())
+    assert len(e.senses) <= 35, f"Expected ≤35 senses after de-blob, got {len(e.senses)}"

@@ -90,6 +90,41 @@ def _strip_html(html: str) -> str:
     return BeautifulSoup(html, "html.parser").get_text().strip()
 
 
+def _split_definition(html: str) -> list[str]:
+    """Split a definition HTML into one or more plain-text glosses.
+
+    When the HTML embeds a nested ``<ol>`` or ``<ul>``, emit:
+    - the lead text before the list (if non-empty), then
+    - each non-empty ``<li>`` text as its own gloss.
+
+    When there is no nested list, return a single-element list with the
+    plain text of the whole HTML (or an empty list if blank).
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    nested = soup.find(["ol", "ul"])
+    if nested is None:
+        text = soup.get_text().strip()
+        return [text] if text else []
+
+    # Lead text: clone, strip the list, get text
+    lead_soup = BeautifulSoup(html, "html.parser")
+    for lst in lead_soup.find_all(["ol", "ul"]):
+        lst.decompose()
+    lead = lead_soup.get_text().strip()
+
+    glosses: list[str] = []
+    if lead:
+        glosses.append(lead)
+
+    # Each non-empty <li>
+    for li in nested.find_all("li", recursive=False):
+        li_text = li.get_text().strip()
+        if li_text:
+            glosses.append(li_text)
+
+    return glosses
+
+
 def _extract_ipa(raw: str) -> str:
     """Return the IPA string including its delimiters, or the whole string."""
     m = _IPA_RE.search(raw)
@@ -273,19 +308,18 @@ def _extract_translations_from_tables(tables: list[Tag]) -> dict[str, list[str]]
     return translations
 
 
-def _scrape_extras(headword: str, session: requests.Session) -> dict:
-    """Fetch the Wiktionary HTML for *headword* and extract inflections, relations,
-    and translations.
+def _scrape_extras_from_soup(
+    headword: str, soup: BeautifulSoup, session: requests.Session
+) -> dict[str, object]:
+    """Extract inflections, relations, and translations from a pre-fetched soup.
+
+    *soup* must be the parsed main-page HTML for *headword*.  Only the
+    translations subpage (a different URL) may trigger an additional request.
 
     Returns a dict with keys:
       ``"inflections"``, ``"relations"``, ``"translations"``
     Each value is already JSON-serialisable (list[dict] or dict[str, list[str]]).
     """
-    url = _HTML_URL.format(word=headword)
-    resp = session.get(url, timeout=20)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
-
     eng_div = _find_english_section(soup)
     if eng_div is None:
         return {"inflections": [], "relations": [], "translations": {}}
@@ -332,22 +366,13 @@ def _fetch_definitions(headword: str, session: requests.Session) -> list[dict]:
     return data.get("en", [])
 
 
-def _scrape_pronunciations(headword: str, session: requests.Session) -> list[dict]:
-    url = _HTML_URL.format(word=headword)
-    resp = session.get(url, timeout=20)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
-
-    eng_div: BeautifulSoup | None = None
-    for div in soup.find_all("div", {"class": "mw-heading2"}):
-        h2 = div.find("h2")
-        if h2 and h2.get("id") == "English":
-            eng_div = div
-            break
+def _scrape_pronunciations_from_soup(soup: BeautifulSoup) -> list[dict[str, object]]:
+    """Extract pronunciation entries from a pre-fetched BeautifulSoup of the main page."""
+    eng_div: Tag | None = _find_english_section(soup)
     if eng_div is None:
         return []
 
-    pronunciations: list[dict] = []
+    pronunciations: list[dict[str, object]] = []
     sib = eng_div.find_next_sibling()
     in_pron = False
     while sib:
@@ -358,7 +383,7 @@ def _scrape_pronunciations(headword: str, session: requests.Session) -> list[dic
         elif in_pron and sib.name == "ul":
             for li in sib.find_all("li", recursive=False):
                 ipa_spans = li.find_all("span", {"class": lambda c: c and "IPA" in c})
-                ipa_texts = [sp.get_text() for sp in ipa_spans]
+                ipa_texts: list[str] = [sp.get_text() for sp in ipa_spans]
                 audio_srcs: list[str] = []
                 for src_tag in li.find_all("source"):
                     src = src_tag.get("src", "")
@@ -396,7 +421,11 @@ def fetch_wiktionary(headword: str) -> dict:
         if "inflections" not in cached:
             session = requests.Session()
             session.headers["User-Agent"] = _USER_AGENT
-            extras = _scrape_extras(headword, session)
+            html_url = _HTML_URL.format(word=headword)
+            html_resp = session.get(html_url, timeout=20)
+            html_resp.raise_for_status()
+            main_soup = BeautifulSoup(html_resp.text, "html.parser")
+            extras = _scrape_extras_from_soup(headword, main_soup, session)
             cached.update(extras)
             cache_path.write_text(json.dumps(cached, ensure_ascii=False, indent=2), encoding="utf-8")
         return cached
@@ -405,9 +434,16 @@ def fetch_wiktionary(headword: str) -> dict:
     session.headers["User-Agent"] = _USER_AGENT
 
     definitions = _fetch_definitions(headword, session)
-    pronunciations = _scrape_pronunciations(headword, session)
-    extras = _scrape_extras(headword, session)
-    result: dict = {
+
+    # Fetch main-page HTML once; reuse soup for both pronunciations and extras.
+    html_url = _HTML_URL.format(word=headword)
+    html_resp = session.get(html_url, timeout=20)
+    html_resp.raise_for_status()
+    main_soup = BeautifulSoup(html_resp.text, "html.parser")
+
+    pronunciations = _scrape_pronunciations_from_soup(main_soup)
+    extras = _scrape_extras_from_soup(headword, main_soup, session)
+    result: dict[str, object] = {
         "definitions": definitions,
         "pronunciations": pronunciations,
         **extras,
@@ -432,6 +468,7 @@ def parse_wiktionary(headword: str, raw: dict) -> EntryRec:
 
     senses: list[SenseRec] = []
     n = 0  # sense counter, 1-based across the whole entry
+    seen_glosses: set[str] = set()  # de-duplicate sub-senses emitted by REST API twice
 
     for pos_group in raw.get("definitions", []):
         pos = pos_group.get("partOfSpeech", "").lower()
@@ -439,20 +476,21 @@ def parse_wiktionary(headword: str, raw: dict) -> EntryRec:
             html = def_item.get("definition", "")
             if not html:
                 continue  # skip blank placeholders
-            gloss = _strip_html(html)
-            if not gloss:
-                continue
-            n += 1
-            senses.append(
-                SenseRec(
-                    id=f"{entry_id}#{n}",
-                    entry_id=entry_id,
-                    pos=pos or None,
-                    sense_order=n,
-                    gloss_en=gloss,
-                    source_id=_SOURCE,
+            for gloss in _split_definition(html):
+                if not gloss or gloss in seen_glosses:
+                    continue
+                seen_glosses.add(gloss)
+                n += 1
+                senses.append(
+                    SenseRec(
+                        id=f"{entry_id}#{n}",
+                        entry_id=entry_id,
+                        pos=pos or None,
+                        sense_order=n,
+                        gloss_en=gloss,
+                        source_id=_SOURCE,
+                    )
                 )
-            )
 
     pronunciations: list[PronunciationRec] = []
     for pron_item in raw.get("pronunciations", []):
@@ -494,7 +532,7 @@ def parse_wiktionary(headword: str, raw: dict) -> EntryRec:
         for rel in raw.get("relations", [])
     ]
 
-    attributes: dict = {}
+    attributes: dict[str, object] = {}
     translations = raw.get("translations", {})
     if translations:
         attributes["translations"] = translations
