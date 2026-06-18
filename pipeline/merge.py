@@ -78,16 +78,16 @@ def merge_entry(
     # 4. Pronunciations — wiktionary base → CMU → Cambridge, dedup.      #
     # ------------------------------------------------------------------ #
     pronunciations: list[PronunciationRec] = []
-    seen_accent_ipa: set[tuple[str, str]] = set()
+    seen_accent_ipa: set[tuple[str, str | None]] = set()
 
     def _add_pron(pron: PronunciationRec) -> None:
         acc = normalize_accent(pron.accent)
-        ipa = clean_ipa(pron.ipa) if pron.ipa is not None else ""
+        ipa = clean_ipa(pron.ipa) if pron.ipa is not None else None
         key = (acc, ipa)
         if key not in seen_accent_ipa:
             seen_accent_ipa.add(key)
             pronunciations.append(
-                pron.model_copy(update={"accent": acc, "ipa": ipa or pron.ipa})
+                pron.model_copy(update={"accent": acc, "ipa": ipa})
             )
 
     for p in entry.pronunciations:

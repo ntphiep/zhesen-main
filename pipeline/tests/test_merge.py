@@ -176,3 +176,29 @@ def test_gloss_vi_all_stored_in_attributes():
     entry = merge_entry("dog", (None, "common"), _wik(), None, cambridge, [], None, [])
 
     assert entry.attributes.get("gloss_vi_all") == vi_glosses
+    # gloss_vi is from a human-curated bilingual dict, not machine translation.
+    assert entry.senses[0].gloss_vi == "con chó"
+    assert entry.senses[0].gloss_vi_is_mt is False
+
+
+def test_pron_dedup_with_none_ipa():
+    """Two pronunciations with the same accent and no IPA are deduped consistently."""
+    e = "en:uh"
+    wik = EntryRec(
+        id=e, lang="en", headword="uh", headword_normalized="uh", source_id="wiktionary-en",
+        senses=[SenseRec(id=f"{e}#1", entry_id=e, pos="interjection", sense_order=1, gloss_en="a filler", source_id="wiktionary-en")],
+        pronunciations=[PronunciationRec(entry_id=e, accent="en-UK", ipa=None, source_id="wiktionary-en")],
+    )
+    cambridge = {
+        "level": None,
+        "gloss_vi": [],
+        # Same accent, also no IPA: must be deduped against the wiktionary one.
+        "pronunciations": [PronunciationRec(entry_id=e, accent="en-UK", ipa=None, source_id="cambridge")],
+        "examples": [],
+    }
+
+    entry = merge_entry("uh", (None, "common"), wik, None, cambridge, [], None, [])
+
+    uk_prons = [p for p in entry.pronunciations if p.accent == "en-UK"]
+    assert len(uk_prons) == 1
+    assert uk_prons[0].ipa is None
