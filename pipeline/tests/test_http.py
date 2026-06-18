@@ -1,5 +1,15 @@
+import pytest
+
 import pipeline.acquire.http as http
 from pipeline.config import settings
+
+
+@pytest.fixture(autouse=True)
+def _clear_http_state():
+    """Isolate the module-level rate-limit state between tests."""
+    http._last.clear()
+    yield
+    http._last.clear()
 
 
 def test_cache_hit_avoids_refetch(tmp_path, monkeypatch):
