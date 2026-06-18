@@ -321,5 +321,2872 @@
       ],
       "audio": []
     }
-  ]
+  ],
+  "inflections": [
+    {
+      "form_text": "dogs",
+      "form_label": "plural"
+    },
+    {
+      "form_text": "dogs",
+      "form_label": "third-person singular simple present"
+    },
+    {
+      "form_text": "dogging",
+      "form_label": "present participle"
+    },
+    {
+      "form_text": "dogged",
+      "form_label": "simple past and past participle"
+    }
+  ],
+  "relations": [
+    {
+      "related_text": "domestic dog",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "hound",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "canine",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "stud",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "sire",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "dogflesh",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "dog meat",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "fragrant meat",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "bloke",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "cad",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "bounder",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "blackguard",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "fool",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "heel",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "scoundrel",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "click",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "detent",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "pawl",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "andiron",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "fire dog",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "dogiron",
+      "relation_type": "synonym"
+    },
+    {
+      "related_text": "a barking dog never bites",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "a barking dog seldom bites",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "African Lion Dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "a hit dog will holler",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "aid dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "alpha dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "alpha-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "and your little dog too",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "angledog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "an old dog for a hard road",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "antidog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "anti-dogger",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Arctic dog disease",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "arson dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "as sick as a dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "assistance dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Atlas Mountain Dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "attack dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Australian cattle dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Azara's dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Bắc Hà dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "badger dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "bait dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "balloon dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "bandog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "barking dogs never bite",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "barking dogs seldom bite",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "beardog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "bedog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "bench dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Bernese mountain dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "beware of the dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "big dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "big dog of the tanyard",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Black Dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "black dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "bone-crushing dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "bonedog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "bottom dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Brinjaree dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "bulldog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "bush dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "buy a dog and bark oneself",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "cadaver dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "call off the dogs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Canaan dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "cant dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "cant-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "caramelo dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Carolina dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "carriage dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "carrot dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Catahoula hog dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Catahoula leopard dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "cat and dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "catch-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "cats and dogs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "cattle dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Caucasian shepherd dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "cheese dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Chicago dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "chili dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "chilidog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "chilli dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "choke-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Chongqing dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "coachdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "coney dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "coondog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "coon dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "corndog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "corn dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "coydog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "coy dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "curdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "curtail dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dagwood dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Danish dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "delfie",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "derby dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "designer dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "detection dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "devil dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dish dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogaholic",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog and bone",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog and cat",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog and maggot",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog and pony show",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-and-pony show",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog around",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog bag",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogballs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogbane",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog basket",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-bear",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog bed",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-bee",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-belt",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogberry",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Dogberry",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Dogberryism",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogberryism",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog biscuit",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogbit",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogbolt",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogbone",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog bone",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog bread",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogbreath",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog breeding",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-brier",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog cart",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogcart",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogcatcher",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-catcher",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogcatching",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-cheap",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-cherry",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog chew",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-child",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog collar",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogcow",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog daisy",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog day",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-day cicada",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog days",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog dirt",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog doctor",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogdom",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-doo",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog door",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogdraw",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog ear",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-ear",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogear",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-eared",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog eared",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogeared",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog eat dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-eat-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogeater",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog egg",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-egg",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-end",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogese",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogette",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogface",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-faced baboon",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogfall",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog fancier",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog fennel",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogfennel",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-fight",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog fight",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogfight",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogfish",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog flap",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-flea model",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogfluencer",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogfly",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog food",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-food",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogfood",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogfought",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog fox",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-fox",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-friendly",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog fucker",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogfucker",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogfur",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog fur",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Dogg",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogged",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogger",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doggerel",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doggery",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doggess",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doggie",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doggish",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doggo",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doggone",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doggoned",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog grass",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doggrel",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog guide",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doggy",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doggy dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doghair",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog handler",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doghead",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-hearted",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog heavy",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doghole",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doghood",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog hook",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog house",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doghouse",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog hunter",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogicide",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doggicide",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog in a blanket",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog in the fight",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog in the hunt",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog in the manger",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog in the race",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogiron",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog it",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogitude",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogkind",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog Latin",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Dog Latin",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-laurel",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog lead",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogleg",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogless",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doglet",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doglike",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogling",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doglock",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doglore",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "doglover",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogly",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog man",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogman",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog milk",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogmonaut",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog musher",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog mustard",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog my cats",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dognap",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dognaper",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog napper",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-napper",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dognapper",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dognapping",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dognaps",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogness",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-nose",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-nosed",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog officer",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogophile",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogote",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog out",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogpaddle",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-paddle",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog paddle",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog park",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog parsley",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Dogpatch",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog pile",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogpile",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-pile",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogpill",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog pound",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogproof",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-proof",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog racing",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogrel",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Dogrib",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Dogribbed",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog robber",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Dog Rocks",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog roll",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog rope",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog rose",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog rough",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog run",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog salmon",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogs-bane",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogs bark, cats meow",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogsbody",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog's breakfast",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog's chance",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog scooter",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog's dangly bits",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog's dinner",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog's-ear",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog's egg",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogshank",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogs have masters, cats have staff",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogs have owners, cats have staff",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogship",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog shit",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogshit",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogshore",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-shot",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog shot",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog show",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogsick",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogsicle",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-sit",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogsit",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog sit",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogsitter",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogsitting",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogskin",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogsledder",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogsledding",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogsled",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog sled",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog sledge",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog sleep",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogsleep",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog's-leg",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog's letter",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog's life",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-slow",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog slow",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog's mercury",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogs of war",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog soldier",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogspeak",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogspike",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog spike",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog's sleep",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog's soup",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogstagram",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogstail",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog standard",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Dog Star",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog station",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-stone",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog's violet",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog tag",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogtagged",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog tax",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog team",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogtective",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog tent",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog that caught the car",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog tired",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-tired",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-tooth",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogtooth",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog tooth",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogtor",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog town",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-tree",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog trick",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogtrot",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog tucker",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogturd",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogvane",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-violet",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog violet",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog vomit slime mold",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog walk",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogwalk",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-walker",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogwalker",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog walker",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-walking",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog walking",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogwalking",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogward",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog warden",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-watch",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogwatch",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog watch",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogwear",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-weary",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog wheat",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog wheel",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog whelk",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogwhip",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog whistle",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-whistley",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-whistling",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog-whistly",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog who caught the tire",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogwise",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dogwood",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dog year",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "don't keep a dog and bark yourself",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "dope dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "double dog dare",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "double-dog-dare",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "double-dog dare",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "down dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "downward dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "downward-facing dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "drug dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Dulux dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "earth dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "everybody and his dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "everybody and their dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "every dog has his day",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "every dog has its day",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "every dog must have his day",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "every dog must have its day",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "everyone and his dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "everyone and their dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "faithful as a dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "feed dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "feist dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "female dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "fice dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "fight like cat and dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "firedog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "fire dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "fire dogs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "fit as a butcher's dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "flat dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "flip dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "flip-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "fogdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "foo dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "fox dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Frisian water dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "fuck the dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "fu dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Fuegian dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "gag a dog off a gut wagon",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "gay dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "get a dog up you",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "give a dog a bad name and hang him",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "go to the dogs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Goyet dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "granddog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "guard dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "guard-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "guide dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "gun dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "gutterdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "gutter dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hair of the dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hair of the dog that bit one",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Hallstrom's dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hang dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hang-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hangdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "have a dog and bark oneself",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "have a dog in the fight",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "have a dog in the race",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hearing dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hearing-ear dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "help a lame dog over a stile",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "helper dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "herding dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hop dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "horn dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "horndog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "horn-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hot diggety dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hot diggity dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hot-dog bun",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hot-dogged",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hot dogged",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hotdogged",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hotdogger",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hot-dogger",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hotdoggery",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hot dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hotdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hot-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hound dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "house dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hunting dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "hyena dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Iceland dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "idle as Ludlam's dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "if you lie with dogs you will get fleas",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Indian pariah dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "in the doghouse",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Inuit Dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Isle of Dogs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "it is easy to find a stick to beat a dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "it's the hit dog that howls",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Jeju dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "junkyard-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "junkyard dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "kaffir dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "kangaroo dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "keep a dog and bark oneself",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "kick a dog when it's down",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "knock a dog off a gut wagon",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "lap-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "lapdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "lap dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "lazy as Ludlam's dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "lazy dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "lazy dog bomb",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "lead dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "let sleeping dogs lie",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "let the dog see the rabbit",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "let the sleeping dogs lie",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "lie doggo",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "lie like a dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "like a big dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "like a dog in heat",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "like a dog on heat",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "like a dog with a bone",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "like a dog with two dicks",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "like a dog with two tails",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "like a scalded dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "like cats and dogs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "lion dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "little dog syndrome",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "log dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "longdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "look for a dog to kick",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "lucky dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "mad dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "mad-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "mad-dog skullcap",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "man bites dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Maori dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "merdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "miller's dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Miryang dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "moon dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "multidog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "nanny dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "New Guinea singing dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "nondog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "not-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "not dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "not enough to hang a dog on",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "on dead dogs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "one-dog night",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "one man and a dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "one man and his dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "on the Internet nobody knows you're a dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "orange dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "overdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "painted dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "pariah dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Pavlov dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Pavlov's dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "pelt of the dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "penny dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "pi-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "pie-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "pig dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "plum pudding dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "polar dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "police dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "poligar dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "polygar dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "pour cats and dogs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "pour dogs and cats",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "prairie dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "pseudodog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "pug dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "pug-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Pungsan dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "puppy dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "puppy-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "puppy-dog eyes",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "puppy dog eyes",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "put on dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "put on the dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "pye-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "raccoon dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "raft dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "rain cats and dogs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "rain dogs and cats",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "rain like cats and dogs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "rat dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "raw dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "red dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "rescue dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "river dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "road dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "robodog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "roundabout dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "running dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "salty dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sausage dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sea dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "seadog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sea-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "see a man about a dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "seeing-eye dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "seeing eye dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "seizure dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "service dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "setting dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "shaggy-dog story",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "shaggy dog story",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "shaggy dog tale",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "shaggy-dog tale",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "she-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sheepdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sheep dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "shelter dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "shepherd dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "shockdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "short-eared dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "show dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sick as a dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "singing dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "skittle-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sled dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sleddog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sleep like a dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sleuth dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sleuth-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sling dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "slumdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sly dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "small dog syndrome",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "small-eared dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sniffer dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "snowdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sod a dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "space dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sparkledog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "spoke-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "spokesdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "spotted dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "spurdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sticky dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "stink a dog off a gut wagon",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "storm cats and dogs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "stray dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Sulimov dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sundog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "sun dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "superdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "support dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "swing dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "tail wagging the dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "teacup dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "that dog don't run",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "that dog won't hunt",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "that old dog won't hunt",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "the dog ate my homework",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "the proverbial dog that caught the car",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "the quick brown fox jumps over the lazy dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "there's life in the old dog yet",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "the tail wags the dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "the whole world and his dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "three dog night",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "three-dog night",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "throw to the dogs",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "tin dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "tinned dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "too much pudding will choke a dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "top dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "toy dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "tracker dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "triple dog dare",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "try it on the dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "try it out on the dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "turnspit dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "two men and a dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "underdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "undog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "until the last dog is hung",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "upward-facing dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "veggie dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "veggiedog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Velcro dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "wag the dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "walking the dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "walk the dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "war dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "watchdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "water dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "waterdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "weiner dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "weredog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "wet dog shakes",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "wheel dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "white dog shaker syndrome",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "why keep a dog and bark yourself",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "wiener dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "wild dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Wild Dog Valley",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "wingdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "wolfdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "wolf-dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "wolf dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "wonderdog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "work dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "working dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "work like a dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "Yaghan dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "yallar dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "yaller dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "yapper dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "yellow dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "yipper dog",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "you can't teach an old dog new tricks",
+      "relation_type": "derived"
+    },
+    {
+      "related_text": "all dogged up",
+      "relation_type": "derived"
+    }
+  ],
+  "translations": {
+    "zh": [
+      "狗"
+    ],
+    "es": [
+      "perro",
+      "can",
+      "tuso",
+      "pichicho"
+    ]
+  }
 }
