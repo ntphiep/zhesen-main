@@ -16,6 +16,10 @@ def test_parse_cambridge_dog() -> None:
         p.tier == "personal" and p.source_id == "cambridge"
         for p in out["pronunciations"]
     )
+    assert all(
+        p.accent == "en-UK"
+        for p in out["pronunciations"]
+    )
     # level may be None for some words but should be a str when present
     assert out["level"] is None or isinstance(out["level"], str)
 

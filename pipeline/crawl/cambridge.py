@@ -42,13 +42,14 @@ _HEADERS = {
 def fetch_cambridge(headword: str) -> str:
     """Return HTML for *headword* from a read-through disk cache.
 
-    Cache location: settings.CACHE_DIR / "cambridge" / "<headword>.html".
+    Cache location: settings.CACHE_DIR / "cambridge" / "<safe_headword>.html".
     On a cache miss the page is fetched from Cambridge with the browser
     User-Agent and cached before being returned.
     """
     cache_dir = settings.CACHE_DIR / "cambridge"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    cache_file = cache_dir / f"{headword}.html"
+    safe = re.sub(r"[^\w\-]", "_", headword)
+    cache_file = cache_dir / f"{safe}.html"
 
     if cache_file.exists():
         return cache_file.read_text(encoding="utf-8")
@@ -72,7 +73,7 @@ def _absolute_audio(src: str) -> str:
     return _BASE + src
 
 
-def parse_cambridge(headword: str, html: str) -> dict:  # noqa: ARG001
+def parse_cambridge(headword: str, html: str) -> dict:
     """Parse a Cambridge English-Vietnamese page and return extracted data.
 
     Parameters
@@ -106,12 +107,12 @@ def parse_cambridge(headword: str, html: str) -> dict:  # noqa: ARG001
     # Pronunciation
     # Actual DOM: one .pron-info.dpron-info per POS block when present.
     # Contains .ipa.dipa for the phoneme string.
-    # Audio: audio > source[src]  (graceful — may be absent).
+    # Audio: audio > source[src] (graceful — may be absent).
     # Cambridge E-V typically shows a single IPA (no UK/US split).
-    # We emit accent="en-GB" for the single pronunciation found.
+    # We emit accent="en-UK" for the single pronunciation found.
     # ------------------------------------------------------------------
     pronunciations: list[PronunciationRec] = []
-    seen_ipa: set[str] = set()
+    seen_ipa: set[tuple[str, str | None]] = set()
 
     for pron_el in soup.select("span.pron-info.dpron-info"):
         ipa_el = pron_el.select_one("span.ipa.dipa")
@@ -124,8 +125,9 @@ def parse_cambridge(headword: str, html: str) -> dict:  # noqa: ARG001
             if src:
                 audio_url = _absolute_audio(str(src))
 
-        # De-duplicate by IPA string
-        key = ipa_text or ""
+        # De-duplicate by (accent, IPA) to preserve distinct accents
+        accent = "en-UK"
+        key = (accent, ipa_text)
         if key in seen_ipa:
             continue
         seen_ipa.add(key)
@@ -133,7 +135,7 @@ def parse_cambridge(headword: str, html: str) -> dict:  # noqa: ARG001
         pronunciations.append(
             PronunciationRec(
                 entry_id=headword,
-                accent="en-GB",
+                accent=accent,
                 ipa=ipa_text,
                 audio_url=audio_url,
                 source_id="cambridge",
