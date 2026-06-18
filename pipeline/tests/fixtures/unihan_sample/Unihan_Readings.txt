@@ -44,6 +44,10 @@ U+4EBA	kTGHZ2013	313.110:rén
 U+4EBA	kTang	*njin njin
 U+4EBA	kVietnamese	nhân
 U+4EBA	kXHC1983	0959.010:rén
+U+4F60	kCantonese	nei5
+U+4F60	kDefinition	you, second person pronoun
+U+4F60	kMandarin	nǐ
+U+4F60	kVietnamese	nể
 U+5927	kCantonese	daai6
 U+5927	kDefinition	big, great, vast, large, high
 U+5927	kFanqie	徒蓋 唐佐

@@ -11,7 +11,8 @@ import wordfreq
 
 from pipeline.acquire.cedict import load_cedict
 from pipeline.acquire.unihan import fetch_unihan, parse_unihan
-from pipeline.models.records import EntryRec, PronunciationRec, SenseRec
+from pipeline.enrich.examples import fetch_tatoeba, parse_tatoeba
+from pipeline.models.records import EntryRec, ExampleRec, PronunciationRec, SenseRec
 
 # ---------------------------------------------------------------------------
 # Tone-mark conversion (numbered pinyin to diacritic pinyin)
@@ -179,6 +180,18 @@ def build_zh_entry(simplified: str) -> EntryRec:
                 source_id="cc-cedict",
             )
         )
+
+    # Fetch Mandarin→Vietnamese example sentences from Tatoeba.
+    try:
+        raw_examples = fetch_tatoeba(simplified, from_lang="cmn", to_lang="vie")
+        zh_examples: list[ExampleRec] = parse_tatoeba(simplified, raw_examples)
+        # Fix entry_id to match this zh entry (parse_tatoeba defaults to "en:…")
+        for ex in zh_examples:
+            ex.entry_id = entry_id
+        entry.examples.extend(zh_examples[:5])
+    except Exception:
+        # Network errors are non-fatal; entry is still valid without examples.
+        pass
 
     return entry
 

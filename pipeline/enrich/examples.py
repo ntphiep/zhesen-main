@@ -53,7 +53,7 @@ from pipeline.models.records import ExampleRec
 
 _SOURCE = "tatoeba"
 _BASE_URL = "https://tatoeba.org"
-_SEARCH_URL = _BASE_URL + "/en/api_v0/search?from=eng&to=vie&query={word}"
+_SEARCH_URL = _BASE_URL + "/en/api_v0/search?from={from_lang}&to={to_lang}&query={word}"
 _USER_AGENT = "chesen-langlearn/0.1 (personal study project)"
 _MAX_RESULTS = 5
 
@@ -62,7 +62,7 @@ def parse_tatoeba(headword: str, raw: dict) -> list[ExampleRec]:
     """Map a Tatoeba API response dict to a list of ExampleRec (capped at 5).
 
     Args:
-        headword: The English headword (e.g. "dog").
+        headword: The headword used for entry_id construction (e.g. "dog" or "你好").
         raw: The dict returned by the Tatoeba api_v0/search endpoint.
 
     Returns:
@@ -108,26 +108,35 @@ def parse_tatoeba(headword: str, raw: dict) -> list[ExampleRec]:
     return records
 
 
-def fetch_tatoeba(headword: str) -> dict:
+def fetch_tatoeba(
+    headword: str,
+    from_lang: str = "eng",
+    to_lang: str = "vie",
+) -> dict:
     """Read-through cache; fetches Tatoeba search results for a headword.
 
-    Cache path: settings.CACHE_DIR / "tatoeba" / "{headword}.json"
+    Cache path: settings.CACHE_DIR / "tatoeba" / "{from_lang}-{to_lang}-{headword}.json"
     On miss: GETs the api_v0/search URL, raises on non-2xx, writes JSON cache,
     and returns the parsed dict.
 
     Args:
-        headword: The English word to search for.
+        headword: The word to search for (any language).
+        from_lang: Tatoeba language code for the source language (default "eng").
+        to_lang: Tatoeba language code for the translation language (default "vie").
 
     Returns:
         The raw Tatoeba API response dict.
     """
     cache_dir = settings.CACHE_DIR / "tatoeba"
-    cache_path = cache_dir / f"{headword}.json"
+    # Include lang codes in cache key so different language pairs don't collide.
+    safe_headword = headword.encode("utf-8").hex() if any(ord(c) > 127 for c in headword) else headword
+    cache_filename = f"{from_lang}-{to_lang}-{safe_headword}.json"
+    cache_path = cache_dir / cache_filename
 
     if cache_path.exists():
         return json.loads(cache_path.read_text(encoding="utf-8"))
 
-    url = _SEARCH_URL.format(word=headword)
+    url = _SEARCH_URL.format(from_lang=from_lang, to_lang=to_lang, word=headword)
     resp = requests.get(url, headers={"User-Agent": _USER_AGENT}, timeout=30)
     resp.raise_for_status()
     data: dict = resp.json()

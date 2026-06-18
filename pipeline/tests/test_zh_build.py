@@ -1,8 +1,9 @@
-"""Tests for pipeline.zh_build — task 3c.2."""
+"""Tests for pipeline.zh_build — task 3c.2 / 3c.4."""
 from __future__ import annotations
 
 from pathlib import Path
 import zipfile
+from unittest.mock import patch
 
 import pytest
 
@@ -169,3 +170,82 @@ def test_select_headwords_in_cedict():
 def test_select_headwords_no_duplicates():
     words = select_zh_headwords(20)
     assert len(words) == len(set(words))
+
+
+# ---------------------------------------------------------------------------
+# Stroke count + radical character correctness (task 3c.4 A+B)
+# ---------------------------------------------------------------------------
+
+
+def test_ren_stroke_count_is_total() -> None:
+    # 人 has kTotalStrokes=2; previously kRSUnicode additional strokes=0 (wrong)
+    entry = build_zh_entry("人")
+    chars = entry.attributes.get("characters", [])
+    assert len(chars) == 1
+    assert chars[0]["stroke_count"] == 2
+
+
+def test_ren_radical_is_character() -> None:
+    # radical should be the Kangxi character 人, not the index "9"
+    entry = build_zh_entry("人")
+    chars = entry.attributes.get("characters", [])
+    assert chars[0]["radical"] == "人"
+
+
+def test_ni_stroke_count_is_total() -> None:
+    # 你 has kTotalStrokes=7; previously kRSUnicode additional strokes=5 (wrong)
+    entry = build_zh_entry("你")
+    chars = entry.attributes.get("characters", [])
+    assert len(chars) == 1
+    assert chars[0]["stroke_count"] == 7
+
+
+def test_ni_radical_is_character() -> None:
+    entry = build_zh_entry("你")
+    chars = entry.attributes.get("characters", [])
+    assert chars[0]["radical"] == "人"
+
+
+# ---------------------------------------------------------------------------
+# Tatoeba Chinese examples (task 3c.4 C)
+# ---------------------------------------------------------------------------
+
+
+def test_zh_examples_attached_when_tatoeba_returns_results() -> None:
+    """When fetch_tatoeba returns results, examples are attached to entry."""
+    fake_raw = {
+        "results": [
+            {
+                "text": "你好。",
+                "translations": [[{"id": 1, "text": "Xin chào.", "lang": "vie", "audios": []}]],
+                "audios": [],
+            }
+        ]
+    }
+    with patch("pipeline.zh_build.fetch_tatoeba", return_value=fake_raw):
+        entry = build_zh_entry("你")
+    assert len(entry.examples) >= 1
+    ex = entry.examples[0]
+    assert ex.source_id == "tatoeba"
+    assert ex.entry_id == "zh:你"
+    assert ex.translation_vi == "Xin chào."
+
+
+def test_zh_examples_capped_at_five() -> None:
+    """Examples are capped at 5 even when Tatoeba returns more."""
+    result_template = {
+        "text": "你好。",
+        "translations": [],
+        "audios": [],
+    }
+    fake_raw = {"results": [result_template] * 10}
+    with patch("pipeline.zh_build.fetch_tatoeba", return_value=fake_raw):
+        entry = build_zh_entry("你")
+    assert len(entry.examples) <= 5
+
+
+def test_zh_examples_empty_on_network_error() -> None:
+    """Network errors are swallowed; entry is still returned without examples."""
+    with patch("pipeline.zh_build.fetch_tatoeba", side_effect=OSError("timeout")):
+        entry = build_zh_entry("你")
+    assert isinstance(entry.examples, list)
