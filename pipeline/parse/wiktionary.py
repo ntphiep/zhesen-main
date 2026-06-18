@@ -1,4 +1,6 @@
-"""Parse English Wiktionary data into pipeline records.
+"""Parse Wiktionary data into pipeline records.
+
+Supports multiple source languages via the ``lang`` parameter (default ``"en"``).
 
 Data source:
   - Definitions: Wiktionary REST API v1 (/api/rest_v1/page/definition/{word})
@@ -65,6 +67,18 @@ _USER_AGENT = "chesen-pipeline/1.0 (contact phuchiep.nguyenthe@adamosoft.com)"
 _REST_URL = "https://en.wiktionary.org/api/rest_v1/page/definition/{word}"
 _HTML_URL = "https://en.wiktionary.org/wiki/{word}?printable=yes"
 _TRANS_URL = "https://en.wiktionary.org/wiki/{word}/translations?printable=yes"
+
+# BCP-47 lang code -> full language name as it appears in Wiktionary h2 headings
+_LANG_SECTION_NAMES: dict[str, str] = {
+    "en": "English",
+    "es": "Spanish",
+    "zh": "Chinese",
+    "fr": "French",
+    "de": "German",
+    "pt": "Portuguese",
+    "it": "Italian",
+    "ja": "Japanese",
+}
 
 # IPA markers: /.../ or [...]
 _IPA_RE = re.compile(r"[/\[]([^/\[\]]+)[/\]]")
@@ -135,9 +149,16 @@ def _extract_ipa(raw: str) -> str:
     return raw
 
 
-def _accent_from_text(text: str) -> str:
+def _accent_from_text(text: str, lang: str = "en") -> str:
     """Heuristically map pronunciation label text to an accent tag."""
     t = text.lower()
+    if lang == "es":
+        if "spain" in t or "castilian" in t or "iberian" in t or "españa" in t:
+            return "es-ES"
+        if "latin" in t or "american" in t or "latin american" in t:
+            return "es-419"
+        return "es"
+    # Default English accents
     if "received pronunciation" in t or " uk" in t or "british" in t:
         return "en-UK"
     if "general american" in t or " us" in t or "american" in t:
@@ -146,16 +167,25 @@ def _accent_from_text(text: str) -> str:
         return "en-CA"
     if "australia" in t or "australian" in t:
         return "en-AU"
-    return "en"
+    return lang
+
+
+def _find_lang_section(soup: BeautifulSoup, lang: str = "en") -> Tag | None:
+    """Return the mw-heading2 div whose h2 matches the given language section, or None."""
+    section_name = _LANG_SECTION_NAMES.get(lang, lang.capitalize())
+    for div in soup.find_all("div", {"class": "mw-heading2"}):
+        h2 = div.find("h2")
+        if h2 and (h2.get("id") == section_name or h2.get_text().strip() == section_name):
+            return div  # type: ignore[return-value]
+    return None
 
 
 def _find_english_section(soup: BeautifulSoup) -> Tag | None:
-    """Return the mw-heading2 div whose h2 has id='English', or None."""
-    for div in soup.find_all("div", {"class": "mw-heading2"}):
-        h2 = div.find("h2")
-        if h2 and h2.get("id") == "English":
-            return div  # type: ignore[return-value]
-    return None
+    """Return the mw-heading2 div whose h2 has id='English', or None.
+
+    Kept for backward compatibility; delegates to _find_lang_section.
+    """
+    return _find_lang_section(soup, lang="en")
 
 
 def _scrape_inflections(eng_div: Tag, headword: str) -> list[dict]:
@@ -309,7 +339,7 @@ def _extract_translations_from_tables(tables: list[Tag]) -> dict[str, list[str]]
 
 
 def _scrape_extras_from_soup(
-    headword: str, soup: BeautifulSoup, session: requests.Session
+    headword: str, soup: BeautifulSoup, session: requests.Session, lang: str = "en"
 ) -> dict[str, object]:
     """Extract inflections, relations, and translations from a pre-fetched soup.
 
@@ -320,7 +350,7 @@ def _scrape_extras_from_soup(
       ``"inflections"``, ``"relations"``, ``"translations"``
     Each value is already JSON-serialisable (list[dict] or dict[str, list[str]]).
     """
-    eng_div = _find_english_section(soup)
+    eng_div = _find_lang_section(soup, lang=lang)
     if eng_div is None:
         return {"inflections": [], "relations": [], "translations": {}}
 
@@ -358,22 +388,24 @@ def _scrape_extras_from_soup(
     }
 
 
-def _fetch_definitions(headword: str, session: requests.Session) -> list[dict]:
+def _fetch_definitions(headword: str, session: requests.Session, lang: str = "en") -> list[dict]:
     url = _REST_URL.format(word=headword)
     resp = session.get(url, timeout=20)
     resp.raise_for_status()
     data: dict = resp.json()
-    return data.get("en", [])
+    return data.get(lang, [])
 
 
-def _scrape_pronunciations_from_soup(soup: BeautifulSoup) -> list[dict[str, object]]:
+def _scrape_pronunciations_from_soup(
+    soup: BeautifulSoup, lang: str = "en"
+) -> list[dict[str, object]]:
     """Extract pronunciation entries from a pre-fetched BeautifulSoup of the main page."""
-    eng_div: Tag | None = _find_english_section(soup)
-    if eng_div is None:
+    lang_div: Tag | None = _find_lang_section(soup, lang=lang)
+    if lang_div is None:
         return []
 
     pronunciations: list[dict[str, object]] = []
-    sib = eng_div.find_next_sibling()
+    sib = lang_div.find_next_sibling()
     in_pron = False
     while sib:
         if sib.name == "div" and "mw-heading2" in sib.get("class", []):
@@ -401,10 +433,15 @@ def _scrape_pronunciations_from_soup(soup: BeautifulSoup) -> list[dict[str, obje
     return pronunciations
 
 
-def fetch_wiktionary(headword: str) -> dict:
+def fetch_wiktionary(headword: str, lang: str = "en") -> dict:
     """Read-through cache; returns the combined fixture dict.
 
-    Cache path: settings.CACHE_DIR / "wiktionary" / "{headword}.json"
+    Args:
+        headword: The word to look up.
+        lang: BCP-47 language code for the Wiktionary section to read
+              (e.g. ``"en"`` for English, ``"es"`` for Spanish). Default ``"en"``.
+
+    Cache path: settings.CACHE_DIR / "wiktionary" / "{lang}_{headword}.json"
     On miss: fetches from Wiktionary REST API + HTML, writes JSON, returns it.
 
     The returned dict includes the keys: ``"definitions"``, ``"pronunciations"``,
@@ -413,7 +450,9 @@ def fetch_wiktionary(headword: str) -> dict:
     runs, the cache is updated, and the enriched dict is returned).
     """
     cache_dir = settings.CACHE_DIR / "wiktionary"
-    cache_path = cache_dir / f"{headword}.json"
+    # Separate cache files per language to avoid collisions
+    cache_filename = f"{headword}.json" if lang == "en" else f"{lang}_{headword}.json"
+    cache_path = cache_dir / cache_filename
 
     if cache_path.exists():
         cached = json.loads(cache_path.read_text(encoding="utf-8"))
@@ -425,7 +464,7 @@ def fetch_wiktionary(headword: str) -> dict:
             html_resp = session.get(html_url, timeout=20)
             html_resp.raise_for_status()
             main_soup = BeautifulSoup(html_resp.text, "html.parser")
-            extras = _scrape_extras_from_soup(headword, main_soup, session)
+            extras = _scrape_extras_from_soup(headword, main_soup, session, lang=lang)
             cached.update(extras)
             cache_path.write_text(json.dumps(cached, ensure_ascii=False, indent=2), encoding="utf-8")
         return cached
@@ -433,7 +472,7 @@ def fetch_wiktionary(headword: str) -> dict:
     session = requests.Session()
     session.headers["User-Agent"] = _USER_AGENT
 
-    definitions = _fetch_definitions(headword, session)
+    definitions = _fetch_definitions(headword, session, lang=lang)
 
     # Fetch main-page HTML once; reuse soup for both pronunciations and extras.
     html_url = _HTML_URL.format(word=headword)
@@ -441,8 +480,8 @@ def fetch_wiktionary(headword: str) -> dict:
     html_resp.raise_for_status()
     main_soup = BeautifulSoup(html_resp.text, "html.parser")
 
-    pronunciations = _scrape_pronunciations_from_soup(main_soup)
-    extras = _scrape_extras_from_soup(headword, main_soup, session)
+    pronunciations = _scrape_pronunciations_from_soup(main_soup, lang=lang)
+    extras = _scrape_extras_from_soup(headword, main_soup, session, lang=lang)
     result: dict[str, object] = {
         "definitions": definitions,
         "pronunciations": pronunciations,
@@ -454,17 +493,19 @@ def fetch_wiktionary(headword: str) -> dict:
     return result
 
 
-def parse_wiktionary(headword: str, raw: dict) -> EntryRec:
+def parse_wiktionary(headword: str, raw: dict, lang: str = "en") -> EntryRec:
     """Map a combined Wiktionary fetch dict to an EntryRec.
 
     Args:
-        headword: The word (e.g. "dog").
+        headword: The word (e.g. "dog" or "hablar").
         raw: The dict produced by fetch_wiktionary() (or loaded from the fixture).
+        lang: BCP-47 language code; sets ``EntryRec.lang`` and id prefix. Default ``"en"``.
 
     Returns:
         An EntryRec populated with senses, pronunciations, and relations.
     """
-    entry_id = f"en:{headword}"
+    source_id = f"wiktionary-{lang}"
+    entry_id = f"{lang}:{headword}"
 
     senses: list[SenseRec] = []
     n = 0  # sense counter, 1-based across the whole entry
@@ -488,7 +529,7 @@ def parse_wiktionary(headword: str, raw: dict) -> EntryRec:
                         pos=pos or None,
                         sense_order=n,
                         gloss_en=gloss,
-                        source_id=_SOURCE,
+                        source_id=source_id,
                     )
                 )
 
@@ -497,7 +538,7 @@ def parse_wiktionary(headword: str, raw: dict) -> EntryRec:
         text = pron_item.get("text", "")
         ipa_list: list[str] = pron_item.get("ipa", [])
         audio_list: list[str] = pron_item.get("audio", [])
-        accent = _accent_from_text(text)
+        accent = _accent_from_text(text, lang=lang)
         # Pair each IPA with an audio URL where available
         for idx, raw_ipa in enumerate(ipa_list):
             ipa = _extract_ipa(raw_ipa)
@@ -508,7 +549,7 @@ def parse_wiktionary(headword: str, raw: dict) -> EntryRec:
                     accent=accent,
                     ipa=ipa,
                     audio_url=audio_url,
-                    source_id=_SOURCE,
+                    source_id=source_id,
                 )
             )
 
@@ -517,7 +558,7 @@ def parse_wiktionary(headword: str, raw: dict) -> EntryRec:
             entry_id=entry_id,
             form_text=inf["form_text"],
             form_label=inf.get("form_label") or None,
-            source_id=_SOURCE,
+            source_id=source_id,
         )
         for inf in raw.get("inflections", [])
     ]
@@ -527,7 +568,7 @@ def parse_wiktionary(headword: str, raw: dict) -> EntryRec:
             entry_id=entry_id,
             related_text=rel["related_text"],
             relation_type=rel["relation_type"],
-            source_id=_SOURCE,
+            source_id=source_id,
         )
         for rel in raw.get("relations", [])
     ]
@@ -539,11 +580,11 @@ def parse_wiktionary(headword: str, raw: dict) -> EntryRec:
 
     return EntryRec(
         id=entry_id,
-        lang="en",
+        lang=lang,
         entry_type="word",
         headword=headword,
         headword_normalized=headword.lower(),
-        source_id=_SOURCE,
+        source_id=source_id,
         senses=senses,
         pronunciations=pronunciations,
         inflections=inflections,

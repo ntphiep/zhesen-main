@@ -87,6 +87,22 @@ SOURCES: dict[str, SourceRow] = {
         tier="open",
         notes=""
     ),
+    "wiktionary-es": SourceRow(
+        id="wiktionary-es",
+        name="English Wiktionary — Spanish section",
+        url="https://en.wiktionary.org",
+        license="CC BY-SA 4.0",
+        tier="open",
+        notes="Spanish definitions, IPA, and inflections scraped from en.wiktionary.org"
+    ),
+    "verbecc": SourceRow(
+        id="verbecc",
+        name="verbecc Spanish verb conjugator",
+        url="https://github.com/bretttolbert/verbecc",
+        license="MIT",
+        tier="open",
+        notes="Pure-Python Spanish verb conjugation; full indicativo/subjuntivo/imperativo/condicional tables"
+    ),
 }
 
 
