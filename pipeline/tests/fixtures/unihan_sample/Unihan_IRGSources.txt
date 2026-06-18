@@ -1,0 +1,98 @@
+# Unihan_IRGSources.txt
+# Date: 2025-07-24 00:00:00 GMT [KL]
+# Unicode Version 17.0.0
+#
+# Unicode Character Database
+# © 2025 Unicode®, Inc.
+# Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+# For terms of use and license, see https://www.unicode.org/terms_of_use.html
+#
+# For documentation, see https://www.unicode.org/reports/tr38/
+#
+# This file contains data on the following fields from the Unihan database:
+#	kCompatibilityVariant
+#	kIICore
+#	kIRG_GSource
+#	kIRG_HSource
+#	kIRG_JSource
+#	kIRG_KPSource
+#	kIRG_KSource
+#	kIRG_MSource
+#	kIRG_SSource
+#	kIRG_TSource
+#	kIRG_UKSource
+#	kIRG_USource
+#	kIRG_VSource
+#	kRSUnicode
+#	kTotalStrokes
+#
+U+4EBA	kIICore	AGTJHKMP
+U+4EBA	kIRG_GSource	G0-484B
+U+4EBA	kIRG_HSource	HB1-A448
+U+4EBA	kIRG_JSource	J0-3F4D
+U+4EBA	kIRG_KPSource	KP0-FCC5
+U+4EBA	kIRG_KSource	K0-6C51
+U+4EBA	kIRG_TSource	T1-4429
+U+4EBA	kIRG_VSource	V1-4A62
+U+4EBA	kRSUnicode	9.0
+U+4EBA	kTotalStrokes	2
+U+5927	kIICore	AGTJHKMP
+U+5927	kIRG_GSource	G0-3473
+U+5927	kIRG_HSource	HB1-A46A
+U+5927	kIRG_JSource	J0-4267
+U+5927	kIRG_KPSource	KP0-D6FA
+U+5927	kIRG_KSource	K0-535E
+U+5927	kIRG_TSource	T1-444B
+U+5927	kIRG_VSource	V1-5146
+U+5927	kRSUnicode	37.0
+U+5927	kTotalStrokes	3
+U+5C0F	kIICore	AGTJHKMP
+U+5C0F	kIRG_GSource	G0-5021
+U+5C0F	kIRG_HSource	HB1-A470
+U+5C0F	kIRG_JSource	J0-3E2E
+U+5C0F	kIRG_KPSource	KP0-E2FE
+U+5C0F	kIRG_KSource	K0-6133
+U+5C0F	kIRG_TSource	T1-4451
+U+5C0F	kIRG_VSource	V1-5324
+U+5C0F	kRSUnicode	42.0
+U+5C0F	kTotalStrokes	3
+U+611B	kIICore	ATJHKMP
+U+611B	kIRG_GSource	G1-302E
+U+611B	kIRG_HSource	HB1-B752
+U+611B	kIRG_JSource	J0-3026
+U+611B	kIRG_KPSource	KP0-FCF1
+U+611B	kIRG_KSource	K0-6471
+U+611B	kIRG_TSource	T1-6378
+U+611B	kRSUnicode	61.9
+U+611B	kTotalStrokes	13
+U+6C34	kIICore	AGTJHKMP
+U+6C34	kIRG_GSource	G0-4B2E
+U+6C34	kIRG_HSource	HB1-A4F4
+U+6C34	kIRG_JSource	J0-3F65
+U+6C34	kIRG_KPSource	KP0-E3EE
+U+6C34	kIRG_KSource	K0-6229
+U+6C34	kIRG_TSource	T1-4555
+U+6C34	kIRG_VSource	V1-5B5A
+U+6C34	kRSUnicode	85.0
+U+6C34	kTotalStrokes	4
+U+72D7	kIICore	AGTJHKMP
+U+72D7	kIRG_GSource	G0-3937
+U+72D7	kIRG_HSource	HB1-AAAF
+U+72D7	kIRG_JSource	J0-3669
+U+72D7	kIRG_KPSource	KP0-D0FD
+U+72D7	kIRG_KSource	K0-4F37
+U+72D7	kIRG_TSource	T1-4E70
+U+72D7	kIRG_VSource	V1-5E68
+U+72D7	kRSUnicode	94.5
+U+72D7	kTotalStrokes	8
+U+732B	kIICore	AGJKP
+U+732B	kIRG_GSource	G0-4328
+U+732B	kIRG_HSource	H-FE53
+U+732B	kIRG_JSource	J0-472D
+U+732B	kIRG_KPSource	KP0-DBCC
+U+732B	kIRG_KSource	K0-595E
+U+732B	kIRG_TSource	T3-3D2B
+U+732B	kIRG_VSource	V2-8D78
+U+732B	kRSUnicode	94.9
+U+732B	kTotalStrokes	11
+# EOF
