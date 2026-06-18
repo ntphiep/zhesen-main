@@ -34,6 +34,21 @@ def test_merge_combines_sources():
     assert entry.provenance.get("level") == "cambridge"
 
 
+def test_all_pronunciations_get_canonical_entry_id():
+    """Cambridge pronunciations arrive with entry_id='dog' (raw headword); the merge
+    must canonicalize every pronunciation's entry_id to 'en:dog' or the DB load fails
+    the entries FK. Regression test for an e2e-discovered bug."""
+    cambridge = {
+        "level": "A1", "gloss_vi": [], "examples": [],
+        "pronunciations": [
+            PronunciationRec(entry_id="dog", accent="en-UK", ipa="doɡ",
+                             source_id="cambridge", tier="personal"),
+        ],
+    }
+    entry = merge_entry("dog", (1, "very_common"), _wik(), None, cambridge, [], None, [])
+    assert all(p.entry_id == "en:dog" for p in entry.pronunciations)
+
+
 def test_no_cmu_when_us_already_present():
     """CMU pron is NOT added when wiktionary already has en-US."""
     e = "en:cat"

@@ -87,7 +87,9 @@ def merge_entry(
         if key not in seen_accent_ipa:
             seen_accent_ipa.add(key)
             pronunciations.append(
-                pron.model_copy(update={"accent": acc, "ipa": ipa})
+                pron.model_copy(
+                    update={"accent": acc, "ipa": ipa, "entry_id": entry_id}
+                )
             )
 
     for p in entry.pronunciations:
