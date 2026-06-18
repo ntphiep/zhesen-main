@@ -7,7 +7,7 @@ from __future__ import annotations
 from pipeline.models.records import EntryRec
 
 
-def coverage_report(entries: list[EntryRec]) -> dict:
+def coverage_report(entries: list[EntryRec]) -> dict[str, object]:
     """Return coverage counts and percentages for *entries*.
 
     Keys returned:

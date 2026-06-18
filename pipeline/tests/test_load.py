@@ -12,6 +12,7 @@ from pipeline.models.records import (
     SenseRec,
 )
 from pipeline.load.supabase_load import entry_to_rows, upsert_entry
+from pipeline.orchestrator import load_all
 
 
 # ---------------------------------------------------------------------------
@@ -24,7 +25,7 @@ class FakeResp:
 
 
 class FakeTable:
-    def __init__(self, log: list, name: str) -> None:
+    def __init__(self, log: list[tuple[object, ...]], name: str) -> None:
         self.log = log
         self.name = name
 
@@ -40,12 +41,16 @@ class FakeTable:
         self.log.append(("insert", self.name, len(rows)))
         return self
 
+    def upsert(self, rows: list[dict], **kwargs: object) -> "FakeTable":
+        self.log.append(("upsert", self.name, len(rows)))
+        return self
+
     def execute(self) -> FakeResp:
         return FakeResp()
 
 
 class FakeSchema:
-    def __init__(self, log: list) -> None:
+    def __init__(self, log: list[tuple[object, ...]]) -> None:
         self.log = log
 
     def table(self, name: str) -> FakeTable:
@@ -54,7 +59,7 @@ class FakeSchema:
 
 class FakeClient:
     def __init__(self) -> None:
-        self.log: list = []
+        self.log: list[tuple[object, ...]] = []
 
     def schema(self, name: str) -> FakeSchema:
         return FakeSchema(self.log)
@@ -227,3 +232,34 @@ class TestUpsertEntry:
         assert insert_map["pronunciations"] == 1
         assert insert_map["examples"] == 1
         assert insert_map["images"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Tests for load_all (sources seeding + ordering)
+# ---------------------------------------------------------------------------
+
+class TestLoadAll:
+    def test_sources_seeded_before_entries(self) -> None:
+        """load_all must upsert lex.sources BEFORE any entries insert."""
+        entry = _rich_entry()
+        client = FakeClient()
+        result = load_all([entry], client)
+
+        # Check return value
+        assert result == 1
+
+        # Find positions of the sources upsert and the first entries insert
+        sources_upsert_pos: int | None = None
+        entries_insert_pos: int | None = None
+        for i, ev in enumerate(client.log):
+            if ev[0] == "upsert" and ev[1] == "sources" and sources_upsert_pos is None:
+                sources_upsert_pos = i
+            if ev[0] == "insert" and ev[1] == "entries" and entries_insert_pos is None:
+                entries_insert_pos = i
+
+        assert sources_upsert_pos is not None, "sources upsert not found in log"
+        assert entries_insert_pos is not None, "entries insert not found in log"
+        assert sources_upsert_pos < entries_insert_pos, (
+            f"sources upsert (pos {sources_upsert_pos}) must precede "
+            f"entries insert (pos {entries_insert_pos})"
+        )

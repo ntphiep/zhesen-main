@@ -6,18 +6,22 @@ from __future__ import annotations
 
 import json
 import sys
+from typing import TYPE_CHECKING
 
 from pipeline.acquire.frequency import frequency_for, select_headwords
 from pipeline.config import settings
 from pipeline.crawl.cambridge import fetch_cambridge, parse_cambridge
 from pipeline.enrich.examples import fetch_tatoeba, parse_tatoeba
 from pipeline.enrich.wikidata import cross_links_for, fetch_wikidata, image_for
-from pipeline.load.supabase_load import get_service_client, upsert_entry
+from pipeline.load.supabase_load import get_service_client, seed_sources, upsert_entry
 from pipeline.merge import merge_entry
 from pipeline.models.records import EntryRec, ExampleRec
 from pipeline.parse.cmu import us_pronunciation
 from pipeline.parse.wiktionary import fetch_wiktionary, parse_wiktionary
 from pipeline.qa.coverage import coverage_report
+
+if TYPE_CHECKING:
+    from supabase import Client
 
 
 def build_entry(headword: str) -> EntryRec:
@@ -109,13 +113,19 @@ def run_slice(limit: int) -> list[EntryRec]:
     return entries
 
 
-def load_all(entries: list[EntryRec]) -> int:
+def load_all(entries: list[EntryRec], client: "Client | None" = None) -> int:
     """Load *entries* into Supabase via the service-role client.
+
+    Args:
+        entries: Entries to load.
+        client:  Optional injectable Supabase client (for testing). If None,
+                 a live service-role client is created from env vars.
 
     Returns:
         Number of entries loaded.
     """
-    client = get_service_client()
-    for entry in entries:
-        upsert_entry(client, entry)
+    client = client or get_service_client()
+    seed_sources(client)
+    for e in entries:
+        upsert_entry(client, e)
     return len(entries)

@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 
 from pipeline.config import settings
 from pipeline.models.records import EntryRec
+from pipeline.sources import seed_rows
 
 if TYPE_CHECKING:
     from supabase import Client
@@ -91,7 +92,12 @@ def entry_to_rows(entry: EntryRec) -> dict[str, list[dict]]:
     return result
 
 
-def upsert_entry(client: object, entry: EntryRec) -> None:
+def seed_sources(client: "Client") -> None:
+    """Upsert the source catalog so entry FKs resolve."""
+    client.schema("lex").table("sources").upsert(seed_rows(), on_conflict="id").execute()
+
+
+def upsert_entry(client: "Client", entry: EntryRec) -> None:
     """Idempotent delete-then-insert of the full entry tree into Supabase.
 
     Steps:
@@ -103,14 +109,14 @@ def upsert_entry(client: object, entry: EntryRec) -> None:
         entry:  The entry to load.
     """
     # Step 1: cascade-delete existing entry (and all its children).
-    client.schema("lex").table("entries").delete().eq("id", entry.id).execute()  # type: ignore[union-attr]
+    client.schema("lex").table("entries").delete().eq("id", entry.id).execute()
 
     rows = entry_to_rows(entry)
 
     # Step 2: insert entries row first, then children in FK-safe order.
     def _insert(table: str, data: list[dict]) -> None:
         if data:
-            client.schema("lex").table(table).insert(data).execute()  # type: ignore[union-attr]
+            client.schema("lex").table(table).insert(data).execute()
 
     _insert("entries", rows["entries"])
     for table in _CHILD_ORDER:
