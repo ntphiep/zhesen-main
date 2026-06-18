@@ -15,6 +15,7 @@ from pipeline.config import settings
 from pipeline.crawl.cambridge import fetch_cambridge, parse_cambridge
 from pipeline.enrich.examples import fetch_tatoeba, parse_tatoeba
 from pipeline.enrich.wikidata import cross_links_for, fetch_wikidata, image_for
+from pipeline.es_build import build_es_entry, select_es_headwords
 from pipeline.load.supabase_load import get_service_client, seed_sources, upsert_entry
 from pipeline.merge import merge_entry
 from pipeline.models.records import EntryRec, ExampleRec
@@ -141,6 +142,41 @@ def run_zh_slice(limit: int) -> list[EntryRec]:
 
     # Write interim JSONL
     out_path = settings.INTERIM_DIR / "zh_entries.jsonl"
+    with out_path.open("w", encoding="utf-8") as fh:
+        for entry in entries:
+            fh.write(entry.model_dump_json() + "\n")
+
+    # Print coverage report
+    report = coverage_report(entries)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+
+    return entries
+
+
+def run_es_slice(limit: int) -> list[EntryRec]:
+    """Select *limit* Spanish headwords, build each entry, write JSONL, print coverage.
+
+    Each entry is fetched from en.wiktionary.org (Spanish section) and
+    conjugated via verbecc when a verb sense is detected.  A polite delay of
+    REQUEST_DELAY_SECONDS is inserted between words to avoid hammering the
+    Wiktionary API.
+
+    Returns:
+        The list of built EntryRec objects.
+    """
+    settings.ensure_dirs()
+    headwords = select_es_headwords(limit)
+    entries: list[EntryRec] = []
+    for hw in headwords:
+        try:
+            entry = build_es_entry(hw)
+            entries.append(entry)
+        except Exception as exc:  # noqa: BLE001
+            print(f"[orchestrator] es_build failed for {hw!r}: {exc}", file=sys.stderr)
+        time.sleep(REQUEST_DELAY_SECONDS)
+
+    # Write interim JSONL
+    out_path = settings.INTERIM_DIR / "es_entries.jsonl"
     with out_path.open("w", encoding="utf-8") as fh:
         for entry in entries:
             fh.write(entry.model_dump_json() + "\n")
