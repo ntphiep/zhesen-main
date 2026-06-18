@@ -21,6 +21,7 @@ from pipeline.models.records import EntryRec, ExampleRec
 from pipeline.parse.cmu import us_pronunciation
 from pipeline.parse.wiktionary import fetch_wiktionary, parse_wiktionary
 from pipeline.qa.coverage import coverage_report
+from pipeline.zh_build import build_zh_entry, select_zh_headwords
 
 if TYPE_CHECKING:
     from supabase import Client
@@ -108,6 +109,38 @@ def run_slice(limit: int) -> list[EntryRec]:
 
     # Write interim JSONL
     out_path = settings.INTERIM_DIR / "entries.jsonl"
+    with out_path.open("w", encoding="utf-8") as fh:
+        for entry in entries:
+            fh.write(entry.model_dump_json() + "\n")
+
+    # Print coverage report
+    report = coverage_report(entries)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+
+    return entries
+
+
+def run_zh_slice(limit: int) -> list[EntryRec]:
+    """Select *limit* Chinese headwords, build each entry, write JSONL, print coverage.
+
+    build_zh_entry is offline (uses local CC-CEDICT/Unihan), so no inter-word
+    network delay is needed.
+
+    Returns:
+        The list of built EntryRec objects.
+    """
+    settings.ensure_dirs()
+    headwords = select_zh_headwords(limit)
+    entries: list[EntryRec] = []
+    for hw in headwords:
+        try:
+            entry = build_zh_entry(hw)
+            entries.append(entry)
+        except Exception as exc:  # noqa: BLE001
+            print(f"[orchestrator] zh_build failed for {hw!r}: {exc}", file=sys.stderr)
+
+    # Write interim JSONL
+    out_path = settings.INTERIM_DIR / "zh_entries.jsonl"
     with out_path.open("w", encoding="utf-8") as fh:
         for entry in entries:
             fh.write(entry.model_dump_json() + "\n")
