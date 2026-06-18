@@ -63,15 +63,17 @@ def merge_entry(
     senses = dedup_senses(normalized_senses)
 
     # ------------------------------------------------------------------ #
-    # 3. Vietnamese glosses — positional/approximate alignment.           #
-    # NOTE: Wiktionary↔Cambridge sense alignment is positional (index-   #
-    # based). This is a known approximation and a documented refinement   #
-    # target — a future task should do semantic alignment via embeddings. #
+    # 3. Vietnamese glosses — attach ONLY the first Cambridge gloss to the #
+    # primary sense (that alignment is reliable). The other Cambridge      #
+    # glosses are NOT positionally aligned to Wiktionary senses — doing so #
+    # produced wrong meanings (e.g. "cáo đực" on an unrelated sense) — so   #
+    # the full list is kept entry-level in attributes["gloss_vi_all"].     #
+    # Per-sense semantic alignment is a future refinement.                 #
     # ------------------------------------------------------------------ #
     gloss_vi: list[str] = cambridge.get("gloss_vi") or []
-    for i in range(min(len(senses), len(gloss_vi))):
-        senses[i] = senses[i].model_copy(
-            update={"gloss_vi": gloss_vi[i], "gloss_vi_is_mt": False}
+    if senses and gloss_vi:
+        senses[0] = senses[0].model_copy(
+            update={"gloss_vi": gloss_vi[0], "gloss_vi_is_mt": False}
         )
 
     # ------------------------------------------------------------------ #
