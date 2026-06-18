@@ -25,6 +25,7 @@ def test_image_for_dog() -> None:
     assert img is not None
     assert "commons.wikimedia.org" in img.url or "upload.wikimedia.org" in img.url
     assert img.source_id == "wikimedia-commons"
+    assert img.sense_id == ""
 
 
 def test_cross_links_for_dog() -> None:

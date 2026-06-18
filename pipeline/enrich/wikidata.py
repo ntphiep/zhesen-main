@@ -40,6 +40,7 @@ Commons image URL: https://commons.wikimedia.org/wiki/Special:FilePath/<urlencod
 from __future__ import annotations
 
 import json
+from typing import cast
 from urllib.parse import quote
 
 import requests
@@ -217,18 +218,14 @@ def _get_with_retry(url: str, params: dict, headers: dict) -> dict:
         try:
             resp = requests.get(url, params=params, headers=headers, timeout=30)
             resp.raise_for_status()
-            return resp.json()  # type: ignore[no-any-return]
+            return cast(dict, resp.json())
         except requests.RequestException:
             if attempt == 1:
                 raise
-    return {}  # unreachable but satisfies type checker
+    raise AssertionError("unreachable")
 
 
-def _write_cache(path: object, cache_dir: object, data: dict) -> None:
+def _write_cache(path: Path, cache_dir: Path, data: dict) -> None:
     """Write data as JSON to path, creating cache_dir if needed."""
-    from pathlib import Path
-
-    p = Path(str(path))
-    d = Path(str(cache_dir))
-    d.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
