@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/content/types'
 import type {
   DictEntryPreview, DictEntryDetail, DictSense, DictPron, DictExample, DictRelation,
+  CrossLangSibling, CharInfo,
 } from './types'
 
 export function pickIpa(prons: { accent: string; ipa: string | null }[], lang: LangCode): string | null {
@@ -95,4 +96,75 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
     examples, relations,
     attributes: r.attributes ?? {},
   }
+}
+
+interface ConceptRow { concept_id: string | null }
+interface LinkRow { from_entry_id: string | null; to_entry_id: string | null }
+interface SiblingRow {
+  id: string; lang: LangCode; headword: string
+  senses: { gloss_vi: string | null; sense_order: number }[] | null
+}
+
+export async function getCrossLanguage(
+  supabase: SupabaseClient, entryId: string,
+): Promise<CrossLangSibling[]> {
+  const links = supabase.schema('lex').from('cross_language_links')
+  const [from, to] = await Promise.all([
+    links.select('concept_id').eq('from_entry_id', entryId),
+    supabase.schema('lex').from('cross_language_links').select('concept_id').eq('to_entry_id', entryId),
+  ])
+  if (from.error) throw from.error
+  if (to.error) throw to.error
+  const conceptIds = [...new Set(
+    [...(from.data ?? []), ...(to.data ?? [])]
+      .map((r) => (r as ConceptRow).concept_id)
+      .filter((c): c is string => Boolean(c)),
+  )]
+  if (conceptIds.length === 0) return []
+
+  const sib = await supabase.schema('lex').from('cross_language_links')
+    .select('from_entry_id, to_entry_id').in('concept_id', conceptIds)
+  if (sib.error) throw sib.error
+  const candidateIds = [...new Set(
+    ((sib.data ?? []) as LinkRow[])
+      .flatMap((r) => [r.from_entry_id, r.to_entry_id])
+      .filter((id): id is string => Boolean(id)),
+  )].filter((id) => id !== entryId)
+  if (candidateIds.length === 0) return []
+
+  const entries = await supabase.schema('lex').from('entries')
+    .select('id, lang, headword, senses(gloss_vi, sense_order)').in('id', candidateIds)
+  if (entries.error) throw entries.error
+  return ((entries.data ?? []) as unknown as SiblingRow[]).map((r) => {
+    const primary = [...(r.senses ?? [])].sort((a, b) => a.sense_order - b.sense_order)[0]
+    return { id: r.id, lang: r.lang, headword: r.headword, glossVi: primary?.gloss_vi ?? null }
+  })
+}
+
+interface CharRow {
+  char: string; radical: string | null; stroke_count: number | null
+  han_viet: string[] | null; pinyin: string[] | null; gloss: string | null
+}
+
+export async function getCharacters(
+  supabase: SupabaseClient, headword: string,
+): Promise<CharInfo[]> {
+  const glyphs = [...headword].filter((c) => /\p{Script=Han}/u.test(c))
+  if (glyphs.length === 0) return []
+  const unique = [...new Set(glyphs)]
+  const { data, error } = await supabase.schema('lex').from('characters')
+    .select('char, radical, stroke_count, han_viet, pinyin, gloss').in('char', unique)
+  if (error) throw error
+  const byChar = new Map(((data ?? []) as CharRow[]).map((r) => [r.char, r]))
+  return glyphs.map((c) => {
+    const r = byChar.get(c)
+    return {
+      char: c,
+      radical: r?.radical ?? null,
+      strokeCount: r?.stroke_count ?? null,
+      hanViet: r?.han_viet ?? [],
+      pinyin: r?.pinyin ?? [],
+      gloss: r?.gloss ?? null,
+    }
+  })
 }

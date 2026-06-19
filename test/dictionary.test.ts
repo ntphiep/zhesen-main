@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { pickIpa, pickPrimarySense, searchEntries, getEntryDetail } from '@/lib/dictionary/search'
+import { pickIpa, pickPrimarySense, searchEntries, getEntryDetail, getCrossLanguage, getCharacters } from '@/lib/dictionary/search'
 
 describe('pickIpa', () => {
   it('prefers en-US, then en-UK', () => {
@@ -56,5 +56,59 @@ describe('getEntryDetail', () => {
   it('returns null when not found', async () => {
     const client = mockClient(null)
     expect(await getEntryDetail(client, 'en:nope')).toBeNull()
+  })
+})
+
+// Returns queued results in call order; `.eq` and `.in` are terminal (awaited).
+function queueClient(results: { data: unknown; error: null }[]) {
+  let i = 0
+  const next = () => Promise.resolve(results[i++] ?? { data: [], error: null })
+  const builder: Record<string, unknown> = {}
+  Object.assign(builder, {
+    select: vi.fn(() => builder),
+    eq: vi.fn(() => next()),
+    in: vi.fn(() => next()),
+  })
+  return {
+    schema: vi.fn(() => ({ from: vi.fn(() => builder) })),
+  } as unknown as import('@supabase/supabase-js').SupabaseClient
+}
+
+describe('getCrossLanguage', () => {
+  it('returns only siblings that exist as entries', async () => {
+    const client = queueClient([
+      { data: [{ concept_id: 'Q144' }], error: null },               // eq from_entry_id
+      { data: [], error: null },                                      // eq to_entry_id
+      { data: [                                                       // in concept_id
+        { from_entry_id: 'en:dog', to_entry_id: 'es:perro' },
+        { from_entry_id: 'en:dog', to_entry_id: 'zh:狗' },
+      ], error: null },
+      { data: [                                                       // in id (only perro exists)
+        { id: 'es:perro', lang: 'es', headword: 'perro', senses: [{ gloss_vi: 'con chó', sense_order: 1 }] },
+      ], error: null },
+    ])
+    const res = await getCrossLanguage(client, 'en:dog')
+    expect(res).toEqual([{ id: 'es:perro', lang: 'es', headword: 'perro', glossVi: 'con chó' }])
+  })
+
+  it('returns [] when the entry has no concepts', async () => {
+    const client = queueClient([{ data: [], error: null }, { data: [], error: null }])
+    expect(await getCrossLanguage(client, 'en:nope')).toEqual([])
+  })
+})
+
+describe('getCharacters', () => {
+  it('maps each Han glyph in order, repeats included', async () => {
+    const client = queueClient([
+      { data: [{ char: '人', radical: '人', stroke_count: 2, han_viet: ['nhân'], pinyin: ['rén'], gloss: 'person' }], error: null },
+    ])
+    const res = await getCharacters(client, '人人')
+    expect(res).toHaveLength(2)
+    expect(res[0]).toEqual({ char: '人', radical: '人', strokeCount: 2, hanViet: ['nhân'], pinyin: ['rén'], gloss: 'person' })
+  })
+
+  it('returns [] for non-Han input without querying', async () => {
+    const client = queueClient([])
+    expect(await getCharacters(client, 'dog')).toEqual([])
   })
 })
