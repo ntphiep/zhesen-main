@@ -41,3 +41,17 @@ export interface DictEntryDetail extends DictEntryPreview {
   relations: DictRelation[]
   attributes: Record<string, unknown>
 }
+export interface CrossLangSibling {
+  id: string
+  lang: LangCode
+  headword: string
+  glossVi: string | null
+}
+export interface CharInfo {
+  char: string
+  radical: string | null
+  strokeCount: number | null
+  hanViet: string[]
+  pinyin: string[]
+  gloss: string | null
+}
