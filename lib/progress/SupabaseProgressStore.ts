@@ -51,7 +51,15 @@ export class SupabaseProgressStore implements ProgressStore {
   }
 
   async countDue(lang: LangCode, now: number): Promise<number> {
-    return (await this.getDueCards(lang, now)).length
+    const userId = await this.userId()
+    const { count, error } = await this.supabase
+      .from('srs_state')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('lang', lang)
+      .lte('due_at', new Date(now).toISOString())
+    if (error) throw error
+    return count ?? 0
   }
 
   async recordReview(vocabId: string, grade: Grade, now: number): Promise<CardRecord> {
