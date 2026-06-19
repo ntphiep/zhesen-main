@@ -19,7 +19,7 @@ describe('AudioButton', () => {
 
   it('plays the audio file when audioUrl is present', async () => {
     const play = vi.fn(() => Promise.resolve())
-    vi.stubGlobal('Audio', vi.fn(() => ({ play })))
+    vi.stubGlobal('Audio', vi.fn(function () { return { play } }))
     render(<AudioButton text="dog" lang="en" audioUrl="x.ogg" />)
     await userEvent.click(screen.getByRole('button'))
     expect(play).toHaveBeenCalled()
