@@ -10,13 +10,15 @@ export function WordDetail({ word }: { word: UserWord }) {
   const supabase = useMemo(() => createClient(), [])
   const [detail, setDetail] = useState<DictEntryDetail | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!word.entryId) return
     setLoading(true)
+    setError(null)
     getEntryDetail(supabase, word.entryId)
       .then((d) => setDetail(d))
-      .catch(() => setDetail(null))
+      .catch(() => setError('Không tải được chi tiết.'))
       .finally(() => setLoading(false))
   }, [supabase, word.entryId])
 
@@ -32,6 +34,10 @@ export function WordDetail({ word }: { word: UserWord }) {
 
   if (loading) {
     return <p className="text-sm text-black/40">Đang tải...</p>
+  }
+
+  if (error) {
+    return <p className="text-sm text-red-500">{error}</p>
   }
 
   if (!detail) return null

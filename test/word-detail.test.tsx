@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { WordDetail } from '@/components/wordlist/WordDetail'
+import { getEntryDetail } from '@/lib/dictionary/search'
 import type { UserWord } from '@/lib/wordlist/types'
 
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
@@ -33,5 +34,11 @@ describe('WordDetail', () => {
     render(<WordDetail word={{ ...base, entryId: null, meaningVi: 'tự nhập', notes: 'ghi chú' }} />)
     expect(screen.getByText('tự nhập')).toBeInTheDocument()
     expect(screen.getByText('ghi chú')).toBeInTheDocument()
+  })
+
+  it('shows error message when detail fetch fails', async () => {
+    vi.mocked(getEntryDetail).mockRejectedValueOnce(new Error('network error'))
+    render(<WordDetail word={base} />)
+    expect(await screen.findByText(/Không tải được/i)).toBeInTheDocument()
   })
 })
