@@ -25,11 +25,15 @@ export async function proxy(request: NextRequest) {
     },
   )
 
+  // Use getSession (reads the session from the cookie locally, refreshing only
+  // when the token is expired) instead of getUser (which makes a network call to
+  // the Auth server on every request). We only need to know whether an anonymous
+  // session already exists, not to authorize anything, so the local check is safe.
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  if (!user) {
+  if (!session) {
     const { error } = await supabase.auth.signInAnonymously()
     if (error) console.error('[proxy] signInAnonymously failed:', error.message)
   }
