@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { getContentSource } from '@/lib/content'
 import { LanguageCard } from '@/components/LanguageCard'
 
@@ -11,6 +12,11 @@ export default async function Home() {
         {languages.map((l) => (
           <LanguageCard key={l.code} language={l} />
         ))}
+      </div>
+      <div className="mt-10">
+        <Link href="/wordlist" className="inline-block rounded-lg bg-black px-4 py-2 text-white">
+          Danh sách từ của tôi
+        </Link>
       </div>
     </main>
   )
