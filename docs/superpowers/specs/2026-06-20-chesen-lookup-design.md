@@ -1,15 +1,18 @@
-# Thiết kế: Tính năng Tra cứu (`/tra-cuu`)
+# Thiết kế: Tính năng Tra cứu (`/dictionary`)
+
+> **Quy ước đặt tên (bắt buộc):** đường dẫn route bằng **tiếng Anh** (khớp `/learn`, `/wordlist` đã có), nhãn hiển thị trên UI bằng **tiếng Việt** ("Tra cứu"). Không đặt route tiếng Việt.
 
 **Mục tiêu:** Trang tra cứu từ vựng kiểu hanzii cho Chesen: gõ một từ ra trang chi tiết đầy đủ (phát âm, nghĩa theo từ loại, ví dụ, thành phần chữ, từ liên quan, và **từ đó ở các ngôn ngữ khác**). Đọc từ schema `lex`, tái dùng tầng dữ liệu đã có.
 
-**Kiến trúc:** Một route `/tra-cuu` với ô tìm (dùng `searchEntries` đã có) và trang chi tiết `/tra-cuu/[lang]/[id]` (Server Component đọc `getEntryDetail`, render bố cục giàu). Tái dùng/ mở rộng tầng `lib/dictionary`. Các mục thiếu dữ liệu **tự ẩn (graceful degrade)**, sáng dần khi pipeline backfill.
+**Kiến trúc:** Một route `/dictionary` với ô tìm (dùng `searchEntries` đã có) và trang chi tiết `/dictionary/[lang]/[id]` (Server Component đọc `getEntryDetail`, render bố cục giàu). Tái dùng/ mở rộng tầng `lib/dictionary`. Các mục thiếu dữ liệu **tự ẩn (graceful degrade)**, sáng dần khi pipeline backfill.
 
 **Tech Stack:** Next.js 16.2.9 (App Router, Server Components ưu tiên), React 19.2, Supabase (`.schema('lex')`), Tailwind 4, Vitest + Testing Library.
 
 ## Global Constraints
 
 - KHÔNG phải Next.js trong training data; đọc `node_modules/next/dist/docs/` trước khi đụng caching/async API. Tra cứu là dữ liệu công khai → đọc qua client không-cookie có cache (`lib/supabase/content.ts` đã có) để trang cache được, KHÔNG gọi `cookies()` trong scope cache.
-- Mọi khẳng định dữ liệu phải kiểm chứng. Sự thật đã đo (live 2026-06-20): từ liên quan toàn **text-only** (`related_text`, 0 link tới entry tra cứu được; loại: derived/synonym/related/antonym); cross-language **mỏng** (chỉ ~17 link giải được tới entry thật, 63/231 từ có link); thành phần chữ (女+子) **chưa có** (mới có bộ thủ/nét/Hán-Việt).
+- Mọi khẳng định dữ liệu phải kiểm chứng. Sự thật đã đo (live 2026-06-20): nghĩa tiếng Việt chỉ có ở **en (101/101)**, còn **es 0/100, zh 0/30** (chưa crawl xong) → trang chi tiết tiếng Anh dùng được ngay, zh/es sáng dần. Từ liên quan toàn **text-only** (`related_text`, 0 link tới entry; loại: derived/synonym/related/antonym). Cross-language **rất mỏng**: chỉ 17/118 link giải được tới entry thật, đa số từ (kể cả `en:dog`) ra **0 sibling** vì entry đích chưa tồn tại → panel tự ẩn. Chữ Hán nằm ở bảng riêng **`lex.characters`** (khóa theo glyph `char`: radical/stroke_count/han_viet[]/pinyin[]/gloss), KHÔNG ở `attributes`; phân rã thành phần (女+子) **chưa có** (`decomposition` null).
+- **RLS:** `lex.characters` và `lex.cross_language_links` hiện chỉ mở cho role `authenticated`. Trang chi tiết đọc qua client không-cookie (role `anon`) để cache được, nên cần migration thêm policy `anon SELECT` cho hai bảng này (cùng kiểu migration 0006 đã làm cho entries/senses/...).
 - TS strict, không `any`. TDD. Tái dùng (DRY) tầng `lib/dictionary` + component đã có, không dựng trùng. UI tiếng Việt, phong cách Tailwind tối giản hiện hành.
 - `LangCode = 'zh'|'es'|'en'`.
 
@@ -21,8 +24,8 @@
 
 ## 2. Định tuyến và component
 
-- `app/tra-cuu/page.tsx` (Client hoặc Server + client search box): ô tìm + chọn ngôn ngữ; gõ → `searchEntries` (debounce) → danh sách kết quả (headword + nghĩa + IPA), bấm điều hướng tới trang chi tiết.
-- `app/tra-cuu/[lang]/[id]/page.tsx` (Server Component): giải mã `id`, gọi `getEntryDetail` qua client nội dung không-cookie có cache; render `LookupView`.
+- `app/dictionary/page.tsx` (Client hoặc Server + client search box): ô tìm + chọn ngôn ngữ; gõ → `searchEntries` (debounce) → danh sách kết quả (headword + nghĩa + IPA), bấm điều hướng tới trang chi tiết.
+- `app/dictionary/[lang]/[id]/page.tsx` (Server Component): giải mã `id`, gọi `getEntryDetail` qua client nội dung không-cookie có cache; render `LookupView`.
 - `components/lookup/LookupView.tsx`: bố cục giàu (các section ở mục 3), nhận `DictEntryDetail`. Tách các section thành component con nhỏ, tập trung trách nhiệm:
   - `LookupHero.tsx`, `SenseList.tsx`, `CharacterPanel.tsx` (zh), `RelatedWords.tsx`, `CrossLanguagePanel.tsx`, `ExampleList.tsx`.
 - Tái dùng `AudioButton` (đã có). `WordDetail` (trong wordlist) giữ nguyên cho xem nhanh inline; `LookupView` là bản đầy đủ cho trang tra cứu (chia sẻ các component con khi hợp lý).
@@ -31,9 +34,9 @@
 ## 3. Tầng dữ liệu (mở rộng `lib/dictionary`)
 
 `getEntryDetail` đã trả senses/pronunciations/examples/relations + attributes. Bổ sung:
-- `getCrossLanguage(supabase, entryId): Promise<CrossLangSibling[]>` — từ `cross_language_links` lấy `concept_id` của entry, tìm các entry KHÁC cùng `concept_id` (qua from/to) mà **tồn tại** trong `lex.entries`; trả {id, lang, headword, glossVi}. Rỗng nếu không có (panel tự ẩn).
-- Ánh xạ `attributes.characters[]` (zh) thành cấu trúc cho `CharacterPanel`: mỗi chữ {char, radical, strokeCount, hanViet[], pinyin[]}.
-- Related words: nhóm `relations` theo `relationType` (synonym/antonym/derived/related); mỗi item là `relatedText` (chip). Bấm chip → điều hướng `/tra-cuu?q=<text>&lang=<lang>` (tìm lại), vì không có link entry trực tiếp.
+- `getCrossLanguage(supabase, entryId): Promise<CrossLangSibling[]>` — từ `cross_language_links` lấy `concept_id` của entry (truy bằng hai query `eq from_entry_id` / `eq to_entry_id` để tránh lỗi escape khi headword có ký tự đặc biệt), tìm các entry KHÁC cùng `concept_id` mà **tồn tại** trong `lex.entries`; trả {id, lang, headword, glossVi}. Rỗng nếu không có (panel tự ẩn).
+- `getCharacters(supabase, headword): Promise<CharInfo[]>` (zh) — tách headword thành từng glyph Hán (giữ thứ tự chuỗi), tra bảng `lex.characters` theo `char`; mỗi chữ trả {char, radical, strokeCount, hanViet[], pinyin[], gloss}. Hán-Việt của cả từ ở hero = ghép `hanViet[0]` mỗi chữ. Không dùng bảng `entry_characters` (thưa và thiếu policy anon).
+- Related words: nhóm `relations` theo `relationType` (synonym/antonym/derived/related); mỗi item là `relatedText` (chip). Bấm chip → điều hướng `/dictionary?q=<text>&lang=<lang>` (tìm lại), vì không có link entry trực tiếp.
 
 ## 4. Bố cục trang chi tiết (thứ tự)
 
@@ -53,7 +56,7 @@ Trang chi tiết là Server Component đọc dữ liệu công khai qua `createC
 - `getCrossLanguage`: mock supabase, xác nhận chỉ trả sibling tồn tại, rỗng khi không có.
 - Mỗi section component: render đúng từ `DictEntryDetail` mẫu; nhóm rỗng tự ẩn; chip related điều hướng đúng URL tìm lại.
 - `LookupView`: ráp đủ section; zh hiện CharacterPanel, en/es ẩn.
-- Trang `/tra-cuu/[lang]/[id]`: smoke (gọi getEntryDetail mock).
+- Trang `/dictionary/[lang]/[id]`: smoke (gọi getEntryDetail mock).
 - Giữ toàn bộ test hiện có (51) xanh; `tsc` exit 0; `npm run build` OK.
 
 ## 7. Hạng mục xác minh khi lập plan

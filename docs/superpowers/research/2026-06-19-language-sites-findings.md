@@ -1,7 +1,7 @@
 # Language Lookup Sites — UX Research Findings
 **Date:** 2026-06-19  
 **Researcher:** UX Research agent (Playwright browser — working)  
-**Purpose:** Inform the design of a `/tra-cuu` word-lookup feature for Chesen
+**Purpose:** Inform the design of a `/dictionary` word-lookup feature for Chesen
 
 ---
 
@@ -137,7 +137,7 @@ Key design principle: **conjugation as a sibling page** (not inline) keeps the t
 
 ## Recommended Lookup Feature for Chesen
 
-### Page: `/tra-cuu/[lang]/[headword]`
+### Page: `/dictionary/[lang]/[headword]`
 
 Reuse and extend the existing `WordDetail` React component. Proposed section order:
 
@@ -157,14 +157,14 @@ Reuse and extend the existing `WordDetail` React component. Proposed section ord
 
 #### Section 3 — Character/Component breakdown (ZH only, NEW)
 - For single character: radical, stroke count, component breakdown (e.g. NỮ 女 + TỬ 子) with each component clickable
-- For compound: each character in the compound shown as a clickable chip → navigates to that character's own `/tra-cuu` page
+- For compound: each character in the compound shown as a clickable chip → navigates to that character's own `/dictionary` page
 - Data source: `characters` table + new `character_components` relation (data gap — needs filling)
 
 #### Section 4 — Same word in other languages (NEW, via cross_language_links)
 - Section title: "Từ này trong ngôn ngữ khác"
 - Query `cross_language_links` by `concept_id` of this entry
 - Show sibling entries: e.g. 学习 (ZH) → "learn" (EN) → "aprender" (ES)
-- Each shown as a small card: headword + language flag + gloss_vi + link to that word's `/tra-cuu` page
+- Each shown as a small card: headword + language flag + gloss_vi + link to that word's `/dictionary` page
 - **This is the cross-language panel the owner wants** — it's directly powered by `cross_language_links.concept_id`
 
 #### Section 5 — Related words (already partially in WordDetail)
@@ -179,7 +179,7 @@ Reuse and extend the existing `WordDetail` React component. Proposed section ord
 - Audio button if `audio_url` present
 
 #### Section 7 — For ES: Conjugation (link-out, not inline)
-- "Xem chia động từ" button → `/tra-cuu/es/[verb]/chia-dong-tu`
+- "Xem chia động từ" button → `/dictionary/es/[verb]/conjugation`
 - Conjugation table data NOT in schema — this is a significant data gap for Spanish
 
 ---
