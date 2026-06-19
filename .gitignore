@@ -44,10 +44,6 @@ next-env.d.ts
 # Playwright MCP smoke-test artifacts
 .playwright-mcp/
 
-# Python ETL pipeline
-.venv/
-data/raw/
-data/interim/
-__pycache__/
-*.pyc
-.env
+# local artifacts (logs, stray screenshots dumped at repo root)
+*.log
+/*.png
