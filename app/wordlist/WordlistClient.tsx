@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addWord, updateWord, deleteWord, deleteWords } from '@/lib/wordlist/store'
 import { AddWordDialog } from '@/components/wordlist/AddWordDialog'
@@ -42,8 +42,9 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       if (statusFilter && w.status !== statusFilter) return false
       if (q) {
         const inHead = w.headword.toLowerCase().includes(q)
-        const inMeaning = (w.meaningVi ?? '').toLowerCase().includes(q)
-        if (!inHead && !inMeaning) return false
+        const inMeaningVi = (w.meaningVi ?? '').toLowerCase().includes(q)
+        const inMeaningEn = (w.meaningEn ?? '').toLowerCase().includes(q)
+        if (!inHead && !inMeaningVi && !inMeaningEn) return false
       }
       return true
     })
@@ -141,8 +142,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   // Optimistic delete
   async function handleDelete(id: string, headword: string) {
     if (!window.confirm(`Xóa từ "${headword}"?`)) return
-    const snapshot = words
-    setWords((prev) => prev.filter((w) => w.id !== id))
+    let snapshot: UserWord[] = []
+    setWords((prev) => { snapshot = prev; return prev.filter((w) => w.id !== id) })
     setSelected((prev) => {
       const next = new Set(prev)
       next.delete(id)
@@ -161,13 +162,14 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     const ids = [...selected]
     if (ids.length === 0) return
     if (!window.confirm(`Xóa ${ids.length} từ đã chọn?`)) return
-    const snapshot = words
-    setWords((prev) => prev.filter((w) => !ids.includes(w.id)))
+    let snapshot: UserWord[] = []
+    setWords((prev) => { snapshot = prev; return prev.filter((w) => !ids.includes(w.id)) })
     setSelected(new Set())
     try {
       await deleteWords(supabase, ids)
     } catch {
       setWords(snapshot)
+      setSelected(new Set(ids))
       alert('Không xóa được từ. Vui lòng thử lại.')
     }
   }
@@ -319,11 +321,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
             </thead>
             <tbody>
               {visible.map((w) => (
-                <>
-                  <tr
-                    key={w.id}
-                    className="border-b border-black/5 hover:bg-black/2"
-                  >
+                <Fragment key={w.id}>
+                  <tr className="border-b border-black/5 hover:bg-black/2">
                     <td className="py-2 pr-3">
                       <input
                         type="checkbox"
@@ -369,13 +368,13 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     </td>
                   </tr>
                   {expandedId === w.id && (
-                    <tr key={`${w.id}-detail`} className="bg-black/2">
+                    <tr className="bg-black/2">
                       <td colSpan={10} className="px-4 py-3">
                         <WordDetail word={w} />
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>

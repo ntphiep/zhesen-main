@@ -69,4 +69,28 @@ describe('WordlistClient', () => {
     render(<WordlistClient initialWords={[]} />)
     expect(screen.getByText(/Chưa có từ nào/i)).toBeInTheDocument()
   })
+
+  it('optimistic add: new row appears immediately and addWord is called', async () => {
+    render(<WordlistClient initialWords={[]} />)
+    // Open the dialog
+    await userEvent.click(screen.getByRole('button', { name: /Thêm từ/i }))
+    // Switch to manual tab so we can fill the form without a DB search
+    await userEvent.click(screen.getByRole('tab', { name: /Thủ công/i }))
+    await userEvent.type(screen.getByPlaceholderText(/Ví dụ: dog/i), 'hello')
+    await userEvent.click(screen.getByRole('button', { name: /Lưu từ/i }))
+    // Optimistic row should appear before the async addWord resolves
+    expect(await screen.findByText('hello')).toBeInTheDocument()
+    expect(addWord).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ headword: 'hello' }))
+  })
+
+  it('bulk delete: removes selected rows and calls deleteWords with their ids', async () => {
+    render(<WordlistClient initialWords={[mk('x', { headword: 'alpha' }), mk('y', { headword: 'beta' })]} />)
+    // Select all via select-all checkbox
+    await userEvent.click(screen.getByLabelText(/Chọn tất cả/i))
+    // Bulk delete button should be visible now
+    await userEvent.click(screen.getByRole('button', { name: /Xóa đã chọn/i }))
+    expect(screen.queryByText('alpha')).not.toBeInTheDocument()
+    expect(screen.queryByText('beta')).not.toBeInTheDocument()
+    expect(deleteWords).toHaveBeenCalledWith(expect.anything(), expect.arrayContaining(['x', 'y']))
+  })
 })
