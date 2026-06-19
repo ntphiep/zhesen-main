@@ -34,9 +34,9 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
   const [status, setStatus] = useState<WordStatus>('new')
   const [tagsRaw, setTagsRaw] = useState('')
 
-  // Sync form state when word changes
+  // Sync form state when word changes or dialog reopens (so stale edits don't persist across open/close)
   useEffect(() => {
-    if (!word) return
+    if (!word || !open) return
     setMeaningVi(word.meaningVi ?? '')
     setMeaningEn(word.meaningEn ?? '')
     setPos(word.pos ?? '')
@@ -47,7 +47,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
     setNotes(word.notes ?? '')
     setStatus(word.status)
     setTagsRaw(tagsToString(word.tags))
-  }, [word])
+  }, [word, open])
 
   // Drive open/close via prop
   useEffect(() => {

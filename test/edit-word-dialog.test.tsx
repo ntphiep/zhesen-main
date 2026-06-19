@@ -23,4 +23,11 @@ describe('EditWordDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: /Lưu/i }))
     expect(onSave).toHaveBeenCalledWith('id1', expect.objectContaining({ meaningVi: 'chó nhà', status: 'learning' }))
   })
+
+  it('calls onSave with empty patch when nothing changed', async () => {
+    const onSave = vi.fn()
+    render(<EditWordDialog word={word} open onClose={() => {}} onSave={onSave} />)
+    await userEvent.click(screen.getByRole('button', { name: /Lưu/i }))
+    expect(onSave).toHaveBeenCalledWith('id1', {})
+  })
 })
