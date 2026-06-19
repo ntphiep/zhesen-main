@@ -31,11 +31,11 @@ function draftToRow(d: WordDraft): Record<string, unknown> {
 }
 
 function patchToRow(p: Partial<WordDraft>): Record<string, unknown> {
-  const map: Record<keyof WordDraft, string> = {
+  const map = {
     lang: 'lang', entryId: 'entry_id', headword: 'headword', reading: 'reading', ipa: 'ipa', pos: 'pos',
     meaningVi: 'meaning_vi', meaningEn: 'meaning_en', level: 'level', example: 'example',
     exampleTranslation: 'example_translation', audioUrl: 'audio_url', notes: 'notes', status: 'status', tags: 'tags',
-  }
+  } satisfies Record<keyof WordDraft, string>
   const out: Record<string, unknown> = {}
   for (const k of Object.keys(p) as (keyof WordDraft)[]) out[map[k]] = p[k]
   return out

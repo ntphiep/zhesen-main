@@ -45,6 +45,7 @@ describe('addWord', () => {
       ipa: '/dɔːɡ/', pos: 'noun', glossVi: 'con chó', glossEn: 'dog', audioUrl: 'x.ogg',
     }))
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({ entry_id: 'en:dog', meaning_vi: 'con chó' }))
+    expect(insert).toHaveBeenCalledWith(expect.not.objectContaining({ user_id: expect.anything() }))
     expect(w.headword).toBe('dog')
   })
 })
