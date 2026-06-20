@@ -60,7 +60,7 @@ export function DictionarySearch({ initialQuery, initialLang }: { initialQuery: 
           <li key={e.id}>
             <Link href={entryPath(e.id)} className="flex items-baseline gap-2 rounded-lg px-3 py-2 hover:bg-black/5">
               <span className="font-medium">{e.headword}</span>
-              {e.ipa && <span className="font-mono text-xs text-black/40">{e.ipa}</span>}
+              {e.ipa && <span className="ipa text-xs text-black/40">{e.ipa}</span>}
               {e.glossVi && <span className="text-sm text-black/60">{e.glossVi}</span>}
             </Link>
           </li>

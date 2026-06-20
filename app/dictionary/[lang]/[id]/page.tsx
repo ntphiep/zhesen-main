@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
-import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters } from '@/lib/dictionary/cached'
+import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections } from '@/lib/dictionary/cached'
 import { buildEntryId } from '@/lib/dictionary/entryId'
+import { groupWordForms } from '@/lib/dictionary/family'
 import { LookupView } from '@/components/lookup/LookupView'
 import type { LangCode } from '@/lib/content/types'
 
@@ -15,10 +16,13 @@ export default async function Page({ params }: { params: Promise<{ lang: string;
   const detail = await getCachedEntryDetail(entryId)
   if (!detail) notFound()
 
-  const [characters, siblings] = await Promise.all([
+  const [characters, siblings, inflections] = await Promise.all([
     detail.lang === 'zh' ? getCachedCharacters(detail.headword) : Promise.resolve([]),
     getCachedCrossLanguage(entryId),
+    getCachedInflections(entryId),
   ])
 
-  return <LookupView detail={detail} characters={characters} siblings={siblings} />
+  return (
+    <LookupView detail={detail} characters={characters} siblings={siblings} forms={groupWordForms(inflections)} />
+  )
 }

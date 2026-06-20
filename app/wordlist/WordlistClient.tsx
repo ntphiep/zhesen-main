@@ -332,7 +332,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                       />
                     </td>
                     <td className="py-2 pr-3 font-medium">{w.headword}</td>
-                    <td className="py-2 pr-3 font-mono text-black/50">{w.ipa ?? ''}</td>
+                    <td className="ipa py-2 pr-3 text-black/50">{w.ipa ?? ''}</td>
                     <td className="py-2 pr-3 text-black/50">{w.pos ?? ''}</td>
                     <td className="py-2 pr-3">{w.meaningVi ?? ''}</td>
                     <td className="py-2 pr-3 text-black/50">{w.level ?? ''}</td>
@@ -398,7 +398,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     aria-label={`Chọn từ ${w.headword}`}
                   />
                   <span className="font-semibold">{w.headword}</span>
-                  {w.ipa && <span className="font-mono text-xs text-black/50">{w.ipa}</span>}
+                  {w.ipa && <span className="ipa text-xs text-black/50">{w.ipa}</span>}
                 </div>
                 <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
               </div>

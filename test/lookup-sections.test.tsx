@@ -13,9 +13,14 @@ vi.mock('@/lib/wordlist/store', () => ({
   addWord: vi.fn(async () => ({})),
   draftFromDictEntry: (e: { headword: string }) => ({ headword: e.headword }),
 }))
+// ExampleList renders example text through TappableText (per-word spans); stub it
+// so these tests assert ExampleList structure, not tap-to-lookup behavior.
+vi.mock('@/components/reader/TappableText', () => ({
+  TappableText: ({ text }: { text: string }) => <span>{text}</span>,
+}))
 
 const detail: DictEntryDetail = {
-  id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', ipa: '/dɔːɡ/', pos: 'noun',
+  id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', ipa: 'dɔːɡ', pos: 'noun',
   glossVi: 'con chó', glossEn: 'dog', audioUrl: null,
   senses: [
     { pos: 'noun', glossVi: 'con chó', glossEn: 'a dog', senseOrder: 1 },

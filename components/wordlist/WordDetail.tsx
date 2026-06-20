@@ -72,7 +72,7 @@ export function WordDetail({ word }: { word: UserWord }) {
           {detail.pronunciations.map((p, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className="text-xs text-black/40">{p.accent}</span>
-              {p.ipa && <span className="font-mono text-black/70">{p.ipa}</span>}
+              {p.ipa && <span className="ipa text-black/70">{p.ipa}</span>}
               <AudioButton text={detail.headword} lang={detail.lang} audioUrl={p.audioUrl} />
             </div>
           ))}

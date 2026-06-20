@@ -19,7 +19,7 @@ export function LookupHero({ detail, hanViet }: { detail: DictEntryDetail; hanVi
       </div>
       <div className="flex flex-wrap items-center gap-3 text-black/60">
         {pinyin && <span className="font-medium">{pinyin}</span>}
-        {detail.ipa && <span className="font-mono">{detail.ipa}</span>}
+        {detail.ipa && <span className="ipa text-[0.95rem]">/{detail.ipa}/</span>}
         {hanViet && <span className="italic">Hán-Việt: {hanViet}</span>}
       </div>
     </header>

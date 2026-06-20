@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/content/types'
 import type {
   DictEntryPreview, DictEntryDetail, DictSense, DictPron, DictExample, DictRelation,
-  CrossLangSibling, CharInfo,
+  CrossLangSibling, CharInfo, WordForm,
 } from './types'
 
 export function pickIpa(prons: { accent: string; ipa: string | null }[], lang: LangCode): string | null {
@@ -15,6 +15,25 @@ export function pickIpa(prons: { accent: string; ipa: string | null }[], lang: L
 export function pickPrimarySense(senses: DictSense[]): DictSense | null {
   if (senses.length === 0) return null
   return [...senses].sort((a, b) => a.senseOrder - b.senseOrder)[0]
+}
+
+/** Choose the most relevant senses to show: lowest sense_order, gloss_vi presence as
+ * tiebreaker (no sense_frequency signal exists in the data), capped at `max`. */
+export function pickSenses(senses: DictSense[], max = 3): { shown: DictSense[]; hiddenCount: number } {
+  const sorted = [...senses].sort(
+    (a, b) => a.senseOrder - b.senseOrder || (Number(Boolean(b.glossVi)) - Number(Boolean(a.glossVi))),
+  )
+  return { shown: sorted.slice(0, max), hiddenCount: Math.max(0, senses.length - max) }
+}
+
+/** Heuristic: reject example sentences whose words have run together (pipeline data
+ * corruption, e.g. "WhenIspoketo"). Catches camelCase boundaries and over-long tokens. */
+export function isCleanExample(text: string): boolean {
+  const t = text.trim()
+  if (!t) return false
+  if (/[a-z][A-Z]/.test(t)) return false
+  if (t.split(/\s+/).some((w) => w.replace(/[^\p{L}]/gu, '').length > 14)) return false
+  return true
 }
 
 interface SenseRow { pos: string | null; gloss_vi: string | null; gloss_en: string | null; sense_order: number }
@@ -33,6 +52,9 @@ interface EntryPreviewRow {
   senses: SenseRow[] | null
   pronunciations: PronRow[] | null
 }
+
+const PREVIEW_SELECT =
+  'id, lang, headword, traditional, level, attributes, senses(pos, gloss_vi, gloss_en, sense_order), pronunciations(accent, ipa, audio_url)'
 
 function toPreview(r: EntryPreviewRow): DictEntryPreview {
   const senses = toSenses(r.senses)
@@ -56,13 +78,61 @@ export async function searchEntries(
   const { data, error } = await supabase
     .schema('lex')
     .from('entries')
-    .select('id, lang, headword, traditional, level, attributes, senses(pos, gloss_vi, gloss_en, sense_order), pronunciations(accent, ipa, audio_url)')
+    .select(PREVIEW_SELECT)
     .eq('lang', lang)
     .ilike('headword', `${q}%`)
     .order('frequency_rank', { ascending: true, nullsFirst: false })
     .limit(limit)
   if (error) throw error
   return ((data ?? []) as unknown as EntryPreviewRow[]).map(toPreview)
+}
+
+/** All headwords for a language (zh needs the set for longest-match segmentation). */
+export async function getHeadwords(supabase: SupabaseClient, lang: LangCode): Promise<string[]> {
+  const { data, error } = await supabase.schema('lex').from('entries').select('headword').eq('lang', lang)
+  if (error) throw error
+  return ((data ?? []) as { headword: string }[]).map((r) => r.headword)
+}
+
+/**
+ * Resolve word tokens to dictionary entries for tap-to-lookup. Matches the
+ * lowercased token against `headword_normalized`, then (for the rest) against
+ * inflected forms in `lex.inflections`. Returns a map keyed by lowercased token.
+ */
+export async function resolveTokens(
+  supabase: SupabaseClient, lang: LangCode, tokens: string[],
+): Promise<Map<string, DictEntryPreview>> {
+  const lowered = [...new Set(tokens.map((t) => t.toLowerCase()).filter(Boolean))]
+  const out = new Map<string, DictEntryPreview>()
+  if (lowered.length === 0) return out
+
+  const direct = await supabase.schema('lex').from('entries')
+    .select(PREVIEW_SELECT).eq('lang', lang).in('headword_normalized', lowered)
+  if (direct.error) throw direct.error
+  for (const row of (direct.data ?? []) as unknown as EntryPreviewRow[]) {
+    out.set(row.headword.toLowerCase(), toPreview(row))
+  }
+
+  const remaining = lowered.filter((t) => !out.has(t))
+  if (remaining.length === 0) return out
+
+  const infl = await supabase.schema('lex').from('inflections')
+    .select('form_text, entry_id').in('form_text', remaining)
+  if (infl.error) throw infl.error
+  const inflRows = (infl.data ?? []) as { form_text: string; entry_id: string }[]
+  if (inflRows.length === 0) return out
+
+  const ids = [...new Set(inflRows.map((r) => r.entry_id))]
+  const ent = await supabase.schema('lex').from('entries')
+    .select(PREVIEW_SELECT).in('id', ids).eq('lang', lang)
+  if (ent.error) throw ent.error
+  const byId = new Map<string, DictEntryPreview>()
+  for (const row of (ent.data ?? []) as unknown as EntryPreviewRow[]) byId.set(row.id, toPreview(row))
+  for (const r of inflRows) {
+    const p = byId.get(r.entry_id)
+    if (p && !out.has(r.form_text)) out.set(r.form_text, p)
+  }
+  return out
 }
 
 interface ExampleRow { text: string; reading: string | null; translation_vi: string | null; translation_en: string | null }
@@ -144,6 +214,15 @@ export async function getCrossLanguage(
 interface CharRow {
   char: string; radical: string | null; stroke_count: number | null
   han_viet: string[] | null; pinyin: string[] | null; gloss: string | null
+}
+
+/** Inflected forms of an entry (the grammatical word family). */
+export async function getInflections(supabase: SupabaseClient, entryId: string): Promise<WordForm[]> {
+  const { data, error } = await supabase.schema('lex').from('inflections')
+    .select('form_text, form_label').eq('entry_id', entryId)
+  if (error) throw error
+  return ((data ?? []) as { form_text: string; form_label: string | null }[])
+    .map((r) => ({ formText: r.form_text, formLabel: r.form_label }))
 }
 
 export async function getCharacters(

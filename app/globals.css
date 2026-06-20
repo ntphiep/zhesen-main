@@ -24,3 +24,14 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* IPA: monospace coding fonts misplace combining diacritics. Use IPA-capable fonts
+   (SIL families when installed) with safe Unicode fallbacks; render at normal size. */
+.ipa {
+  font-family: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode",
+    "Segoe UI", "DejaVu Sans", "Arial Unicode MS", sans-serif;
+  font-feature-settings: normal;
+  font-variant-ligatures: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+}

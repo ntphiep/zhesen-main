@@ -2,15 +2,17 @@ import Link from 'next/link'
 import { LookupHero } from './LookupHero'
 import { SenseList } from './SenseList'
 import { CharacterPanel } from './CharacterPanel'
+import { WordFamily } from './WordFamily'
 import { RelatedWords } from './RelatedWords'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { ExampleList } from './ExampleList'
 import type { DictEntryDetail, CharInfo, CrossLangSibling } from '@/lib/dictionary/types'
 
-export function LookupView({ detail, characters, siblings }: {
+export function LookupView({ detail, characters, siblings, forms = [] }: {
   detail: DictEntryDetail
   characters: CharInfo[]
   siblings: CrossLangSibling[]
+  forms?: string[]
 }) {
   const hanViet = characters.map((c) => c.hanViet[0]).filter(Boolean).join(' ') || null
   return (
@@ -19,6 +21,7 @@ export function LookupView({ detail, characters, siblings }: {
       <LookupHero detail={detail} hanViet={detail.lang === 'zh' ? hanViet : null} />
       <SenseList senses={detail.senses} />
       {detail.lang === 'zh' && <CharacterPanel characters={characters} />}
+      <WordFamily headword={detail.headword} forms={forms} lang={detail.lang} />
       <RelatedWords relations={detail.relations} lang={detail.lang} />
       <CrossLanguagePanel siblings={siblings} />
       <ExampleList examples={detail.examples} lang={detail.lang} />

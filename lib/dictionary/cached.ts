@@ -1,7 +1,7 @@
 import { unstable_cache } from 'next/cache'
 import { createContentClient } from '@/lib/supabase/content'
-import { getEntryDetail, getCrossLanguage, getCharacters } from './search'
-import type { DictEntryDetail, CrossLangSibling, CharInfo } from './types'
+import { getEntryDetail, getCrossLanguage, getCharacters, getInflections } from './search'
+import type { DictEntryDetail, CrossLangSibling, CharInfo, WordForm } from './types'
 
 export const getCachedEntryDetail = unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),
@@ -18,5 +18,11 @@ export const getCachedCrossLanguage = unstable_cache(
 export const getCachedCharacters = unstable_cache(
   (headword: string): Promise<CharInfo[]> => getCharacters(createContentClient(), headword),
   ['dict-characters'],
+  { revalidate: 3600, tags: ['lex'] },
+)
+
+export const getCachedInflections = unstable_cache(
+  (entryId: string): Promise<WordForm[]> => getInflections(createContentClient(), entryId),
+  ['dict-inflections'],
   { revalidate: 3600, tags: ['lex'] },
 )

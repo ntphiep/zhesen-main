@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { pickIpa, pickPrimarySense, searchEntries, getEntryDetail, getCrossLanguage, getCharacters } from '@/lib/dictionary/search'
+import { pickIpa, pickPrimarySense, searchEntries, getEntryDetail, getCrossLanguage, getCharacters, resolveTokens, getHeadwords } from '@/lib/dictionary/search'
 
 describe('pickIpa', () => {
   it('prefers en-US, then en-UK', () => {
@@ -110,5 +110,60 @@ describe('getCharacters', () => {
   it('returns [] for non-Han input without querying', async () => {
     const client = queueClient([])
     expect(await getCharacters(client, 'dog')).toEqual([])
+  })
+})
+
+// Thenable builder: every method returns the builder, awaiting it yields the next
+// queued result. Handles any chain shape (the terminal method varies per query).
+function thenableClient(results: { data: unknown; error: null }[]) {
+  let i = 0
+  const builder: Record<string, unknown> = {
+    then: (resolve: (v: { data: unknown; error: null }) => unknown) =>
+      resolve(results[i++] ?? { data: [], error: null }),
+  }
+  for (const m of ['select', 'eq', 'in', 'order', 'limit']) builder[m] = () => builder
+  return {
+    schema: () => ({ from: () => builder }),
+  } as unknown as import('@supabase/supabase-js').SupabaseClient
+}
+
+const dogRow = {
+  id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', attributes: {},
+  senses: [{ pos: 'noun', gloss_vi: 'con chó', gloss_en: 'dog', sense_order: 1 }],
+  pronunciations: [{ accent: 'en-US', ipa: '/dɔːɡ/', audio_url: null }],
+}
+
+describe('resolveTokens', () => {
+  it('resolves a token by direct headword match', async () => {
+    const client = thenableClient([{ data: [dogRow], error: null }])
+    const map = await resolveTokens(client, 'en', ['Dog'])
+    expect(map.get('dog')).toMatchObject({ id: 'en:dog', glossVi: 'con chó' })
+  })
+
+  it('resolves an inflected form via the inflections table', async () => {
+    const client = thenableClient([
+      { data: [], error: null },                                    // direct headword: none
+      { data: [{ form_text: 'dogs', entry_id: 'en:dog' }], error: null }, // inflections
+      { data: [dogRow], error: null },                              // entries by id
+    ])
+    const map = await resolveTokens(client, 'en', ['dogs'])
+    expect(map.get('dogs')).toMatchObject({ id: 'en:dog', headword: 'dog' })
+  })
+
+  it('returns an empty map when nothing matches', async () => {
+    const client = thenableClient([{ data: [], error: null }, { data: [], error: null }])
+    expect((await resolveTokens(client, 'en', ['zzzz'])).size).toBe(0)
+  })
+
+  it('does not query for empty token list', async () => {
+    const client = thenableClient([])
+    expect((await resolveTokens(client, 'en', [])).size).toBe(0)
+  })
+})
+
+describe('getHeadwords', () => {
+  it('returns the headword strings for a language', async () => {
+    const client = thenableClient([{ data: [{ headword: '你好' }, { headword: '好' }], error: null }])
+    expect(await getHeadwords(client, 'zh')).toEqual(['你好', '好'])
   })
 })

@@ -47,6 +47,10 @@ export interface CrossLangSibling {
   headword: string
   glossVi: string | null
 }
+export interface WordForm {
+  formText: string
+  formLabel: string | null
+}
 export interface CharInfo {
   char: string
   radical: string | null
