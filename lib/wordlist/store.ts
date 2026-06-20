@@ -47,7 +47,23 @@ export async function listWords(supabase: SupabaseClient): Promise<UserWord[]> {
   return (data ?? []).map(parseUserWordRow)
 }
 
+/** Raised when a dictionary entry is already saved in the user's wordlist. */
+export class WordAlreadyExistsError extends Error {
+  constructor(public readonly entryId: string) {
+    super(`Word already in wordlist: ${entryId}`)
+    this.name = 'WordAlreadyExistsError'
+  }
+}
+
 export async function addWord(supabase: SupabaseClient, draft: WordDraft): Promise<UserWord> {
+  // Dictionary-sourced words are deduped by entry_id. RLS scopes the lookup to the
+  // current user's rows. Custom words (entryId null) are never treated as duplicates.
+  if (draft.entryId) {
+    const { data: existing, error: checkError } = await supabase
+      .from('user_words').select('id').eq('entry_id', draft.entryId).limit(1)
+    if (checkError) throw checkError
+    if (existing && existing.length > 0) throw new WordAlreadyExistsError(draft.entryId)
+  }
   const { data, error } = await supabase.from('user_words').insert(draftToRow(draft)).select().single()
   if (error) throw error
   return parseUserWordRow(data)

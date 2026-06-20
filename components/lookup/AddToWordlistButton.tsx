@@ -1,10 +1,10 @@
 'use client'
 import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { addWord, draftFromDictEntry } from '@/lib/wordlist/store'
+import { addWord, draftFromDictEntry, WordAlreadyExistsError } from '@/lib/wordlist/store'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 
-type State = 'idle' | 'saving' | 'added' | 'error'
+type State = 'idle' | 'saving' | 'added' | 'exists' | 'error'
 
 export function AddToWordlistButton({ entry }: { entry: DictEntryPreview }) {
   const supabase = useMemo(() => createClient(), [])
@@ -15,12 +15,13 @@ export function AddToWordlistButton({ entry }: { entry: DictEntryPreview }) {
     try {
       await addWord(supabase, draftFromDictEntry(entry))
       setState('added')
-    } catch {
-      setState('error')
+    } catch (e) {
+      setState(e instanceof WordAlreadyExistsError ? 'exists' : 'error')
     }
   }
 
   const label = state === 'added' ? '✓ Đã thêm'
+    : state === 'exists' ? '✓ Đã có trong sổ tay'
     : state === 'saving' ? 'Đang thêm...'
     : state === 'error' ? 'Lỗi, thử lại'
     : '+ Thêm vào sổ tay'
@@ -29,7 +30,7 @@ export function AddToWordlistButton({ entry }: { entry: DictEntryPreview }) {
     <button
       type="button"
       onClick={onClick}
-      disabled={state === 'saving' || state === 'added'}
+      disabled={state === 'saving' || state === 'added' || state === 'exists'}
       className="rounded-lg bg-black px-3 py-1.5 text-sm text-white disabled:opacity-50"
     >
       {label}

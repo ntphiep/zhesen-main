@@ -42,12 +42,15 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
   const [example, setExample] = useState('')
   const [status, setStatus] = useState<WordStatus>('new')
 
-  // Drive open/close via prop
+  // Drive open/close via prop. Guard against the dialog's current state: showModal()
+  // throws if it is already open (e.g. React Strict Mode double-invokes the effect),
+  // and the `open` attribute must NOT be set (that opens it non-modal, conflicting
+  // with showModal()).
   useEffect(() => {
     const el = dialogRef.current
     if (!el) return
-    if (open) el.showModal()
-    else el.close()
+    if (open && !el.open) el.showModal()
+    else if (!open && el.open) el.close()
   }, [open])
 
   // Debounced search
@@ -97,7 +100,6 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
   return (
     <dialog
       ref={dialogRef}
-      open={open}
       className="rounded-xl bg-white shadow-xl p-0 w-full max-w-lg backdrop:bg-black/30"
       onClose={onClose}
     >

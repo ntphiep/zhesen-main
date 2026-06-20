@@ -32,8 +32,6 @@ function mk(id: string, over: Partial<UserWord> = {}): UserWord {
 }
 
 beforeEach(() => {
-  HTMLDialogElement.prototype.showModal = vi.fn()
-  HTMLDialogElement.prototype.close = vi.fn()
   vi.stubGlobal('confirm', () => true)
   vi.clearAllMocks()
   // Re-set default implementations after clearAllMocks

@@ -1,5 +1,5 @@
 // test/edit-word-dialog.test.tsx
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EditWordDialog } from '@/components/wordlist/EditWordDialog'
@@ -10,7 +10,6 @@ const word: UserWord = {
   meaningVi: 'con chó', meaningEn: 'dog', level: 'A1', example: null, exampleTranslation: null,
   audioUrl: null, notes: null, status: 'new', tags: [], createdAt: 'x', updatedAt: 'x',
 }
-beforeEach(() => { HTMLDialogElement.prototype.showModal = vi.fn(); HTMLDialogElement.prototype.close = vi.fn() })
 
 describe('EditWordDialog', () => {
   it('saves edited meaning and status', async () => {

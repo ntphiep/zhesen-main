@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AddWordDialog } from '@/components/wordlist/AddWordDialog'
@@ -7,8 +7,6 @@ vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
 vi.mock('@/lib/dictionary/search', () => ({
   searchEntries: vi.fn(async () => ([{ id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', ipa: '/dɔːɡ/', pos: 'noun', glossVi: 'con chó', glossEn: 'dog', audioUrl: null }])),
 }))
-
-beforeEach(() => { HTMLDialogElement.prototype.showModal = vi.fn(); HTMLDialogElement.prototype.close = vi.fn() })
 
 describe('AddWordDialog', () => {
   it('searches and adds a dictionary entry', async () => {

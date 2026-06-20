@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { parseUserWordRow, draftFromDictEntry, addWord, listWords } from '@/lib/wordlist/store'
+import { parseUserWordRow, draftFromDictEntry, addWord, listWords, WordAlreadyExistsError } from '@/lib/wordlist/store'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 
 const row = {
@@ -27,32 +27,51 @@ describe('draftFromDictEntry', () => {
   })
 })
 
-function mockInsert(returned: unknown) {
-  const single = vi.fn(() => Promise.resolve({ data: returned, error: null }))
-  const select = vi.fn(() => ({ single }))
-  const insert = vi.fn(() => ({ select }))
-  const order = vi.fn(() => Promise.resolve({ data: [returned], error: null }))
-  const selectList = vi.fn(() => ({ order }))
-  const from = vi.fn(() => ({ insert, select: selectList }))
-  return { client: { from } as unknown as import('@supabase/supabase-js').SupabaseClient, insert }
+// Builder mock supporting insert (insert.select.single), the pre-insert duplicate
+// check (select.eq.limit) and listWords (select.order).
+function mockClient({ existing = [] as unknown[], inserted = row } = {}) {
+  const insertSingle = vi.fn(() => Promise.resolve({ data: inserted, error: null }))
+  const insertSelect = vi.fn(() => ({ single: insertSingle }))
+  const insert = vi.fn(() => ({ select: insertSelect }))
+  const limit = vi.fn(() => Promise.resolve({ data: existing, error: null }))
+  const eq = vi.fn(() => ({ limit }))
+  const order = vi.fn(() => Promise.resolve({ data: [inserted], error: null }))
+  const select = vi.fn(() => ({ eq, order, limit }))
+  const from = vi.fn(() => ({ insert, select }))
+  return { client: { from } as unknown as import('@supabase/supabase-js').SupabaseClient, insert, select }
+}
+
+const dogEntry: DictEntryPreview = {
+  id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1',
+  ipa: '/dɔːɡ/', pos: 'noun', glossVi: 'con chó', glossEn: 'dog', audioUrl: 'x.ogg',
 }
 
 describe('addWord', () => {
-  it('inserts a draft and returns the parsed word', async () => {
-    const { client, insert } = mockInsert(row)
-    const w = await addWord(client, draftFromDictEntry({
-      id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1',
-      ipa: '/dɔːɡ/', pos: 'noun', glossVi: 'con chó', glossEn: 'dog', audioUrl: 'x.ogg',
-    }))
+  it('inserts a draft and returns the parsed word when not a duplicate', async () => {
+    const { client, insert } = mockClient({ existing: [] })
+    const w = await addWord(client, draftFromDictEntry(dogEntry))
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({ entry_id: 'en:dog', meaning_vi: 'con chó' }))
     expect(insert).toHaveBeenCalledWith(expect.not.objectContaining({ user_id: expect.anything() }))
     expect(w.headword).toBe('dog')
+  })
+
+  it('throws WordAlreadyExistsError and does not insert when the entry is already saved', async () => {
+    const { client, insert } = mockClient({ existing: [{ id: 'existing-id' }] })
+    await expect(addWord(client, draftFromDictEntry(dogEntry))).rejects.toBeInstanceOf(WordAlreadyExistsError)
+    expect(insert).not.toHaveBeenCalled()
+  })
+
+  it('skips the duplicate check for custom words without an entryId', async () => {
+    const { client, insert, select } = mockClient({ existing: [{ id: 'x' }] })
+    await addWord(client, { ...draftFromDictEntry(dogEntry), entryId: null })
+    expect(insert).toHaveBeenCalled()
+    expect(select).not.toHaveBeenCalled()
   })
 })
 
 describe('listWords', () => {
   it('returns parsed rows', async () => {
-    const { client } = mockInsert(row)
+    const { client } = mockClient()
     const res = await listWords(client)
     expect(res[0].headword).toBe('dog')
   })
