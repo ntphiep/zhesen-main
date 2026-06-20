@@ -87,6 +87,20 @@ export async function searchEntries(
   return ((data ?? []) as unknown as EntryPreviewRow[]).map(toPreview)
 }
 
+/** Search all supported languages at once, grouped by language (for auto-detect search). */
+export async function searchAllLanguages(
+  supabase: SupabaseClient, query: string, perLang = 8,
+): Promise<Record<LangCode, DictEntryPreview[]>> {
+  const q = query.trim()
+  if (!q) return { en: [], zh: [], es: [] }
+  const [en, zh, es] = await Promise.all([
+    searchEntries(supabase, 'en', q, perLang),
+    searchEntries(supabase, 'zh', q, perLang),
+    searchEntries(supabase, 'es', q, perLang),
+  ])
+  return { en, zh, es }
+}
+
 /** All headwords for a language (zh needs the set for longest-match segmentation). */
 export async function getHeadwords(supabase: SupabaseClient, lang: LangCode): Promise<string[]> {
   const { data, error } = await supabase.schema('lex').from('entries').select('headword').eq('lang', lang)
