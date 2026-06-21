@@ -1,4 +1,5 @@
 import type { CharInfo } from '@/lib/dictionary/types'
+import { StrokeOrder } from './StrokeOrder'
 
 export function CharacterPanel({ characters }: { characters: CharInfo[] }) {
   if (characters.length === 0) return null
@@ -20,6 +21,7 @@ export function CharacterPanel({ characters }: { characters: CharInfo[] }) {
               </div>
               {c.gloss && <span className="text-xs text-black/50">{c.gloss}</span>}
             </div>
+            <div className="ml-auto"><StrokeOrder char={c.char} /></div>
           </div>
         ))}
       </div>
