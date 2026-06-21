@@ -4,7 +4,7 @@ import type {
   DictEntryPreview, DictEntryDetail, DictSense, DictPron, DictExample, DictRelation,
   CrossLangSibling, CharInfo, WordForm,
 } from './types'
-import { entryPivots } from './crosslang'
+import { entryPivots, cleanGlossTerm } from './crosslang'
 
 export function pickIpa(prons: { accent: string; ipa: string | null }[], lang: LangCode): string | null {
   if (prons.length === 0) return null
@@ -18,15 +18,48 @@ export function pickPrimarySense(senses: DictSense[]): DictSense | null {
   return [...senses].sort((a, b) => a.senseOrder - b.senseOrder)[0]
 }
 
+/**
+ * Clean a machine-translated Vietnamese gloss of known MT artifacts. The pipeline's
+ * MT glued a trailing NER label "Name" onto proper nouns ("Trung QuốcName" ->
+ * "Trung Quốc", "Việt NamName" -> "Việt Nam"); strip it. If the gloss is still
+ * garbled (an internal CamelCase boundary or a template leftover like
+ * "Th3Ethiopian…LongName…"), return null so the caller falls back to the pivot or
+ * the English gloss rather than showing junk.
+ */
+export function cleanMtGloss(gloss: string | null): string | null {
+  if (!gloss) return null
+  const t = gloss.replace(/(\p{L})Name(?=$|[\s;,)])/gu, '$1').trim()
+  if (!t) return null
+  if (/LongName|[A-Za-z]\d[A-Za-z]/.test(t)) return null // template / OCR-like leftovers
+  if (/[a-zà-ỹ][A-Z]/u.test(t)) return null              // residual CamelCase boundary
+  return t
+}
+
+/** Whether a sense carries any Vietnamese gloss (direct or via the English pivot). */
+const hasVi = (s: DictSense): boolean => Boolean(s.glossVi || s.pivotVi)
+
 /** Choose the most relevant senses to show, capped at `max`. The audience is
- * Vietnamese learners, so a sense that actually has a Vietnamese gloss is more
- * useful than an English-only one; we sort gloss_vi presence first, then by
- * sense_order (the source's commonness order). */
+ * Vietnamese learners, so a sense that actually has a Vietnamese gloss (direct or
+ * pivot-derived) is more useful than an English-only one; we sort Vietnamese
+ * presence first, then by sense_order (the source's commonness order). */
 export function pickSenses(senses: DictSense[], max = 3): { shown: DictSense[]; hiddenCount: number } {
   const sorted = [...senses].sort(
-    (a, b) => (Number(Boolean(b.glossVi)) - Number(Boolean(a.glossVi))) || a.senseOrder - b.senseOrder,
+    (a, b) => (Number(hasVi(b)) - Number(hasVi(a))) || a.senseOrder - b.senseOrder,
   )
   return { shown: sorted.slice(0, max), hiddenCount: Math.max(0, senses.length - max) }
+}
+
+/** For non-English entries, derive a Vietnamese gloss for senses that lack one by
+ * bridging through the English pivot: the sense's English gloss (e.g. zh 学习 ->
+ * "to study") points at the English headword, whose Vietnamese gloss we reuse.
+ * `viByTerm` maps a cleaned English term -> Vietnamese gloss. */
+export function fillPivotVi(senses: DictSense[], viByTerm: Map<string, string>): DictSense[] {
+  return senses.map((s) => {
+    if (s.glossVi || !s.glossEn) return s
+    const term = cleanGlossTerm(s.glossEn)
+    const vi = term ? viByTerm.get(term) : undefined
+    return vi ? { ...s, pivotVi: vi } : s
+  })
 }
 
 /** A Chinese sense whose gloss is a CC-CEDICT classifier note (e.g.
@@ -101,7 +134,7 @@ interface SenseRow { pos: string | null; gloss_vi: string | null; gloss_en: stri
 interface PronRow { accent: string; ipa: string | null; audio_url: string | null }
 
 function toSenses(rows: SenseRow[] | null): DictSense[] {
-  return (rows ?? []).map((r) => ({ pos: r.pos, glossVi: r.gloss_vi, glossEn: r.gloss_en, senseOrder: r.sense_order }))
+  return (rows ?? []).map((r) => ({ pos: r.pos, glossVi: cleanMtGloss(r.gloss_vi), glossEn: r.gloss_en, senseOrder: r.sense_order }))
 }
 function toProns(rows: PronRow[] | null): DictPron[] {
   return (rows ?? []).map((r) => ({ accent: r.accent, ipa: r.ipa, audioUrl: r.audio_url }))
@@ -251,13 +284,35 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
   const relations: DictRelation[] = (r.lex_relations ?? []).map((x) => ({
     relationType: x.relation_type, relatedText: x.related_text, relatedEntryId: x.related_entry_id,
   }))
+  let senses = toSenses(r.senses)
+  // zh/es entries mostly lack a Vietnamese gloss; derive one via the English pivot.
+  if (r.lang !== 'en') senses = await withPivotVi(supabase, senses)
   return {
     ...preview,
-    senses: toSenses(r.senses),
+    senses,
     pronunciations: toProns(r.pronunciations),
     examples, relations,
     attributes: r.attributes ?? {},
   }
+}
+
+/** Fetch the Vietnamese glosses of the English pivot words for senses missing one,
+ * and attach them as `pivotVi` (see fillPivotVi). */
+async function withPivotVi(supabase: SupabaseClient, senses: DictSense[]): Promise<DictSense[]> {
+  const terms = [...new Set(
+    senses.filter((s) => !s.glossVi && s.glossEn).map((s) => cleanGlossTerm(s.glossEn)).filter((t): t is string => Boolean(t)),
+  )]
+  if (terms.length === 0) return senses
+  const { data, error } = await supabase.schema('lex').from('entries')
+    .select('headword_normalized, senses(gloss_vi, sense_order)').eq('lang', 'en').in('headword_normalized', terms)
+  if (error) throw error
+  const viByTerm = new Map<string, string>()
+  for (const row of (data ?? []) as { headword_normalized: string; senses: { gloss_vi: string | null; sense_order: number }[] | null }[]) {
+    const vi = [...(row.senses ?? [])].sort((a, b) => a.sense_order - b.sense_order)
+      .map((x) => cleanMtGloss(x.gloss_vi)).find((x): x is string => Boolean(x))
+    if (vi) viByTerm.set(row.headword_normalized, vi)
+  }
+  return fillPivotVi(senses, viByTerm)
 }
 
 interface SiblingRpcRow { id: string; lang: LangCode; headword: string; gloss_vi: string | null; gloss_en: string | null }

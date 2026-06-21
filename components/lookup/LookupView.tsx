@@ -11,6 +11,12 @@ import { groupWordForms } from '@/lib/dictionary/family'
 import { buildConjugation } from '@/lib/dictionary/conjugation'
 import type { DictEntryDetail, CharInfo, CrossLangSibling, WordForm } from '@/lib/dictionary/types'
 
+/**
+ * Two-column lookup layout (hanzii-style): the hero spans the top, then a wide
+ * main column holds the dense content (meanings, character breakdown, conjugation,
+ * examples) and a narrower side rail holds the link lists (other languages, related
+ * words, word forms). Collapses to a single column below `lg`.
+ */
 export function LookupView({ detail, characters, siblings, inflections = [] }: {
   detail: DictEntryDetail
   characters: CharInfo[]
@@ -22,17 +28,30 @@ export function LookupView({ detail, characters, siblings, inflections = [] }: {
   // would be hundreds of inflected forms, so we suppress it in favour of the table.
   const conjugation = detail.lang === 'es' ? buildConjugation(inflections) : null
   const forms = conjugation ? [] : groupWordForms(inflections)
+
+  const hasSideRail = siblings.length > 0 || detail.relations.length > 0 || forms.length > 0
+
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
+    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
       <Link href="/dictionary" className="text-sm text-black/50 hover:underline">← Tra cứu</Link>
       <LookupHero detail={detail} hanViet={detail.lang === 'zh' ? hanViet : null} />
-      <SenseList senses={detail.senses} />
-      {detail.lang === 'zh' && <CharacterPanel characters={characters} />}
-      {conjugation && <ConjugationTable conjugation={conjugation} />}
-      <WordFamily headword={detail.headword} forms={forms} lang={detail.lang} />
-      <RelatedWords relations={detail.relations} lang={detail.lang} />
-      <CrossLanguagePanel siblings={siblings} />
-      <ExampleList examples={detail.examples} lang={detail.lang} />
+
+      <div className={hasSideRail ? 'grid gap-x-10 gap-y-8 lg:grid-cols-3' : 'flex flex-col gap-8'}>
+        <div className="flex flex-col gap-8 lg:col-span-2">
+          <SenseList senses={detail.senses} />
+          {detail.lang === 'zh' && <CharacterPanel characters={characters} />}
+          {conjugation && <ConjugationTable conjugation={conjugation} />}
+          <ExampleList examples={detail.examples} lang={detail.lang} />
+        </div>
+
+        {hasSideRail && (
+          <aside className="flex flex-col gap-8">
+            <CrossLanguagePanel siblings={siblings} />
+            <RelatedWords relations={detail.relations} lang={detail.lang} />
+            <WordFamily headword={detail.headword} forms={forms} lang={detail.lang} />
+          </aside>
+        )}
+      </div>
     </main>
   )
 }

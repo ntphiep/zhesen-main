@@ -8,7 +8,7 @@ export function CrossLanguagePanel({ siblings }: { siblings: CrossLangSibling[] 
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-lg font-semibold">Từ này ở ngôn ngữ khác</h2>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="flex flex-col gap-2">
         {siblings.map((s) => (
           <Link
             key={s.id}

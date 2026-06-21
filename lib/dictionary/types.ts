@@ -5,6 +5,11 @@ export interface DictSense {
   glossVi: string | null
   glossEn: string | null
   senseOrder: number
+  /** Vietnamese gloss derived via the English pivot (zh/es entry whose gloss_en
+   * points at an English headword that has a Vietnamese gloss). Set only when
+   * glossVi is absent; shown with a "qua tiếng Anh" marker so it is not mistaken
+   * for a curated direct translation. */
+  pivotVi?: string | null
 }
 export interface DictPron {
   accent: string

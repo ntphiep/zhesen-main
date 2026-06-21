@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pickSenses, isCleanExample, isClassifierGloss, parseClassifiers } from '@/lib/dictionary/search'
+import { pickSenses, isCleanExample, isClassifierGloss, parseClassifiers, fillPivotVi, cleanMtGloss } from '@/lib/dictionary/search'
 import { classifyRelations } from '@/lib/dictionary/relations'
 import { groupWordForms } from '@/lib/dictionary/family'
 import type { DictSense, DictRelation } from '@/lib/dictionary/types'
@@ -28,6 +28,40 @@ describe('pickSenses', () => {
     const { shown, hiddenCount } = pickSenses([sense(1, 'a')], 3)
     expect(shown).toHaveLength(1)
     expect(hiddenCount).toBe(0)
+  })
+  it('treats a pivot-derived Vietnamese gloss as Vietnamese for ordering', () => {
+    const withPivot: DictSense = { pos: 'n', glossVi: null, glossEn: 'en', senseOrder: 9, pivotVi: 'qua-en' }
+    const { shown } = pickSenses([sense(1, null), withPivot], 1)
+    expect(shown[0].pivotVi).toBe('qua-en')
+  })
+})
+
+describe('cleanMtGloss', () => {
+  it('strips the trailing "Name" NER artifact from proper-noun glosses', () => {
+    expect(cleanMtGloss('Trung QuốcName')).toBe('Trung Quốc')
+    expect(cleanMtGloss('Việt NamName')).toBe('Việt Nam')
+    expect(cleanMtGloss('MạngName')).toBe('Mạng')
+    expect(cleanMtGloss('net; MạngName')).toBe('net; Mạng')
+  })
+  it('drops a still-garbled gloss so the caller can fall back', () => {
+    expect(cleanMtGloss('Th3Ethiopian month 11-LongNamePossessive; ~ (hạt thuộc sở hữu)')).toBeNull()
+  })
+  it('leaves a clean Vietnamese gloss untouched', () => {
+    expect(cleanMtGloss('học, nghiên cứu')).toBe('học, nghiên cứu')
+    expect(cleanMtGloss('con chó')).toBe('con chó')
+    expect(cleanMtGloss(null)).toBeNull()
+  })
+})
+
+describe('fillPivotVi', () => {
+  const s = (glossVi: string | null, glossEn: string | null): DictSense =>
+    ({ pos: 'n', glossVi, glossEn, senseOrder: 1 })
+  it('attaches a Vietnamese gloss from the English pivot only where one is missing', () => {
+    const map = new Map([['study', 'học, nghiên cứu'], ['dog', 'con chó']])
+    const out = fillPivotVi([s(null, 'to study'), s('đã có', 'x'), s(null, 'cat')], map)
+    expect(out[0].pivotVi).toBe('học, nghiên cứu') // "to study" -> study -> Vietnamese
+    expect(out[1].pivotVi).toBeUndefined()          // already has glossVi, untouched
+    expect(out[2].pivotVi).toBeUndefined()          // "cat" not in the pivot map
   })
 })
 

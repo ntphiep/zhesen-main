@@ -32,9 +32,16 @@ export function SenseList({ senses }: { senses: DictSense[] }) {
           <ol className="flex list-inside list-decimal flex-col gap-1">
             {g.items.map((s, i) => (
               <li key={i}>
-                {s.glossVi && <span className="text-black/80">{s.glossVi}</span>}
+                {s.glossVi
+                  ? <span className="text-black/80">{s.glossVi}</span>
+                  : s.pivotVi && (
+                    <span className="text-black/80">
+                      {s.pivotVi}
+                      <span className="ml-1 align-middle text-[10px] uppercase tracking-wide text-amber-700/70" title="Nghĩa suy ra qua tiếng Anh">qua tiếng Anh</span>
+                    </span>
+                  )}
                 {s.glossEn && <span className="ml-2 text-sm text-black/50">{s.glossEn}</span>}
-                {!s.glossVi && !s.glossEn && <span className="italic text-black/30">(chưa có nghĩa)</span>}
+                {!s.glossVi && !s.pivotVi && !s.glossEn && <span className="italic text-black/30">(chưa có nghĩa)</span>}
               </li>
             ))}
           </ol>
