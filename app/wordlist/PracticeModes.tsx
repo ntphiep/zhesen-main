@@ -6,9 +6,11 @@ export function PracticeModes({ due }: { due: number }) {
     { href: '/wordlist/quiz', label: 'Kiểm tra', sub: 'Trắc nghiệm 4 đáp án', primary: false },
     { href: '/wordlist/write', label: 'Viết từ', sub: 'Nghĩa → gõ từ', primary: false },
     { href: '/wordlist/dictation', label: 'Nghe & chép', sub: 'Nghe → gõ từ', primary: false },
+    { href: '/wordlist/match', label: 'Ghép cặp', sub: 'Nối từ với nghĩa', primary: false },
+    { href: '/wordlist/speak', label: 'Luyện nói', sub: 'Đọc lại, AI chấm', primary: false },
   ]
   return (
-    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
       {modes.map((m) => (
         <Link
           key={m.href}
