@@ -8,10 +8,12 @@ const preview = (id: string, lang: string, headword: string, glossVi: string) =>
 })
 
 const prefetch = vi.fn()
-vi.mock('next/navigation', () => ({ useRouter: () => ({ prefetch }) }))
+const push = vi.fn()
+vi.mock('next/navigation', () => ({ useRouter: () => ({ prefetch, push }) }))
 
 beforeEach(() => {
   prefetch.mockClear()
+  push.mockClear()
   vi.stubGlobal('fetch', vi.fn(async () => ({
     json: async () => ({ en: [preview('en:dog', 'en', 'dog', 'con chó')], zh: [], es: [] }),
   })))
@@ -33,5 +35,15 @@ describe('SearchBox', () => {
     const link = await screen.findByRole('link', { name: /dog/ })
     await userEvent.hover(link)
     expect(prefetch).toHaveBeenCalledWith('/dictionary/en/dog')
+  })
+
+  it('opens the highlighted result when Enter is pressed', async () => {
+    render(<SearchBox initialQuery="" />)
+    const box = screen.getByRole('textbox')
+    await userEvent.type(screen.getByRole('textbox'), 'dog')
+    await screen.findByRole('link', { name: /dog/ })
+    box.focus()
+    await userEvent.keyboard('{Enter}')
+    expect(push).toHaveBeenCalledWith('/dictionary/en/dog')
   })
 })
