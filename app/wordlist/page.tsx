@@ -2,12 +2,14 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { listWords } from '@/lib/wordlist/store'
-import { countDueCards } from '@/lib/wordlist/review'
+import { getWordlistStats } from '@/lib/wordlist/stats'
+import { WordlistStats } from './WordlistStats'
 import { WordlistClient } from './WordlistClient'
 
 export default async function WordlistPage() {
   const supabase = await createClient()
-  const [words, due] = await Promise.all([listWords(supabase), countDueCards(supabase, Date.now())])
+  const [words, stats] = await Promise.all([listWords(supabase), getWordlistStats(supabase, Date.now())])
+  const due = stats.due
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
       <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>
@@ -29,6 +31,7 @@ export default async function WordlistPage() {
         </div>
       </div>
       <p className="mt-1 text-sm text-black/60">Nơi lưu các từ bạn đã học. Lưu ý: danh sách gắn với phiên trình duyệt hiện tại.</p>
+      <WordlistStats stats={stats} />
       <div className="mt-6">
         <WordlistClient initialWords={words} />
       </div>
