@@ -20,7 +20,7 @@ const RECENT_KEY = 'chesen:recent-searches'
  * abort and a small in-memory prefix cache so repeats are instant. Supports keyboard
  * navigation (up/down/enter), prefetch on hover, and a recent-searches list.
  */
-export function SearchBox({ initialQuery = '', autoFocus = false }: { initialQuery?: string; autoFocus?: boolean }) {
+export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { initialQuery?: string; autoFocus?: boolean; lang?: LangCode }) {
   const [query, setQuery] = useState(initialQuery)
   const [results, setResults] = useState<Results>(EMPTY)
   const [loading, setLoading] = useState(false)
@@ -60,7 +60,7 @@ export function SearchBox({ initialQuery = '', autoFocus = false }: { initialQue
     return () => { clearTimeout(id); ctrl.abort() }
   }, [query])
 
-  const order = useMemo(() => detectOrder(query), [query])
+  const order = useMemo(() => (lang ? [lang] : detectOrder(query)), [query, lang])
   // Flat list in display order, for keyboard navigation and Enter-to-open.
   const flat = useMemo(() => order.flatMap((lang) => results[lang].map((e) => e)), [order, results])
   const indexById = useMemo(() => new Map(flat.map((e, i) => [e.id, i])), [flat])

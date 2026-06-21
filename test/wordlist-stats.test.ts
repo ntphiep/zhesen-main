@@ -13,7 +13,12 @@ const row = (over: Partial<StatRow>): StatRow => ({
 })
 
 describe('computeWordlistStats', () => {
-  it('counts total, due, mature ("đã thuộc"), and reviewed-today', () => {
+  const localDay = (ts: number) => {
+    const d = new Date(ts)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
+  it('counts total, due, mature ("đã thuộc"), reviewed-today, and streak', () => {
     const rows: StatRow[] = [
       row({ srsDueAt: iso(new Date(now - DAY).toISOString()) }), // due (past)
       row({ srsDueAt: iso(new Date(now + DAY).toISOString()) }), // not due (future)
@@ -21,14 +26,15 @@ describe('computeWordlistStats', () => {
       row({ srsLastReviewedAt: iso(new Date(now).toISOString()), srsDueAt: iso(new Date(now + DAY).toISOString()) }), // reviewed today
       row({ srsLastReviewedAt: iso(new Date(now - 3 * DAY).toISOString()), srsDueAt: iso(new Date(now + DAY).toISOString()) }), // reviewed 3 days ago
     ]
-    const s = computeWordlistStats(rows, now)
+    const s = computeWordlistStats(rows, [localDay(now), localDay(now - DAY)], now)
     expect(s.total).toBe(5)
     expect(s.due).toBe(1)
     expect(s.learned).toBe(1)
     expect(s.reviewedToday).toBe(1)
+    expect(s.streak).toBe(2)
   })
 
   it('is all zeros for an empty wordlist', () => {
-    expect(computeWordlistStats([], now)).toEqual({ total: 0, due: 0, learned: 0, reviewedToday: 0 })
+    expect(computeWordlistStats([], [], now)).toEqual({ total: 0, due: 0, learned: 0, reviewedToday: 0, streak: 0 })
   })
 })

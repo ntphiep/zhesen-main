@@ -1,7 +1,9 @@
 import { unstable_cache } from 'next/cache'
 import { createContentClient } from '@/lib/supabase/content'
-import { getEntryDetail, getCrossLanguage, getCharacters, getInflections } from './search'
-import type { DictEntryDetail, CrossLangSibling, CharInfo, WordForm } from './types'
+import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getCommonWords } from './search'
+import { getWordOfDay, type DailyWord } from './wordOfDay'
+import type { DictEntryDetail, DictEntryPreview, CrossLangSibling, CharInfo, WordForm } from './types'
+import type { LangCode } from '@/lib/content/types'
 
 export const getCachedEntryDetail = unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),
@@ -24,5 +26,18 @@ export const getCachedCharacters = unstable_cache(
 export const getCachedInflections = unstable_cache(
   (entryId: string): Promise<WordForm[]> => getInflections(createContentClient(), entryId),
   ['dict-inflections'],
+  { revalidate: 3600, tags: ['lex'] },
+)
+
+// Keyed by day index so the word is stable for the whole day and cached across users.
+export const getCachedWordOfDay = unstable_cache(
+  (dayNum: number): Promise<DailyWord | null> => getWordOfDay(createContentClient(), dayNum),
+  ['dict-word-of-day'],
+  { revalidate: 3600, tags: ['lex'] },
+)
+
+export const getCachedCommonWords = unstable_cache(
+  (lang: LangCode): Promise<DictEntryPreview[]> => getCommonWords(createContentClient(), lang),
+  ['dict-common-words'],
   { revalidate: 3600, tags: ['lex'] },
 )

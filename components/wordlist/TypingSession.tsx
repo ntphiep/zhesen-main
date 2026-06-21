@@ -1,8 +1,9 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listWords } from '@/lib/wordlist/store'
+import { logActivityDay } from '@/lib/wordlist/activity'
 import { checkTypedAnswer, type TypedResult } from '@/lib/wordlist/typing'
 import { TypingCard, type TypingPrompt } from '@/components/wordlist/TypingCard'
 
@@ -25,6 +26,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
   const [result, setResult] = useState<TypedResult | null>(null)
   const [score, setScore] = useState(0)
   const [round, setRound] = useState(0)
+  const logged = useRef(false)
 
   useEffect(() => {
     let active = true
@@ -48,7 +50,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
       <main className="mx-auto max-w-md px-6 py-16 text-center">
         <div className="text-xl font-semibold">Chưa đủ từ để luyện</div>
         <p className="mt-2 text-black/50">Thêm vài từ vào sổ tay trước nhé.</p>
-        <Link href="/wordlist" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">Về sổ tay</Link>
+        <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">Về luyện tập</Link>
       </main>
     )
   }
@@ -59,7 +61,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
         <div className="text-2xl font-semibold">Kết quả: {score}/{queue.length}</div>
         <div className="mt-6 flex justify-center gap-3">
           <button onClick={() => setRound((r) => r + 1)} className="rounded-lg bg-black px-5 py-2 text-white">Làm lại</button>
-          <Link href="/wordlist" className="rounded-lg border border-black/15 px-5 py-2 hover:bg-black/5">Về sổ tay</Link>
+          <Link href="/practice" className="rounded-lg border border-black/15 px-5 py-2 hover:bg-black/5">Về luyện tập</Link>
         </div>
       </main>
     )
@@ -73,6 +75,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
     const r = checkTypedAnswer(value, current.headword)
     setResult(r)
     if (r !== 'wrong') setScore((s) => s + 1)
+    if (!logged.current) { logged.current = true; void logActivityDay(supabase, Date.now()) }
   }
   function next() {
     setResult(null); setValue(''); setIndex((i) => i + 1)
@@ -81,7 +84,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
   return (
     <main className="mx-auto max-w-md px-6 py-12">
       <div className="mb-4 flex items-center justify-between text-sm text-black/50">
-        <Link href="/wordlist" className="hover:underline">← Thoát</Link>
+        <Link href="/practice" className="hover:underline">← Thoát</Link>
         <span>{title} · {index + 1}/{queue.length} · Đúng {score}</span>
       </div>
       <TypingCard

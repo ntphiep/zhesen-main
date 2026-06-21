@@ -140,6 +140,21 @@ export async function searchAllLanguages(
   return { en, zh, es }
 }
 
+/** Most frequent entries for a language (for the per-language "common words" list). */
+export async function getCommonWords(
+  supabase: SupabaseClient, lang: LangCode, limit = 24,
+): Promise<DictEntryPreview[]> {
+  const { data, error } = await supabase
+    .schema('lex')
+    .from('entries')
+    .select(PREVIEW_SELECT)
+    .eq('lang', lang)
+    .order('frequency_rank', { ascending: true, nullsFirst: false })
+    .limit(limit)
+  if (error) throw error
+  return ((data ?? []) as unknown as EntryPreviewRow[]).map(toPreview)
+}
+
 /** All headwords for a language (zh needs the set for longest-match segmentation). */
 export async function getHeadwords(supabase: SupabaseClient, lang: LangCode): Promise<string[]> {
   const { data, error } = await supabase.schema('lex').from('entries').select('headword').eq('lang', lang)

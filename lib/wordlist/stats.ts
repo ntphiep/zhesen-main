@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { computeStreak, getActivityDays } from './activity'
 
 export interface StatRow {
   srsIntervalDays: number
@@ -12,6 +13,8 @@ export interface WordlistStats {
   /** "Đã thuộc": interval has grown to Anki's mature threshold (>= 21 days). */
   learned: number
   reviewedToday: number
+  /** Consecutive days of activity, counting back from today. */
+  streak: number
 }
 
 const MATURE_DAYS = 21
@@ -22,7 +25,7 @@ function sameLocalDay(a: number, b: number): boolean {
   return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate()
 }
 
-export function computeWordlistStats(rows: StatRow[], now: number): WordlistStats {
+export function computeWordlistStats(rows: StatRow[], activityDays: string[], now: number): WordlistStats {
   let due = 0
   let learned = 0
   let reviewedToday = 0
@@ -31,21 +34,22 @@ export function computeWordlistStats(rows: StatRow[], now: number): WordlistStat
     if (r.srsIntervalDays >= MATURE_DAYS) learned++
     if (r.srsLastReviewedAt && sameLocalDay(Date.parse(r.srsLastReviewedAt), now)) reviewedToday++
   }
-  return { total: rows.length, due, learned, reviewedToday }
+  return { total: rows.length, due, learned, reviewedToday, streak: computeStreak(activityDays, now) }
 }
 
 interface StatRowDb { srs_interval_days: number; srs_due_at: string; srs_last_reviewed_at: string | null }
 
-/** Wordlist progress stats for the current user. RLS scopes the read. */
+/** Wordlist progress stats for the current user. RLS scopes the reads. */
 export async function getWordlistStats(supabase: SupabaseClient, now: number): Promise<WordlistStats> {
-  const { data, error } = await supabase
-    .from('user_words')
-    .select('srs_interval_days, srs_due_at, srs_last_reviewed_at')
-  if (error) throw error
-  const rows: StatRow[] = ((data ?? []) as unknown as StatRowDb[]).map((r) => ({
+  const [words, activityDays] = await Promise.all([
+    supabase.from('user_words').select('srs_interval_days, srs_due_at, srs_last_reviewed_at'),
+    getActivityDays(supabase),
+  ])
+  if (words.error) throw words.error
+  const rows: StatRow[] = ((words.data ?? []) as unknown as StatRowDb[]).map((r) => ({
     srsIntervalDays: r.srs_interval_days,
     srsDueAt: r.srs_due_at,
     srsLastReviewedAt: r.srs_last_reviewed_at,
   }))
-  return computeWordlistStats(rows, now)
+  return computeWordlistStats(rows, activityDays, now)
 }

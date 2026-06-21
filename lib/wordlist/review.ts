@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/content/types'
 import type { Grade, SrsState } from '@/lib/progress/types'
 import { review } from '@/lib/progress/srs'
+import { logActivityDay } from './activity'
 
 /** A due wordlist entry plus its spaced-repetition state, ready to review. */
 export interface ReviewCard {
@@ -81,5 +82,7 @@ export async function gradeCard(supabase: SupabaseClient, card: ReviewCard, grad
     srs_last_reviewed_at: next.lastReviewedAt ? new Date(next.lastReviewedAt).toISOString() : null,
   }).eq('id', card.id)
   if (error) throw error
+  // Record today's activity for the streak; never fail the grade over it.
+  try { await logActivityDay(supabase, now) } catch { /* ignore */ }
   return next
 }

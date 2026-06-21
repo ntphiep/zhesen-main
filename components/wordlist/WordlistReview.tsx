@@ -23,8 +23,8 @@ export function WordlistReview() {
       <main className="mx-auto max-w-md px-6 py-16 text-center">
         <div className="text-2xl font-semibold">Hết thẻ cần ôn 🎉</div>
         {reviewed > 0 && <p className="mt-2 text-black/50">Đã ôn {reviewed} từ trong phiên này.</p>}
-        <Link href="/wordlist" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">
-          Về sổ tay
+        <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">
+          Về luyện tập
         </Link>
       </main>
     )
@@ -45,7 +45,7 @@ export function WordlistReview() {
   return (
     <main className="mx-auto max-w-md px-6 py-12">
       <div className="mb-4 flex items-center justify-between text-sm text-black/50">
-        <Link href="/wordlist" className="hover:underline">← Thoát</Link>
+        <Link href="/practice" className="hover:underline">← Thoát</Link>
         <span>Còn lại: {queue.length}</span>
       </div>
       <WordReviewCard card={current} revealed={revealed} onReveal={() => setRevealed(true)} onGrade={grade} />
