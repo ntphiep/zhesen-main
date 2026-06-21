@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { getContentSource } from '@/lib/content'
 import { LanguageCard } from '@/components/LanguageCard'
 import { SearchBox } from '@/components/search/SearchBox'
@@ -16,14 +15,6 @@ export default async function Home() {
         {languages.map((l) => (
           <LanguageCard key={l.code} language={l} />
         ))}
-      </div>
-      <div className="mt-10 flex flex-wrap gap-3">
-        <Link href="/dictionary" className="inline-block rounded-lg border border-black/15 px-4 py-2 hover:bg-black/5">
-          Tra cứu
-        </Link>
-        <Link href="/wordlist" className="inline-block rounded-lg bg-black px-4 py-2 text-white">
-          Danh sách từ của tôi
-        </Link>
       </div>
     </main>
   )

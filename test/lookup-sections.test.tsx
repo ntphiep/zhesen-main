@@ -26,15 +26,22 @@ const detail: DictEntryDetail = {
     { pos: 'noun', glossVi: 'con chó', glossEn: 'a dog', senseOrder: 1 },
     { pos: 'verb', glossVi: 'theo dõi', glossEn: null, senseOrder: 2 },
   ],
-  pronunciations: [], examples: [], relations: [], attributes: {},
+  pronunciations: [
+    { accent: 'en-UK', ipa: 'dɒɡ', audioUrl: 'https://upload.wikimedia.org/.../En-uk-dog.ogg' },
+    { accent: 'en-US', ipa: 'dɑɡ', audioUrl: 'https://upload.wikimedia.org/.../En-us-dog.ogg' },
+  ],
+  examples: [], relations: [], attributes: {},
 }
 
 describe('LookupHero', () => {
-  it('shows headword, ipa and level', () => {
+  it('shows headword, level and per-accent UK/US pronunciations', () => {
     render(<LookupHero detail={detail} />)
     expect(screen.getByRole('heading', { name: 'dog' })).toBeInTheDocument()
-    expect(screen.getByText('/dɔːɡ/')).toBeInTheDocument()
     expect(screen.getByText('A1')).toBeInTheDocument()
+    expect(screen.getByText('UK')).toBeInTheDocument()
+    expect(screen.getByText('/dɒɡ/')).toBeInTheDocument()
+    expect(screen.getByText('US')).toBeInTheDocument()
+    expect(screen.getByText('/dɑɡ/')).toBeInTheDocument()
   })
   it('shows Hán-Việt when provided', () => {
     render(<LookupHero detail={{ ...detail, lang: 'zh' }} hanViet="khuyển" />)

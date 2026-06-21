@@ -18,7 +18,7 @@ export function CrossLanguagePanel({ siblings }: { siblings: CrossLangSibling[] 
             <span className="text-xl">{LANG_FLAGS[s.lang]}</span>
             <div className="flex flex-col">
               <span className="font-medium">{s.headword}</span>
-              {s.glossVi && <span className="text-sm text-black/50">{s.glossVi}</span>}
+              {(s.glossVi || s.glossEn) && <span className="text-sm text-black/50">{s.glossVi || s.glossEn}</span>}
               <span className="text-xs text-black/30">{LANG_LABELS[s.lang]}</span>
             </div>
           </Link>

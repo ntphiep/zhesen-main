@@ -74,25 +74,53 @@ function queueClient(results: { data: unknown; error: null }[]) {
   } as unknown as import('@supabase/supabase-js').SupabaseClient
 }
 
+// Cross-language mock: select/eq are chainable; maybeSingle (source row) and in
+// (sibling queries) are terminal and consume the result queue in call order.
+function crossClient(results: { data: unknown; error: null }[]) {
+  let i = 0
+  const next = () => Promise.resolve(results[i++] ?? { data: [], error: null })
+  const builder: Record<string, unknown> = {}
+  Object.assign(builder, { select: () => builder, eq: () => builder, in: () => next(), maybeSingle: () => next() })
+  return { schema: () => ({ from: () => builder }) } as unknown as import('@supabase/supabase-js').SupabaseClient
+}
+
+const sib = (id: string, lang: string, headword: string, glossVi: string | null, glossEn: string | null) =>
+  ({ id, lang, headword, senses: [{ gloss_vi: glossVi, gloss_en: glossEn, sense_order: 1 }] })
+
 describe('getCrossLanguage', () => {
-  it('returns only siblings that exist as entries', async () => {
-    const client = queueClient([
-      { data: [{ concept_id: 'Q144' }], error: null },               // eq from_entry_id
-      { data: [], error: null },                                      // eq to_entry_id
-      { data: [                                                       // in concept_id
-        { from_entry_id: 'en:dog', to_entry_id: 'es:perro' },
-        { from_entry_id: 'en:dog', to_entry_id: 'zh:狗' },
-      ], error: null },
-      { data: [                                                       // in id (only perro exists)
-        { id: 'es:perro', lang: 'es', headword: 'perro', senses: [{ gloss_vi: 'con chó', sense_order: 1 }] },
+  it('bridges an English word to other-language entries that gloss to it', async () => {
+    const client = crossClient([
+      { data: { lang: 'en', headword_normalized: 'dog', senses: [{ gloss_en: 'dog' }] }, error: null }, // source
+      { data: [                                                                                          // zh/es candidates
+        sib('es:perro', 'es', 'perro', 'con chó', 'dog'),
+        sib('zh:狗', 'zh', '狗', null, 'dog'),
+        sib('es:gato', 'es', 'gato', null, 'cat'),
       ], error: null },
     ])
     const res = await getCrossLanguage(client, 'en:dog')
-    expect(res).toEqual([{ id: 'es:perro', lang: 'es', headword: 'perro', glossVi: 'con chó' }])
+    expect(res.map((r) => r.id)).toEqual(['es:perro', 'zh:狗'])
+    expect(res[0]).toMatchObject({ glossVi: 'con chó', glossEn: 'dog' })
   })
 
-  it('returns [] when the entry has no concepts', async () => {
-    const client = queueClient([{ data: [], error: null }, { data: [], error: null }])
+  it('for a non-English word, surfaces the English pivot plus other languages, excluding same language', async () => {
+    const client = crossClient([
+      { data: { lang: 'zh', headword_normalized: '狗', senses: [{ gloss_en: 'dog' }] }, error: null },   // source
+      { data: [sib('en:dog', 'en', 'dog', 'con chó', 'dog')], error: null },                              // English pivot
+      { data: [sib('zh:狗', 'zh', '狗', null, 'dog'), sib('es:perro', 'es', 'perro', null, 'dog')], error: null }, // candidates
+    ])
+    const res = await getCrossLanguage(client, 'zh:狗')
+    expect(res.map((r) => r.id)).toEqual(['en:dog', 'es:perro']) // zh:狗 (self/same-lang) excluded
+  })
+
+  it('returns [] when the gloss yields no usable pivot', async () => {
+    const client = crossClient([
+      { data: { lang: 'zh', headword_normalized: '吧', senses: [{ gloss_en: '(particle); marker' }] }, error: null },
+    ])
+    expect(await getCrossLanguage(client, 'zh:吧')).toEqual([])
+  })
+
+  it('returns [] when the entry is not found', async () => {
+    const client = crossClient([{ data: null, error: null }])
     expect(await getCrossLanguage(client, 'en:nope')).toEqual([])
   })
 })

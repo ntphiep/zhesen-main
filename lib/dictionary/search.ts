@@ -4,6 +4,7 @@ import type {
   DictEntryPreview, DictEntryDetail, DictSense, DictPron, DictExample, DictRelation,
   CrossLangSibling, CharInfo, WordForm,
 } from './types'
+import { entryPivots, cleanGlossTerm } from './crosslang'
 
 export function pickIpa(prons: { accent: string; ipa: string | null }[], lang: LangCode): string | null {
   if (prons.length === 0) return null
@@ -182,47 +183,57 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
   }
 }
 
-interface ConceptRow { concept_id: string | null }
-interface LinkRow { from_entry_id: string | null; to_entry_id: string | null }
 interface SiblingRow {
   id: string; lang: LangCode; headword: string
-  senses: { gloss_vi: string | null; sense_order: number }[] | null
+  senses: { gloss_vi: string | null; gloss_en: string | null; sense_order: number }[] | null
+}
+const SIBLING_SELECT = 'id, lang, headword, senses(gloss_vi, gloss_en, sense_order)'
+
+function primaryGloss(senses: SiblingRow['senses']): { glossVi: string | null; glossEn: string | null } {
+  const s = [...(senses ?? [])].sort((a, b) => a.sense_order - b.sense_order)[0]
+  return { glossVi: s?.gloss_vi ?? null, glossEn: s?.gloss_en ?? null }
 }
 
+/**
+ * Equivalents of an entry in the other languages, bridged through an English
+ * pivot (see crosslang.ts). For a non-English entry we also surface the English
+ * word it glosses to. Same-language matches are excluded — this is the
+ * "other languages" panel, not a synonyms list.
+ */
 export async function getCrossLanguage(
   supabase: SupabaseClient, entryId: string,
 ): Promise<CrossLangSibling[]> {
-  const links = supabase.schema('lex').from('cross_language_links')
-  const [from, to] = await Promise.all([
-    links.select('concept_id').eq('from_entry_id', entryId),
-    supabase.schema('lex').from('cross_language_links').select('concept_id').eq('to_entry_id', entryId),
-  ])
-  if (from.error) throw from.error
-  if (to.error) throw to.error
-  const conceptIds = [...new Set(
-    [...(from.data ?? []), ...(to.data ?? [])]
-      .map((r) => (r as ConceptRow).concept_id)
-      .filter((c): c is string => Boolean(c)),
-  )]
-  if (conceptIds.length === 0) return []
+  const src = await supabase.schema('lex').from('entries')
+    .select('lang, headword_normalized, senses(gloss_en)').eq('id', entryId).maybeSingle()
+  if (src.error) throw src.error
+  const row = src.data as { lang: LangCode; headword_normalized: string | null; senses: { gloss_en: string | null }[] | null } | null
+  if (!row) return []
 
-  const sib = await supabase.schema('lex').from('cross_language_links')
-    .select('from_entry_id, to_entry_id').in('concept_id', conceptIds)
-  if (sib.error) throw sib.error
-  const candidateIds = [...new Set(
-    ((sib.data ?? []) as LinkRow[])
-      .flatMap((r) => [r.from_entry_id, r.to_entry_id])
-      .filter((id): id is string => Boolean(id)),
-  )].filter((id) => id !== entryId)
-  if (candidateIds.length === 0) return []
+  const pivots = entryPivots(row.lang, row.headword_normalized ?? '', (row.senses ?? []).map((s) => s.gloss_en))
+  if (pivots.length === 0) return []
+  const pivotSet = new Set(pivots)
 
-  const entries = await supabase.schema('lex').from('entries')
-    .select('id, lang, headword, senses(gloss_vi, sense_order)').in('id', candidateIds)
-  if (entries.error) throw entries.error
-  return ((entries.data ?? []) as unknown as SiblingRow[]).map((r) => {
-    const primary = [...(r.senses ?? [])].sort((a, b) => a.sense_order - b.sense_order)[0]
-    return { id: r.id, lang: r.lang, headword: r.headword, glossVi: primary?.gloss_vi ?? null }
-  })
+  const byId = new Map<string, CrossLangSibling>()
+  const add = (r: SiblingRow) => {
+    if (r.id === entryId || r.lang === row.lang || byId.has(r.id)) return
+    byId.set(r.id, { id: r.id, lang: r.lang, headword: r.headword, ...primaryGloss(r.senses) })
+  }
+
+  if (row.lang !== 'en') {
+    const en = await supabase.schema('lex').from('entries')
+      .select(SIBLING_SELECT).eq('lang', 'en').in('headword_normalized', pivots)
+    if (en.error) throw en.error
+    for (const r of (en.data ?? []) as unknown as SiblingRow[]) add(r)
+  }
+
+  const others = await supabase.schema('lex').from('entries').select(SIBLING_SELECT).in('lang', ['zh', 'es'])
+  if (others.error) throw others.error
+  for (const r of (others.data ?? []) as unknown as SiblingRow[]) {
+    const terms = (r.senses ?? []).map((s) => cleanGlossTerm(s.gloss_en)).filter((t): t is string => Boolean(t))
+    if (terms.some((t) => pivotSet.has(t))) add(r)
+  }
+
+  return [...byId.values()].slice(0, 12)
 }
 
 interface CharRow {

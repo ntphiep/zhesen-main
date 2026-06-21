@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { detectOrder } from '@/lib/dictionary/detect'
 import { LANG_LABELS, LANG_FLAGS } from '@/lib/dictionary/labels'
@@ -21,6 +22,7 @@ export function SearchBox({ initialQuery = '', autoFocus = false }: { initialQue
   const [results, setResults] = useState<Results>(EMPTY)
   const [loading, setLoading] = useState(false)
   const cache = useRef(new Map<string, Results>())
+  const router = useRouter()
 
   useEffect(() => {
     const q = query.trim()
@@ -69,15 +71,25 @@ export function SearchBox({ initialQuery = '', autoFocus = false }: { initialQue
               {LANG_FLAGS[lang]} {LANG_LABELS[lang]}
             </span>
             <ul className="flex flex-col gap-0.5">
-              {results[lang].map((e) => (
+              {results[lang].map((e) => {
+                const href = entryPath(e.id)
+                const warm = () => router.prefetch(href)
+                return (
                 <li key={e.id}>
-                  <Link href={entryPath(e.id)} className="flex items-baseline gap-2 rounded-lg px-3 py-2 hover:bg-black/5">
+                  <Link
+                    href={href}
+                    prefetch={false}
+                    onMouseEnter={warm}
+                    onFocus={warm}
+                    className="flex items-baseline gap-2 rounded-lg px-3 py-2 hover:bg-black/5"
+                  >
                     <span className="font-medium">{e.headword}</span>
                     {e.ipa && <span className="ipa text-xs text-black/40">{e.ipa}</span>}
                     {e.glossVi && <span className="text-sm text-black/60">{e.glossVi}</span>}
                   </Link>
                 </li>
-              ))}
+                )
+              })}
             </ul>
           </div>
         ) : null,

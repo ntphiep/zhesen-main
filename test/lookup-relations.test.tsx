@@ -37,7 +37,7 @@ describe('CrossLanguagePanel', () => {
     expect(container).toBeEmptyDOMElement()
   })
   it('links each sibling to its detail page', () => {
-    render(<CrossLanguagePanel siblings={[{ id: 'es:perro', lang: 'es', headword: 'perro', glossVi: 'con chó' }]} />)
+    render(<CrossLanguagePanel siblings={[{ id: 'es:perro', lang: 'es', headword: 'perro', glossVi: 'con chó', glossEn: 'dog' }]} />)
     const link = screen.getByRole('link', { name: /perro/ })
     expect(link).toHaveAttribute('href', '/dictionary/es/perro')
   })

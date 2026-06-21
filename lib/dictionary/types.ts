@@ -46,6 +46,7 @@ export interface CrossLangSibling {
   lang: LangCode
   headword: string
   glossVi: string | null
+  glossEn: string | null
 }
 export interface WordForm {
   formText: string
