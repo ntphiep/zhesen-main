@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections } from '@/lib/dictionary/cached'
 import { buildEntryId } from '@/lib/dictionary/entryId'
-import { groupWordForms } from '@/lib/dictionary/family'
 import { LookupView } from '@/components/lookup/LookupView'
 import type { LangCode } from '@/lib/content/types'
 
@@ -23,6 +22,6 @@ export default async function Page({ params }: { params: Promise<{ lang: string;
   ])
 
   return (
-    <LookupView detail={detail} characters={characters} siblings={siblings} forms={groupWordForms(inflections)} />
+    <LookupView detail={detail} characters={characters} siblings={siblings} inflections={inflections} />
   )
 }

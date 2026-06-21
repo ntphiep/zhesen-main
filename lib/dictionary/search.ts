@@ -4,7 +4,7 @@ import type {
   DictEntryPreview, DictEntryDetail, DictSense, DictPron, DictExample, DictRelation,
   CrossLangSibling, CharInfo, WordForm,
 } from './types'
-import { entryPivots, cleanGlossTerm } from './crosslang'
+import { entryPivots } from './crosslang'
 
 export function pickIpa(prons: { accent: string; ipa: string | null }[], lang: LangCode): string | null {
   if (prons.length === 0) return null
@@ -18,13 +18,37 @@ export function pickPrimarySense(senses: DictSense[]): DictSense | null {
   return [...senses].sort((a, b) => a.senseOrder - b.senseOrder)[0]
 }
 
-/** Choose the most relevant senses to show: lowest sense_order, gloss_vi presence as
- * tiebreaker (no sense_frequency signal exists in the data), capped at `max`. */
+/** Choose the most relevant senses to show, capped at `max`. The audience is
+ * Vietnamese learners, so a sense that actually has a Vietnamese gloss is more
+ * useful than an English-only one; we sort gloss_vi presence first, then by
+ * sense_order (the source's commonness order). */
 export function pickSenses(senses: DictSense[], max = 3): { shown: DictSense[]; hiddenCount: number } {
   const sorted = [...senses].sort(
-    (a, b) => a.senseOrder - b.senseOrder || (Number(Boolean(b.glossVi)) - Number(Boolean(a.glossVi))),
+    (a, b) => (Number(Boolean(b.glossVi)) - Number(Boolean(a.glossVi))) || a.senseOrder - b.senseOrder,
   )
   return { shown: sorted.slice(0, max), hiddenCount: Math.max(0, senses.length - max) }
+}
+
+/** A Chinese sense whose gloss is a CC-CEDICT classifier note (e.g.
+ * "CL:隻|只[zhi1],條|条[tiao2]") rather than an actual meaning. */
+export function isClassifierGloss(gloss: string | null): boolean {
+  return Boolean(gloss && gloss.startsWith('CL:'))
+}
+
+/** Pull the (simplified) classifier characters out of a CC-CEDICT "CL:" gloss.
+ * Each entry is `traditional|simplified[pinyin]`; we keep the simplified form and
+ * drop the bracketed pinyin. Returns [] for a non-classifier gloss. */
+export function parseClassifiers(gloss: string | null): string[] {
+  if (!isClassifierGloss(gloss)) return []
+  const out: string[] = []
+  for (const tok of gloss!.slice(3).split(',')) {
+    const noPinyin = tok.replace(/\[[^\]]*\]/g, '').trim()
+    if (!noPinyin) continue
+    const parts = noPinyin.split('|')
+    const simp = (parts.length > 1 ? parts[1] : parts[0]).trim()
+    if (simp && !out.includes(simp)) out.push(simp)
+  }
+  return out
 }
 
 // Very common English words, used to detect a token that is several words run
@@ -236,21 +260,14 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
   }
 }
 
-interface SiblingRow {
-  id: string; lang: LangCode; headword: string
-  senses: { gloss_vi: string | null; gloss_en: string | null; sense_order: number }[] | null
-}
-const SIBLING_SELECT = 'id, lang, headword, senses(gloss_vi, gloss_en, sense_order)'
-
-function primaryGloss(senses: SiblingRow['senses']): { glossVi: string | null; glossEn: string | null } {
-  const s = [...(senses ?? [])].sort((a, b) => a.sense_order - b.sense_order)[0]
-  return { glossVi: s?.gloss_vi ?? null, glossEn: s?.gloss_en ?? null }
-}
+interface SiblingRpcRow { id: string; lang: LangCode; headword: string; gloss_vi: string | null; gloss_en: string | null }
 
 /**
  * Equivalents of an entry in the other languages, bridged through an English
- * pivot (see crosslang.ts). For a non-English entry we also surface the English
- * word it glosses to. Same-language matches are excluded — this is the
+ * pivot (see crosslang.ts). Pivot terms are computed here; the actual match runs
+ * in the `lex.match_cross_language` SQL function so it is not subject to the
+ * PostgREST row cap (the old "fetch all zh/es and filter in JS" approach silently
+ * dropped most entries). Same-language matches are excluded — this is the
  * "other languages" panel, not a synonyms list.
  */
 export async function getCrossLanguage(
@@ -264,29 +281,14 @@ export async function getCrossLanguage(
 
   const pivots = entryPivots(row.lang, row.headword_normalized ?? '', (row.senses ?? []).map((s) => s.gloss_en))
   if (pivots.length === 0) return []
-  const pivotSet = new Set(pivots)
 
-  const byId = new Map<string, CrossLangSibling>()
-  const add = (r: SiblingRow) => {
-    if (r.id === entryId || r.lang === row.lang || byId.has(r.id)) return
-    byId.set(r.id, { id: r.id, lang: r.lang, headword: r.headword, ...primaryGloss(r.senses) })
-  }
-
-  if (row.lang !== 'en') {
-    const en = await supabase.schema('lex').from('entries')
-      .select(SIBLING_SELECT).eq('lang', 'en').in('headword_normalized', pivots)
-    if (en.error) throw en.error
-    for (const r of (en.data ?? []) as unknown as SiblingRow[]) add(r)
-  }
-
-  const others = await supabase.schema('lex').from('entries').select(SIBLING_SELECT).in('lang', ['zh', 'es'])
-  if (others.error) throw others.error
-  for (const r of (others.data ?? []) as unknown as SiblingRow[]) {
-    const terms = (r.senses ?? []).map((s) => cleanGlossTerm(s.gloss_en)).filter((t): t is string => Boolean(t))
-    if (terms.some((t) => pivotSet.has(t))) add(r)
-  }
-
-  return [...byId.values()].slice(0, 12)
+  const { data, error } = await supabase.schema('lex').rpc('match_cross_language', {
+    p_terms: pivots, p_exclude_lang: row.lang, p_exclude_id: entryId,
+  })
+  if (error) throw error
+  return ((data ?? []) as SiblingRpcRow[]).map((r) => ({
+    id: r.id, lang: r.lang, headword: r.headword, glossVi: r.gloss_vi, glossEn: r.gloss_en,
+  }))
 }
 
 interface CharRow {

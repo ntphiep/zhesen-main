@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pickSenses, isCleanExample } from '@/lib/dictionary/search'
+import { pickSenses, isCleanExample, isClassifierGloss, parseClassifiers } from '@/lib/dictionary/search'
 import { classifyRelations } from '@/lib/dictionary/relations'
 import { groupWordForms } from '@/lib/dictionary/family'
 import type { DictSense, DictRelation } from '@/lib/dictionary/types'
@@ -18,6 +18,11 @@ describe('pickSenses', () => {
     const senses = [sense(1, null), sense(1, 'has-vi'), sense(2, 'b')]
     const { shown } = pickSenses(senses, 2)
     expect(shown.some((s) => s.glossVi === 'has-vi')).toBe(true)
+  })
+  it('surfaces Vietnamese-bearing senses ahead of English-only ones for a VN learner', () => {
+    const senses = [sense(1, null), sense(2, null), sense(5, 'có-vi')]
+    const { shown } = pickSenses(senses, 1)
+    expect(shown[0].glossVi).toBe('có-vi')
   })
   it('returns all and hiddenCount 0 when under the cap', () => {
     const { shown, hiddenCount } = pickSenses([sense(1, 'a')], 3)
@@ -48,6 +53,19 @@ describe('isCleanExample', () => {
   })
   it('treats empty as not clean', () => {
     expect(isCleanExample('')).toBe(false)
+  })
+})
+
+describe('classifiers (Chinese CL: glosses)', () => {
+  it('flags CC-CEDICT classifier glosses', () => {
+    expect(isClassifierGloss('CL:个[ge4]')).toBe(true)
+    expect(isClassifierGloss('dog')).toBe(false)
+    expect(isClassifierGloss(null)).toBe(false)
+  })
+  it('extracts the simplified classifier characters, dropping pinyin', () => {
+    expect(parseClassifiers('CL:隻|只[zhi1],條|条[tiao2]')).toEqual(['只', '条'])
+    expect(parseClassifiers('CL:个[ge4]')).toEqual(['个'])
+    expect(parseClassifiers('dog')).toEqual([])
   })
 })
 

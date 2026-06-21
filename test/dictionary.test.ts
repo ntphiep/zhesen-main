@@ -74,45 +74,42 @@ function queueClient(results: { data: unknown; error: null }[]) {
   } as unknown as import('@supabase/supabase-js').SupabaseClient
 }
 
-// Cross-language mock: select/eq are chainable; maybeSingle (source row) and in
-// (sibling queries) are terminal and consume the result queue in call order.
+// Cross-language mock: the source row is read via from(...).maybeSingle(); the
+// match runs via schema(...).rpc(...). Both consume the result queue in call order.
+// The matching/exclusion itself lives in the SQL function, so the rpc result is the
+// already-filtered sibling list; the unit test covers pivot gating + row mapping.
 function crossClient(results: { data: unknown; error: null }[]) {
   let i = 0
   const next = () => Promise.resolve(results[i++] ?? { data: [], error: null })
   const builder: Record<string, unknown> = {}
-  Object.assign(builder, { select: () => builder, eq: () => builder, in: () => next(), maybeSingle: () => next() })
-  return { schema: () => ({ from: () => builder }) } as unknown as import('@supabase/supabase-js').SupabaseClient
+  Object.assign(builder, { select: () => builder, eq: () => builder, maybeSingle: () => next() })
+  return { schema: () => ({ from: () => builder, rpc: () => next() }) } as unknown as import('@supabase/supabase-js').SupabaseClient
 }
 
-const sib = (id: string, lang: string, headword: string, glossVi: string | null, glossEn: string | null) =>
-  ({ id, lang, headword, senses: [{ gloss_vi: glossVi, gloss_en: glossEn, sense_order: 1 }] })
+const sib = (id: string, lang: string, headword: string, gloss_vi: string | null, gloss_en: string | null) =>
+  ({ id, lang, headword, gloss_vi, gloss_en })
 
 describe('getCrossLanguage', () => {
-  it('bridges an English word to other-language entries that gloss to it', async () => {
+  it('maps the matcher result for an English word, snake_case to camelCase', async () => {
     const client = crossClient([
       { data: { lang: 'en', headword_normalized: 'dog', senses: [{ gloss_en: 'dog' }] }, error: null }, // source
-      { data: [                                                                                          // zh/es candidates
-        sib('es:perro', 'es', 'perro', 'con chó', 'dog'),
-        sib('zh:狗', 'zh', '狗', null, 'dog'),
-        sib('es:gato', 'es', 'gato', null, 'cat'),
-      ], error: null },
+      { data: [sib('es:perro', 'es', 'perro', 'con chó', 'dog'), sib('zh:狗', 'zh', '狗', null, 'dog')], error: null }, // rpc
     ])
     const res = await getCrossLanguage(client, 'en:dog')
     expect(res.map((r) => r.id)).toEqual(['es:perro', 'zh:狗'])
     expect(res[0]).toMatchObject({ glossVi: 'con chó', glossEn: 'dog' })
   })
 
-  it('for a non-English word, surfaces the English pivot plus other languages, excluding same language', async () => {
+  it('maps the matcher result for a non-English word', async () => {
     const client = crossClient([
-      { data: { lang: 'zh', headword_normalized: '狗', senses: [{ gloss_en: 'dog' }] }, error: null },   // source
-      { data: [sib('en:dog', 'en', 'dog', 'con chó', 'dog')], error: null },                              // English pivot
-      { data: [sib('zh:狗', 'zh', '狗', null, 'dog'), sib('es:perro', 'es', 'perro', null, 'dog')], error: null }, // candidates
+      { data: { lang: 'zh', headword_normalized: '狗', senses: [{ gloss_en: 'dog' }] }, error: null }, // source
+      { data: [sib('en:dog', 'en', 'dog', 'con chó', 'dog'), sib('es:perro', 'es', 'perro', null, 'dog')], error: null }, // rpc
     ])
     const res = await getCrossLanguage(client, 'zh:狗')
-    expect(res.map((r) => r.id)).toEqual(['en:dog', 'es:perro']) // zh:狗 (self/same-lang) excluded
+    expect(res.map((r) => r.id)).toEqual(['en:dog', 'es:perro'])
   })
 
-  it('returns [] when the gloss yields no usable pivot', async () => {
+  it('returns [] without calling the matcher when the gloss yields no usable pivot', async () => {
     const client = crossClient([
       { data: { lang: 'zh', headword_normalized: '吧', senses: [{ gloss_en: '(particle); marker' }] }, error: null },
     ])

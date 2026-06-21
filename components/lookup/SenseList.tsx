@@ -1,14 +1,20 @@
 'use client'
 import { useState } from 'react'
-import { pickSenses } from '@/lib/dictionary/search'
+import { pickSenses, isClassifierGloss, parseClassifiers } from '@/lib/dictionary/search'
 import type { DictSense } from '@/lib/dictionary/types'
 
 export function SenseList({ senses }: { senses: DictSense[] }) {
   const [expanded, setExpanded] = useState(false)
-  if (senses.length === 0) return null
 
-  const { hiddenCount } = pickSenses(senses, 3)
-  const visible = expanded ? [...senses].sort((a, b) => a.senseOrder - b.senseOrder) : pickSenses(senses, 3).shown
+  // Chinese entries carry CC-CEDICT "CL:" rows that are classifier notes, not
+  // meanings — surface them as a separate "Lượng từ" line and keep them out of
+  // the numbered meaning list.
+  const classifiers = [...new Set(senses.flatMap((s) => parseClassifiers(s.glossEn)))]
+  const meaningful = senses.filter((s) => !isClassifierGloss(s.glossEn))
+  if (meaningful.length === 0 && classifiers.length === 0) return null
+
+  const { hiddenCount } = pickSenses(meaningful, 3)
+  const visible = expanded ? [...meaningful].sort((a, b) => a.senseOrder - b.senseOrder) : pickSenses(meaningful, 3).shown
 
   const groups: { pos: string | null; items: DictSense[] }[] = []
   for (const s of visible) {
@@ -40,8 +46,16 @@ export function SenseList({ senses }: { senses: DictSense[] }) {
           onClick={() => setExpanded((v) => !v)}
           className="w-fit text-sm text-blue-700 hover:underline"
         >
-          {expanded ? 'Thu gọn' : `Xem tất cả ${senses.length} nghĩa`}
+          {expanded ? 'Thu gọn' : `Xem tất cả ${meaningful.length} nghĩa`}
         </button>
+      )}
+      {classifiers.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-xs font-semibold uppercase tracking-wide text-black/40">Lượng từ</span>
+          {classifiers.map((c) => (
+            <span key={c} className="rounded-full bg-black/5 px-3 py-1 font-medium text-black/80">{c}</span>
+          ))}
+        </div>
       )}
     </section>
   )
