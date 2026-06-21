@@ -47,6 +47,12 @@ describe('LookupHero', () => {
     render(<LookupHero detail={{ ...detail, lang: 'zh' }} hanViet="khuyển" />)
     expect(screen.getByText(/khuyển/)).toBeInTheDocument()
   })
+  it('shows a "Thông dụng" badge for high-frequency words only', () => {
+    const { rerender } = render(<LookupHero detail={{ ...detail, frequencyRank: 500 }} />)
+    expect(screen.getByText('Thông dụng')).toBeInTheDocument()
+    rerender(<LookupHero detail={{ ...detail, frequencyRank: 9000 }} />)
+    expect(screen.queryByText('Thông dụng')).not.toBeInTheDocument()
+  })
 })
 
 describe('SenseList', () => {

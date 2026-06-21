@@ -73,7 +73,21 @@ chất lượng nằm ở dữ liệu**, do `chesen-pipeline` sinh ra.
 - Tăng số entry zh/es (đặc biệt các từ vựng A1-B1 phổ biến) sẽ tự động mở rộng độ phủ
   cross-language mà không cần đổi code app.
 
-### 6. Thứ tự nghĩa (`sense_order`) chưa phản ánh nghĩa thông dụng
+### 6. ~213 entry EN không có sense nào (danh từ riêng) — NGHIÊM TRỌNG
+- Ban đầu **285 entry EN có 0 sense** (không hiện được mục "Nghĩa", trang trông như hỏng).
+  Toàn danh từ riêng: tháng, thứ, quốc gia, châu lục, quốc tịch, tên người, bang/thành phố Mỹ,
+  thương hiệu (youtube, microsoft, netflix...). 84 từ nằm trong top-3000 phổ biến.
+- App đã seed thủ công nghĩa cho **74 từ nhóm đóng** (12 tháng, 7 thứ, châu lục, ~35 quốc gia,
+  ~20 quốc tịch, christmas/halloween) qua migration `0009_seed_proper_noun_senses.sql`
+  (provenance `curated-seed-0009`, `gloss_vi_is_mt=false`). **Còn lại ~213 entry** (tên người,
+  bang/thành phố, thương hiệu) chưa có nghĩa.
+- Pipeline cần: trích lại sense cho danh từ riêng (Wiktionary thường để chữ hoa "January",
+  "London" nên bước extract theo headword lowercase bị trượt), hoặc sinh gloss kiểu phân loại
+  ("(tên người)", "(thành phố)", "(thương hiệu)"). **Không seed trùng** nhóm đã có
+  `provenance='curated-seed-0009'`.
+- Kiểm tra: `select count(*) from lex.entries e where lang='en' and not exists (select 1 from lex.senses s where s.entry_id=e.id);`
+
+### 7. Thứ tự nghĩa (`sense_order`) chưa phản ánh nghĩa thông dụng
 - Ví dụ `develop`: sense đầu (`sense_order` nhỏ nhất) đang là "mở rộng / To discover",
   trong khi nghĩa thông dụng là "phát triển". App chỉ hiển thị 2-3 nghĩa đầu, nên thứ tự
   sai làm lộ nghĩa hiếm. Cần xếp `sense_order` theo tần suất sử dụng thực tế.

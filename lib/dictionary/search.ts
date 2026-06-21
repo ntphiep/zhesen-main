@@ -27,13 +27,49 @@ export function pickSenses(senses: DictSense[], max = 3): { shown: DictSense[]; 
   return { shown: sorted.slice(0, max), hiddenCount: Math.max(0, senses.length - max) }
 }
 
+// Very common English words, used to detect a token that is several words run
+// together (e.g. "Ilastsawher" = i+last+saw+her). Kept small and high-frequency so
+// the check below rarely fires on a real long word.
+const COMMON_WORDS = new Set([
+  'i', 'a', 'an', 'the', 'and', 'or', 'of', 'to', 'in', 'on', 'at', 'for', 'with', 'as', 'by', 'from',
+  'is', 'are', 'was', 'were', 'be', 'been', 'do', 'did', 'does', 'has', 'had', 'have', 'will', 'would',
+  'can', 'could', 'not', 'no', 'so', 'but', 'up', 'out', 'all', 'this', 'that', 'these', 'those',
+  'he', 'she', 'it', 'we', 'they', 'you', 'me', 'him', 'her', 'his', 'my', 'your', 'our', 'their',
+  'who', 'what', 'when', 'where', 'how', 'then', 'there', 'here', 'into', 'over', 'about', 'like', 'just',
+  'one', 'two', 'got', 'get', 'see', 'saw', 'last', 'man', 'day', 'hat', 'red', 'blue', 'lake', 'house',
+  'mother', 'father', 'child', 'picture', 'history', 'test', 'friend', 'told', 'seen', 'swimmer', 'better', 'far',
+])
+const MAX_COMMON_LEN = 8
+
+/** Greedy longest-match segmentation of a lowercase token into COMMON_WORDS.
+ * Returns the number of pieces, or 0 if it cannot be fully segmented. */
+function segmentCommon(token: string): number {
+  let i = 0
+  let pieces = 0
+  while (i < token.length) {
+    let matched = 0
+    for (let len = Math.min(MAX_COMMON_LEN, token.length - i); len >= 1; len--) {
+      if (COMMON_WORDS.has(token.slice(i, i + len))) { matched = len; break }
+    }
+    if (matched === 0) return 0
+    i += matched
+    pieces++
+  }
+  return pieces
+}
+
 /** Heuristic: reject example sentences whose words have run together (pipeline data
- * corruption, e.g. "WhenIspoketo"). Catches camelCase boundaries and over-long tokens. */
+ * corruption). Catches camelCase boundaries, over-long tokens, and a long token that
+ * fully decomposes into 3+ common words (e.g. "Ilastsawher"). */
 export function isCleanExample(text: string): boolean {
   const t = text.trim()
   if (!t) return false
   if (/[a-z][A-Z]/.test(t)) return false
-  if (t.split(/\s+/).some((w) => w.replace(/[^\p{L}]/gu, '').length > 14)) return false
+  for (const w of t.split(/\s+/)) {
+    const letters = w.replace(/[^\p{L}]/gu, '')
+    if (letters.length > 14) return false
+    if (letters.length >= 11 && segmentCommon(letters.toLowerCase()) >= 3) return false
+  }
   return true
 }
 
@@ -49,13 +85,14 @@ function toProns(rows: PronRow[] | null): DictPron[] {
 
 interface EntryPreviewRow {
   id: string; lang: LangCode; headword: string; traditional: string | null; level: string | null
+  frequency_rank: number | null
   attributes: Record<string, unknown> | null
   senses: SenseRow[] | null
   pronunciations: PronRow[] | null
 }
 
 const PREVIEW_SELECT =
-  'id, lang, headword, traditional, level, attributes, senses(pos, gloss_vi, gloss_en, sense_order), pronunciations(accent, ipa, audio_url)'
+  'id, lang, headword, traditional, level, frequency_rank, attributes, senses(pos, gloss_vi, gloss_en, sense_order), pronunciations(accent, ipa, audio_url)'
 
 function toPreview(r: EntryPreviewRow): DictEntryPreview {
   const senses = toSenses(r.senses)
@@ -68,6 +105,7 @@ function toPreview(r: EntryPreviewRow): DictEntryPreview {
     glossVi: primary?.glossVi ?? null,
     glossEn: primary?.glossEn ?? null,
     audioUrl: prons.find((p) => p.audioUrl)?.audioUrl ?? null,
+    frequencyRank: r.frequency_rank ?? null,
   }
 }
 
@@ -161,7 +199,7 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
   const { data, error } = await supabase
     .schema('lex')
     .from('entries')
-    .select('id, lang, headword, traditional, level, attributes, senses(pos, gloss_vi, gloss_en, sense_order), pronunciations(accent, ipa, audio_url), examples!examples_entry_id_fkey(text, reading, translation_vi, translation_en), lex_relations!lex_relations_entry_id_fkey(relation_type, related_text, related_entry_id)')
+    .select('id, lang, headword, traditional, level, frequency_rank, attributes, senses(pos, gloss_vi, gloss_en, sense_order), pronunciations(accent, ipa, audio_url), examples!examples_entry_id_fkey(text, reading, translation_vi, translation_en), lex_relations!lex_relations_entry_id_fkey(relation_type, related_text, related_entry_id)')
     .eq('id', entryId)
     .maybeSingle()
   if (error) throw error

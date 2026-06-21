@@ -36,6 +36,16 @@ describe('isCleanExample', () => {
     expect(isCleanExample('WhenIspoketo John, he told me he had seen you.')).toBe(false)
     expect(isCleanExample('She was a farbetterswimmerthan herfriend.')).toBe(false)
   })
+  it('rejects a merged run of common words even when each piece is short', () => {
+    expect(isCleanExample('Ilastsawher in January.')).toBe(false)
+    expect(isCleanExample('Thehatwasblueandred.')).toBe(false)
+  })
+  it('keeps legitimate long words and compounds', () => {
+    expect(isCleanExample('The development of the economy was rapid.')).toBe(true)
+    expect(isCleanExample('My grandmother lives near the lake.')).toBe(true)
+    expect(isCleanExample('International cooperation is important.')).toBe(true)
+    expect(isCleanExample('We did it together that afternoon.')).toBe(true)
+  })
   it('treats empty as not clean', () => {
     expect(isCleanExample('')).toBe(false)
   })

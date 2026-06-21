@@ -33,6 +33,8 @@ export interface DictEntryPreview {
   glossVi: string | null
   glossEn: string | null
   audioUrl: string | null
+  /** Corpus frequency rank (1 = most frequent); null when unknown. */
+  frequencyRank?: number | null
 }
 export interface DictEntryDetail extends DictEntryPreview {
   senses: DictSense[]

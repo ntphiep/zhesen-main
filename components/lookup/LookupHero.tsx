@@ -14,6 +14,9 @@ export function LookupHero({ detail, hanViet }: { detail: DictEntryDetail; hanVi
         {detail.level && (
           <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs font-medium text-black/60">{detail.level}</span>
         )}
+        {detail.frequencyRank != null && detail.frequencyRank <= 3000 && (
+          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Thông dụng</span>
+        )}
         <div className="ml-auto"><AddToWordlistButton entry={detail} /></div>
       </div>
       {(pinyin || hanViet) && (
