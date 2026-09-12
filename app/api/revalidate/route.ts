@@ -10,7 +10,7 @@ import { revalidateTag } from 'next/cache'
  *
  *   curl -X POST https://<host>/api/revalidate -H "x-revalidate-secret: …"
  */
-const TAGS = ['lex', 'content'] as const
+const TAGS = ['lex'] as const
 
 export async function POST(request: Request): Promise<Response> {
   const secret = process.env.REVALIDATE_SECRET

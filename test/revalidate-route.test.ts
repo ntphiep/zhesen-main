@@ -39,11 +39,18 @@ describe('POST /api/revalidate', () => {
     expect(revalidateTag).not.toHaveBeenCalled()
   })
 
-  it('clears both cache tags on the right secret', async () => {
+  it('clears the cache tag on the right secret', async () => {
     const res = await post({ 'x-revalidate-secret': 'test-secret' })
     expect(res.status).toBe(200)
-    await expect(res.json()).resolves.toMatchObject({ revalidated: ['lex', 'content'] })
+    await expect(res.json()).resolves.toMatchObject({ revalidated: ['lex'] })
     expect(revalidateTag).toHaveBeenCalledWith('lex', 'max')
-    expect(revalidateTag).toHaveBeenCalledWith('content', 'max')
+  })
+
+  it('clears every tag the app actually caches under, and no more', async () => {
+    // A tag listed here that nothing caches under is dead weight; a tag missing
+    // from here leaves data stale after the pipeline loads new rows. `content`
+    // was the former: it outlived the JSON seed files it belonged to.
+    await post({ 'x-revalidate-secret': 'test-secret' })
+    expect(revalidateTag.mock.calls.map(([tag]) => tag)).toEqual(['lex'])
   })
 })
