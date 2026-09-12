@@ -68,11 +68,12 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
   return (
     <dialog
       ref={dialogRef}
+      aria-labelledby="import-csv-title"
       className="rounded-xl bg-white shadow-xl p-0 w-full max-w-xl backdrop:bg-black/30"
       onClose={onClose}
     >
       <div className="flex items-center justify-between px-5 pt-4 pb-0">
-        <h2 className="text-lg font-semibold">Nhập từ CSV</h2>
+        <h2 id="import-csv-title" className="text-lg font-semibold">Nhập từ CSV</h2>
         <button className="text-black/40 hover:text-black/70 text-xl leading-none" onClick={onClose} aria-label="Đóng">×</button>
       </div>
 

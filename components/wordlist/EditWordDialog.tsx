@@ -93,11 +93,12 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
   return (
     <dialog
       ref={dialogRef}
+      aria-labelledby="edit-word-title"
       className="rounded-xl bg-white shadow-xl p-0 w-full max-w-lg backdrop:bg-black/30"
       onClose={onClose}
     >
       <div className="flex items-center justify-between px-5 pt-4 pb-0">
-        <h2 className="text-lg font-semibold">Chỉnh sửa từ</h2>
+        <h2 id="edit-word-title" className="text-lg font-semibold">Chỉnh sửa từ</h2>
         <button
           className="text-black/40 hover:text-black/70 text-xl leading-none"
           onClick={onClose}

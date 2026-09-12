@@ -218,6 +218,8 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
         onKeyDown={onKeyDown}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
+        id="dictionary-search"
+        name="q"
         aria-label="Tra cứu từ"
         placeholder="Nhập từ cần tra (Anh · Trung · Tây Ban Nha · Việt)..."
         className="w-full rounded-xl border border-black/15 px-4 py-3 text-base shadow-sm focus:border-black/40 focus:outline-none"
@@ -239,6 +241,15 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
           </div>
         </div>
       )}
+      {/* Visually-hidden live region: screen readers only get result-count updates from
+          here, since the visible list below has no other role="status" text. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {loading
+          ? 'Đang tìm...'
+          : query.trim()
+            ? `${total} kết quả cho "${query.trim()}"`
+            : ''}
+      </p>
       {loading && <p className="text-sm text-black/40">Đang tìm...</p>}
       {showNoResults && <p className="text-sm text-black/40">Không tìm thấy kết quả.</p>}
       {showSuggestions && (

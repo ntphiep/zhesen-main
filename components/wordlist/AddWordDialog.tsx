@@ -108,11 +108,12 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
   return (
     <dialog
       ref={dialogRef}
+      aria-labelledby="add-word-title"
       className="rounded-xl bg-white shadow-xl p-0 w-full max-w-lg backdrop:bg-black/30"
       onClose={onClose}
     >
       <div className="flex items-center justify-between px-5 pt-4 pb-0">
-        <h2 className="text-lg font-semibold">Thêm từ mới</h2>
+        <h2 id="add-word-title" className="text-lg font-semibold">Thêm từ mới</h2>
         <button
           className="text-black/40 hover:text-black/70 text-xl leading-none"
           onClick={onClose}
@@ -163,6 +164,12 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
                 className="flex-1 rounded-lg border border-black/15 px-3 py-2 text-sm"
               />
             </div>
+
+            {/* Debounced search results update with no other status text -- announce the
+                count for screen readers, same pattern as SearchBox. */}
+            <p role="status" aria-live="polite" className="sr-only">
+              {query.trim() ? `${results.length} kết quả cho "${query.trim()}"` : ''}
+            </p>
 
             {results.length > 0 && (
               <ul className="flex flex-col gap-1 max-h-60 overflow-y-auto">
