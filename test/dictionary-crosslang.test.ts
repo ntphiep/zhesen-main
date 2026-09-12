@@ -9,11 +9,20 @@ describe('cleanGlossTerm', () => {
     expect(cleanGlossTerm('The Sun')).toBe('sun')
     expect(cleanGlossTerm('very')).toBe('very')
   })
-  it('rejects definitions and phrases, not single equivalents', () => {
-    expect(cleanGlossTerm('now (at the present time)')).toBeNull()
-    expect(cleanGlossTerm('goods; property; possessions')).toBeNull()
-    expect(cleanGlossTerm('each; every')).toBeNull()
+  // The contract changed on 2026-09-12. It used to reject any gloss containing a
+  // bracket or a semicolon, which is how most Spanish and Chinese senses are
+  // written -- "dog (the species Canis familiaris ...)" for perro. The panel found
+  // nothing for those words. The head of the gloss is now taken instead.
+  it('takes the equivalent that leads a gloss and drops the definition after it', () => {
+    expect(cleanGlossTerm('now (at the present time)')).toBe('now')
+    expect(cleanGlossTerm('dog (the species Canis familiaris)')).toBe('dog')
+    expect(cleanGlossTerm('goods; property; possessions')).toBe('goods')
+    expect(cleanGlossTerm('each; every')).toBe('each')
+  })
+  it('still rejects a gloss with no equivalent to lead with', () => {
     expect(cleanGlossTerm('plural of año')).toBeNull()
+    expect(cleanGlossTerm('(particle); marker')).toBeNull()
+    expect(cleanGlossTerm('CL:隻|只[zhi1]')).toBeNull()
     expect(cleanGlossTerm('')).toBeNull()
     expect(cleanGlossTerm(null)).toBeNull()
   })
@@ -25,7 +34,8 @@ describe('entryPivots', () => {
   })
   it('uses cleaned English glosses (deduped) for other languages', () => {
     expect(entryPivots('zh', '狗', ['dog', 'hound'])).toEqual(['dog', 'hound'])
-    expect(entryPivots('es', 'perro', ['dog', 'a dog', 'now (x)'])).toEqual(['dog'])
+    expect(entryPivots('es', 'perro', ['dog (the species)', 'a dog', 'clothes peg, clothespin']))
+      .toEqual(['dog', 'clothes peg'])
   })
   it('returns no pivots when nothing is usable', () => {
     expect(entryPivots('zh', '吧', ['(particle); sentence-final marker'])).toEqual([])

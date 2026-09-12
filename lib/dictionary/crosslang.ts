@@ -12,16 +12,25 @@ import type { LangCode } from '@/lib/languages'
  */
 
 /**
- * Normalize an `gloss_en` value into a candidate English headword, or null if it
- * reads as a definition/phrase rather than a single equivalent. Strips a leading
- * article or "to", lowercases, and rejects anything with punctuation or more than
- * two words.
+ * Normalize a `gloss_en` value into a candidate English headword, or null if what
+ * is left does not read as a single equivalent.
+ *
+ * Most Spanish and Chinese senses are written as the equivalent followed by a
+ * definition: "dog (the species Canis familiaris ...)", "cat (unspecified
+ * gender)", "pop, soda (soft drink)". Rejecting anything with a bracket in it
+ * threw away the commonest shape in the data -- looking up "perro" found no
+ * English equivalent at all -- so the head of the gloss is taken instead:
+ * everything before the first "(", ";" or ",".
+ *
+ * The same expression indexes the other side of the match, in
+ * `lex.match_cross_language`. If one changes, both must.
  */
 export function cleanGlossTerm(gloss: string | null): string | null {
   if (!gloss) return null
-  const t = gloss.trim().toLowerCase().replace(/^(to|a|an|the)\s+/, '')
+  const head = gloss.split(/[(;,]/)[0]
+  const t = head.trim().toLowerCase().replace(/^(to|a|an|the)\s+/, '').trim()
   if (!t) return null
-  if (/[(),;:"/0-9]/.test(t)) return null
+  if (/[:"/0-9]/.test(t)) return null
   if (t.split(/\s+/).length > 2) return null
   return t
 }
