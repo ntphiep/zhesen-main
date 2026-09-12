@@ -74,7 +74,7 @@ export function MatchClient() {
       </div>
 
       {done ? (
-        <div className="rounded-2xl border border-black/10 p-8 text-center">
+        <div role="status" aria-live="polite" className="rounded-2xl border border-black/10 p-8 text-center">
           <div className="text-2xl font-semibold">Hoàn thành trong {seconds}s 🎉</div>
           <div className="mt-6 flex justify-center gap-3">
             <button onClick={() => setRound((r) => r + 1)} className="rounded-lg bg-black px-5 py-2 text-white">Chơi lại</button>
@@ -83,6 +83,10 @@ export function MatchClient() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {/* Matched/wrong feedback is otherwise color-only -- announce it for screen readers. */}
+          <p role="status" aria-live="polite" className="sr-only col-span-full">
+            {wrong.length > 0 ? 'Không khớp, thử lại.' : ''}
+          </p>
           {tiles.map((t) => {
             const isMatched = matched.has(t.key)
             const isSelected = selected === t.key

@@ -22,6 +22,14 @@ export function QuizCard({
       {question.ipa && <div className="ipa mt-1 text-center text-black/40">/{question.ipa}/</div>}
       <p className="mt-2 text-center text-sm text-black/50">Chọn nghĩa đúng</p>
 
+      {/* Feedback is otherwise color-only (green/red option borders), which a screen
+          reader can't perceive -- announce the outcome as text here. */}
+      {answered && (
+        <p role="status" aria-live="polite" className="sr-only">
+          {selected === question.answer ? 'Chính xác' : `Sai. Đáp án đúng là ${question.answer}`}
+        </p>
+      )}
+
       <div className="mt-6 flex flex-col gap-2">
         {question.options.map((opt) => {
           let cls = 'border-black/10 hover:bg-black/5'

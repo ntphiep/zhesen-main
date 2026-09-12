@@ -57,7 +57,7 @@ export function TypingCard({
       </form>
 
       {answered && (
-        <div className="mt-4 text-center">
+        <div role="status" aria-live="polite" className="mt-4 text-center">
           {result === 'correct' && <p className="font-medium text-emerald-700">Chính xác ✓</p>}
           {result === 'close' && <p className="font-medium text-amber-700">Gần đúng — đáp án: <b>{word.headword}</b></p>}
           {result === 'wrong' && <p className="font-medium text-rose-700">Đáp án: <b>{word.headword}</b></p>}

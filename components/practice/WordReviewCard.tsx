@@ -29,7 +29,7 @@ export function WordReviewCard({
 
       {revealed ? (
         <>
-          <div className="mt-6 border-t border-black/10 pt-6">
+          <div role="status" aria-live="polite" className="mt-6 border-t border-black/10 pt-6">
             {card.meaningVi && <div className="text-xl">{card.meaningVi}</div>}
             {card.meaningEn && <div className="mt-1 text-sm text-black/50">{card.meaningEn}</div>}
             {card.example && (
