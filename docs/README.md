@@ -14,7 +14,7 @@ mâu thuẫn, mã là đúng.
 | --- | --- |
 | [`specs/2026-09-12-zhesen-handoff.md`](superpowers/specs/2026-09-12-zhesen-handoff.md) | **Đọc trước tiên.** Trạng thái đã kiểm chứng, việc còn nợ, bẫy của môi trường |
 | [`specs/2026-09-12-zhesen-restart-design.md`](superpowers/specs/2026-09-12-zhesen-restart-design.md) | Đợt khởi động lại: đổi tên, thu hẹp phạm vi về tra cứu, sổ tay và ôn tập |
-| [`specs/2026-06-20-zhesen-improvement-roadmap.md`](superpowers/specs/2026-06-20-zhesen-improvement-roadmap.md) | Danh sách cải tiến F1-F12, vẫn còn mục chưa làm |
+| [`specs/2026-06-20-zhesen-improvement-roadmap.md`](superpowers/specs/2026-06-20-zhesen-improvement-roadmap.md) | Khảo sát tháng Sáu, F1-F12 đã làm xong hết; giữ làm hồ sơ, kèm bảng đối chiếu từng mục với mã |
 | [`research/2026-07-01-claude-recurring-mistakes.md`](superpowers/research/2026-07-01-claude-recurring-mistakes.md) | Sổ lỗi lặp lại của agent. Lỗi nào lặp nhiều thì được nâng thành rule trong `AGENTS.md` |
 | [`specs/2026-06-21-zhesen-pipeline-data-fixes-handoff.md`](superpowers/specs/2026-06-21-zhesen-pipeline-data-fixes-handoff.md) | Việc còn nợ bên repo pipeline, vì dữ liệu chưa đủ thì mã không sửa được |
 
