@@ -1,7 +1,7 @@
 import { AudioButton } from '@/components/AudioButton'
 import { pickAccentRows } from '@/lib/dictionary/pronunciation'
 import type { DictPron } from '@/lib/dictionary/types'
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 /**
  * Cambridge-style pronunciation block: a UK and a US row for English (each with

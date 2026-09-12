@@ -7,11 +7,11 @@ import { detectOrder } from '@/lib/dictionary/detect'
 import { pushRecent } from '@/lib/dictionary/recent'
 import { LANG_LABELS, LANG_FLAGS } from '@/lib/dictionary/labels'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 type Results = Record<LangCode, DictEntryPreview[]>
 const EMPTY: Results = { en: [], zh: [], es: [] }
-const RECENT_KEY = 'chesen:recent-searches'
+const RECENT_KEY = 'zhesen:recent-searches'
 
 /**
  * Auto-detecting search box. Queries all three languages via the cached
@@ -25,46 +25,63 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   const [results, setResults] = useState<Results>(EMPTY)
   const [loading, setLoading] = useState(false)
   const [active, setActive] = useState(0)
-  const [recent, setRecent] = useState<string[]>([])
+  // Lazy-init from localStorage on mount; guarded for SSR (this runs during the
+  // server-rendered pass too, before 'use client' hydration takes over on the client).
+  const [recent, setRecent] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const raw = localStorage.getItem(RECENT_KEY)
+      return raw ? (JSON.parse(raw) as string[]) : []
+    } catch {
+      return []
+    }
+  })
   const [focused, setFocused] = useState(false)
   const cache = useRef(new Map<string, Results>())
   const router = useRouter()
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(RECENT_KEY)
-      if (raw) setRecent(JSON.parse(raw) as string[])
-    } catch { /* ignore unavailable/corrupt storage */ }
-  }, [])
+  // Reset selection and stale results synchronously as soon as the query changes,
+  // instead of in an effect (adjust state during render, per
+  // react.dev/learn/you-might-not-need-an-effect). The ref-backed cache can't be read
+  // during render, so the cache-hit/fetch branching for `results` stays in the effect.
+  const [prevQuery, setPrevQuery] = useState(query)
+  if (query !== prevQuery) {
+    setPrevQuery(query)
+    setActive(0)
+    if (!query.trim()) { setResults(EMPTY); setLoading(false) }
+  }
 
   useEffect(() => {
     const q = query.trim()
-    if (!q) { setResults(EMPTY); setLoading(false); return }
+    if (!q) return
     const key = q.toLowerCase()
-    const cached = cache.current.get(key)
-    if (cached) { setResults(cached); setLoading(false); return }
-    setLoading(true)
     const ctrl = new AbortController()
-    const id = setTimeout(async () => {
-      try {
-        const res = await fetch(`/dictionary/search?q=${encodeURIComponent(q)}`, { signal: ctrl.signal })
-        const data = (await res.json()) as Results
-        cache.current.set(key, data)
-        setResults(data)
-      } catch (e) {
-        if ((e as Error).name !== 'AbortError') setResults(EMPTY)
-      } finally {
-        setLoading(false)
-      }
-    }, 200)
-    return () => { clearTimeout(id); ctrl.abort() }
+    let id: ReturnType<typeof setTimeout> | undefined
+    async function run() {
+      const cached = cache.current.get(key)
+      if (cached) { setResults(cached); setLoading(false); return }
+      setLoading(true)
+      id = setTimeout(async () => {
+        try {
+          const res = await fetch(`/dictionary/search?q=${encodeURIComponent(q)}`, { signal: ctrl.signal })
+          const data = (await res.json()) as Results
+          cache.current.set(key, data)
+          setResults(data)
+        } catch (e) {
+          if ((e as Error).name !== 'AbortError') setResults(EMPTY)
+        } finally {
+          setLoading(false)
+        }
+      }, 200)
+    }
+    run()
+    return () => { if (id) clearTimeout(id); ctrl.abort() }
   }, [query])
 
   const order = useMemo(() => (lang ? [lang] : detectOrder(query)), [query, lang])
   // Flat list in display order, for keyboard navigation and Enter-to-open.
   const flat = useMemo(() => order.flatMap((lang) => results[lang].map((e) => e)), [order, results])
   const indexById = useMemo(() => new Map(flat.map((e, i) => [e.id, i])), [flat])
-  useEffect(() => { setActive(0) }, [query])
 
   const total = flat.length
 

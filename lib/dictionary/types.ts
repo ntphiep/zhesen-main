@@ -1,4 +1,4 @@
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 export interface DictSense {
   pos: string | null

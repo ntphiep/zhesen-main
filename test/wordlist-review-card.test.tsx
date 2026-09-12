@@ -8,7 +8,7 @@ const card: ReviewCard = {
   id: 'w1', lang: 'en', headword: 'dog', reading: null, ipa: 'dɒɡ',
   meaningVi: 'con chó', meaningEn: 'a dog', example: 'The dog ran.', exampleTranslation: 'Con chó chạy.',
   audioUrl: null,
-  state: { vocabId: 'w1', intervalDays: 0, ease: 2.5, reps: 0, lapses: 0, dueAt: 0, lastReviewedAt: null },
+  state: { vocabId: 'w1', stability: 0, difficulty: 0, elapsedDays: 0, scheduledDays: 0, learningSteps: 0, reps: 0, lapses: 0, cardState: 'new', dueAt: 0, lastReviewedAt: null },
 }
 
 describe('WordReviewCard', () => {

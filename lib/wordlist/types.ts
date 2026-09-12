@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 export type WordStatus = 'new' | 'learning' | 'known'
 

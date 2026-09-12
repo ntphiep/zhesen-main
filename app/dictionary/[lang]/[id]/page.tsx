@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections } from '@/lib/dictionary/cached'
 import { buildEntryId } from '@/lib/dictionary/entryId'
 import { LookupView } from '@/components/lookup/LookupView'
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 const VALID: LangCode[] = ['zh', 'es', 'en']
 

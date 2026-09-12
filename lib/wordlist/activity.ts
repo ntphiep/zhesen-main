@@ -31,7 +31,7 @@ export function computeStreak(days: string[], now: number): number {
 }
 
 /** Record that the user practised today (idempotent per day). RLS sets user_id. */
-export async function logActivityDay(supabase: SupabaseClient, now: number): Promise<void> {
+export async function logActivityDay(supabase: SupabaseClient, now: number = Date.now()): Promise<void> {
   const { error } = await supabase
     .from('review_log')
     .upsert({ day: localDay(now) }, { onConflict: 'user_id,day', ignoreDuplicates: true })

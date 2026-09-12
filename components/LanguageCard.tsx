@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import type { Language } from '@/lib/content/types'
+import type { Language } from '@/lib/languages'
 
 export function LanguageCard({ language }: { language: Language }) {
   return (

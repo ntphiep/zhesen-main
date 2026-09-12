@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { SearchBox } from '@/components/search/SearchBox'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { LANG_FLAGS } from '@/lib/dictionary/labels'
-import type { Language } from '@/lib/content/types'
+import type { Language } from '@/lib/languages'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 
 /** Per-language hub: a search scoped to this language, the practice entry point, and

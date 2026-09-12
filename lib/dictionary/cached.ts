@@ -1,9 +1,9 @@
 import { unstable_cache } from 'next/cache'
 import { createContentClient } from '@/lib/supabase/content'
 import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getCommonWords } from './search'
-import { getWordOfDay, type DailyWord } from './wordOfDay'
+import { getWordOfDay, dayNumber, type DailyWord } from './wordOfDay'
 import type { DictEntryDetail, DictEntryPreview, CrossLangSibling, CharInfo, WordForm } from './types'
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 export const getCachedEntryDetail = unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),
@@ -30,8 +30,14 @@ export const getCachedInflections = unstable_cache(
 )
 
 // Keyed by day index so the word is stable for the whole day and cached across users.
+/**
+ * Từ của ngày. Số thứ tự ngày được tính bên trong hàm này chứ không nhận từ nơi gọi,
+ * vì gọi `Date.now()` ngay trong thân một Server Component là đọc giá trị không thuần
+ * khiết lúc render (quy tắc `react-hooks/purity`). Hệ quả duy nhất là sau nửa đêm, từ
+ * mới xuất hiện chậm nhất sau một chu kỳ `revalidate`, tức một giờ.
+ */
 export const getCachedWordOfDay = unstable_cache(
-  (dayNum: number): Promise<DailyWord | null> => getWordOfDay(createContentClient(), dayNum),
+  (): Promise<DailyWord | null> => getWordOfDay(createContentClient(), dayNumber(Date.now())),
   ['dict-word-of-day'],
   { revalidate: 3600, tags: ['lex'] },
 )

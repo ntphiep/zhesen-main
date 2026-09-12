@@ -1,4 +1,4 @@
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 const HAN = /\p{Script=Han}/u
 const SPANISH = /[ñáéíóúü¿¡]/iu

@@ -1,75 +1,78 @@
 import { describe, it, expect } from 'vitest'
-import { initialSrsState, review, DAY_MS } from '@/lib/progress/srs'
+import { initialSrsState, review } from '@/lib/progress/srs'
 
 const T0 = 1_000_000_000_000 // fixed "now"
 
-describe('srs', () => {
-  it('initial state is due now with ease 2.5', () => {
+describe('srs (FSRS-6 via ts-fsrs)', () => {
+  it('initial state is a brand-new card, due immediately', () => {
     const s = initialSrsState('v1', T0)
-    expect(s).toMatchObject({ vocabId: 'v1', intervalDays: 0, ease: 2.5, reps: 0, lapses: 0, dueAt: T0 })
+    expect(s).toMatchObject({
+      vocabId: 'v1',
+      stability: 0,
+      difficulty: 0,
+      scheduledDays: 0,
+      learningSteps: 0,
+      reps: 0,
+      lapses: 0,
+      cardState: 'new',
+      dueAt: T0,
+      lastReviewedAt: null,
+    })
   })
 
-  it('first good review schedules 1 day out', () => {
+  it('consecutive "good" reviews grow the interval each time', () => {
+    let s = initialSrsState('v1', T0)
+    const scheduled: number[] = []
+    for (let i = 0; i < 3; i++) {
+      s = review(s, 'good', s.dueAt)
+      scheduled.push(s.scheduledDays)
+    }
+    expect(s.reps).toBe(3)
+    expect(s.cardState).toBe('review')
+    expect(scheduled).toEqual([3, 14, 57])
+    expect(scheduled[0]).toBeLessThan(scheduled[1])
+    expect(scheduled[1]).toBeLessThan(scheduled[2])
+  })
+
+  it('"again" shortens the interval and counts a lapse', () => {
+    let s = initialSrsState('v1', T0)
+    s = review(s, 'good', s.dueAt)
+    s = review(s, 'good', s.dueAt)
+    const beforeInterval = s.scheduledDays
+    s = review(s, 'again', s.dueAt)
+    expect(s.lapses).toBe(1)
+    expect(s.scheduledDays).toBeLessThan(beforeInterval)
+    expect(s.reps).toBe(3) // reps counts every review, including lapses
+  })
+
+  it('lastReviewedAt tracks the review time', () => {
     const s = review(initialSrsState('v1', T0), 'good', T0)
-    expect(s.reps).toBe(1)
-    expect(s.intervalDays).toBe(1)
-    expect(s.dueAt).toBe(T0 + DAY_MS)
     expect(s.lastReviewedAt).toBe(T0)
   })
 
-  it('second good review schedules 6 days out', () => {
-    let s = review(initialSrsState('v1', T0), 'good', T0)
+  it('repeated "again" keeps shrinking stability without going negative', () => {
+    let s = initialSrsState('v1', T0)
     s = review(s, 'good', s.dueAt)
-    expect(s.reps).toBe(2)
-    expect(s.intervalDays).toBe(6)
+    let prevStability = s.stability
+    for (let i = 0; i < 5; i++) {
+      s = review(s, 'again', s.dueAt)
+      expect(s.stability).toBeLessThan(prevStability)
+      expect(s.stability).toBeGreaterThanOrEqual(0)
+      prevStability = s.stability
+    }
+    expect(s.lapses).toBe(5)
   })
 
-  it('third good review multiplies by ease', () => {
-    let s = initialSrsState('v1', T0)
-    s = review(s, 'good', T0)        // 1
-    s = review(s, 'good', s.dueAt)   // 6
-    s = review(s, 'good', s.dueAt)   // round(6 * 2.5) = 15
-    expect(s.intervalDays).toBe(15)
-  })
-
-  it('again resets reps, increments lapses, lowers ease, due immediately at review time', () => {
-    let s = review(initialSrsState('v1', T0), 'good', T0)
-    const s2 = review(s, 'again', s.dueAt)
-    expect(s2.reps).toBe(0)
-    expect(s2.lapses).toBe(1)
-    expect(s2.intervalDays).toBe(0)
-    expect(s2.dueAt).toBe(s.dueAt)
-    expect(s2.ease).toBeCloseTo(2.3, 5)
-  })
-
-  it('again is due at review time even when reviewed late', () => {
-    const first = review(initialSrsState('v1', T0), 'good', T0) // due at T0 + DAY_MS
-    const late = first.dueAt + 2 * DAY_MS
-    const s = review(first, 'again', late)
-    expect(s.dueAt).toBe(late)
-    expect(s.intervalDays).toBe(0)
-    expect(s.lastReviewedAt).toBe(late)
-  })
-
-  it('ease never drops below 1.3', () => {
-    let s = initialSrsState('v1', T0)
-    for (let i = 0; i < 20; i++) s = review(s, 'again', T0)
-    expect(s.ease).toBeGreaterThanOrEqual(1.3)
-  })
-
-  it('easy raises ease and schedules further than good', () => {
+  it('"easy" schedules further out than "good" from a new card', () => {
     const good = review(initialSrsState('v1', T0), 'good', T0)
     const easy = review(initialSrsState('v2', T0), 'easy', T0)
-    expect(easy.ease).toBeGreaterThan(2.5)
-    expect(easy.intervalDays).toBeGreaterThan(good.intervalDays)
+    expect(easy.scheduledDays).toBeGreaterThan(good.scheduledDays)
   })
 
-  it('hard grows interval modestly and lowers ease', () => {
-    let s = initialSrsState('v1', T0)
-    s = review(s, 'good', T0)        // interval 1, ease 2.5
-    const hard = review(s, 'hard', s.dueAt)
-    expect(hard.ease).toBeCloseTo(2.35, 5)
-    expect(hard.intervalDays).toBe(1)
-    expect(hard.reps).toBe(2)
+  it('"hard" schedules sooner than "good" from a new card', () => {
+    const hard = review(initialSrsState('v1', T0), 'hard', T0)
+    const good = review(initialSrsState('v2', T0), 'good', T0)
+    expect(hard.scheduledDays).toBeLessThan(good.scheduledDays)
+    expect(hard.lapses).toBe(0)
   })
 })

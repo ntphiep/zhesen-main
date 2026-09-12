@@ -1,12 +1,12 @@
-# Thiết kế Phase 2: Tích hợp Supabase (Chesen)
+# Thiết kế Phase 2: Tích hợp Supabase (Zhesen)
 
 Ngày: 2026-06-17
 Trạng thái: Bản thiết kế chờ duyệt
-Tiền đề: Phase 1 (POC chạy local) đã hoàn tất, commit và push lên `github.com/ntphiep/chesen`.
+Tiền đề: Phase 1 (POC chạy local) đã hoàn tất, commit và push lên `github.com/ntphiep/zhesen`.
 
 ## 1. Tổng quan và mục tiêu
 
-Phase 2 chuyển Chesen từ chạy hoàn toàn cục bộ sang dùng Supabase làm backend thật. Nội dung học và tiến độ người dùng được lưu trên PostgreSQL của project `cvltsyoweddhpkomuevz` (region ap-northeast-2). Người dùng được cấp một phiên đăng nhập ẩn danh ngay từ lần đầu vào trang, và dữ liệu được bảo vệ bằng Row-Level Security.
+Phase 2 chuyển Zhesen từ chạy hoàn toàn cục bộ sang dùng Supabase làm backend thật. Nội dung học và tiến độ người dùng được lưu trên PostgreSQL của project `cvltsyoweddhpkomuevz` (region ap-northeast-2). Người dùng được cấp một phiên đăng nhập ẩn danh ngay từ lần đầu vào trang, và dữ liệu được bảo vệ bằng Row-Level Security.
 
 Mục tiêu cốt lõi là thay phần lưu trữ mà **không đổi giao diện và logic học**, nhờ hai interface `ContentSource` và `ProgressStore` đã dựng ở Phase 1. Toàn bộ vòng học (chọn ngôn ngữ, bài học, trắc nghiệm, ôn flashcard) phải chạy y như Phase 1 nhưng dữ liệu nằm trên cloud và gắn với từng người dùng.
 

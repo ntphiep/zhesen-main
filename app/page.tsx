@@ -1,10 +1,9 @@
 import Link from 'next/link'
-import { getContentSource } from '@/lib/content'
+import { LANGUAGES } from '@/lib/languages'
 import { LanguageCard } from '@/components/LanguageCard'
 import { WordOfDayCard } from '@/components/WordOfDayCard'
 import { SearchBox } from '@/components/search/SearchBox'
 import { getCachedWordOfDay } from '@/lib/dictionary/cached'
-import { dayNumber } from '@/lib/dictionary/wordOfDay'
 
 const SECTIONS = [
   { href: '/dictionary', title: 'Tra cứu', desc: 'Tìm nghĩa, phát âm, ví dụ' },
@@ -13,13 +12,11 @@ const SECTIONS = [
 ]
 
 export default async function Home() {
-  const [languages, wordOfDay] = await Promise.all([
-    getContentSource().getLanguages(),
-    getCachedWordOfDay(dayNumber(Date.now())),
-  ])
+  const languages = LANGUAGES
+  const wordOfDay = await getCachedWordOfDay()
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-4xl font-bold">Chesen</h1>
+      <h1 className="text-4xl font-bold">Zhesen</h1>
       <p className="mt-2 text-black/60">Học tiếng Trung, Tây Ban Nha và Anh.</p>
       <div className="mt-8">
         <SearchBox />

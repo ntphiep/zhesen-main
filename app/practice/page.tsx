@@ -7,7 +7,7 @@ import { PracticeModes } from '@/components/wordlist/PracticeModes'
 // Practice hub: progress stats + every study mode, working over the saved wordlist.
 export default async function PracticePage() {
   const supabase = await createClient()
-  const stats = await getWordlistStats(supabase, Date.now())
+  const stats = await getWordlistStats(supabase)
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>

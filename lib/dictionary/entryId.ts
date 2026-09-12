@@ -1,4 +1,4 @@
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 export function splitEntryId(id: string): { lang: string; key: string } {
   const i = id.indexOf(':')

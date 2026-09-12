@@ -34,9 +34,14 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
   const [status, setStatus] = useState<WordStatus>('new')
   const [tagsRaw, setTagsRaw] = useState('')
 
-  // Sync form state when word changes or dialog reopens (so stale edits don't persist across open/close)
-  useEffect(() => {
-    if (!word || !open) return
+  // Sync form state when word changes or dialog reopens (so stale edits don't persist
+  // across open/close). Adjust state during render instead of in an effect, per
+  // react.dev/learn/you-might-not-need-an-effect: track the (word, open) combination we
+  // last synced from, and re-sync synchronously whenever it changes.
+  const resetKey = open && word ? word.id : null
+  const [prevResetKey, setPrevResetKey] = useState<string | null>(null)
+  if (word && open && resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey)
     setMeaningVi(word.meaningVi ?? '')
     setMeaningEn(word.meaningEn ?? '')
     setPos(word.pos ?? '')
@@ -47,7 +52,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
     setNotes(word.notes ?? '')
     setStatus(word.status)
     setTagsRaw(tagsToString(word.tags))
-  }, [word, open])
+  }
 
   // Drive open/close via prop. Guard against the dialog's current state: showModal()
   // throws if it is already open (e.g. React Strict Mode double-invokes the effect),

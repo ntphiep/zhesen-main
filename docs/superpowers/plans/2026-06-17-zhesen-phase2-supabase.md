@@ -1,8 +1,8 @@
-# Chesen Phase 2 (Supabase) Implementation Plan
+# Zhesen Phase 2 (Supabase) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax. For ANY Supabase-specific code (@supabase/ssr clients, middleware, auth, RLS), the implementer MUST invoke the `supabase:supabase` skill and verify current API against it / `search_docs` rather than trusting memory.
 
-**Goal:** Move Chesen's content and progress from local (JSON + localStorage) to the hosted Supabase project `cvltsyoweddhpkomuevz`, with cookie-based anonymous auth and RLS, behind the unchanged `ContentSource`/`ProgressStore` interfaces.
+**Goal:** Move Zhesen's content and progress from local (JSON + localStorage) to the hosted Supabase project `cvltsyoweddhpkomuevz`, with cookie-based anonymous auth and RLS, behind the unchanged `ContentSource`/`ProgressStore` interfaces.
 
 **Architecture:** PostgreSQL schema with RLS (content readable by `authenticated`, progress scoped to `auth.uid()`). `@supabase/ssr` provides a browser client, a server client, and a Next.js middleware that bootstraps an anonymous session into cookies so server components can read content. New `SupabaseContentSource` (server-capable) and `SupabaseProgressStore` (client) implement the existing interfaces; the local implementations are removed. The pure SRS function is reused inside the progress store.
 
@@ -31,7 +31,7 @@
 ## File Structure
 
 ```
-chesen/
+zhesen/
   middleware.ts                         # NEW: refresh session + anonymous bootstrap
   lib/supabase/
     client.ts                           # NEW: createBrowserClient

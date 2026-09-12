@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Chesen",
+  title: "Zhesen",
   description: "Học ngoại ngữ",
 };
 

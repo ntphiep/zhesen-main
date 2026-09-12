@@ -1,15 +1,15 @@
 # Language Lookup Sites — UX Research Findings
 **Date:** 2026-06-19  
 **Researcher:** UX Research agent (Playwright browser — working)  
-**Purpose:** Inform the design of a `/dictionary` word-lookup feature for Chesen
+**Purpose:** Inform the design of a `/dictionary` word-lookup feature for Zhesen
 
 ---
 
 ## 1. hanzii.net — PRIMARY REFERENCE
 
 ### Screenshots
-- `C:\Users\Hiep\Desktop\chesen\.playwright-mcp\hanzii-hao-top.png` (好 — word page top viewport)
-- `C:\Users\Hiep\Desktop\chesen\.playwright-mcp\hanzii-xuexi.png` (学习 — word page top viewport)
+- `C:\Users\Hiep\Desktop\zhesen\.playwright-mcp\hanzii-hao-top.png` (好 — word page top viewport)
+- `C:\Users\Hiep\Desktop\zhesen\.playwright-mcp\hanzii-xuexi.png` (学习 — word page top viewport)
 
 ### Lookup page anatomy — single character 好 (hǎo / hào)
 
@@ -52,7 +52,7 @@ Structure is the same as single character, with these differences:
 ## 2. dictionary.cambridge.org — English reference
 
 ### Screenshot
-- `C:\Users\Hiep\Desktop\chesen\.playwright-mcp\cambridge-run.png`
+- `C:\Users\Hiep\Desktop\zhesen\.playwright-mcp\cambridge-run.png`
 
 ### Lookup page anatomy — "run" (verb)
 
@@ -77,7 +77,7 @@ Key design principle: **guide words as semantic scoping** — never show a flat 
 **Note:** babla.vn returned 404 for the Spanish-Vietnamese path; es.bab.la redirected to its translator page. Successfully accessed **en.bab.la/dictionary/spanish-english/hablar**. The Vietnamese-specific interface was not reachable via automation; findings reflect the English-facing version which shares the same structure.
 
 ### Screenshot
-- `C:\Users\Hiep\Desktop\chesen\.playwright-mcp\babla-hablar.png`
+- `C:\Users\Hiep\Desktop\zhesen\.playwright-mcp\babla-hablar.png`
 
 ### Lookup page anatomy — "hablar" (Spanish → English)
 
@@ -135,7 +135,7 @@ Key design principle: **conjugation as a sibling page** (not inline) keeps the t
 
 ---
 
-## Recommended Lookup Feature for Chesen
+## Recommended Lookup Feature for Zhesen
 
 ### Page: `/dictionary/[lang]/[headword]`
 
@@ -194,10 +194,10 @@ Reuse and extend the existing `WordDetail` React component. Proposed section ord
 
 4. **Cross-language concept coverage**: How complete is `cross_language_links`? For example, does every ZH entry have a linked EN and ES entry? If coverage is partial, the "same word in other languages" panel should gracefully degrade.
 
-5. **Conjugation for Spanish**: bab.la's strongest feature for ES learners is verb conjugation tables. Do we plan to add conjugation data to Chesen? If so, should it be a separate table or part of `entries.attributes`?
+5. **Conjugation for Spanish**: bab.la's strongest feature for ES learners is verb conjugation tables. Do we plan to add conjugation data to Zhesen? If so, should it be a separate table or part of `entries.attributes`?
 
-6. **Community notes / Góp ý**: hanzii's community mnemonic feature is loved by Vietnamese learners of Chinese. Is this in scope for Chesen?
+6. **Community notes / Góp ý**: hanzii's community mnemonic feature is loved by Vietnamese learners of Chinese. Is this in scope for Zhesen?
 
-7. **Premium / freemium**: hanzii locks senses 2+ and most related words behind a paywall. Should Chesen follow a similar model, or show everything free?
+7. **Premium / freemium**: hanzii locks senses 2+ and most related words behind a paywall. Should Zhesen follow a similar model, or show everything free?
 
 8. **Guide words**: For polysemous words (especially EN "run"), should we add a `guide_word` column to `senses` to enable Cambridge-style sense grouping?

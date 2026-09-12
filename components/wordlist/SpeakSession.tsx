@@ -6,7 +6,7 @@ import { listWords } from '@/lib/wordlist/store'
 import { AudioButton, speechLang } from '@/components/AudioButton'
 import { checkTypedAnswer, type TypedResult } from '@/lib/wordlist/typing'
 import { logActivityDay } from '@/lib/wordlist/activity'
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 const SIZE = 10
 

@@ -6,20 +6,30 @@ import { AudioButton } from '@/components/AudioButton'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 import type { UserWord } from '@/lib/wordlist/types'
 
+type DetailState =
+  | { status: 'loading' }
+  | { status: 'ok'; detail: DictEntryDetail | null }
+  | { status: 'error' }
+
 export function WordDetail({ word }: { word: UserWord }) {
   const supabase = useMemo(() => createClient(), [])
-  const [detail, setDetail] = useState<DictEntryDetail | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [state, setState] = useState<DetailState>({ status: 'loading' })
 
   useEffect(() => {
-    if (!word.entryId) return
-    setLoading(true)
-    setError(null)
-    getEntryDetail(supabase, word.entryId)
-      .then((d) => setDetail(d))
-      .catch(() => setError('Không tải được chi tiết.'))
-      .finally(() => setLoading(false))
+    const entryId = word.entryId
+    if (!entryId) return
+    let cancelled = false
+    async function run(id: string) {
+      setState({ status: 'loading' })
+      try {
+        const d = await getEntryDetail(supabase, id)
+        if (!cancelled) setState({ status: 'ok', detail: d })
+      } catch {
+        if (!cancelled) setState({ status: 'error' })
+      }
+    }
+    run(entryId)
+    return () => { cancelled = true }
   }, [supabase, word.entryId])
 
   if (!word.entryId) {
@@ -32,14 +42,15 @@ export function WordDetail({ word }: { word: UserWord }) {
     )
   }
 
-  if (loading) {
+  if (state.status === 'loading') {
     return <p className="text-sm text-black/40">Đang tải...</p>
   }
 
-  if (error) {
-    return <p className="text-sm text-red-500">{error}</p>
+  if (state.status === 'error') {
+    return <p className="text-sm text-red-500">Không tải được chi tiết.</p>
   }
 
+  const { detail } = state
   if (!detail) return null
 
   // Group relations by relationType

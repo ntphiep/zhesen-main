@@ -1,4 +1,4 @@
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 export const LANG_LABELS: Record<LangCode, string> = {
   en: 'Tiếng Anh',

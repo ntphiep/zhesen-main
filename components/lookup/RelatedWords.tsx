@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { searchPath } from '@/lib/dictionary/entryId'
 import { classifyRelations, type ClassifiedRelations } from '@/lib/dictionary/relations'
 import type { DictRelation } from '@/lib/dictionary/types'
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 const SECTIONS: { key: keyof ClassifiedRelations; label: string }[] = [
   { key: 'synonyms', label: 'Cận nghĩa' },

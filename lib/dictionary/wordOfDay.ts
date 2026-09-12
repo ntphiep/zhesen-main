@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { z } from 'zod'
 import { localDay } from '@/lib/wordlist/activity'
 
 export interface DailyWord {
@@ -21,13 +22,15 @@ export function pickByDay<T>(pool: T[], dayNum: number): T | null {
   return pool[((dayNum % pool.length) + pool.length) % pool.length]
 }
 
-interface PoolRow {
-  id: string
-  headword: string
-  level: string | null
-  senses: { gloss_vi: string | null; gloss_en: string | null; sense_order: number }[] | null
-  pronunciations: { accent: string; ipa: string | null }[] | null
-}
+const poolRow = z.object({
+  id: z.string(),
+  headword: z.string(),
+  level: z.string().nullable(),
+  senses: z.array(z.object({
+    gloss_vi: z.string().nullable(), gloss_en: z.string().nullable(), sense_order: z.number(),
+  })).nullable(),
+  pronunciations: z.array(z.object({ accent: z.string(), ipa: z.string().nullable() })).nullable(),
+})
 
 /** A common English word chosen deterministically for the given day index. Picks
  * from the 200 most frequent words so the daily word is always learner-relevant. */
@@ -42,7 +45,7 @@ export async function getWordOfDay(supabase: SupabaseClient, dayNum: number): Pr
     .order('frequency_rank', { ascending: true })
     .limit(200)
   if (error) throw error
-  const row = pickByDay((data ?? []) as unknown as PoolRow[], dayNum)
+  const row = pickByDay(poolRow.array().parse(data ?? []), dayNum)
   if (!row) return null
   const primary = [...(row.senses ?? [])].sort((a, b) => a.sense_order - b.sense_order)[0]
   const prons = row.pronunciations ?? []

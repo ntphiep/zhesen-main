@@ -7,7 +7,7 @@ import { WordlistClient } from './WordlistClient'
 
 export default async function WordlistPage() {
   const supabase = await createClient()
-  const [words, due] = await Promise.all([listWords(supabase), countDueCards(supabase, Date.now())])
+  const [words, due] = await Promise.all([listWords(supabase), countDueCards(supabase)])
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
       <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>

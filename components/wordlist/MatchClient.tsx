@@ -52,7 +52,7 @@ export function MatchClient() {
 
   function clickTile(tile: MatchTile) {
     if (wrong.length > 0 || matched.has(tile.key)) return
-    if (!logged.current) { logged.current = true; void logActivityDay(supabase, Date.now()) }
+    if (!logged.current) { logged.current = true; void logActivityDay(supabase) }
     if (selected === null) { setSelected(tile.key); return }
     if (selected === tile.key) { setSelected(null); return }
     const first = tiles!.find((t) => t.key === selected)!

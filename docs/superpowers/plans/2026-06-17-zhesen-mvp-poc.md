@@ -1,4 +1,4 @@
-# Chesen MVP POC Implementation Plan
+# Zhesen MVP POC Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -23,7 +23,7 @@
 ## File Structure
 
 ```
-chesen/
+zhesen/
   app/
     layout.tsx                          # root layout, providers
     page.tsx                            # home: language picker
@@ -79,10 +79,10 @@ chesen/
 
 Run (non-interactive flags so it doesn't prompt):
 ```bash
-cd /c/Users/Hiep/Desktop/chesen
+cd /c/Users/Hiep/Desktop/zhesen
 npx --yes create-next-app@latest . --ts --app --tailwind --eslint --src-dir=false --import-alias "@/*" --use-npm --no-turbopack
 ```
-Expected: project files created in `chesen/` (the existing `docs/` folder is preserved). If create-next-app refuses because the directory is non-empty, scaffold in a temp dir and copy files over, keeping `docs/`.
+Expected: project files created in `zhesen/` (the existing `docs/` folder is preserved). If create-next-app refuses because the directory is non-empty, scaffold in a temp dir and copy files over, keeping `docs/`.
 
 - [ ] **Step 2: Install test dependencies**
 
@@ -920,8 +920,8 @@ import type { LangCode } from '@/lib/content/types'
 import type { KVBackend } from './kv'
 import { initialSrsState, review } from './srs'
 
-const CARDS_KEY = 'chesen.cards.v1'
-const LESSONS_KEY = 'chesen.lessons.v1'
+const CARDS_KEY = 'zhesen.cards.v1'
+const LESSONS_KEY = 'zhesen.lessons.v1'
 
 export class LocalProgressStore implements ProgressStore {
   constructor(private kv: KVBackend) {}
@@ -1206,7 +1206,7 @@ export default async function Home() {
   const languages = await getContentSource().getLanguages()
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-4xl font-bold">Chesen</h1>
+      <h1 className="text-4xl font-bold">Zhesen</h1>
       <p className="mt-2 text-black/60">Học tiếng Trung, Tây Ban Nha và Anh.</p>
       <div className="mt-10 grid gap-4 sm:grid-cols-3">
         {languages.map((l) => (
@@ -1218,7 +1218,7 @@ export default async function Home() {
 }
 ```
 
-Edit `app/layout.tsx`: set `<html lang="vi">` and update the exported `metadata` title to `'Chesen'` and description to `'Học ngoại ngữ'`.
+Edit `app/layout.tsx`: set `<html lang="vi">` and update the exported `metadata` title to `'Zhesen'` and description to `'Học ngoại ngữ'`.
 
 - [ ] **Step 6: Verify build + run**
 

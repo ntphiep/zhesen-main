@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "C:\\Users\\Hiep\\Documents\\chesen-brain"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\" -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\Hiep\\Desktop\\chesen\\.claude\\hooks\\eslint-edit.ps1\"",
+            "timeout": 60,
+            "statusMessage": "eslint file vua sua"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\" -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\Hiep\\Desktop\\chesen\\.claude\\hooks\\verify-gate.ps1\"",
+            "timeout": 180,
+            "statusMessage": "verify gate: tsc + lint + test lien quan"
+          }
+        ]
+      }
+    ]
+  }
+}

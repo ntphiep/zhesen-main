@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 export function speechLang(lang: LangCode): string {
   return { en: 'en-US', es: 'es-ES', zh: 'zh-CN' }[lang]

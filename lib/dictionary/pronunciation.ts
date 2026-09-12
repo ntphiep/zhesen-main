@@ -1,4 +1,4 @@
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 import type { DictPron } from './types'
 
 export interface AccentRow {

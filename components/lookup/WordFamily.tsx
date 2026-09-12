@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { searchPath } from '@/lib/dictionary/entryId'
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 /** "Từ liên quan" = the grammatical word family (inflected forms of the headword). */
 export function WordFamily({ headword, forms, lang }: { headword: string; forms: string[]; lang: LangCode }) {

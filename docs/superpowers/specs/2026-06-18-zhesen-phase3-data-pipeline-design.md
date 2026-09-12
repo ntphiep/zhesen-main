@@ -1,4 +1,4 @@
-# Thiết kế Phase 3: Pipeline dựng kho từ vựng giàu (Chesen)
+# Thiết kế Phase 3: Pipeline dựng kho từ vựng giàu (Zhesen)
 
 Ngày: 2026-06-18
 Trạng thái: Bản thiết kế chờ duyệt

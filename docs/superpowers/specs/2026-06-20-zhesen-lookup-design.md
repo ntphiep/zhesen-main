@@ -2,7 +2,7 @@
 
 > **Quy ước đặt tên (bắt buộc):** đường dẫn route bằng **tiếng Anh** (khớp `/learn`, `/wordlist` đã có), nhãn hiển thị trên UI bằng **tiếng Việt** ("Tra cứu"). Không đặt route tiếng Việt.
 
-**Mục tiêu:** Trang tra cứu từ vựng kiểu hanzii cho Chesen: gõ một từ ra trang chi tiết đầy đủ (phát âm, nghĩa theo từ loại, ví dụ, thành phần chữ, từ liên quan, và **từ đó ở các ngôn ngữ khác**). Đọc từ schema `lex`, tái dùng tầng dữ liệu đã có.
+**Mục tiêu:** Trang tra cứu từ vựng kiểu hanzii cho Zhesen: gõ một từ ra trang chi tiết đầy đủ (phát âm, nghĩa theo từ loại, ví dụ, thành phần chữ, từ liên quan, và **từ đó ở các ngôn ngữ khác**). Đọc từ schema `lex`, tái dùng tầng dữ liệu đã có.
 
 **Kiến trúc:** Một route `/dictionary` với ô tìm (dùng `searchEntries` đã có) và trang chi tiết `/dictionary/[lang]/[id]` (Server Component đọc `getEntryDetail`, render bố cục giàu). Tái dùng/ mở rộng tầng `lib/dictionary`. Các mục thiếu dữ liệu **tự ẩn (graceful degrade)**, sáng dần khi pipeline backfill.
 

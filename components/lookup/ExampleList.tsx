@@ -2,7 +2,7 @@ import { AudioButton } from '@/components/AudioButton'
 import { TappableText } from '@/components/reader/TappableText'
 import { isCleanExample } from '@/lib/dictionary/search'
 import type { DictExample } from '@/lib/dictionary/types'
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 const MAX_EXAMPLES = 6
 

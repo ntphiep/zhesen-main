@@ -1,14 +1,14 @@
-# Bàn giao: sửa & làm giàu dữ liệu từ điển Chesen (repo `chesen-pipeline`)
+# Bàn giao: sửa & làm giàu dữ liệu từ điển Zhesen (repo `zhesen-pipeline`)
 
 > Tài liệu này là **prompt bàn giao** cho một phiên Claude khác chạy trong repo
-> `chesen-pipeline`. Nó nêu vấn đề dữ liệu, bằng chứng đo được, và việc cần làm.
+> `zhesen-pipeline`. Nó nêu vấn đề dữ liệu, bằng chứng đo được, và việc cần làm.
 > Mọi số liệu dưới đây lấy trực tiếp từ Supabase ngày 2026-06-21.
 
 ## Bối cảnh
 
-Chesen là web app học ngôn ngữ cho người Việt (học Anh/Trung/Tây Ban Nha). App đọc
+Zhesen là web app học ngôn ngữ cho người Việt (học Anh/Trung/Tây Ban Nha). App đọc
 dữ liệu từ một database Supabase, schema `lex`. Repo app (Next.js) đã ổn; **nút thắt
-chất lượng nằm ở dữ liệu**, do `chesen-pipeline` sinh ra.
+chất lượng nằm ở dữ liệu**, do `zhesen-pipeline` sinh ra.
 
 - Supabase project id: `cvltsyoweddhpkomuevz` (region ap-northeast-2, Postgres 17).
 - Schema dữ liệu: `lex`. Các bảng chính:
@@ -99,7 +99,7 @@ chất lượng nằm ở dữ liệu**, do `chesen-pipeline` sinh ra.
 - Ghi bằng **service-role key** cho thao tác bulk (anon không ghi được).
 - Trước khi đổ đại trà: chạy trên một mẫu nhỏ, kiểm chứng bằng các truy vấn ở trên, rồi
   mới mở rộng. Báo cáo số liệu trước/sau cho từng hạng mục.
-- Khám phá cấu trúc repo `chesen-pipeline` trước (script crawl/transform/load hiện có,
+- Khám phá cấu trúc repo `zhesen-pipeline` trước (script crawl/transform/load hiện có,
   nguồn dữ liệu gốc) rồi mới sửa; ưu tiên sửa tại bước transform thay vì vá ở DB.
 
 ## Tiêu chí hoàn thành (gợi ý đo)

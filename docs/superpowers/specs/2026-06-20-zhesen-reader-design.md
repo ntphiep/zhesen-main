@@ -1,4 +1,4 @@
-# Chesen — Đọc & tra (tap-to-lookup)
+# Zhesen — Đọc & tra (tap-to-lookup)
 
 Ngày: 2026-06-20. Trạng thái: đã triển khai, sau đó CẮT trang `/reader` riêng theo
 quyết định của Hiệp (kho từ mỏng + trang riêng ít giá trị). GIỮ lại cơ chế bấm-từ

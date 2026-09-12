@@ -1,4 +1,4 @@
-# Thiết kế MVP: Trang web học ngoại ngữ (Chesen)
+# Thiết kế MVP: Trang web học ngoại ngữ (Zhesen)
 
 Ngày: 2026-06-17
 Trạng thái: Bản thiết kế chờ duyệt
@@ -6,7 +6,7 @@ Phạm vi tài liệu: Chỉ Lát 1 (MVP). Các lát sau chỉ nêu định hư�
 
 ## 1. Tổng quan và mục tiêu
 
-Chesen là một trang web giúp người Việt học ba ngoại ngữ: tiếng Trung, tiếng Tây Ban Nha và tiếng Anh. Sản phẩm bắt đầu là một dự án cá nhân, nhưng kiến trúc được thiết kế để mở rộng thành sản phẩm nhiều người dùng về sau.
+Zhesen là một trang web giúp người Việt học ba ngoại ngữ: tiếng Trung, tiếng Tây Ban Nha và tiếng Anh. Sản phẩm bắt đầu là một dự án cá nhân, nhưng kiến trúc được thiết kế để mở rộng thành sản phẩm nhiều người dùng về sau.
 
 Vòng học cốt lõi gồm hai phần bổ trợ nhau. Một là bài học theo chương, mỗi bài giới thiệu một nhóm từ rồi kiểm tra bằng câu hỏi. Hai là ôn tập từ vựng bằng flashcard theo thuật toán lặp lại ngắt quãng (spaced repetition), giúp người học nhớ lâu.
 
@@ -187,7 +187,7 @@ Cách làm này cho phép scope dữ liệu theo từng người qua RLS ngay t�
 ## 13. Cấu trúc thư mục dự kiến
 
 ```
-chesen/
+zhesen/
   app/                  # các trang Next.js (App Router)
   components/           # thành phần giao diện dùng lại
   content/              # dữ liệu seed dạng JSON theo ngôn ngữ

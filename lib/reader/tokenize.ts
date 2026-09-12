@@ -1,4 +1,4 @@
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 /** A piece of source text: a clickable `word`, or a non-word `gap` (spaces, punctuation). */
 export interface Segment {

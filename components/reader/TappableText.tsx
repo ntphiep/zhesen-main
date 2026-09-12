@@ -1,11 +1,11 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { resolveTokens, getHeadwords, getCharacters } from '@/lib/dictionary/search'
+import { resolveTokens, getZhSegmentCandidates, getCharacters } from '@/lib/dictionary/search'
 import { tokenize, type Segment } from '@/lib/reader/tokenize'
 import { WordPopover } from './WordPopover'
 import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 /**
  * Renders text with dictionary-known words made tappable. Tapping a word opens an
@@ -19,12 +19,21 @@ export function TappableText({ text, lang }: { text: string; lang: LangCode }) {
   const [chars, setChars] = useState<Map<string, CharInfo>>(new Map())
   const [active, setActive] = useState<number | null>(null)
 
+  // Close any open popover whenever the underlying text changes, without waiting for
+  // the async resolution below (adjust state during render, per React's guidance for
+  // resetting state when inputs change: react.dev/learn/you-might-not-need-an-effect).
+  const resetKey = `${lang}:${text}`
+  const [prevResetKey, setPrevResetKey] = useState(resetKey)
+  if (prevResetKey !== resetKey) {
+    setPrevResetKey(resetKey)
+    setActive(null)
+  }
+
   useEffect(() => {
     let cancelled = false
-    setActive(null)
     async function run() {
       try {
-        const headwords = lang === 'zh' ? await getHeadwords(supabase, 'zh') : []
+        const headwords = lang === 'zh' ? await getZhSegmentCandidates(supabase, text) : []
         const segs = tokenize(lang, text, headwords)
         const wordTokens = segs.filter((s) => s.word).map((s) => s.text)
         const entryMap = await resolveTokens(supabase, lang, wordTokens)

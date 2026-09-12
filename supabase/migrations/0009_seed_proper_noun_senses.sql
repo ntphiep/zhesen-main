@@ -7,7 +7,7 @@
 -- Idempotent: only inserts for an entry that EXISTS and currently has no sense, so
 -- re-running is safe and it never collides with senses the pipeline adds later.
 -- The long tail (personal names, US states/cities, brands) is left to the pipeline
--- (see docs/superpowers/specs/2026-06-21-chesen-pipeline-data-fixes-handoff.md).
+-- (see docs/superpowers/specs/2026-06-21-zhesen-pipeline-data-fixes-handoff.md).
 
 insert into lex.senses (id, entry_id, sense_order, pos, gloss_vi, gloss_en, gloss_vi_is_mt, provenance)
 select e.id || '#1', e.id, 1, v.pos, v.gloss_vi, v.gloss_en, false,

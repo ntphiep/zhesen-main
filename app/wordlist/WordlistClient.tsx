@@ -7,7 +7,7 @@ import { EditWordDialog } from '@/components/wordlist/EditWordDialog'
 import { WordDetail } from '@/components/wordlist/WordDetail'
 import { AudioButton } from '@/components/AudioButton'
 import type { UserWord, WordDraft } from '@/lib/wordlist/types'
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 type ViewMode = 'table' | 'card'
 type SortKey = 'headword' | 'createdAt'

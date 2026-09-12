@@ -106,7 +106,7 @@ import argparse
 from pipeline.config import settings
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="pipeline", description="Chesen data pipeline")
+    parser = argparse.ArgumentParser(prog="pipeline", description="Zhesen data pipeline")
     parser.add_argument("--limit", type=int, default=50, help="number of headwords to process")
     parser.add_argument("stage", choices=["all"], nargs="?", default="all")
     args = parser.parse_args(argv)
@@ -359,7 +359,7 @@ Add helpful indexes: `create index on lex.senses (entry_id);`, `create index on 
 - Create: `pipeline/acquire/http.py`, `pipeline/tests/test_http.py`
 
 **Interfaces:**
-- Produces: `get(url: str, *, host_key: str, force: bool = False) -> str`. Caches response text at `CACHE_DIR/<host_key>/<sha1(url)>.html`; on cache hit returns cached text without a network call. Enforces ≥1.0s between live requests per `host_key`. Sets header `User-Agent: chesen-langlearn/0.1 (personal study project)`.
+- Produces: `get(url: str, *, host_key: str, force: bool = False) -> str`. Caches response text at `CACHE_DIR/<host_key>/<sha1(url)>.html`; on cache hit returns cached text without a network call. Enforces ≥1.0s between live requests per `host_key`. Sets header `User-Agent: zhesen-langlearn/0.1 (personal study project)`.
 
 - [ ] **Step 1: Write test** (no network): monkeypatch the internal `_fetch` to a counter; first `get` writes cache and calls `_fetch` once; second `get` (same url) returns cached text and does NOT call `_fetch`; `force=True` re-fetches.
 - [ ] **Step 2: Run — FAIL.**

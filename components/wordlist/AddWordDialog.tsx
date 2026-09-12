@@ -5,7 +5,7 @@ import { searchEntries } from '@/lib/dictionary/search'
 import { draftFromDictEntry } from '@/lib/wordlist/store'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { WordDraft, WordStatus } from '@/lib/wordlist/types'
-import type { LangCode } from '@/lib/content/types'
+import type { LangCode } from '@/lib/languages'
 
 type Tab = 'dict' | 'manual'
 
@@ -53,9 +53,17 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
     else if (!open && el.open) el.close()
   }, [open])
 
+  // Clear stale results synchronously as soon as the query is emptied, instead of in an
+  // effect (adjust state during render, per react.dev/learn/you-might-not-need-an-effect).
+  const [prevQuery, setPrevQuery] = useState(query)
+  if (query !== prevQuery) {
+    setPrevQuery(query)
+    if (!query.trim()) setResults([])
+  }
+
   // Debounced search
   useEffect(() => {
-    if (!query.trim()) { setResults([]); return }
+    if (!query.trim()) return
     const id = setTimeout(async () => {
       try {
         const res = await searchEntries(supabase, lang, query)

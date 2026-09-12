@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { pickIpa, pickPrimarySense, searchEntries, getEntryDetail, getCrossLanguage, getCharacters, resolveTokens, getHeadwords } from '@/lib/dictionary/search'
+import { pickIpa, pickPrimarySense, searchEntries, getEntryDetail, getCrossLanguage, getCharacters, resolveTokens, getZhSegmentCandidates } from '@/lib/dictionary/search'
 
 describe('pickIpa', () => {
   it('prefers en-US, then en-UK', () => {
@@ -38,17 +38,36 @@ function mockClient(returnData: unknown) {
   } as unknown as import('@supabase/supabase-js').SupabaseClient
 }
 
+// searchEntries is backed by the lex.search RPC (supabase/migrations/0016_search.sql),
+// which already picks the primary sense/pronunciation in SQL, so the mocked row is flat.
+function rpcClient(returnData: unknown) {
+  const rpc = vi.fn(() => Promise.resolve({ data: returnData, error: null }))
+  const client = { schema: vi.fn(() => ({ rpc })) } as unknown as import('@supabase/supabase-js').SupabaseClient
+  return { client, rpc }
+}
+
 describe('searchEntries', () => {
-  it('maps rows to previews with chosen ipa and primary sense', async () => {
-    const client = mockClient([
+  it('maps the lex.search RPC row to a preview', async () => {
+    const { client } = rpcClient([
       {
-        id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', attributes: {},
-        senses: [{ pos: 'noun', gloss_vi: 'con chó', gloss_en: 'dog', sense_order: 1 }],
-        pronunciations: [{ accent: 'en-US', ipa: '/dɔːɡ/', audio_url: 'x.ogg' }],
+        id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', frequency_rank: 500,
+        attributes: {}, pos: 'noun', gloss_vi: 'con chó', gloss_en: 'dog', ipa: '/dɔːɡ/', audio_url: 'x.ogg', rank: 0.9,
       },
     ])
     const res = await searchEntries(client, 'en', 'dog')
     expect(res[0]).toMatchObject({ id: 'en:dog', headword: 'dog', ipa: '/dɔːɡ/', glossVi: 'con chó', pos: 'noun', audioUrl: 'x.ogg', level: 'A1' })
+  })
+
+  it('calls the RPC with the trimmed query, the single language, and the limit', async () => {
+    const { client, rpc } = rpcClient([])
+    await searchEntries(client, 'en', '  dog  ', 5)
+    expect(rpc).toHaveBeenCalledWith('search', { p_q: 'dog', p_langs: ['en'], p_limit: 5 })
+  })
+
+  it('returns [] without calling the RPC for an empty query', async () => {
+    const { client, rpc } = rpcClient([])
+    expect(await searchEntries(client, 'en', '   ')).toEqual([])
+    expect(rpc).not.toHaveBeenCalled()
   })
 })
 
@@ -153,7 +172,7 @@ function thenableClient(results: { data: unknown; error: null }[]) {
 }
 
 const dogRow = {
-  id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', attributes: {},
+  id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', frequency_rank: 500, attributes: {},
   senses: [{ pos: 'noun', gloss_vi: 'con chó', gloss_en: 'dog', sense_order: 1 }],
   pronunciations: [{ accent: 'en-US', ipa: '/dɔːɡ/', audio_url: null }],
 }
@@ -186,9 +205,15 @@ describe('resolveTokens', () => {
   })
 })
 
-describe('getHeadwords', () => {
-  it('returns the headword strings for a language', async () => {
+describe('getZhSegmentCandidates', () => {
+  it('returns the matched headword strings for candidate substrings found in the text', async () => {
     const client = thenableClient([{ data: [{ headword: '你好' }, { headword: '好' }], error: null }])
-    expect(await getHeadwords(client, 'zh')).toEqual(['你好', '好'])
+    expect(await getZhSegmentCandidates(client, '你好吗')).toEqual(['你好', '好'])
+  })
+
+  it('returns [] without querying when the text has no multi-character Han run', async () => {
+    const client = thenableClient([])
+    expect(await getZhSegmentCandidates(client, 'a')).toEqual([])
+    expect(await getZhSegmentCandidates(client, '')).toEqual([])
   })
 })
