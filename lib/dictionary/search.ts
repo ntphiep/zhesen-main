@@ -57,18 +57,28 @@ export async function searchEntriesVi(
   return searchRpcRow.array().parse(data ?? []).map(toPreviewFromSearchRow)
 }
 
-/** Reverse lookup across all three languages at once, grouped by language. */
+/**
+ * Reverse lookup across all three languages at once, grouped by language.
+ *
+ * One RPC call rather than three. The scan that finds candidate glosses is the
+ * expensive half of `lex.search_vi` and it barely shrinks when the language is
+ * narrowed, so asking per language paid for that scan three times over.
+ */
 export async function searchAllLanguagesVi(
   supabase: SupabaseClient, query: string, perLang = 8,
 ): Promise<Record<LangCode, DictEntryPreview[]>> {
   const q = query.trim()
   if (!q) return { en: [], zh: [], es: [] }
-  const [en, zh, es] = await Promise.all([
-    searchEntriesVi(supabase, 'en', q, perLang),
-    searchEntriesVi(supabase, 'zh', q, perLang),
-    searchEntriesVi(supabase, 'es', q, perLang),
-  ])
-  return { en, zh, es }
+  const { data, error } = await supabase
+    .schema('lex')
+    .rpc('search_vi', { p_q: q, p_langs: LANG_CODES, p_limit: perLang * LANG_CODES.length })
+  if (error) throw error
+  const grouped: Record<LangCode, DictEntryPreview[]> = { en: [], zh: [], es: [] }
+  for (const row of searchRpcRow.array().parse(data ?? [])) {
+    const bucket = grouped[row.lang]
+    if (bucket.length < perLang) bucket.push(toPreviewFromSearchRow(row))
+  }
+  return grouped
 }
 
 /** Trigram-nearest "did you mean...?" candidates, via the `lex.suggest` RPC. */

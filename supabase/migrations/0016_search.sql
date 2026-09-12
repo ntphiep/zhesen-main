@@ -121,7 +121,7 @@ as $$
                       else 2 end
        limit 1) as ipa,
     (select p.audio_url from lex.pronunciations p where p.entry_id = e.id and p.audio_url is not null limit 1) as audio_url,
-    (
+    greatest(
       greatest(
         case when e.headword_normalized = (select q_norm from q) then 4.0
              when e.headword_normalized like (select q_norm from q) || '%' then 3.0
@@ -130,9 +130,6 @@ as $$
         -- compare an unaccented copy for a query typed without accents.
         case when e.lang::text in ('en', 'es') and lower(extensions.immutable_unaccent(e.headword_normalized)) = (select q_norm from q) then 4.0
              when e.lang::text in ('en', 'es') and lower(extensions.immutable_unaccent(e.headword_normalized)) like (select q_norm from q) || '%' then 3.0
-             else 0 end,
-        case when e.lang::text in ('en', 'es')
-               then coalesce(extensions.similarity(e.headword_normalized, (select q_norm from q)), 0) * 2.0
              else 0 end,
         case when e.lang::text = 'en' and e.search_vector @@ websearch_to_tsquery('lex.zhesen_en', (select q_raw from q))
                then ts_rank(e.search_vector, websearch_to_tsquery('lex.zhesen_en', (select q_raw from q)))
@@ -144,7 +141,25 @@ as $$
         case when e.lang::text = 'zh' and (select q_pinyin from q) <> '' and e.pinyin_toneless = (select q_pinyin from q) then 3.5
              when e.lang::text = 'zh' and (select q_pinyin from q) <> '' and e.pinyin_toneless like (select q_pinyin from q) || '%' then 2.5
              else 0 end
-      ) * (1.0 / sqrt(greatest(coalesce(e.frequency_rank, 100000), 1)::float8))
+      ) + 0.5 / sqrt(greatest(coalesce(e.frequency_rank, 100000), 1)::float8),
+      -- Fuzzy matches are scored the way a spell checker does: how close the string
+      -- is, weighted by how likely the word is. Trigram distance alone puts
+      -- "relieve" above "receive" for the typo "recieve", because it genuinely is
+      -- the closer string; frequency is what tells them apart. The prior is capped
+      -- so a very common word cannot ride frequency alone, and the branch stays
+      -- under the 3.0 prefix tier so a guess never outranks a word that actually
+      -- starts with what was typed.
+      --
+      -- Structural matches above take the opposite treatment: there frequency is
+      -- only a tie-breaker, because multiplying by it once put "can" ahead of an
+      -- exact match on "cat".
+      least(
+        2.9,
+        (case when e.lang::text in ('en', 'es')
+                then coalesce(extensions.similarity(e.headword_normalized, (select q_norm from q)), 0) * 2.0
+              else 0 end)
+        * least(3.0, 1.0 + 50.0 / sqrt(greatest(coalesce(e.frequency_rank, 100000), 1)::float8))
+      )
     )::real as rank
   from lex.entries e, q
   where (p_langs is null or e.lang::text = any(p_langs))

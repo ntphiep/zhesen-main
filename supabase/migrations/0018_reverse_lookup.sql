@@ -45,18 +45,37 @@ create index if not exists idx_lex_entries_gloss_vi_all_trgm on lex.entries usin
 -- Ranking, matching lex.search's approach: exact whole-gloss match beats a
 -- prefix beats a substring beats a fuzzy trigram match; the winning score is
 -- then scaled by frequency_rank so common words surface first.
-create or replace function lex.search_vi(p_q text, p_langs text[] default null, p_limit int default 20)
-returns table (
-  id text, lang text, headword text, traditional text, level text, frequency_rank int,
-  attributes jsonb, pos text, gloss_vi text, gloss_en text, ipa text, audio_url text, rank real
-)
-language sql
+create or replace function lex.search_vi(p_q text, p_langs text[] default null::text[], p_limit integer default 20)
+returns table(id text, lang text, headword text, traditional text, level text, frequency_rank integer, attributes jsonb, pos text, gloss_vi text, gloss_en text, ipa text, audio_url text, rank real)
+language plpgsql
 stable
-as $$
-  with q as (
-    select lower(extensions.immutable_unaccent(trim(p_q))) as q_norm
+as $function$
+-- The RETURNS TABLE column names (pos, gloss_vi, lang, ...) also become plpgsql
+-- variables and would shadow the identically named table columns.
+#variable_conflict use_column
+declare
+  v_norm text := lower(extensions.immutable_unaccent(trim(p_q)));
+begin
+  -- A one- or two-syllable Vietnamese query is a substring of a huge share of the
+  -- glosses: "ăn" normalises to "an", which sits inside bàn, cản, than and 48,675
+  -- senses in total. Matching on a word boundary instead cuts that to 1,724 and
+  -- the hits are the ones a reader actually meant.
+  --
+  -- The two strategies live in separate statements rather than one query with a
+  -- CASE or an OR. Inside a plain SQL function the planner has to build one plan
+  -- covering both, which either hides the `%` operator from
+  -- idx_lex_senses_gloss_vi_trgm or drags the unused branch along; measured both
+  -- ways, each cost the other strategy roughly two to three hundred milliseconds.
+  if length(v_norm) < 4 and v_norm ~ '^[a-z0-9 ]+$' then
+    return query
+with q as (
+    select
+      lower(extensions.immutable_unaccent(trim(p_q))) as q_norm
   ),
-  -- Best-scoring sense per entry against the curated, sense-level gloss_vi.
+  -- Best-scoring sense per entry against the curated, sense-level gloss_vi. The
+  -- language filter is applied here rather than at the end: without it every call
+  -- scanned all 178k senses and the three per-language calls each repeated the
+  -- same work, which took "ăn" to roughly six seconds.
   sense_hit as (
     select
       s.entry_id, s.pos, s.gloss_vi, s.sense_order,
@@ -65,15 +84,19 @@ as $$
              when s.gloss_vi_normalized like (select q_norm from q) || '%' then 4.0
              when s.gloss_vi_normalized like '%' || (select q_norm from q) || '%' then 3.0
              else 0 end,
-        coalesce(extensions.similarity(s.gloss_vi_normalized, (select q_norm from q)), 0) * 1.2
+        -- Trigram similarity says nothing useful about a two-character query, and
+        -- computing it for every candidate row is what made short queries slow.
+        0
       ) as score
     from lex.senses s
+    join lex.entries se on se.id = s.entry_id
     where (select q_norm from q) <> ''
+      and (p_langs is null or se.lang::text = any(p_langs))
       and s.gloss_vi_normalized is not null
-      and (
-        s.gloss_vi_normalized like '%' || (select q_norm from q) || '%'
-        or s.gloss_vi_normalized % (select q_norm from q)
-      )
+      -- Written as two flat alternatives rather than a CASE: wrapping the `%`
+      -- operator inside CASE hides it from the planner, which then stops using
+      -- idx_lex_senses_gloss_vi_trgm and makes long queries slower than before.
+      and s.gloss_vi_normalized ~ ('(^|[^[:alnum:]])' || (select q_norm from q) || '([^[:alnum:]]|$)')
   ),
   best_sense as (
     select distinct on (entry_id) entry_id, pos, gloss_vi, score
@@ -82,8 +105,8 @@ as $$
   ),
   -- Entries whose broader gloss_vi_all covers the query even though no single
   -- sense row does. A full-element match ("nhan duoc" as one whole array item)
-  -- ranks close to a curated exact match; a bare substring ranks low since it
-  -- can land inside an unrelated longer meaning.
+  -- ranks close to a curated exact match; a bare substring ranks low since it can
+  -- land inside an unrelated longer meaning.
   attr_hit as (
     select
       e.id as entry_id,
@@ -91,6 +114,112 @@ as $$
            else 1.0 end as score
     from lex.entries e
     where (select q_norm from q) <> ''
+      and (p_langs is null or e.lang::text = any(p_langs))
+      and e.gloss_vi_all_normalized is not null
+      and e.gloss_vi_all_normalized ~ ('(^|[^[:alnum:]])' || (select q_norm from q) || '([^[:alnum:]]|$)')
+  ),
+  candidates as (
+    select entry_id from best_sense
+    union
+    select entry_id from attr_hit
+  ),
+  -- Rank and cut to p_limit before touching pronunciations or the entry's own
+  -- first sense, so those lookups run for the handful of rows actually returned
+  -- instead of for every candidate.
+  ranked as (
+    select
+      e.id, e.lang::text as lang, e.headword, e.traditional, e.level,
+      e.frequency_rank, e.attributes,
+      bs.pos as hit_pos, bs.gloss_vi as hit_gloss_vi,
+      (greatest(coalesce(bs.score, 0), coalesce(ah.score, 0))
+       -- A gloss carrying the query with its diacritics intact answers the question
+       -- better than one that only matches once they are folded away: "ăn" should
+       -- reach 吃 before 印象 ("ấn tượng") or 保险 ("an toàn"), which collapse to the
+       -- same "an". Worth more than the frequency tie-breaker, and the two together
+       -- stay under the 1.0 gap between score tiers.
+       + case when lower(coalesce(bs.gloss_vi, '')) like '%' || lower(trim(p_q)) || '%'
+              then 0.5 else 0 end
+       + 0.3 / sqrt(greatest(coalesce(e.frequency_rank, 100000), 1)::float8))::real as rank
+    from lex.entries e
+    join candidates c on c.entry_id = e.id
+    left join best_sense bs on bs.entry_id = e.id
+    left join attr_hit ah on ah.entry_id = e.id
+    order by rank desc
+    limit p_limit
+  )
+  select
+    r.id, r.lang, r.headword, r.traditional, r.level, r.frequency_rank, r.attributes,
+    coalesce(r.hit_pos, ps.pos) as pos,
+    coalesce(r.hit_gloss_vi, ps.gloss_vi) as gloss_vi,
+    ps.gloss_en,
+    (select p.ipa from lex.pronunciations p
+      where p.entry_id = r.id and p.ipa is not null
+      order by case when r.lang = 'en' and lower(p.accent) like '%us%' then 0
+                    when r.lang = 'en' and lower(p.accent) like '%uk%' then 1
+                    else 2 end
+      limit 1) as ipa,
+    (select p.audio_url from lex.pronunciations p
+      where p.entry_id = r.id and p.audio_url is not null limit 1) as audio_url,
+    r.rank
+  from ranked r
+  left join lateral (
+    select s.pos, s.gloss_vi, s.gloss_en
+    from lex.senses s
+    where s.entry_id = r.id
+    order by s.sense_order asc
+    limit 1
+  ) ps on true
+  order by r.rank desc;
+  else
+    return query
+with q as (
+    select
+      lower(extensions.immutable_unaccent(trim(p_q))) as q_norm
+  ),
+  -- Best-scoring sense per entry against the curated, sense-level gloss_vi. The
+  -- language filter is applied here rather than at the end: without it every call
+  -- scanned all 178k senses and the three per-language calls each repeated the
+  -- same work, which took "ăn" to roughly six seconds.
+  sense_hit as (
+    select
+      s.entry_id, s.pos, s.gloss_vi, s.sense_order,
+      greatest(
+        case when s.gloss_vi_normalized = (select q_norm from q) then 5.0
+             when s.gloss_vi_normalized like (select q_norm from q) || '%' then 4.0
+             when s.gloss_vi_normalized like '%' || (select q_norm from q) || '%' then 3.0
+             else 0 end,
+        -- Trigram similarity says nothing useful about a two-character query, and
+        -- computing it for every candidate row is what made short queries slow.
+        coalesce(extensions.similarity(s.gloss_vi_normalized, (select q_norm from q)), 0) * 1.2
+      ) as score
+    from lex.senses s
+    join lex.entries se on se.id = s.entry_id
+    where (select q_norm from q) <> ''
+      and (p_langs is null or se.lang::text = any(p_langs))
+      and s.gloss_vi_normalized is not null
+      -- Written as two flat alternatives rather than a CASE: wrapping the `%`
+      -- operator inside CASE hides it from the planner, which then stops using
+      -- idx_lex_senses_gloss_vi_trgm and makes long queries slower than before.
+      and ( s.gloss_vi_normalized like '%' || (select q_norm from q) || '%'
+            or s.gloss_vi_normalized % (select q_norm from q) )
+  ),
+  best_sense as (
+    select distinct on (entry_id) entry_id, pos, gloss_vi, score
+    from sense_hit
+    order by entry_id, score desc, sense_order asc
+  ),
+  -- Entries whose broader gloss_vi_all covers the query even though no single
+  -- sense row does. A full-element match ("nhan duoc" as one whole array item)
+  -- ranks close to a curated exact match; a bare substring ranks low since it can
+  -- land inside an unrelated longer meaning.
+  attr_hit as (
+    select
+      e.id as entry_id,
+      case when e.gloss_vi_all_normalized like '%"' || (select q_norm from q) || '"%' then 3.5
+           else 1.0 end as score
+    from lex.entries e
+    where (select q_norm from q) <> ''
+      and (p_langs is null or e.lang::text = any(p_langs))
       and e.gloss_vi_all_normalized is not null
       and e.gloss_vi_all_normalized like '%' || (select q_norm from q) || '%'
   ),
@@ -99,39 +228,58 @@ as $$
     union
     select entry_id from attr_hit
   ),
-  primary_sense as (
-    select distinct on (entry_id) entry_id, pos, gloss_vi, gloss_en
-    from lex.senses
-    order by entry_id, sense_order asc
+  -- Rank and cut to p_limit before touching pronunciations or the entry's own
+  -- first sense, so those lookups run for the handful of rows actually returned
+  -- instead of for every candidate.
+  ranked as (
+    select
+      e.id, e.lang::text as lang, e.headword, e.traditional, e.level,
+      e.frequency_rank, e.attributes,
+      bs.pos as hit_pos, bs.gloss_vi as hit_gloss_vi,
+      (greatest(coalesce(bs.score, 0), coalesce(ah.score, 0))
+       -- A gloss carrying the query with its diacritics intact answers the question
+       -- better than one that only matches once they are folded away: "ăn" should
+       -- reach 吃 before 印象 ("ấn tượng") or 保险 ("an toàn"), which collapse to the
+       -- same "an". Worth more than the frequency tie-breaker, and the two together
+       -- stay under the 1.0 gap between score tiers.
+       + case when lower(coalesce(bs.gloss_vi, '')) like '%' || lower(trim(p_q)) || '%'
+              then 0.5 else 0 end
+       + 0.3 / sqrt(greatest(coalesce(e.frequency_rank, 100000), 1)::float8))::real as rank
+    from lex.entries e
+    join candidates c on c.entry_id = e.id
+    left join best_sense bs on bs.entry_id = e.id
+    left join attr_hit ah on ah.entry_id = e.id
+    order by rank desc
+    limit p_limit
   )
   select
-    e.id, e.lang::text, e.headword, e.traditional, e.level, e.frequency_rank, e.attributes,
-    coalesce(bs.pos, ps.pos) as pos,
-    coalesce(bs.gloss_vi, ps.gloss_vi) as gloss_vi,
-    ps.gloss_en as gloss_en,
-    (select p.ipa from lex.pronunciations p where p.entry_id = e.id and p.ipa is not null
-       order by case when e.lang::text = 'en' and lower(p.accent) like '%us%' then 0
-                      when e.lang::text = 'en' and lower(p.accent) like '%uk%' then 1
-                      else 2 end
-       limit 1) as ipa,
-    (select p.audio_url from lex.pronunciations p where p.entry_id = e.id and p.audio_url is not null limit 1) as audio_url,
-    -- Frequency is a tie-breaker, not a multiplier. Multiplying let a rank-1 word
-    -- like "the" outrank an exact match on "get", because 1/sqrt(1) beat a
-    -- perfect score divided by sqrt(50). The bonus stays under the 1.0 gap
-    -- between score tiers, so match quality always wins first.
-    (greatest(coalesce(bs.score, 0), coalesce(ah.score, 0))
-     + 0.5 / sqrt(greatest(coalesce(e.frequency_rank, 100000), 1)::float8))::real as rank
-  from lex.entries e
-  join candidates c on c.entry_id = e.id
-  left join best_sense bs on bs.entry_id = e.id
-  left join attr_hit ah on ah.entry_id = e.id
-  left join primary_sense ps on ps.entry_id = e.id
-  where (p_langs is null or e.lang::text = any(p_langs))
-  order by rank desc
-  limit p_limit;
-$$;
+    r.id, r.lang, r.headword, r.traditional, r.level, r.frequency_rank, r.attributes,
+    coalesce(r.hit_pos, ps.pos) as pos,
+    coalesce(r.hit_gloss_vi, ps.gloss_vi) as gloss_vi,
+    ps.gloss_en,
+    (select p.ipa from lex.pronunciations p
+      where p.entry_id = r.id and p.ipa is not null
+      order by case when r.lang = 'en' and lower(p.accent) like '%us%' then 0
+                    when r.lang = 'en' and lower(p.accent) like '%uk%' then 1
+                    else 2 end
+      limit 1) as ipa,
+    (select p.audio_url from lex.pronunciations p
+      where p.entry_id = r.id and p.audio_url is not null limit 1) as audio_url,
+    r.rank
+  from ranked r
+  left join lateral (
+    select s.pos, s.gloss_vi, s.gloss_en
+    from lex.senses s
+    where s.entry_id = r.id
+    order by s.sense_order asc
+    limit 1
+  ) ps on true
+  order by r.rank desc;
+  end if;
+end;
+$function$;
 
-grant execute on function lex.search_vi(text, text[], int) to anon, authenticated, service_role;
+grant execute on function lex.search_vi(text, text[], integer) to anon, authenticated, service_role;
 
 -- "Did you mean...?" suggestions for a query with zero hits in either direction.
 -- Trigram-nearest headwords (forward) and Vietnamese glosses (reverse).

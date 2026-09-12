@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import {
-  pickIpa, pickPrimarySense, searchEntries, searchEntriesVi, suggestNearby, searchBothDirections,
-  getEntryDetail, getCrossLanguage, getCharacters, resolveTokens, getZhSegmentCandidates,
+  pickIpa, pickPrimarySense, searchEntries, searchEntriesVi, searchAllLanguagesVi, suggestNearby,
+  searchBothDirections, getEntryDetail, getCrossLanguage, getCharacters, resolveTokens,
+  getZhSegmentCandidates,
 } from '@/lib/dictionary/search'
 
 describe('pickIpa', () => {
@@ -86,6 +87,49 @@ const receiveViRow = {
   id: 'en:receive', lang: 'en', headword: 'receive', traditional: null, level: null, frequency_rank: 3000,
   attributes: {}, pos: 'verb', gloss_vi: 'nhận được', gloss_en: 'receive', ipa: null, audio_url: null, rank: 4.2,
 }
+
+function viRow(id: string, lang: string, headword: string) {
+  return {
+    id, lang, headword, traditional: null, level: null, frequency_rank: null,
+    attributes: null, pos: null, gloss_vi: null, gloss_en: null, ipa: null,
+    audio_url: null, rank: 1,
+  }
+}
+
+describe('searchAllLanguagesVi', () => {
+  it('asks the database once and splits the rows by language', async () => {
+    const { client, rpc } = rpcClient([
+      viRow('en:get', 'en', 'get'),
+      viRow('en:got', 'en', 'got'),
+      viRow('zh:收', 'zh', '收'),
+    ])
+    const out = await searchAllLanguagesVi(client, 'nhận được', 8)
+
+    // Three calls, one per language, meant paying for the same gloss scan three
+    // times; the scan barely shrinks when the language is narrowed.
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(rpc).toHaveBeenCalledWith('search_vi', { p_q: 'nhận được', p_langs: ['en', 'es', 'zh'], p_limit: 24 })
+    expect(out.en.map((e) => e.headword)).toEqual(['get', 'got'])
+    expect(out.zh.map((e) => e.headword)).toEqual(['收'])
+    expect(out.es).toEqual([])
+  })
+
+  it('caps each language at perLang even when one language dominates', async () => {
+    const { client } = rpcClient([
+      viRow('en:a', 'en', 'a'), viRow('en:b', 'en', 'b'), viRow('en:c', 'en', 'c'),
+      viRow('zh:d', 'zh', 'd'),
+    ])
+    const out = await searchAllLanguagesVi(client, 'x', 2)
+    expect(out.en.map((e) => e.headword)).toEqual(['a', 'b'])
+    expect(out.zh.map((e) => e.headword)).toEqual(['d'])
+  })
+
+  it('skips the round trip on an empty query', async () => {
+    const { client, rpc } = rpcClient([])
+    await searchAllLanguagesVi(client, '   ', 8)
+    expect(rpc).not.toHaveBeenCalled()
+  })
+})
 
 describe('searchEntriesVi', () => {
   it('maps the lex.search_vi RPC row to a preview', async () => {
