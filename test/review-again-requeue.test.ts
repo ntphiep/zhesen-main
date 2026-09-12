@@ -38,13 +38,17 @@ describe('grading a lapsed card twice in one session', () => {
 })
 
 describe('a clock that runs backwards', () => {
-  it('grades at the earlier timestamp instead of throwing', () => {
+  it('grades instead of throwing, and records the review when it happened', () => {
+    // This used to assert that the card kept the LATER timestamp. It does not any
+    // more: keeping it meant the next review clamped to it again and computed zero
+    // elapsed days forever, so one bad clock reading took the card out of the
+    // review queue permanently. See test/srs-clock.test.ts and lib/progress/srs.ts.
     const s = review(initialSrsState('v1', T0), 'good', T0)
     expect(s.lastReviewedAt).toBe(T0)
 
     const earlier = T0 - 5 * DAY
     expect(() => review(s, 'good', earlier)).not.toThrow()
-    expect(review(s, 'good', earlier).lastReviewedAt).toBe(T0)
+    expect(review(s, 'good', earlier).lastReviewedAt).toBe(earlier)
   })
 
   it('still uses the real time when the clock is sane', () => {

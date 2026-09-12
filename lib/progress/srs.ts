@@ -94,16 +94,29 @@ export function initialSrsState(vocabId: string, now: number): SrsState {
 /**
  * Grade a card with FSRS and return its next schedule.
  *
- * `now` and the stored last-review timestamp both come from a browser clock, and
- * the two need not agree: a manual clock change, a second device in another
- * timezone, or an NTP correction pulling the clock backwards all produce a review
- * that appears to happen before the previous one. ts-fsrs rejects that with
- * `Invalid delta_t "-5"`, which surfaced as a dead grading button. Treating such a
- * review as happening at the earlier timestamp costs nothing — the elapsed time
- * was going to be nonsense either way — and keeps the card gradeable.
+ * `now` and the stored last-review timestamp both come from a browser clock and
+ * need not agree: a manual clock change or an NTP correction pulling the clock
+ * backwards produces a review that appears to happen before the previous one.
+ * ts-fsrs rejects that with `Invalid delta_t "-5"`, which surfaced as a dead
+ * grading button, so the scheduler is handed the later of the two.
+ *
+ * The result is then pulled back onto the real timeline. Feeding ts-fsrs the
+ * later timestamp and storing what it returned was worse than the crash it
+ * replaced: the future timestamp became the card's last review, so every later
+ * review read it, clamped to it again, and computed zero elapsed days forever. A
+ * card graded once while the clock ran a year fast froze at stability 64.69 with
+ * a due date in 2027, and `listDueCards` filters on `fsrs_due_at <= now`, so it
+ * never came up again and nothing said so.
+ *
+ * Shifting the due date back by the same skew and recording the review at the
+ * moment it actually happened leaves an ordinary review untouched -- the skew is
+ * zero -- and lets a card recover on its next review.
  */
 export function review(state: SrsState, grade: Grade, now: number): SrsState {
   const at = Math.max(now, state.lastReviewedAt ?? now)
   const { card } = scheduler.next(toCardInput(state), at, RATING_BY_GRADE[grade])
-  return fromCard(state.vocabId, card)
+  const next = fromCard(state.vocabId, card)
+  const skew = at - now
+  if (skew === 0) return next
+  return { ...next, dueAt: next.dueAt - skew, lastReviewedAt: now }
 }

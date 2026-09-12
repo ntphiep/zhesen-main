@@ -124,6 +124,39 @@ describe('SearchBox', () => {
     expect(screen.queryAllByRole('link')).toHaveLength(0)
   })
 
+  it('says the service is busy rather than that the word does not exist', async () => {
+    // "Không tìm thấy kết quả" is a claim about the dictionary. When the route
+    // refuses the request the dictionary was never asked, and a user told their
+    // word is missing will go and look for it somewhere else.
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: false, status: 429, json: async () => ({ error: 'chậm lại' }),
+    })))
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('textbox'), 'dog')
+    await new Promise((r) => setTimeout(r, 300))
+    expect(screen.queryByText('Không tìm thấy kết quả.')).toBeNull()
+    expect(screen.getAllByText(/quá nhiều lượt tra cứu/).length).toBeGreaterThan(0)
+  })
+
+  it('clears the busy notice once a later search succeeds', async () => {
+    const fetchMock = vi
+      .fn<() => Promise<{ ok: boolean; status?: number; json: () => Promise<unknown> }>>()
+      .mockResolvedValueOnce({ ok: false, status: 429, json: async () => ({ error: 'chậm lại' }) })
+      .mockResolvedValue({
+        ok: true,
+        json: async () => response({ forward: { en: [preview('en:dog', 'en', 'dog', 'con chó')], zh: [], es: [] } }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<SearchBox initialQuery="" />)
+    const box = screen.getByRole('textbox')
+    await userEvent.type(box, 'dog')
+    await new Promise((r) => setTimeout(r, 300))
+    await userEvent.clear(box)
+    await userEvent.type(box, 'dogs')
+    await screen.findByRole('link', { name: /dog/ })
+    expect(screen.queryAllByText(/quá nhiều lượt tra cứu/)).toHaveLength(0)
+  })
+
   it('does not cache a refused request, so the next keystroke asks again', async () => {
     const fetchMock = vi.fn(async () => ({ ok: false, status: 429, json: async () => ({ error: 'chậm lại' }) }))
     vi.stubGlobal('fetch', fetchMock)

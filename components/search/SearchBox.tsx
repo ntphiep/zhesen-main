@@ -18,6 +18,7 @@ function bestScore(groups: ByLang): number {
   return Math.max(0, ...[...groups.en, ...groups.es, ...groups.zh].map((e) => e.matchScore ?? 0))
 }
 const EMPTY = EMPTY_SEARCH_RESPONSE
+const BUSY_MESSAGE = 'Đang có quá nhiều lượt tra cứu. Vui lòng thử lại sau ít giây.'
 const RECENT_KEY = 'zhesen:recent-searches'
 /** en levels only as of this writing (verified: 0 es/zh rows have a level), in
  * CEFR order; any level value not in this list (there shouldn't be one) still
@@ -40,6 +41,10 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   const [query, setQuery] = useState(initialQuery)
   const [data, setData] = useState<SearchResponse>(EMPTY)
   const [loading, setLoading] = useState(false)
+  // Set when the route refused the request rather than answering it. "Không tìm
+  // thấy kết quả" would be a claim about the dictionary, and the dictionary was
+  // never asked.
+  const [refused, setRefused] = useState(false)
   const [active, setActive] = useState(0)
   const [levelFilter, setLevelFilter] = useState<string | null>(null)
   const [posFilter, setPosFilter] = useState<string | null>(null)
@@ -68,7 +73,7 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
     setActive(0)
     setLevelFilter(null)
     setPosFilter(null)
-    if (!query.trim()) { setData(EMPTY); setLoading(false) }
+    if (!query.trim()) { setData(EMPTY); setLoading(false); setRefused(false) }
   }
 
   useEffect(() => {
@@ -87,7 +92,8 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
           // A rejected request (rate limit, server error, a proxy's HTML page)
           // carries a body that is not a result set. Show nothing rather than
           // caching it, so the next keystroke tries again instead of replaying it.
-          if (!res.ok) { setData(EMPTY); return }
+          if (!res.ok) { setRefused(true); setData(EMPTY); return }
+          setRefused(false)
           const json = searchResponse.parse(await res.json())
           cache.current.set(key, json)
           setData(json)
@@ -186,8 +192,8 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   }
 
   const showRecent = focused && !query.trim() && recent.length > 0
-  const showNoResults = !loading && query.trim() && allShown.length === 0 && data.suggestions.length === 0
-  const showSuggestions = !loading && query.trim() && allShown.length === 0 && data.suggestions.length > 0
+  const showNoResults = !loading && !refused && query.trim() && allShown.length === 0 && data.suggestions.length === 0
+  const showSuggestions = !loading && !refused && query.trim() && allShown.length === 0 && data.suggestions.length > 0
   const showFilteredEmpty = !loading && query.trim() && allShown.length > 0 && total === 0
 
   function renderGroup(lang: LangCode, entries: DictEntryPreview[], reversed: boolean) {
@@ -264,11 +270,14 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
       <p role="status" aria-live="polite" className="sr-only">
         {loading
           ? 'Đang tìm...'
-          : query.trim()
-            ? `${total} kết quả cho "${query.trim()}"`
-            : ''}
+          : refused
+            ? BUSY_MESSAGE
+            : query.trim()
+              ? `${total} kết quả cho "${query.trim()}"`
+              : ''}
       </p>
       {loading && <p className="text-sm text-black/40">Đang tìm...</p>}
+      {!loading && refused && <p className="text-sm text-black/40">{BUSY_MESSAGE}</p>}
       {showNoResults && <p className="text-sm text-black/40">Không tìm thấy kết quả.</p>}
       {showSuggestions && (
         <div className="flex flex-col gap-1">

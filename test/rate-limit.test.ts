@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { clientKey, createRateLimiter } from '@/lib/http/rate-limit'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { clientKey, createColdQueryLimiter, createRateLimiter } from '@/lib/http/rate-limit'
 
 /** A limiter on a clock the test controls, so no test has to wait out a window. */
 function limiterAt(limit: number, windowMs: number, maxKeys?: number) {
@@ -73,22 +73,108 @@ describe('createRateLimiter', () => {
 })
 
 describe('clientKey', () => {
-  const req = (headers: Record<string, string>) => new Request('https://x.test/', { headers })
-
-  it('takes the original client from a proxy chain', () => {
-    expect(clientKey(req({ 'x-forwarded-for': '203.0.113.7, 10.0.0.1, 10.0.0.2' }))).toBe('203.0.113.7')
+  const req = (headers: Record<string, string> = {}) => new Request('https://x.test/', { headers })
+  const original = process.env.TRUST_PROXY_HEADER
+  afterEach(() => {
+    if (original === undefined) delete process.env.TRUST_PROXY_HEADER
+    else process.env.TRUST_PROXY_HEADER = original
   })
 
-  it('trims the whitespace proxies leave around the addresses', () => {
-    expect(clientKey(req({ 'x-forwarded-for': '  203.0.113.7 ' }))).toBe('203.0.113.7')
+  describe('behind a proxy the deployment vouches for', () => {
+    beforeEach(() => { process.env.TRUST_PROXY_HEADER = '1' })
+
+    it('takes the original client from a proxy chain', () => {
+      expect(clientKey(req({ 'x-forwarded-for': '203.0.113.7, 10.0.0.1, 10.0.0.2' }))).toBe('203.0.113.7')
+    })
+
+    it('trims the whitespace proxies leave around the addresses', () => {
+      expect(clientKey(req({ 'x-forwarded-for': '  203.0.113.7 ' }))).toBe('203.0.113.7')
+    })
+
+    it('falls back to x-real-ip', () => {
+      expect(clientKey(req({ 'x-real-ip': '203.0.113.9' }))).toBe('203.0.113.9')
+    })
+
+    it('identifies nobody when the headers are absent or blank', () => {
+      expect(clientKey(req())).toBeNull()
+      expect(clientKey(req({ 'x-forwarded-for': '   ' }))).toBeNull()
+    })
   })
 
-  it('falls back to x-real-ip', () => {
-    expect(clientKey(req({ 'x-real-ip': '203.0.113.9' }))).toBe('203.0.113.9')
+  describe('with no proxy in front', () => {
+    beforeEach(() => { delete process.env.TRUST_PROXY_HEADER })
+
+    it('ignores a header the client could have written itself', () => {
+      // Trusting it unconditionally made the per-address limit free to bypass:
+      // rotating the header let 5,000 of 5,000 requests through.
+      expect(clientKey(req({ 'x-forwarded-for': '203.0.113.7' }))).toBeNull()
+    })
+
+    it('does not herd every visitor into one shared bucket', () => {
+      // Returning a constant here capped the whole site at one caller's budget:
+      // on a bare `next start`, 120 of 200 searches got through in total.
+      expect(clientKey(req())).toBeNull()
+    })
+  })
+})
+
+describe('createColdQueryLimiter', () => {
+  function limiterAt(limit: number, windowMs: number, remember?: number) {
+    let clock = 1_000
+    const admit = createColdQueryLimiter({ limit, windowMs, remember, now: () => clock })
+    return { admit, advance: (ms: number) => { clock += ms } }
+  }
+
+  it('lets a query the cache already holds through for free', () => {
+    const { admit } = limiterAt(1, 60_000)
+    expect(admit('dog').allowed).toBe(true)
+    for (let i = 0; i < 100; i++) expect(admit('dog').allowed).toBe(true)
   })
 
-  it('buckets callers it cannot identify together rather than exempting them', () => {
-    expect(clientKey(req({}))).toBe('unknown')
-    expect(clientKey(req({ 'x-forwarded-for': '   ' }))).toBe('unknown')
+  it('caps how many queries it has never seen get through', () => {
+    const { admit } = limiterAt(3, 60_000)
+    expect(['a', 'b', 'c'].map((q) => admit(q).allowed)).toEqual([true, true, true])
+    expect(admit('d').allowed).toBe(false)
+  })
+
+  it('cannot be escaped by forging a header, because it never reads one', () => {
+    // This is the guarantee the per-address limiter could not give.
+    const { admit } = limiterAt(10, 60_000)
+    let allowed = 0
+    for (let i = 0; i < 5_000; i++) if (admit(`random-${i}`).allowed) allowed++
+    expect(allowed).toBe(10)
+  })
+
+  it('opens the budget again in the next window', () => {
+    const { admit, advance } = limiterAt(1, 60_000)
+    admit('a')
+    expect(admit('b').allowed).toBe(false)
+    advance(60_000)
+    expect(admit('b').allowed).toBe(true)
+  })
+
+  it('reports at least a second to wait', () => {
+    const { admit, advance } = limiterAt(1, 60_000)
+    admit('a')
+    expect(admit('b').retryAfterSeconds).toBe(60)
+    advance(59_900)
+    expect(admit('b').retryAfterSeconds).toBe(1)
+  })
+
+  it('forgets the least recently asked query rather than growing without bound', () => {
+    const { admit } = limiterAt(1_000, 60_000, 3)
+    admit('a'); admit('b'); admit('c'); admit('d')
+    const beforeWarm = admit('d').remaining
+    // 'd' is still warm, so asking again spends nothing.
+    expect(admit('d').remaining).toBe(beforeWarm)
+    // 'a' was pushed out by the cap, so it costs budget again.
+    const spent = 1_000 - admit('a').remaining
+    expect(spent).toBe(5)
+  })
+
+  it('refuses a configuration that would allow nothing or remember nothing', () => {
+    expect(() => createColdQueryLimiter({ limit: 0, windowMs: 1_000 })).toThrow(RangeError)
+    expect(() => createColdQueryLimiter({ limit: 1, windowMs: 0 })).toThrow(RangeError)
+    expect(() => createColdQueryLimiter({ limit: 1, windowMs: 1_000, remember: 0 })).toThrow(RangeError)
   })
 })
