@@ -70,16 +70,53 @@ export function rowToCard(r: CardRow): ReviewCard {
   }
 }
 
-/** Cards whose next review is due at or before `now`, soonest first. RLS scopes to the user. */
-export async function listDueCards(supabase: SupabaseClient, now: number, limit = 50): Promise<ReviewCard[]> {
-  const { data, error } = await supabase
-    .from('user_words')
-    .select(CARD_SELECT)
-    .lte('fsrs_due_at', new Date(now).toISOString())
-    .order('fsrs_due_at', { ascending: true })
-    .limit(limit)
-  if (error) throw error
-  return z.array(cardRowSchema).parse(data ?? []).map(rowToCard)
+export interface DueOptions {
+  /** Most cards in one session. */
+  limit?: number
+  /** Most never-seen cards in one session. */
+  newLimit?: number
+}
+
+/**
+ * The session queue: cards already being learned that are due, then a bounded
+ * number of cards never seen before.
+ *
+ * A new card is due the moment it is saved, so importing a wordlist made every
+ * word due at once -- 404 of one account's 407 cards have never been reviewed and
+ * all 404 are due. One flat query answered with fifty of them in whatever order
+ * their due timestamps happened to fall, which is a wall, not a session, and buried
+ * the handful of cards that were genuinely due for review underneath.
+ *
+ * Splitting the two is what every spaced-repetition scheduler does: reviews are
+ * obligations the schedule made and all of them belong in the session, while new
+ * cards are a choice about pace. Twenty is Anki's default daily allowance and a
+ * reasonable amount of new vocabulary for one sitting.
+ */
+export async function listDueCards(
+  supabase: SupabaseClient, now: number, options: DueOptions = {},
+): Promise<ReviewCard[]> {
+  const { limit = 50, newLimit = 20 } = options
+  const dueBy = new Date(now).toISOString()
+
+  const page = (fresh: boolean, take: number) =>
+    supabase
+      .from('user_words')
+      .select(CARD_SELECT)
+      .lte('fsrs_due_at', dueBy)
+      .filter('fsrs_reps', fresh ? 'eq' : 'gt', 0)
+      .order('fsrs_due_at', { ascending: true })
+      .limit(take)
+
+  const { data: reviews, error: reviewError } = await page(false, limit)
+  if (reviewError) throw reviewError
+  const learned = z.array(cardRowSchema).parse(reviews ?? []).map(rowToCard)
+
+  const room = Math.min(newLimit, limit - learned.length)
+  if (room <= 0) return learned
+
+  const { data: fresh, error: freshError } = await page(true, room)
+  if (freshError) throw freshError
+  return [...learned, ...z.array(cardRowSchema).parse(fresh ?? []).map(rowToCard)]
 }
 
 /** Number of wordlist cards currently due. RLS scopes to the user. */
