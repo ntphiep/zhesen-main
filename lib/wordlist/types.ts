@@ -24,7 +24,7 @@ export interface UserWord {
   updatedAt: string
 }
 
-// Trường người dùng tạo/sửa (không gồm id/timestamps/user_id)
+/** Fields the user supplies when creating/editing a word (excludes id/timestamps/user_id). */
 export interface WordDraft {
   lang: LangCode
   entryId: string | null
