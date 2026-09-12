@@ -6,6 +6,7 @@ import { listWords } from '@/lib/wordlist/store'
 import { AudioButton, speechLang } from '@/components/ui/AudioButton'
 import { checkTypedAnswer, type TypedResult } from '@/lib/practice/typing'
 import { logActivityDay } from '@/lib/wordlist/activity'
+import { shuffle } from '@/lib/practice/shuffle'
 import { gradeWordById } from '@/lib/wordlist/review'
 import { gradeForMode } from '@/lib/practice/grading'
 import type { LangCode } from '@/lib/languages'
@@ -33,15 +34,6 @@ function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
 }
 
 interface SpeakWord { id: string; headword: string; meaningVi: string | null; audioUrl: string | null; lang: LangCode }
-
-function shuffle<T>(input: T[]): T[] {
-  const a = [...input]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
 
 export function SpeakSession() {
   const supabase = useMemo(() => createClient(), [])

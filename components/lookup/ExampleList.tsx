@@ -1,6 +1,6 @@
 import { AudioButton } from '@/components/ui/AudioButton'
 import { TappableText } from '@/components/reader/TappableText'
-import { isCleanExample } from '@/lib/dictionary/search'
+import { isCleanExample } from '@/lib/dictionary/textQuality'
 import type { DictExample } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 

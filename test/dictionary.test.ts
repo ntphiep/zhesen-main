@@ -1,9 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
-import {
-  pickIpa, pickPrimarySense, searchEntries, searchEntriesVi, searchAllLanguagesVi, suggestNearby,
-  searchBothDirections, getEntryDetail, getCrossLanguage, getCharacters, resolveTokens,
-  getZhSegmentCandidates,
-} from '@/lib/dictionary/search'
+import { pickIpa, pickPrimarySense } from '@/lib/dictionary/rows'
+import { searchEntries, searchEntriesVi, searchAllLanguagesVi, suggestNearby, searchBothDirections } from '@/lib/dictionary/search'
+import { getEntryDetail, getCrossLanguage, getCharacters } from '@/lib/dictionary/entryDetail'
+import { resolveTokens, getZhSegmentCandidates } from '@/lib/dictionary/resolveTokens'
 
 describe('pickIpa', () => {
   it('prefers en-US, then en-UK', () => {

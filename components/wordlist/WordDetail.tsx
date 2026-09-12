@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { getEntryDetail } from '@/lib/dictionary/search'
+import { getEntryDetail } from '@/lib/dictionary/entryDetail'
 import { AudioButton } from '@/components/ui/AudioButton'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 import type { UserWord } from '@/lib/wordlist/types'

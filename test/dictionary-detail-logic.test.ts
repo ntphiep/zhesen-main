@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pickSenses, isCleanExample, isClassifierGloss, parseClassifiers, fillPivotVi, cleanMtGloss } from '@/lib/dictionary/search'
+import { pickSenses, isCleanExample, isClassifierGloss, parseClassifiers, fillPivotVi, cleanMtGloss } from '@/lib/dictionary/textQuality'
 import { classifyRelations } from '@/lib/dictionary/relations'
 import { groupWordForms } from '@/lib/dictionary/family'
 import type { DictSense, DictRelation } from '@/lib/dictionary/types'

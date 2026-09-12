@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { WordDetail } from '@/components/wordlist/WordDetail'
-import { getEntryDetail } from '@/lib/dictionary/search'
+import { getEntryDetail } from '@/lib/dictionary/entryDetail'
 import type { UserWord } from '@/lib/wordlist/types'
 
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
-vi.mock('@/lib/dictionary/search', () => ({
+vi.mock('@/lib/dictionary/entryDetail', () => ({
   getEntryDetail: vi.fn(async () => ({
     id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', ipa: '/dɔːɡ/', pos: 'noun',
     glossVi: 'con chó', glossEn: 'dog', audioUrl: null,

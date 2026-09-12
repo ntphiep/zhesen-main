@@ -1,6 +1,7 @@
 import { unstable_cache } from 'next/cache'
 import { createContentClient } from '@/lib/supabase/content'
-import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getTermPreviews, getCommonWords } from './search'
+import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getTermPreviews } from './entryDetail'
+import { getCommonWords } from './search'
 import { getEntriesContaining } from './containing'
 import { getWordOfDay, dayNumber, type DailyWord } from './wordOfDay'
 import { getLevelsForLanguage, getEntriesByLevel, type LevelSummary, type LevelPage } from './levels'

@@ -4,21 +4,13 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listWords } from '@/lib/wordlist/store'
 import { logActivityDay } from '@/lib/wordlist/activity'
+import { shuffle } from '@/lib/practice/shuffle'
 import { gradeWordById } from '@/lib/wordlist/review'
 import { gradeForMode } from '@/lib/practice/grading'
 import { checkTypedAnswer, type TypedResult } from '@/lib/practice/typing'
 import { TypingCard, type TypingPrompt } from '@/components/practice/TypingCard'
 
 const SIZE = 10
-
-function shuffle<T>(input: T[]): T[] {
-  const a = [...input]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
 
 export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
   const supabase = useMemo(() => createClient(), [])

@@ -1,4 +1,5 @@
 import type { LangCode } from '@/lib/languages'
+import { shuffle, type Rand } from './shuffle'
 
 export interface QuizWord {
   id: string
@@ -17,16 +18,6 @@ export interface QuizQuestion {
   answer: string
 }
 
-type Rand = () => number
-
-function shuffle<T>(arr: T[], rand: Rand): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
 
 /**
  * Multiple-choice recall quiz over saved words: each question shows a headword and

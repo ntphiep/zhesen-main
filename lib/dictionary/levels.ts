@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/languages'
 import type { DictEntryPreview } from './types'
 import { entryPreviewRow, toPreview } from './rows'
-import { PREVIEW_SELECT } from './search'
+import { PREVIEW_SELECT } from './entrySelect'
 
 /**
  * "Browse by level" data for `/learn/[lang]`: which levels exist for a language

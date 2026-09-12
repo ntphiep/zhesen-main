@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { pickSenses, isClassifierGloss, parseClassifiers } from '@/lib/dictionary/search'
+import { pickSenses, isClassifierGloss, parseClassifiers } from '@/lib/dictionary/textQuality'
 import type { DictSense } from '@/lib/dictionary/types'
 
 export function SenseList({ senses }: { senses: DictSense[] }) {

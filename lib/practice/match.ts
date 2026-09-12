@@ -1,3 +1,5 @@
+import { shuffle, type Rand } from './shuffle'
+
 export interface MatchWord {
   id: string
   headword: string
@@ -11,16 +13,6 @@ export interface MatchTile {
   kind: 'word' | 'meaning'
 }
 
-type Rand = () => number
-
-function shuffle<T>(input: T[], rand: Rand): T[] {
-  const a = [...input]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
 
 /**
  * Build the shuffled tile set for a matching round (Quizlet "Match"): each chosen

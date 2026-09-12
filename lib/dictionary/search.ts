@@ -10,16 +10,9 @@ import { entryPreviewRow, searchRpcRow, suggestRow, toPreview, toPreviewFromSear
  * lookup (`lex.search_vi`, trigram "did you mean" (`lex.suggest`), both from
  * supabase/migrations/0018_reverse_lookup.sql), and the plain frequency-ordered
  * "common words" list.
- *
- * This file also re-exports the rest of the dictionary data-layer's public
- * surface (row mapping, text-quality helpers, token resolution, entry detail)
- * so every existing `@/lib/dictionary/search` import keeps working -- the
- * implementations now live in smaller, responsibility-grouped files instead of
- * one 384-line file.
  */
 
 import { PREVIEW_SELECT } from './entrySelect'
-export { PREVIEW_SELECT }
 
 export async function searchEntries(
   supabase: SupabaseClient, lang: LangCode, query: string, limit = 20,
@@ -172,7 +165,3 @@ export async function getCommonWords(
   return entryPreviewRow.array().parse(data ?? []).map(toPreview)
 }
 
-export { pickIpa, pickPrimarySense } from './rows'
-export { cleanMtGloss, pickSenses, fillPivotVi, isClassifierGloss, parseClassifiers, isCleanExample } from './textQuality'
-export { resolveTokens, getZhSegmentCandidates } from './resolveTokens'
-export { getEntryDetail, getCrossLanguage, getInflections, getTermPreviews, getCharacters } from './entryDetail'

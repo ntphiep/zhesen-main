@@ -11,12 +11,13 @@ vi.mock('@/lib/wordlist/store', () => ({
   draftFromDictEntry: (e: { headword: string }) => ({ headword: e.headword }),
 }))
 
-const { resolveTokens, getHeadwords, getCharacters } = vi.hoisted(() => ({
+const { resolveTokens, getZhSegmentCandidates, getCharacters } = vi.hoisted(() => ({
   resolveTokens: vi.fn(async () => new Map()),
-  getHeadwords: vi.fn(async () => [] as string[]),
+  getZhSegmentCandidates: vi.fn(async () => [] as string[]),
   getCharacters: vi.fn(async () => [] as CharInfo[]),
 }))
-vi.mock('@/lib/dictionary/search', () => ({ resolveTokens, getHeadwords, getCharacters }))
+vi.mock('@/lib/dictionary/resolveTokens', () => ({ resolveTokens, getZhSegmentCandidates }))
+vi.mock('@/lib/dictionary/entryDetail', () => ({ getCharacters }))
 
 const dog: DictEntryPreview = {
   id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1',
