@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Ipa } from '@/components/ui/Ipa'
 import { SearchBox } from '@/components/search/SearchBox'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { LANG_FLAGS } from '@/lib/dictionary/labels'
@@ -60,7 +61,7 @@ export function LanguageHub({ language, common, levels }: { language: Language; 
                 className="flex items-baseline gap-2 rounded-lg border border-black/10 px-4 py-2 hover:bg-black/5"
               >
                 <span className="font-medium">{e.headword}</span>
-                {e.ipa && <span className="ipa text-xs text-black/40">{e.ipa}</span>}
+                <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/40" />
                 {e.glossVi && <span className="truncate text-sm text-black/55">{e.glossVi}</span>}
               </Link>
             ))}

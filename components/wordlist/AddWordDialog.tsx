@@ -1,11 +1,11 @@
 'use client'
-import { useEffect, useRef, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { searchEntries } from '@/lib/dictionary/search'
+import { useEffect, useRef, useState } from 'react'
+import { fetchSearch } from '@/lib/dictionary/searchClient'
 import { draftFromDictEntry } from '@/lib/wordlist/store'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import { STATUS_OPTIONS, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
 import { LANGUAGES, type LangCode } from '@/lib/languages'
+import { Ipa } from '@/components/ui/Ipa'
 
 type Tab = 'dict' | 'manual'
 
@@ -17,7 +17,6 @@ interface Props {
 
 export function AddWordDialog({ open, onClose, onAdd }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const supabase = useMemo(() => createClient(), [])
 
   const [tab, setTab] = useState<Tab>('dict')
 
@@ -59,14 +58,17 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
     if (!query.trim()) return
     const id = setTimeout(async () => {
       try {
-        const res = await searchEntries(supabase, lang, query)
-        setResults(res)
+        // Through the cached route, like the main search box. Going straight to
+        // Supabase from here spent a cross-region round trip per keystroke and
+        // skipped both the shared cache and the per-address budget.
+        const outcome = await fetchSearch(query)
+        setResults(outcome.status === 'ok' ? outcome.data.forward[lang] : [])
       } catch {
         setResults([])
       }
     }, 250)
     return () => clearTimeout(id)
-  }, [query, lang, supabase])
+  }, [query, lang])
 
   async function handleDictAdd(entry: DictEntryPreview) {
     await onAdd(draftFromDictEntry(entry))
@@ -172,7 +174,7 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
                   >
                     <div>
                       <span className="font-medium">{entry.headword}</span>
-                      {entry.ipa && <span className="ml-2 text-xs text-black/50">{entry.ipa}</span>}
+                      <Ipa value={entry.ipa} lang={entry.lang} className="ml-2 text-xs text-black/50" />
                       {entry.glossVi && <span className="ml-2 text-sm text-black/60">{entry.glossVi}</span>}
                     </div>
                     <button

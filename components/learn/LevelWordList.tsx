@@ -8,6 +8,7 @@ import { entryPath } from '@/lib/dictionary/entryId'
 import { LANG_FLAGS } from '@/lib/dictionary/labels'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { Language } from '@/lib/languages'
+import { Ipa } from '@/components/ui/Ipa'
 
 type AddAllState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'done'; added: number; skipped: number } | { kind: 'error' }
 
@@ -88,7 +89,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
             className="flex items-baseline gap-2 rounded-lg border border-black/10 px-4 py-2 hover:bg-black/5"
           >
             <span className="font-medium">{e.headword}</span>
-            {e.ipa && <span className="ipa text-xs text-black/40">{e.ipa}</span>}
+            <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/40" />
             {e.glossVi && <span className="truncate text-sm text-black/55">{e.glossVi}</span>}
           </Link>
         ))}

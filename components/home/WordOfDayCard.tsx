@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Ipa } from '@/components/ui/Ipa'
 import { entryPath } from '@/lib/dictionary/entryId'
 import type { DailyWord } from '@/lib/dictionary/wordOfDay'
 
@@ -13,7 +14,7 @@ export function WordOfDayCard({ word }: { word: DailyWord | null }) {
         <div className="text-xs font-semibold uppercase tracking-wide text-black/40">Từ vựng hôm nay</div>
         <div className="mt-1 flex items-baseline gap-2">
           <span className="text-2xl font-semibold">{word.headword}</span>
-          {word.ipa && <span className="ipa text-sm text-black/40">/{word.ipa}/</span>}
+          <Ipa value={word.ipa} lang={word.lang} className="text-sm text-black/40" />
           {word.level && <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/50">{word.level}</span>}
         </div>
         {word.glossVi && <div className="mt-0.5 text-sm text-black/60">{word.glossVi}</div>}

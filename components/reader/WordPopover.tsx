@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Ipa } from '@/components/ui/Ipa'
 import { AddToWordlistButton } from '@/components/lookup/AddToWordlistButton'
 import { entryPath } from '@/lib/dictionary/entryId'
 import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
@@ -13,7 +14,7 @@ export function WordPopover({ entry, charInfo }: { entry?: DictEntryPreview; cha
       <span className={CARD}>
         <span className="flex items-baseline gap-2">
           <span className="text-lg font-semibold">{entry.headword}</span>
-          {entry.ipa && <span className="ipa text-xs text-black/40">{entry.ipa}</span>}
+          <Ipa value={entry.ipa} lang={entry.lang} className="text-xs text-black/40" />
           {entry.pos && <span className="text-xs text-black/40">{entry.pos}</span>}
         </span>
         {entry.glossVi && <span className="mt-1 block text-sm text-black/70">{entry.glossVi}</span>}

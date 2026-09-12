@@ -5,6 +5,7 @@ import { getEntryDetail } from '@/lib/dictionary/entryDetail'
 import { AudioButton } from '@/components/ui/AudioButton'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 import type { UserWord } from '@/lib/wordlist/types'
+import { Ipa } from '@/components/ui/Ipa'
 
 type DetailState =
   | { status: 'loading' }
@@ -83,7 +84,7 @@ export function WordDetail({ word }: { word: UserWord }) {
           {detail.pronunciations.map((p, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className="text-xs text-black/40">{p.accent}</span>
-              {p.ipa && <span className="ipa text-black/70">{p.ipa}</span>}
+              <Ipa value={p.ipa} lang={detail.lang} className="text-black/70" />
               <AudioButton text={detail.headword} lang={detail.lang} audioUrl={p.audioUrl} />
             </div>
           ))}

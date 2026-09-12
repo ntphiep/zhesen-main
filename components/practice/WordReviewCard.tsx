@@ -2,6 +2,7 @@
 import { AudioButton } from '@/components/ui/AudioButton'
 import type { ReviewCard } from '@/lib/wordlist/review'
 import type { Grade } from '@/lib/progress/types'
+import { Ipa } from '@/components/ui/Ipa'
 
 const GRADES: { grade: Grade; label: string; cls: string }[] = [
   { grade: 'again', label: 'Lại', cls: 'text-rose-700 border-rose-200 hover:bg-rose-50' },
@@ -25,7 +26,7 @@ export function WordReviewCard({
         <AudioButton text={card.headword} lang={card.lang} audioUrl={card.audioUrl} />
       </div>
       {card.reading && <div className="mt-1 text-black/50">{card.reading}</div>}
-      {card.ipa && <div className="ipa mt-1 text-black/40">/{card.ipa}/</div>}
+      <Ipa value={card.ipa} lang={card.lang} className="mt-1 block text-black/40" />
 
       {revealed ? (
         <>

@@ -1,9 +1,16 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { localDay } from '@/lib/wordlist/activity'
+import type { LangCode } from '@/lib/languages'
+
+/** The pool is English-only: the frequency ranks that make the pick meaningful
+ * exist for en and nothing else. */
+const WORD_OF_DAY_LANG: LangCode = 'en'
 
 export interface DailyWord {
   id: string
+  /** Always English today; carried explicitly so a renderer never has to assume. */
+  lang: LangCode
   headword: string
   ipa: string | null
   glossVi: string | null
@@ -39,7 +46,7 @@ export async function getWordOfDay(supabase: SupabaseClient, dayNum: number): Pr
     .schema('lex')
     .from('entries')
     .select('id, headword, level, senses(gloss_vi, gloss_en, sense_order), pronunciations(accent, ipa)')
-    .eq('lang', 'en')
+    .eq('lang', WORD_OF_DAY_LANG)
     .not('frequency_rank', 'is', null)
     .lte('frequency_rank', 2000)
     .order('frequency_rank', { ascending: true })
@@ -52,6 +59,7 @@ export async function getWordOfDay(supabase: SupabaseClient, dayNum: number): Pr
   const ipa = prons.find((p) => p.accent.toLowerCase().includes('us') && p.ipa)?.ipa ?? prons.find((p) => p.ipa)?.ipa ?? null
   return {
     id: row.id,
+    lang: WORD_OF_DAY_LANG,
     headword: row.headword,
     ipa,
     glossVi: primary?.gloss_vi ?? primary?.gloss_en ?? null,

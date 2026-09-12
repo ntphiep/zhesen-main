@@ -1,6 +1,7 @@
 'use client'
 import { AudioButton } from '@/components/ui/AudioButton'
 import type { QuizQuestion } from '@/lib/practice/quiz'
+import { Ipa } from '@/components/ui/Ipa'
 
 /** One multiple-choice question. Once `selected` is set, options are locked and
  * coloured: the correct answer green, a wrong pick red. */
@@ -19,7 +20,7 @@ export function QuizCard({
         <span className="text-3xl font-semibold">{question.headword}</span>
         <AudioButton text={question.headword} lang={question.lang} />
       </div>
-      {question.ipa && <div className="ipa mt-1 text-center text-black/40">/{question.ipa}/</div>}
+      <Ipa value={question.ipa} lang={question.lang} className="mt-1 block text-center text-black/40" />
       <p className="mt-2 text-center text-sm text-black/50">Chọn nghĩa đúng</p>
 
       {/* Feedback is otherwise color-only (green/red option borders), which a screen

@@ -15,6 +15,7 @@ import { ImportCsvDialog } from '@/components/wordlist/ImportCsvDialog'
 import { WordDetail } from '@/components/wordlist/WordDetail'
 import { AudioButton } from '@/components/ui/AudioButton'
 import type { UserWord, WordDraft, WordStatus } from '@/lib/wordlist/types'
+import { Ipa } from '@/components/ui/Ipa'
 
 export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   const supabase = useMemo(() => createClient(), [])
@@ -281,7 +282,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                       />
                     </td>
                     <td className="py-2 pr-3 font-medium">{w.headword}</td>
-                    <td className="ipa py-2 pr-3 text-black/50">{w.ipa ?? ''}</td>
+                    <td className="py-2 pr-3 text-black/50"><Ipa value={w.ipa} lang={w.lang} /></td>
                     <td className="py-2 pr-3 text-black/50">{w.pos ?? ''}</td>
                     <td className="py-2 pr-3">{w.meaningVi ?? ''}</td>
                     <td className="py-2 pr-3 text-black/50">{w.level ?? ''}</td>
@@ -354,7 +355,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     aria-label={`Chọn từ ${w.headword}`}
                   />
                   <span className="font-semibold">{w.headword}</span>
-                  {w.ipa && <span className="ipa text-xs text-black/50">{w.ipa}</span>}
+                  <Ipa value={w.ipa} lang={w.lang} className="text-xs text-black/50" />
                 </div>
                 <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
               </div>

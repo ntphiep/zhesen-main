@@ -3,9 +3,11 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AddWordDialog } from '@/components/wordlist/AddWordDialog'
 
-vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
-vi.mock('@/lib/dictionary/search', () => ({
-  searchEntries: vi.fn(async () => ([{ id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', ipa: '/dɔːɡ/', pos: 'noun', glossVi: 'con chó', glossEn: 'dog', audioUrl: null }])),
+vi.mock('@/lib/dictionary/searchClient', () => ({
+  fetchSearch: vi.fn(async () => ({
+    status: 'ok',
+    data: { forward: { en: [{ id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', ipa: '/dɔːɡ/', pos: 'noun', glossVi: 'con chó', glossEn: 'dog', audioUrl: null }], es: [], zh: [] }, reverse: { en: [], es: [], zh: [] }, suggestions: [] },
+  })),
 }))
 
 describe('AddWordDialog', () => {
