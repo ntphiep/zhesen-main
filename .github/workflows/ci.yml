@@ -10,8 +10,16 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# The workflow only ever reads the repository. Without this block the job would
+# inherit whatever the repository default is, which may be read-write.
+permissions:
+  contents: read
+
 env:
-  NODE_VERSION: '22.x'
+  # Matches the `engines.node` range in package.json and the version used for
+  # local development. CI and the developer machine run the same major on
+  # purpose: a test that only fails on one of them is the worst kind to debug.
+  NODE_VERSION: '24.x'
 
 jobs:
   verify:
@@ -28,11 +36,14 @@ jobs:
 
       - run: npm ci
 
+      # Split into three steps rather than one `npm run verify` so a failure
+      # names itself in the job summary. The scripts are the same ones the Stop
+      # hook and a developer run, so there is one definition of each check.
       - name: ESLint
         run: npm run lint
 
       - name: TypeScript
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Unit tests
         run: npm run test
@@ -68,12 +79,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Sequential numbering, no duplicates
+      - name: No duplicate migration numbers
         run: |
           cd supabase/migrations
-          ls *.sql | cut -d_ -f1 | sort > numbers.txt
-          if [ "$(uniq -d numbers.txt | wc -l)" -ne 0 ]; then
-            echo "Duplicate migration numbers:"; uniq -d numbers.txt; exit 1
+          duplicates=$(ls *.sql | cut -d_ -f1 | sort | uniq -d)
+          if [ -n "$duplicates" ]; then
+            echo "Two migrations share a number, so their order is undefined:"
+            echo "$duplicates"
+            exit 1
           fi
           echo "$(ls *.sql | wc -l) migrations, all numbered uniquely."
 
