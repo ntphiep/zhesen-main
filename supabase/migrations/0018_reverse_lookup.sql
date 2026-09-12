@@ -81,6 +81,10 @@ with q as (
       s.entry_id, s.pos, s.gloss_vi, s.sense_order,
       greatest(
         case when s.gloss_vi_normalized = (select q_norm from q) then 5.0
+             -- A gloss lists its senses comma-separated, so a query that fills one
+             -- of them whole means the word means that: 吃 "ăn, tiêu thụ" answers
+             -- "ăn", while 就 "ăn kèm, nhắm với" only happens to start with it.
+             when s.gloss_vi_normalized ~ ('(^|[,;] *)' || (select q_norm from q) || '( *[,;]|$)') then 4.5
              when s.gloss_vi_normalized like (select q_norm from q) || '%' then 4.0
              when s.gloss_vi_normalized like '%' || (select q_norm from q) || '%' then 3.0
              else 0 end,
@@ -185,6 +189,10 @@ with q as (
       s.entry_id, s.pos, s.gloss_vi, s.sense_order,
       greatest(
         case when s.gloss_vi_normalized = (select q_norm from q) then 5.0
+             -- A gloss lists its senses comma-separated, so a query that fills one
+             -- of them whole means the word means that: 吃 "ăn, tiêu thụ" answers
+             -- "ăn", while 就 "ăn kèm, nhắm với" only happens to start with it.
+             when s.gloss_vi_normalized ~ ('(^|[,;] *)' || (select q_norm from q) || '( *[,;]|$)') then 4.5
              when s.gloss_vi_normalized like (select q_norm from q) || '%' then 4.0
              when s.gloss_vi_normalized like '%' || (select q_norm from q) || '%' then 3.0
              else 0 end,
