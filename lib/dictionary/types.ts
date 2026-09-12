@@ -60,6 +60,18 @@ export interface SuggestionPreview {
   headword: string
   glossVi: string | null
 }
+/** A longer entry that contains the word being looked at: 学 -> 学生, water -> water down.
+ *  See supabase/migrations/0025_entries_containing.sql. */
+export interface ContainingWord {
+  id: string
+  lang: LangCode
+  headword: string
+  traditional: string | null
+  level: string | null
+  glossVi: string | null
+  glossEn: string | null
+}
+
 export interface CrossLangSibling {
   id: string
   lang: LangCode

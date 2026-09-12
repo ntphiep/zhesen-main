@@ -7,6 +7,7 @@ vi.mock('@/lib/dictionary/cached', () => ({
   getCachedCrossLanguage: vi.fn(async () => []),
   getCachedCharacters: vi.fn(async () => []),
   getCachedInflections: vi.fn(async () => []),
+  getCachedEntriesContaining: vi.fn(async () => []),
 }))
 vi.mock('@/lib/grammar/cached', () => ({
   getCachedGrammarPointsForEntry: vi.fn(async () => []),

@@ -1,9 +1,10 @@
 import { unstable_cache } from 'next/cache'
 import { createContentClient } from '@/lib/supabase/content'
 import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getCommonWords } from './search'
+import { getEntriesContaining } from './containing'
 import { getWordOfDay, dayNumber, type DailyWord } from './wordOfDay'
 import { getLevelsForLanguage, getEntriesByLevel, type LevelSummary, type LevelPage } from './levels'
-import type { DictEntryDetail, DictEntryPreview, CrossLangSibling, CharInfo, WordForm } from './types'
+import type { ContainingWord, DictEntryDetail, DictEntryPreview, CrossLangSibling, CharInfo, WordForm } from './types'
 import type { LangCode } from '@/lib/languages'
 
 export const getCachedEntryDetail = unstable_cache(
@@ -21,6 +22,13 @@ export const getCachedCrossLanguage = unstable_cache(
 export const getCachedCharacters = unstable_cache(
   (headword: string): Promise<CharInfo[]> => getCharacters(createContentClient(), headword),
   ['dict-characters'],
+  { revalidate: 3600, tags: ['lex'] },
+)
+
+export const getCachedEntriesContaining = unstable_cache(
+  (lang: LangCode, headword: string): Promise<ContainingWord[]> =>
+    getEntriesContaining(createContentClient(), lang, headword),
+  ['dict-entries-containing'],
   { revalidate: 3600, tags: ['lex'] },
 )
 

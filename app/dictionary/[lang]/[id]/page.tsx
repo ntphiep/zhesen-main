@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections } from '@/lib/dictionary/cached'
+import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections, getCachedEntriesContaining } from '@/lib/dictionary/cached'
 import { getCachedGrammarPointsForEntry } from '@/lib/grammar/cached'
 import { buildEntryId } from '@/lib/dictionary/entryId'
 import { LookupView } from '@/components/lookup/LookupView'
@@ -16,14 +16,22 @@ export default async function Page({ params }: { params: Promise<{ lang: string;
   const detail = await getCachedEntryDetail(entryId)
   if (!detail) notFound()
 
-  const [characters, siblings, inflections, grammarPoints] = await Promise.all([
+  const [characters, siblings, inflections, grammarPoints, containing] = await Promise.all([
     detail.lang === 'zh' ? getCachedCharacters(detail.headword) : Promise.resolve([]),
     getCachedCrossLanguage(entryId),
     getCachedInflections(entryId),
     getCachedGrammarPointsForEntry(entryId),
+    getCachedEntriesContaining(detail.lang, detail.headword),
   ])
 
   return (
-    <LookupView detail={detail} characters={characters} siblings={siblings} inflections={inflections} grammarPoints={grammarPoints} />
+    <LookupView
+      detail={detail}
+      characters={characters}
+      siblings={siblings}
+      inflections={inflections}
+      grammarPoints={grammarPoints}
+      containing={containing}
+    />
   )
 }

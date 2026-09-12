@@ -4,13 +4,14 @@ import { SenseList } from './SenseList'
 import { CharacterPanel } from './CharacterPanel'
 import { WordFamily } from './WordFamily'
 import { RelatedWords } from './RelatedWords'
+import { ContainingWords } from './ContainingWords'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { ConjugationTable } from './ConjugationTable'
 import { ExampleList } from './ExampleList'
 import { GrammarLinks } from './GrammarLinks'
 import { groupWordForms } from '@/lib/dictionary/family'
 import { buildConjugation } from '@/lib/dictionary/conjugation'
-import type { DictEntryDetail, CharInfo, CrossLangSibling, WordForm } from '@/lib/dictionary/types'
+import type { ContainingWord, DictEntryDetail, CharInfo, CrossLangSibling, WordForm } from '@/lib/dictionary/types'
 import type { GrammarPoint } from '@/lib/grammar/types'
 
 /**
@@ -19,12 +20,13 @@ import type { GrammarPoint } from '@/lib/grammar/types'
  * examples) and a narrower side rail holds the link lists (other languages, related
  * words, word forms). Collapses to a single column below `lg`.
  */
-export function LookupView({ detail, characters, siblings, inflections = [], grammarPoints = [] }: {
+export function LookupView({ detail, characters, siblings, inflections = [], grammarPoints = [], containing = [] }: {
   detail: DictEntryDetail
   characters: CharInfo[]
   siblings: CrossLangSibling[]
   inflections?: WordForm[]
   grammarPoints?: GrammarPoint[]
+  containing?: ContainingWord[]
 }) {
   const hanViet = characters.map((c) => c.hanViet[0]).filter(Boolean).join(' ') || null
   // Spanish verbs get a conjugation table; for them the flat "word family" chip list
@@ -33,7 +35,7 @@ export function LookupView({ detail, characters, siblings, inflections = [], gra
   const forms = conjugation ? [] : groupWordForms(inflections)
 
   const showChars = detail.lang === 'zh' && characters.length > 0
-  const hasSideRail = showChars || siblings.length > 0 || detail.relations.length > 0 || forms.length > 0 || grammarPoints.length > 0
+  const hasSideRail = showChars || siblings.length > 0 || detail.relations.length > 0 || forms.length > 0 || grammarPoints.length > 0 || containing.length > 0
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
@@ -50,6 +52,7 @@ export function LookupView({ detail, characters, siblings, inflections = [], gra
         {hasSideRail && (
           <aside className="flex flex-col gap-8">
             {showChars && <CharacterPanel characters={characters} />}
+            <ContainingWords words={containing} lang={detail.lang} />
             <CrossLanguagePanel siblings={siblings} />
             <RelatedWords relations={detail.relations} lang={detail.lang} />
             <WordFamily headword={detail.headword} forms={forms} lang={detail.lang} />

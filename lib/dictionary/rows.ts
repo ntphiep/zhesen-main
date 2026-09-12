@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { LangCode } from '@/lib/languages'
-import type { DictEntryPreview, DictSense, DictPron, SuggestionPreview } from './types'
+import type { ContainingWord, DictEntryPreview, DictSense, DictPron, SuggestionPreview } from './types'
 import { cleanMtGloss } from './textQuality'
 
 /**
@@ -182,4 +182,25 @@ export function toPreviewFromSearchRow(r: SearchRpcRow): DictEntryPreview {
 
 export function toSuggestion(r: SuggestRow): SuggestionPreview {
   return { id: r.id, lang: r.lang, headword: r.headword, glossVi: r.gloss_vi }
+}
+
+/** Row returned by the `lex.entries_containing` RPC (see
+ * supabase/migrations/0025_entries_containing.sql). */
+export const containingRow = z.object({
+  id: z.string(),
+  lang: langCode,
+  headword: z.string(),
+  traditional: z.string().nullable(),
+  level: z.string().nullable(),
+  frequency_rank: z.number().nullable(),
+  gloss_vi: z.string().nullable(),
+  gloss_en: z.string().nullable(),
+})
+export type ContainingRow = z.infer<typeof containingRow>
+
+export function toContaining(r: ContainingRow): ContainingWord {
+  return {
+    id: r.id, lang: r.lang, headword: r.headword, traditional: r.traditional,
+    level: r.level, glossVi: r.gloss_vi, glossEn: r.gloss_en,
+  }
 }
