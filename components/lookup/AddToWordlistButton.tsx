@@ -22,7 +22,7 @@ export function AddToWordlistButton({ entry }: { entry: DictEntryPreview | DictE
 
   const label = state === 'added' ? '✓ Đã thêm'
     : state === 'exists' ? '✓ Đã có trong sổ tay'
-    : state === 'saving' ? 'Đang thêm...'
+    : state === 'saving' ? 'Đang thêm…'
     : state === 'error' ? 'Lỗi, thử lại'
     : '+ Thêm vào sổ tay'
 

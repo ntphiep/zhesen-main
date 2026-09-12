@@ -1,10 +1,12 @@
 /**
- * Ba ngôn ngữ đích của zhesen. Trước đây danh sách này được đọc từ bảng
- * `public.languages` qua một lớp trừu tượng ContentSource, nhưng nó chưa bao giờ
- * thay đổi lúc chạy và mỗi lần đọc lại tốn một vòng gọi mạng. Giữ cứng ở đây,
- * đúng như cách `lib/dictionary/labels.ts` vẫn làm với nhãn và cờ.
+ * The three languages zhesen targets, and the single source of truth for them.
  *
- * Giá trị khớp đúng với các dòng trong `public.languages` tính tới 2026-09-12.
+ * This list used to be read from `public.languages` through a ContentSource
+ * abstraction. It never changed at runtime and every read cost a round trip, so
+ * it lives here instead. Anything that needs one value per language should
+ * derive it from LANGUAGES via `byLang` rather than writing the codes out again.
+ *
+ * The values match the rows in `public.languages` as of 2026-09-12.
  */
 
 export type LangCode = 'zh' | 'es' | 'en'
@@ -12,9 +14,9 @@ export type Script = 'han' | 'latin'
 
 export interface Language {
   code: LangCode
-  /** Tên hiển thị tiếng Việt, ví dụ "Tiếng Trung". */
+  /** Vietnamese display name, e.g. "Tiếng Trung". */
   name: string
-  /** Tên bản ngữ, ví dụ "中文". */
+  /** Endonym, e.g. "中文". */
   nativeName: string
   script: Script
 }
@@ -33,6 +35,14 @@ export function getLanguage(code: string): Language | undefined {
 
 export function isLangCode(code: string): code is LangCode {
   return LANGUAGES.some((l) => l.code === code)
+}
+
+/** BCP47 tag for the speech-synthesis voice of each language. Used both by the
+ * audio button's TTS fallback and by speech recognition in the speaking drill. */
+const SPEECH_LANG: Record<LangCode, string> = { en: 'en-US', es: 'es-ES', zh: 'zh-CN' }
+
+export function speechLang(lang: LangCode): string {
+  return SPEECH_LANG[lang]
 }
 
 /**

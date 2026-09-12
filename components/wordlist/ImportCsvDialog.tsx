@@ -136,7 +136,7 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
             onClick={handleImport}
             disabled={okRows.length === 0 || importing}
           >
-            {importing ? 'Đang nhập...' : `Nhập ${okRows.length} từ`}
+            {importing ? 'Đang nhập…' : `Nhập ${okRows.length} từ`}
           </button>
         </div>
       </div>

@@ -55,7 +55,6 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
     if (!query.trim()) setResults([])
   }
 
-  // Debounced search
   useEffect(() => {
     if (!query.trim()) return
     const id = setTimeout(async () => {
@@ -95,7 +94,6 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
       tags: [],
     }
     await onAdd(draft)
-    // Reset manual form
     setHeadword(''); setMeaningVi(''); setMeaningEn(''); setIpa(''); setPos(''); setExample(''); setStatus('new')
   }
 

@@ -43,7 +43,7 @@ export function WordDetail({ word }: { word: UserWord }) {
   }
 
   if (state.status === 'loading') {
-    return <p className="text-sm text-black/40">Đang tải...</p>
+    return <p className="text-sm text-black/40">Đang tải…</p>
   }
 
   if (state.status === 'error') {

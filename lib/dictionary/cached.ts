@@ -51,10 +51,11 @@ export const getCachedInflections = unstable_cache(
 
 // Keyed by day index so the word is stable for the whole day and cached across users.
 /**
- * Từ của ngày. Số thứ tự ngày được tính bên trong hàm này chứ không nhận từ nơi gọi,
- * vì gọi `Date.now()` ngay trong thân một Server Component là đọc giá trị không thuần
- * khiết lúc render (quy tắc `react-hooks/purity`). Hệ quả duy nhất là sau nửa đêm, từ
- * mới xuất hiện chậm nhất sau một chu kỳ `revalidate`, tức một giờ.
+ * Word of the day. The day index is computed in here rather than passed in,
+ * because calling `Date.now()` in the body of a Server Component reads an impure
+ * value during render (the `react-hooks/purity` rule). The only consequence is
+ * that after midnight the new word appears at worst one `revalidate` window
+ * later, which is an hour.
  */
 export const getCachedWordOfDay = unstable_cache(
   (): Promise<DailyWord | null> => getWordOfDay(createContentClient(), dayNumber(Date.now())),

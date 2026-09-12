@@ -18,7 +18,6 @@ type ByLang = SearchResponse['forward']
 function bestScore(groups: ByLang): number {
   return Math.max(0, ...[...groups.en, ...groups.es, ...groups.zh].map((e) => e.matchScore ?? 0))
 }
-const EMPTY = EMPTY_SEARCH_RESPONSE
 const BUSY_MESSAGE = 'Đang có quá nhiều lượt tra cứu. Vui lòng thử lại sau ít giây.'
 /** en levels only as of this writing (verified: 0 es/zh rows have a level), in
  * CEFR order; any level value not in this list (there shouldn't be one) still
@@ -39,7 +38,7 @@ const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
  */
 export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { initialQuery?: string; autoFocus?: boolean; lang?: LangCode }) {
   const [query, setQuery] = useState(initialQuery)
-  const [data, setData] = useState<SearchResponse>(EMPTY)
+  const [data, setData] = useState<SearchResponse>(EMPTY_SEARCH_RESPONSE)
   const [loading, setLoading] = useState(false)
   // Set when the route refused the request rather than answering it. "Không tìm
   // thấy kết quả" would be a claim about the dictionary, and the dictionary was
@@ -65,7 +64,7 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
     setActive(0)
     setLevelFilter(null)
     setPosFilter(null)
-    if (!query.trim()) { setData(EMPTY); setLoading(false); setRefused(false) }
+    if (!query.trim()) { setData(EMPTY_SEARCH_RESPONSE); setLoading(false); setRefused(false) }
   }
 
   useEffect(() => {
@@ -84,13 +83,13 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
           // A rejected request (rate limit, server error, a proxy's HTML page)
           // carries a body that is not a result set. Show nothing rather than
           // caching it, so the next keystroke tries again instead of replaying it.
-          if (!res.ok) { setRefused(true); setData(EMPTY); return }
+          if (!res.ok) { setRefused(true); setData(EMPTY_SEARCH_RESPONSE); return }
           setRefused(false)
           const json = searchResponse.parse(await res.json())
           cache.current.set(key, json)
           setData(json)
         } catch (e) {
-          if ((e as Error).name !== 'AbortError') setData(EMPTY)
+          if ((e as Error).name !== 'AbortError') setData(EMPTY_SEARCH_RESPONSE)
         } finally {
           setLoading(false)
         }
@@ -262,14 +261,14 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
           here, since the visible list below has no other role="status" text. */}
       <p role="status" aria-live="polite" className="sr-only">
         {loading
-          ? 'Đang tìm...'
+          ? 'Đang tìm…'
           : refused
             ? BUSY_MESSAGE
             : query.trim()
               ? `${total} kết quả cho "${query.trim()}"`
               : ''}
       </p>
-      {loading && <p className="text-sm text-black/40">Đang tìm...</p>}
+      {loading && <p className="text-sm text-black/40">Đang tìm…</p>}
       {!loading && refused && <p className="text-sm text-black/40">{BUSY_MESSAGE}</p>}
       {showNoResults && <p className="text-sm text-black/40">Không tìm thấy kết quả.</p>}
       {showSuggestions && (

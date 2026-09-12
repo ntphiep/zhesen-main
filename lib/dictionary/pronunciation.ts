@@ -1,4 +1,4 @@
-import type { LangCode } from '@/lib/languages'
+import { speechLang, type LangCode } from '@/lib/languages'
 import type { DictPron } from './types'
 
 export interface AccentRow {
@@ -10,7 +10,6 @@ export interface AccentRow {
   ttsLang: string
 }
 
-const TTS_LANG: Record<LangCode, string> = { en: 'en-US', es: 'es-ES', zh: 'zh-CN' }
 type Accent = 'uk' | 'us' | 'au' | 'ca'
 
 /**
@@ -149,6 +148,6 @@ export function pickAccentRows(prons: DictPron[], lang: LangCode, headword: stri
     label: '',
     ipa: bestIpa(prons, headword),
     audioUrl: firstMatchingAudio(prons, headword),
-    ttsLang: TTS_LANG[lang],
+    ttsLang: speechLang(lang),
   }]
 }

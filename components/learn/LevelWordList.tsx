@@ -51,7 +51,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
     }
   }
 
-  const addAllLabel = addAll.kind === 'busy' ? 'Đang thêm...'
+  const addAllLabel = addAll.kind === 'busy' ? 'Đang thêm…'
     : addAll.kind === 'done' ? `Đã thêm ${addAll.added} từ${addAll.skipped > 0 ? ` (bỏ qua ${addAll.skipped} từ đã có)` : ''}`
     : addAll.kind === 'error' ? 'Lỗi, thử lại'
     : `+ Thêm cả ${level} vào sổ tay (${total} từ)`
@@ -101,7 +101,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
           disabled={loadingMore}
           className="mt-6 w-full rounded-lg border border-black/15 px-4 py-2 text-sm text-black/70 hover:bg-black/5 disabled:opacity-50"
         >
-          {loadingMore ? 'Đang tải...' : `Tải thêm (${items.length}/${total})`}
+          {loadingMore ? 'Đang tải…' : `Tải thêm (${items.length}/${total})`}
         </button>
       )}
     </main>

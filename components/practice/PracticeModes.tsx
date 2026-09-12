@@ -7,7 +7,7 @@ export function PracticeModes({ due }: { due: number }) {
     { href: '/practice/write', label: 'Viết từ', sub: 'Nghĩa → gõ từ', primary: false },
     { href: '/practice/dictation', label: 'Nghe & chép', sub: 'Nghe → gõ từ', primary: false },
     { href: '/practice/match', label: 'Ghép cặp', sub: 'Nối từ với nghĩa', primary: false },
-    { href: '/practice/speak', label: 'Luyện nói', sub: 'Đọc lại, AI chấm', primary: false },
+    { href: '/practice/speak', label: 'Luyện nói', sub: 'Đọc lại, máy nghe và so', primary: false },
   ]
   return (
     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">

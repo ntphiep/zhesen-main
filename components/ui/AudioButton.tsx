@@ -1,10 +1,6 @@
 'use client'
 import { useState } from 'react'
-import type { LangCode } from '@/lib/languages'
-
-export function speechLang(lang: LangCode): string {
-  return { en: 'en-US', es: 'es-ES', zh: 'zh-CN' }[lang]
-}
+import { speechLang, type LangCode } from '@/lib/languages'
 
 // Chrome/Edge return [] from getVoices() until the async 'voiceschanged' fires, so a
 // speak() on the first interaction of a session silently plays nothing. Resolve the

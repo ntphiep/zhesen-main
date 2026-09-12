@@ -10,7 +10,8 @@ import { revalidateTag } from 'next/cache'
  *
  *   curl -X POST https://<host>/api/revalidate -H "x-revalidate-secret: …"
  */
-const TAGS = ['lex'] as const
+/** Every cached dictionary read is tagged with this; see lib/dictionary/cached.ts. */
+const LEX_TAG = 'lex'
 
 export async function POST(request: Request): Promise<Response> {
   const secret = process.env.REVALIDATE_SECRET
@@ -25,6 +26,6 @@ export async function POST(request: Request): Promise<Response> {
   // which is what the docs recommend and what suits a dictionary: nobody should
   // wait on a blocking refetch just because the pipeline ran. The one-argument
   // form is deprecated in Next 16.
-  for (const tag of TAGS) revalidateTag(tag, 'max')
-  return Response.json({ revalidated: TAGS, at: new Date().toISOString() })
+  revalidateTag(LEX_TAG, 'max')
+  return Response.json({ revalidated: [LEX_TAG], at: new Date().toISOString() })
 }

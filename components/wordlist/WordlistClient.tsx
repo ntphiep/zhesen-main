@@ -31,7 +31,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     tagFilter, toggleTagFilter, sortKey, sortDir, toggleSort, view, toggleView, visible,
   } = useWordlistFilters(words)
 
-  // Select/deselect logic
   const allVisibleIds = visible.map((w) => w.id)
   const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selected.has(id))
 
@@ -53,7 +52,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     })
   }
 
-  // Optimistic add
   async function handleAdd(draft: WordDraft) {
     const tempId = crypto.randomUUID()
     const tempWord: UserWord = {
@@ -93,7 +91,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     setWords((prev) => [...added, ...prev])
   }
 
-  // Optimistic delete
   async function handleDelete(id: string, headword: string) {
     if (!window.confirm(`Xóa từ "${headword}"?`)) return
     // Snapshot from the rendered list, not from inside the updater: React is free to
@@ -114,7 +111,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     }
   }
 
-  // Bulk delete
   async function handleBulkDelete() {
     const ids = [...selected]
     if (ids.length === 0) return
@@ -150,7 +146,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     }
   }
 
-  // Bulk status change
   async function handleBulkStatus(status: WordStatus) {
     const ids = [...selected]
     if (ids.length === 0) return
@@ -164,7 +159,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     }
   }
 
-  // Optimistic edit
   async function handleSave(id: string, patch: Partial<WordDraft>) {
     const original = words.find((w) => w.id === id)
     if (!original) return

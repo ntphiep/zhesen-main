@@ -1,7 +1,8 @@
 import { unstable_cache } from 'next/cache'
 import { createContentClient } from '@/lib/supabase/content'
 import { searchBothDirections } from '@/lib/dictionary/search'
-import { clientKey, createColdQueryLimiter, createRateLimiter } from '@/lib/http/rate-limit'
+import { EMPTY_SEARCH_RESPONSE } from '@/lib/dictionary/response'
+import { clientKey, createColdQueryLimiter, createRateLimiter } from '@/lib/http/rateLimit'
 
 // Cache search results server-side, keyed by the normalized query. This removes the
 // per-keystroke cross-region round-trip to Supabase for any prefix anyone has typed
@@ -43,7 +44,6 @@ const rateLimit = createRateLimiter({ limit: SEARCHES_PER_MINUTE, windowMs: 60_0
 // leaves half a character behind.
 const MAX_QUERY_CHARS = 64
 
-const EMPTY = { forward: { en: [], zh: [], es: [] }, reverse: { en: [], zh: [], es: [] }, suggestions: [] }
 
 // The two caches are told different things on purpose. The previous header gave
 // only `s-maxage`, which says nothing to a browser, so browsers applied heuristic
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
   }
 
   const q = truncate(new URL(request.url).searchParams.get('q')?.trim() ?? '')
-  if (!q) return Response.json(EMPTY)
+  if (!q) return Response.json(EMPTY_SEARCH_RESPONSE)
 
   const key = q.toLowerCase()
   const cold = admitColdQuery(key)

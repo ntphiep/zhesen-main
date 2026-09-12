@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { clientKey, createColdQueryLimiter, createRateLimiter } from '@/lib/http/rate-limit'
+import { clientKey, createColdQueryLimiter, createRateLimiter } from '@/lib/http/rateLimit'
 
 /** A limiter on a clock the test controls, so no test has to wait out a window. */
 function limiterAt(limit: number, windowMs: number, maxKeys?: number) {
