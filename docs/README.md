@@ -18,12 +18,29 @@ mâu thuẫn, mã là đúng.
 | [`research/2026-07-01-claude-recurring-mistakes.md`](superpowers/research/2026-07-01-claude-recurring-mistakes.md) | Sổ lỗi lặp lại của agent. Lỗi nào lặp nhiều thì được nâng thành rule trong `AGENTS.md` |
 | [`specs/2026-06-21-zhesen-pipeline-data-fixes-handoff.md`](superpowers/specs/2026-06-21-zhesen-pipeline-data-fixes-handoff.md) | Việc còn nợ bên repo pipeline, vì dữ liệu chưa đủ thì mã không sửa được |
 
-## Lịch sử
+Năm tệp trên là tất cả những gì còn hiệu lực. Đây là danh sách đầy đủ, không phải danh
+sách chọn lọc.
 
-`superpowers/specs/` và `superpowers/plans/` còn lại là các đợt đã hoàn thành, theo thứ
-tự thời gian: MVP proof-of-concept, chuyển sang Supabase, pipeline dữ liệu, sổ tay từ
-vựng, trang tra cứu chi tiết, trình đọc, và đợt tái cấu trúc quy trình làm việc với AI.
-`superpowers/research/` giữ hai bản khảo sát các sản phẩm cùng loại.
+## Đã xoá, và vì sao
+
+Ngày 2026-09-13 xoá 14 tệp: năm bản plan của các đợt đã hoàn thành (MVP, chuyển sang
+Supabase, pipeline dữ liệu, sổ tay từ vựng, trang tra cứu), sáu bản spec cùng các đợt đó,
+hai bản khảo sát sản phẩm cùng loại hồi tháng Sáu, và một spec mô tả hệ thống hook đã
+được thay.
+
+Lý do không phải để cho gọn mắt. Các tệp đó mô tả kiến trúc đã bị cố tình gỡ bỏ: bản plan
+MVP còn hướng dẫn dựng hai lớp trừu tượng `ContentSource` và `ProgressStore` mà `AGENTS.md`
+ghi rõ là đừng dựng lại. Một agent đọc chúng để lấy bối cảnh sẽ bị dẫn ngược lại đúng chỗ
+dự án đã rời bỏ. Tài liệu sai nguy hiểm hơn là không có tài liệu.
+
+Lịch sử vẫn nằm trong git. Cần đọc lại thì `git log --diff-filter=D --name-only` tìm
+commit xoá, rồi `git show <commit>^:<đường dẫn>`.
+
+## Quy ước
 
 Đường dẫn `docs/superpowers/` là quy ước của bộ kỹ năng superpowers, đừng đổi: các skill
 ghi tệp mới vào đúng đường dẫn đó.
+
+Khi một đợt làm việc kết thúc, spec và plan của nó không tự động có giá trị lưu trữ. Hãy
+hỏi: một agent đọc tệp này sáu tháng nữa sẽ làm đúng hơn hay sai hơn? Nếu là sai hơn thì
+xoá ngay lúc đó, đừng để tích lại.
