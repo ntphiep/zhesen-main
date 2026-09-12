@@ -5,6 +5,9 @@ import { SearchBox } from '@/components/search/SearchBox'
 
 const preview = (id: string, lang: string, headword: string, glossVi: string, extra: Partial<Record<'level' | 'pos', string | null>> = {}) => ({
   id, lang, headword, traditional: null, level: extra.level ?? null, ipa: null, pos: extra.pos ?? null, glossVi, glossEn: null, audioUrl: null,
+  // Real results carry how well they matched; the route sends it and the box
+  // uses it to decide which direction and which language leads.
+  matchScore: 4 as number | undefined,
 })
 type Preview = ReturnType<typeof preview>
 type ByLang = { en: Preview[]; zh: Preview[]; es: Preview[] }
@@ -141,5 +144,37 @@ describe('SearchBox', () => {
     await new Promise((r) => setTimeout(r, 300))
     expect(screen.getByRole('textbox')).toHaveValue('dog')
     expect(screen.queryAllByRole('link')).toHaveLength(0)
+  })
+  it('leads with the direction that answered better', async () => {
+    // "con mèo" produces forward hits that are all trigram guesses while the
+    // reverse lookup finds the word itself; showing the guesses first because
+    // they happen to be the forward direction buries the answer.
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => response({
+        forward: { en: [{ ...preview('en:con', 'en', 'con', 'lừa đảo'), matchScore: 1.75 }], zh: [], es: [] },
+        reverse: { en: [{ ...preview('en:cat', 'en', 'cat', 'con mèo'), matchScore: 5.0 }], zh: [], es: [] },
+      }),
+    })))
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('textbox'), 'con mèo')
+    await screen.findByRole('link', { name: /cat/ })
+    expect(screen.getAllByRole('link').map((l) => l.getAttribute('href')))
+      .toEqual(['/dictionary/en/cat', '/dictionary/en/con'])
+  })
+
+  it('keeps the forward direction first when it answered better', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => response({
+        forward: { en: [{ ...preview('en:dog', 'en', 'dog', 'con chó'), matchScore: 4.02 }], zh: [], es: [] },
+        reverse: { en: [{ ...preview('en:hound', 'en', 'hound', 'chó săn'), matchScore: 3.0 }], zh: [], es: [] },
+      }),
+    })))
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('textbox'), 'dog')
+    await screen.findByRole('link', { name: /dog/ })
+    expect(screen.getAllByRole('link').map((l) => l.getAttribute('href')))
+      .toEqual(['/dictionary/en/dog', '/dictionary/en/hound'])
   })
 })

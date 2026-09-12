@@ -110,14 +110,35 @@ function countAll(byLang: Record<LangCode, DictEntryPreview[]>): number {
   return LANG_CODES.reduce((n, l) => n + byLang[l].length, 0)
 }
 
+function bestScore(byLang: Record<LangCode, DictEntryPreview[]>): number {
+  return Math.max(0, ...LANG_CODES.flatMap((l) => byLang[l]).map((e) => e.matchScore ?? 0))
+}
+
+/**
+ * Below this, `lex.search` found no structural match at all — the tiers are 4.0
+ * for an exact headword, 3.5 for an inflected form and 3.0 for a prefix, and
+ * anything under 3.0 is a trigram guess. See supabase/migrations/0016_search.sql.
+ */
+const STRUCTURAL_MATCH = 3.0
+
 /**
  * Single entry point for the search box's one search field: always searches
  * forward (en/es/zh), and additionally searches the Vietnamese reverse
  * direction when the query looks Vietnamese (diacritics unique to Vietnamese,
- * see `looksVietnamese`) OR the forward search found nothing (covers
- * Vietnamese typed without diacritics, e.g. "nhan duoc"). Falls back to
- * trigram "did you mean" suggestions only when neither direction found
- * anything, so that extra RPC round-trip stays rare.
+ * see `looksVietnamese`) or the forward search turned up nothing better than a
+ * guess.
+ *
+ * The second test used to be "found nothing at all", which missed the common
+ * case: "nhà" and "con mèo" carry only à and è, which Spanish uses too, so
+ * `looksVietnamese` rightly declines to claim them — and the forward search
+ * returned a handful of trigram guesses scoring under 1.0, which counted as
+ * "found something" and suppressed the reverse lookup entirely. Both words then
+ * came back with nothing useful even though the reverse lookup answers them.
+ * Measuring the best score instead spends the extra round trip exactly on the
+ * queries that have nothing else to show.
+ *
+ * Falls back to trigram "did you mean" suggestions only when neither direction
+ * found anything, so that extra RPC round-trip stays rare.
  */
 export async function searchBothDirections(
   supabase: SupabaseClient, query: string, perLang = 8,
@@ -126,7 +147,7 @@ export async function searchBothDirections(
   if (!q) return { forward: EMPTY_BY_LANG, reverse: EMPTY_BY_LANG, suggestions: [] }
 
   const forward = await searchAllLanguages(supabase, q, perLang)
-  const shouldTryReverse = looksVietnamese(q) || countAll(forward) === 0
+  const shouldTryReverse = looksVietnamese(q) || bestScore(forward) < STRUCTURAL_MATCH
   const reverse = shouldTryReverse ? await searchAllLanguagesVi(supabase, q, perLang) : EMPTY_BY_LANG
 
   const suggestions = countAll(forward) === 0 && countAll(reverse) === 0

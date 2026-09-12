@@ -12,6 +12,11 @@ import { EMPTY_SEARCH_RESPONSE, searchResponse, type SearchResponse } from '@/li
 import type { LangCode } from '@/lib/languages'
 
 type ByLang = SearchResponse['forward']
+
+/** Best `lex.search` score in a group, 0 when nothing carries one. */
+function bestScore(groups: ByLang): number {
+  return Math.max(0, ...[...groups.en, ...groups.es, ...groups.zh].map((e) => e.matchScore ?? 0))
+}
 const EMPTY = EMPTY_SEARCH_RESPONSE
 const RECENT_KEY = 'zhesen:recent-searches'
 /** en levels only as of this writing (verified: 0 es/zh rows have a level), in
@@ -145,11 +150,21 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   const forwardShown = useMemo(() => applyFilters(forward), [applyFilters, forward])
   const reverseShown = useMemo(() => applyFilters(reverse), [applyFilters, reverse])
 
-  // Flat list in display order (forward groups, then reverse groups), for
-  // keyboard navigation and Enter-to-open.
+  // Which direction answered better. Typing "con mèo" produces forward hits --
+  // con, cone, cons, all trigram guesses under 1.8 -- while the reverse lookup
+  // finds cat. Showing the guesses first because they happen to be the forward
+  // direction buries the answer, so the stronger direction leads.
+  const reverseLeads = useMemo(
+    () => bestScore(reverseShown) > bestScore(forwardShown),
+    [forwardShown, reverseShown],
+  )
+
+  // Flat list in display order, for keyboard navigation and Enter-to-open.
   const flat = useMemo(
-    () => [...order.flatMap((l) => forwardShown[l]), ...order.flatMap((l) => reverseShown[l])],
-    [order, forwardShown, reverseShown],
+    () => (reverseLeads
+      ? [...order.flatMap((l) => reverseShown[l]), ...order.flatMap((l) => forwardShown[l])]
+      : [...order.flatMap((l) => forwardShown[l]), ...order.flatMap((l) => reverseShown[l])]),
+    [order, forwardShown, reverseShown, reverseLeads],
   )
   const indexById = useMemo(() => new Map(flat.map((e, i) => [e.id, i])), [flat])
   const total = flat.length
@@ -300,8 +315,9 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
         </div>
       )}
       {showFilteredEmpty && <p className="text-sm text-black/40">Không có kết quả khớp bộ lọc đã chọn.</p>}
+      {reverseLeads && hasReverse && order.map((l) => renderGroup(l, reverseShown[l], true))}
       {order.map((l) => renderGroup(l, forwardShown[l], false))}
-      {hasReverse && order.map((l) => renderGroup(l, reverseShown[l], true))}
+      {!reverseLeads && hasReverse && order.map((l) => renderGroup(l, reverseShown[l], true))}
     </div>
   )
 }
