@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { audioAccent, audioMatchesHeadword, pickAccentRows } from '@/lib/dictionary/pronunciation'
+import { audioAccent, audioMatchesHeadword, formatPronunciation, pickAccentRows } from '@/lib/dictionary/pronunciation'
 import type { DictPron } from '@/lib/dictionary/types'
 
 const p = (accent: string, ipa: string | null, audioUrl: string | null = null): DictPron => ({ accent, ipa, audioUrl })
@@ -113,5 +113,44 @@ describe('pickAccentRows audio filtering', () => {
     )
     expect(rows.find((r) => r.label === 'UK')!.audioUrl).toBeNull()
     expect(rows.find((r) => r.label === 'US')!.audioUrl).toBe(`${COMMONS}En-us-cat.ogg`)
+  })
+})
+
+describe('formatPronunciation', () => {
+  // The sources disagree about delimiters: every Spanish transcription arrives
+  // wrapped ("/ˈola/", and "[biˈβ̞iɾ]" for the phonetic ones), every English one
+  // arrives bare ("hoʊld"). The detail page added its own slashes and the search
+  // list added none, so Spanish rendered "//ˈola//" and English rendered "hoʊld".
+  it('leaves a transcription that already carries its delimiters alone', () => {
+    expect(formatPronunciation('/ˈola/', 'es')).toBe('/ˈola/')
+    expect(formatPronunciation('[biˈβ̞iɾ]', 'es')).toBe('[biˈβ̞iɾ]')
+  })
+
+  it('wraps a bare transcription in the phonemic slashes', () => {
+    expect(formatPronunciation('hoʊld', 'en')).toBe('/hoʊld/')
+  })
+
+  // Square brackets mean a narrow phonetic transcription and slashes mean a
+  // phonemic one. Rewriting one as the other would assert something the source
+  // did not, so the delimiter that is already there wins.
+  it('never rewrites phonetic brackets into phonemic slashes', () => {
+    expect(formatPronunciation('[biˈβ̞iɾ]', 'es')).not.toBe('/biˈβ̞iɾ/')
+  })
+
+  // Chinese entries carry pinyin in this column, not a transcription. Pinyin in
+  // slashes claims to be IPA, which it is not.
+  it('leaves Chinese pinyin unwrapped', () => {
+    expect(formatPronunciation('yǒu méi yǒu', 'zh')).toBe('yǒu méi yǒu')
+  })
+
+  it('treats nothing, blank and empty delimiters as nothing to show', () => {
+    expect(formatPronunciation(null, 'en')).toBeNull()
+    expect(formatPronunciation('   ', 'en')).toBeNull()
+    expect(formatPronunciation('//', 'es')).toBeNull()
+  })
+
+  it('trims incidental whitespace before deciding', () => {
+    expect(formatPronunciation('  /ˈkasa/  ', 'es')).toBe('/ˈkasa/')
+    expect(formatPronunciation('  keɪs  ', 'en')).toBe('/keɪs/')
   })
 })

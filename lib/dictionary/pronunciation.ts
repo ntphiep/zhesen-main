@@ -55,6 +55,34 @@ export function audioMatchesHeadword(url: string | null, headword: string): bool
   return false
 }
 
+/**
+ * A transcription as it should be displayed, with exactly one pair of delimiters.
+ *
+ * The sources disagree. Every Spanish row arrives already wrapped -- "/ˈola/",
+ * or "[biˈβ̞iɾ]" where the source recorded a narrow phonetic transcription --
+ * and every English row arrives bare, "hoʊld". The two places that render a
+ * transcription each picked one of those conventions and were wrong about the
+ * other language: the detail page added slashes and showed "//ˈola//", the
+ * search list added none and showed "hoʊld".
+ *
+ * Slashes and brackets are not interchangeable: /…/ is phonemic, […] is
+ * phonetic. Whichever the source chose is kept, because rewriting one as the
+ * other asserts something the source did not. Only a bare value is wrapped, and
+ * only in slashes.
+ *
+ * Chinese is the exception: that column carries pinyin, not a transcription, so
+ * it is returned as it is. Pinyin between slashes would claim to be IPA.
+ */
+export function formatPronunciation(ipa: string | null, lang: LangCode): string | null {
+  const t = ipa?.trim()
+  if (!t) return null
+  if (lang === 'zh') return t
+  // Delimiters with nothing inside them, e.g. a row stored as "//".
+  if (/^[/[\]\s]*$/.test(t)) return null
+  if ((t.startsWith('/') && t.endsWith('/')) || (t.startsWith('[') && t.endsWith(']'))) return t
+  return `/${t}/`
+}
+
 function deaccent(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '')
 }

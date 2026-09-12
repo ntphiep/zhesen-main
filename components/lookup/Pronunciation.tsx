@@ -1,5 +1,5 @@
 import { AudioButton } from '@/components/ui/AudioButton'
-import { pickAccentRows } from '@/lib/dictionary/pronunciation'
+import { formatPronunciation, pickAccentRows } from '@/lib/dictionary/pronunciation'
 import type { DictPron } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 
@@ -12,13 +12,16 @@ export function Pronunciation({ headword, prons, lang }: { headword: string; pro
   const rows = pickAccentRows(prons, lang, headword)
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-      {rows.map((r, i) => (
+      {rows.map((r, i) => {
+        const shown = formatPronunciation(r.ipa, lang)
+        return (
         <span key={i} className="inline-flex items-center gap-1.5 text-black/70">
           {r.label && <span className="text-xs font-semibold uppercase tracking-wide text-black/40">{r.label}</span>}
-          {r.ipa && <span className="ipa text-[0.95rem] text-black/60">/{r.ipa}/</span>}
+          {shown && <span className="ipa text-[0.95rem] text-black/60">{shown}</span>}
           <AudioButton text={headword} lang={lang} audioUrl={r.audioUrl} accent={r.ttsLang} />
         </span>
-      ))}
+        )
+      })}
     </div>
   )
 }

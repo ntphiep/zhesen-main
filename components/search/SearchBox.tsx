@@ -7,6 +7,7 @@ import { detectOrder, orderByBestMatch } from '@/lib/dictionary/detect'
 import { pushRecent } from '@/lib/dictionary/recent'
 import { LANG_LABELS, LANG_FLAGS } from '@/lib/dictionary/labels'
 import { posGroup } from '@/lib/dictionary/pos'
+import { formatPronunciation } from '@/lib/dictionary/pronunciation'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import { EMPTY_SEARCH_RESPONSE, searchResponse, type SearchResponse } from '@/lib/dictionary/response'
 import type { LangCode } from '@/lib/languages'
@@ -207,6 +208,7 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
         <ul className="flex flex-col gap-0.5">
           {entries.map((e) => {
             const href = entryPath(e.id)
+            const ipa = formatPronunciation(e.ipa, e.lang)
             const warm = () => router.prefetch(href)
             const isActive = indexById.get(e.id) === active
             return (
@@ -221,7 +223,7 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
                   className={`flex items-baseline gap-2 rounded-lg px-3 py-2 ${isActive ? 'bg-black/5' : 'hover:bg-black/5'}`}
                 >
                   <span className="font-medium">{e.headword}</span>
-                  {e.ipa && <span className="ipa text-xs text-black/40">{e.ipa}</span>}
+                  {ipa && <span className="ipa text-xs text-black/40">{ipa}</span>}
                   {e.glossVi && <span className="text-sm text-black/60">{e.glossVi}</span>}
                 </Link>
               </li>
