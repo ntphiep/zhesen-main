@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { WordlistClient } from '@/app/wordlist/WordlistClient'
+import { WordlistClient } from '@/components/wordlist/WordlistClient'
 import type { UserWord } from '@/lib/wordlist/types'
 
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))

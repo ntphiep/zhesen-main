@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getLanguage, isLangCode } from '@/lib/languages'
 import { getCachedCommonWords } from '@/lib/dictionary/cached'
-import { LanguageHub } from './LanguageHub'
+import { LanguageHub } from '@/components/learn/LanguageHub'
 
 export default async function Page({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params

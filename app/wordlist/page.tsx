@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { listWords } from '@/lib/wordlist/store'
 import { countDueCards } from '@/lib/wordlist/review'
-import { WordlistClient } from './WordlistClient'
+import { WordlistClient } from '@/components/wordlist/WordlistClient'
 
 export default async function WordlistPage() {
   const supabase = await createClient()
