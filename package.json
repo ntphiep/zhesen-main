@@ -2,13 +2,18 @@
   "name": "zhesen",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "^20.9.0 || ^22.0.0 || >=24.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify": "npm run lint && npm run typecheck && npm run test"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
