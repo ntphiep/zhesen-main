@@ -96,8 +96,11 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   // Optimistic delete
   async function handleDelete(id: string, headword: string) {
     if (!window.confirm(`Xóa từ "${headword}"?`)) return
-    let snapshot: UserWord[] = []
-    setWords((prev) => { snapshot = prev; return prev.filter((w) => w.id !== id) })
+    // Snapshot from the rendered list, not from inside the updater: React is free to
+    // call an updater more than once, and the assignment would not have landed yet
+    // when the catch block below reads it.
+    const snapshot = words
+    setWords((prev) => prev.filter((w) => w.id !== id))
     setSelected((prev) => {
       const next = new Set(prev)
       next.delete(id)
@@ -116,8 +119,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     const ids = [...selected]
     if (ids.length === 0) return
     if (!window.confirm(`Xóa ${ids.length} từ đã chọn?`)) return
-    let snapshot: UserWord[] = []
-    setWords((prev) => { snapshot = prev; return prev.filter((w) => !ids.includes(w.id)) })
+    const snapshot = words
+    setWords((prev) => prev.filter((w) => !ids.includes(w.id)))
     setSelected(new Set())
     try {
       await deleteWords(supabase, ids)

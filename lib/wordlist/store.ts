@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 import { userWordRow, type UserWord, type WordDraft, type WordStatus } from './types'
+import { z } from 'zod'
 import { fetchAllRows } from '@/lib/supabase/paginate'
 
 export * from './types'
@@ -51,10 +52,12 @@ export async function listWords(supabase: SupabaseClient): Promise<UserWord[]> {
 
 /** Entry ids already saved for a language (RLS scopes this to the current user).
  * Used to dedupe a bulk "add whole level" import against the existing wordlist. */
+const savedEntryIdRow = z.object({ entry_id: z.string() })
+
 export async function listSavedEntryIds(supabase: SupabaseClient, lang: LangCode): Promise<Set<string>> {
-  const rows = await fetchAllRows<{ entry_id: string }>((from, to) =>
+  const rows = await fetchAllRows((from, to) =>
     supabase.from('user_words').select('entry_id').eq('lang', lang).not('entry_id', 'is', null).range(from, to))
-  return new Set(rows.map((r) => r.entry_id))
+  return new Set(savedEntryIdRow.array().parse(rows).map((r) => r.entry_id))
 }
 
 /** Raised when a dictionary entry is already saved in the user's wordlist. */
