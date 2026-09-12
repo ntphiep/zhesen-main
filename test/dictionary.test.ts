@@ -257,7 +257,7 @@ function crossClient(results: { data: unknown; error: null }[]) {
 }
 
 const sib = (id: string, lang: string, headword: string, gloss_vi: string | null, gloss_en: string | null) =>
-  ({ id, lang, headword, reading: null, pos: null, gloss_vi, gloss_en })
+  ({ id, lang, headword, reading: null, gender: null, pos: null, gloss_vi, gloss_en })
 
 describe('getCrossLanguage', () => {
   it('maps the matcher result for an English word, snake_case to camelCase', async () => {

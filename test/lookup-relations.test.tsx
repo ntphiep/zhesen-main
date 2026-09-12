@@ -23,7 +23,7 @@ describe('CharacterPanel', () => {
 
 const preview = (over: Partial<TermPreview> & { matchText: string }): TermPreview => ({
   id: `en:${over.matchText}`, headword: over.matchText, pos: null, ipa: null,
-  reading: null, glossVi: null, glossEn: null, ...over,
+  reading: null, gender: null, glossVi: null, glossEn: null, ...over,
 })
 
 describe('RelatedWords', () => {
@@ -92,7 +92,7 @@ describe('CrossLanguagePanel', () => {
     expect(container).toBeEmptyDOMElement()
   })
   it('links each sibling to its detail page', () => {
-    render(<CrossLanguagePanel siblings={[{ id: 'es:perro', lang: 'es', headword: 'perro', reading: null, pos: 'noun', glossVi: 'con chó', glossEn: 'dog' }]} />)
+    render(<CrossLanguagePanel siblings={[{ id: 'es:perro', lang: 'es', headword: 'perro', reading: null, gender: 'm', pos: 'noun', glossVi: 'con chó', glossEn: 'dog' }]} />)
     const link = screen.getByRole('link', { name: /perro/ })
     expect(link).toHaveAttribute('href', '/dictionary/es/perro')
   })
@@ -100,13 +100,19 @@ describe('CrossLanguagePanel', () => {
     render(
       <CrossLanguagePanel
         siblings={[
-          { id: 'es:perro', lang: 'es', headword: 'perro', reading: null, pos: 'noun', glossVi: 'con chó', glossEn: 'dog' },
-          { id: 'zh:狗', lang: 'zh', headword: '狗', reading: 'gǒu', pos: null, glossVi: 'chó', glossEn: 'dog' },
+          { id: 'es:perro', lang: 'es', headword: 'perro', reading: null, gender: 'm', pos: 'noun', glossVi: 'con chó', glossEn: 'dog' },
+          { id: 'zh:狗', lang: 'zh', headword: '狗', reading: 'gǒu', gender: null, pos: null, glossVi: 'chó', glossEn: 'dog' },
         ]}
       />,
     )
     expect(screen.getByText('Tiếng Trung')).toBeInTheDocument()
     expect(screen.getByText('Tiếng Tây Ban Nha')).toBeInTheDocument()
     expect(screen.getByText('gǒu')).toBeInTheDocument()
+  })
+  it('marks the gender of a Spanish noun', () => {
+    // A Spanish noun cannot be used without it: the article, the adjective and
+    // the pronoun all agree with it.
+    render(<CrossLanguagePanel siblings={[{ id: 'es:perro', lang: 'es', headword: 'perro', reading: null, gender: 'm', pos: 'noun', glossVi: 'con chó', glossEn: 'dog' }]} />)
+    expect(screen.getByText('giống đực')).toBeInTheDocument()
   })
 })

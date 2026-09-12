@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { LANG_FLAGS, LANG_LABELS } from '@/lib/dictionary/labels'
 import { posGroup } from '@/lib/dictionary/pos'
+import { genderFromCode } from '@/lib/dictionary/gender'
 import type { CrossLangSibling } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 
@@ -15,7 +16,8 @@ const ORDER: LangCode[] = ['zh', 'es', 'en']
  * one never appeared -- the panel answered "in one other language" rather than
  * "in the others". The quota is now per language (see `lex.match_cross_language`),
  * and a Chinese equivalent carries its pinyin, without which it is unreadable to
- * someone who has not learnt the characters yet.
+ * someone who has not learnt the characters yet. A Spanish one carries its
+ * gender, without which the learner cannot put an article in front of it.
  */
 export function CrossLanguagePanel({ siblings }: { siblings: CrossLangSibling[] }) {
   if (siblings.length === 0) return null
@@ -34,6 +36,7 @@ export function CrossLanguagePanel({ siblings }: { siblings: CrossLangSibling[] 
           <ul className="flex flex-col">
             {rows.map((s) => {
               const pos = posGroup(s.pos)
+              const gender = genderFromCode(s.gender)
               return (
                 <li key={s.id}>
                   <Link
@@ -44,6 +47,7 @@ export function CrossLanguagePanel({ siblings }: { siblings: CrossLangSibling[] 
                       <span className="font-medium">{s.headword}</span>
                       {s.reading && <span className="text-sm text-black/45">{s.reading}</span>}
                       {pos && <span className="text-xs text-black/35">{pos.labelVi}</span>}
+                      {gender && <span className="text-xs text-black/35">{gender}</span>}
                     </span>
                     {(s.glossVi || s.glossEn) && (
                       <span className="text-sm text-black/55">{s.glossVi || s.glossEn}</span>

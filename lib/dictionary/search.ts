@@ -18,8 +18,8 @@ import { entryPreviewRow, searchRpcRow, suggestRow, toPreview, toPreviewFromSear
  * one 384-line file.
  */
 
-export const PREVIEW_SELECT =
-  'id, lang, headword, traditional, level, frequency_rank, attributes, senses(pos, gloss_vi, gloss_en, sense_order), pronunciations(accent, ipa, audio_url)'
+import { PREVIEW_SELECT } from './entrySelect'
+export { PREVIEW_SELECT }
 
 export async function searchEntries(
   supabase: SupabaseClient, lang: LangCode, query: string, limit = 20,

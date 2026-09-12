@@ -78,6 +78,8 @@ export interface CrossLangSibling {
   headword: string
   /** Pinyin for a Chinese equivalent; null for the Latin-script languages. */
   reading: string | null
+  /** Raw gender code from the data ('m', 'f'); Spanish only. */
+  gender: string | null
   pos: string | null
   glossVi: string | null
   glossEn: string | null
@@ -97,6 +99,7 @@ export interface TermPreview {
   pos: string | null
   ipa: string | null
   reading: string | null
+  gender: string | null
   glossVi: string | null
   glossEn: string | null
 }

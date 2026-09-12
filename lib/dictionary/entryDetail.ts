@@ -3,6 +3,7 @@ import type { DictEntryDetail, DictSense, DictExample, DictRelation, CrossLangSi
 import { entryDetailRow, crossLanguageSourceRow, crossLangSiblingRow, termPreviewRow, pivotViRow, inflectionRow, charRow, toPreview, toSenses, toProns } from './rows'
 import { fillPivotVi, cleanMtGloss } from './textQuality'
 import { entryPivots, cleanGlossTerm } from './crosslang'
+import { PREVIEW_SELECT } from './entrySelect'
 import type { LangCode } from '@/lib/languages'
 
 /** Everything the entry detail page needs beyond the search-result preview:
@@ -14,7 +15,10 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
   const { data, error } = await supabase
     .schema('lex')
     .from('entries')
-    .select('id, lang, headword, traditional, level, frequency_rank, attributes, senses(pos, gloss_vi, gloss_en, sense_order), pronunciations(accent, ipa, audio_url), examples!examples_entry_id_fkey(text, reading, translation_vi, translation_en), lex_relations!lex_relations_entry_id_fkey(relation_type, related_text, related_entry_id)')
+    .select(
+      `${PREVIEW_SELECT}, examples!examples_entry_id_fkey(text, reading, translation_vi, translation_en),` +
+      ' lex_relations!lex_relations_entry_id_fkey(relation_type, related_text, related_entry_id)',
+    )
     .eq('id', entryId)
     .maybeSingle()
   if (error) throw error
@@ -87,8 +91,8 @@ export async function getCrossLanguage(
   })
   if (error) throw error
   return crossLangSiblingRow.array().parse(data ?? []).map((r) => ({
-    id: r.id, lang: r.lang, headword: r.headword, reading: r.reading, pos: r.pos,
-    glossVi: r.gloss_vi, glossEn: r.gloss_en,
+    id: r.id, lang: r.lang, headword: r.headword, reading: r.reading, gender: r.gender,
+    pos: r.pos, glossVi: r.gloss_vi, glossEn: r.gloss_en,
   }))
 }
 
@@ -110,7 +114,8 @@ export async function getTermPreviews(
   if (error) throw error
   return termPreviewRow.array().parse(data ?? []).map((r) => ({
     matchText: r.match_text, id: r.id, headword: r.headword, pos: r.pos,
-    ipa: r.ipa, reading: r.reading, glossVi: r.gloss_vi, glossEn: r.gloss_en,
+    ipa: r.ipa, reading: r.reading, gender: r.gender,
+    glossVi: r.gloss_vi, glossEn: r.gloss_en,
   }))
 }
 

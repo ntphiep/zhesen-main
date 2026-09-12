@@ -1,7 +1,9 @@
 # Thiết kế khởi động lại dự án: chesen thành zhesen
 
-Ngày: 2026-09-12. Trạng thái: chờ Hiệp duyệt.
-Nhánh làm việc dự kiến: `zhesen`, tách từ `dictionary`.
+Ngày: 2026-09-12. **Trạng thái: đã duyệt và đã thực hiện.** Nhánh `zhesen` đã tách khỏi
+`dictionary` và là nhánh đang làm việc; việc đổi tên trong mã, trong repo và trong tên
+project Supabase đã xong. Việc duy nhất còn lại của phần đổi tên là đổi tên thư mục
+trên máy, phải đóng phiên làm việc mới làm được.
 
 ## 1. Bối cảnh
 

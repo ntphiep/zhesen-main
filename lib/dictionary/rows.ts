@@ -101,6 +101,7 @@ export const crossLangSiblingRow = z.object({
   lang: langCode,
   headword: z.string(),
   reading: z.string().nullable(),
+  gender: z.string().nullable(),
   pos: z.string().nullable(),
   gloss_vi: z.string().nullable(),
   gloss_en: z.string().nullable(),
@@ -113,6 +114,7 @@ export const termPreviewRow = z.object({
   pos: z.string().nullable(),
   ipa: z.string().nullable(),
   reading: z.string().nullable(),
+  gender: z.string().nullable(),
   gloss_vi: z.string().nullable(),
   gloss_en: z.string().nullable(),
 })

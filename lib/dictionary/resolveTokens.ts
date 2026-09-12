@@ -2,9 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/languages'
 import type { DictEntryPreview } from './types'
 import { entryPreviewRow, inflectionEntryLookupRow, headwordRow, toPreview } from './rows'
-
-const PREVIEW_SELECT =
-  'id, lang, headword, traditional, level, frequency_rank, attributes, senses(pos, gloss_vi, gloss_en, sense_order), pronunciations(accent, ipa, audio_url)'
+import { PREVIEW_SELECT } from './entrySelect'
 
 /**
  * Resolve word tokens to dictionary entries for tap-to-lookup. Matches the

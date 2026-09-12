@@ -1,5 +1,26 @@
 # Zhesen — Lộ trình cải thiện (tổng hợp từ workflow audit, 2026-06-20)
 
+> **Trạng thái, cập nhật 2026-09-12: cả mười hai mục F1-F12 đã làm xong.** Tài liệu
+> này giữ lại làm hồ sơ của đợt khảo sát tháng Sáu, không còn là danh sách việc cần
+> làm. Kiểm chứng từng mục trong mã hiện tại:
+>
+> | Mục | Ở đâu trong mã |
+> | --- | --- |
+> | F1 giọng đọc | `components/ui/AudioButton.tsx` (bộ nhớ đệm giọng qua Promise, `voiceschanged` + hạn 1s, chọn giọng theo BCP-47; từ 2026-09-12 còn từ chối đọc khi máy không có giọng đúng ngôn ngữ) |
+> | F2 OGG/CORS | cùng file: `canPlay()` kiểm `canPlayType` cho `.ogg`, `crossOrigin`, vòng quay `aria-busy` |
+> | F3, F5 giọng vùng | `lib/dictionary/pronunciation.ts` `pickAccentRows`, hiển thị ở `components/lookup/Pronunciation.tsx` |
+> | F4 phông IPA | lớp `.ipa` trong `app/globals.css`, không dùng `font-mono` nữa |
+> | F6 gom nghĩa | `components/lookup/SenseList.tsx` (hiện 3 nghĩa, còn lại sau một cú bấm) |
+> | F7 lọc ví dụ hỏng | `lib/dictionary/textQuality.ts` `isCleanExample` |
+> | F8 tách hai bảng | `components/lookup/RelatedWords.tsx` và `WordFamily.tsx` là hai thành phần riêng |
+> | F9 thanh điều hướng | `components/layout/SiteHeader.tsx`, gắn ở `app/layout.tsx` |
+> | F10 tìm ở trang chủ | `app/page.tsx` dùng `SearchBox`, nhận diện ngôn ngữ ở `lib/dictionary/detect.ts` |
+> | F11 route có cache | `app/dictionary/search/route.ts` (`unstable_cache`), huỷ yêu cầu cũ ở `SearchBox.tsx:83` |
+> | F12 nạp trước | `SearchBox.tsx:210` `router.prefetch` khi rê chuột |
+>
+> Việc tiếp theo không nằm ở đây. Xem `2026-09-12-zhesen-restart-design.md`.
+
+
 Nguồn: 6 agent chẩn đoán (bám code+DB thật) + 5 agent nghiên cứu nền tảng + tổng hợp.
 
 ## Phát hiện chính
