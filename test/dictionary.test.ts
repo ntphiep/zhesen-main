@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
-import { pickIpa, pickPrimarySense, searchEntries, getEntryDetail, getCrossLanguage, getCharacters, resolveTokens, getZhSegmentCandidates } from '@/lib/dictionary/search'
+import {
+  pickIpa, pickPrimarySense, searchEntries, searchEntriesVi, suggestNearby, searchBothDirections,
+  getEntryDetail, getCrossLanguage, getCharacters, resolveTokens, getZhSegmentCandidates,
+} from '@/lib/dictionary/search'
 
 describe('pickIpa', () => {
   it('prefers en-US, then en-UK', () => {
@@ -67,6 +70,92 @@ describe('searchEntries', () => {
   it('returns [] without calling the RPC for an empty query', async () => {
     const { client, rpc } = rpcClient([])
     expect(await searchEntries(client, 'en', '   ')).toEqual([])
+    expect(rpc).not.toHaveBeenCalled()
+  })
+})
+
+// searchBothDirections drives multiple RPC names (search, search_vi, suggest) in
+// one call, so the mock must dispatch by name rather than return one canned result.
+function namedRpcClient(byName: Record<string, unknown>) {
+  const rpc = vi.fn((name: string) => Promise.resolve({ data: byName[name] ?? [], error: null }))
+  const client = { schema: vi.fn(() => ({ rpc })) } as unknown as import('@supabase/supabase-js').SupabaseClient
+  return { client, rpc }
+}
+
+const receiveViRow = {
+  id: 'en:receive', lang: 'en', headword: 'receive', traditional: null, level: null, frequency_rank: 3000,
+  attributes: {}, pos: 'verb', gloss_vi: 'nhận được', gloss_en: 'receive', ipa: null, audio_url: null, rank: 4.2,
+}
+
+describe('searchEntriesVi', () => {
+  it('maps the lex.search_vi RPC row to a preview', async () => {
+    const { client } = rpcClient([receiveViRow])
+    const res = await searchEntriesVi(client, 'en', 'nhận được')
+    expect(res[0]).toMatchObject({ id: 'en:receive', headword: 'receive', glossVi: 'nhận được' })
+  })
+
+  it('calls the RPC with the trimmed query, the single language, and the limit', async () => {
+    const { client, rpc } = rpcClient([])
+    await searchEntriesVi(client, 'en', '  nhận được  ', 5)
+    expect(rpc).toHaveBeenCalledWith('search_vi', { p_q: 'nhận được', p_langs: ['en'], p_limit: 5 })
+  })
+
+  it('returns [] without calling the RPC for an empty query', async () => {
+    const { client, rpc } = rpcClient([])
+    expect(await searchEntriesVi(client, 'en', '   ')).toEqual([])
+    expect(rpc).not.toHaveBeenCalled()
+  })
+})
+
+describe('suggestNearby', () => {
+  it('maps the lex.suggest RPC row to a suggestion', async () => {
+    const { client } = rpcClient([{ id: 'en:receive', lang: 'en', headword: 'receive', gloss_vi: 'nhận được', kind: 'headword', score: 0.5 }])
+    const res = await suggestNearby(client, 'recieve')
+    expect(res).toEqual([{ id: 'en:receive', lang: 'en', headword: 'receive', glossVi: 'nhận được' }])
+  })
+
+  it('returns [] without calling the RPC for an empty query', async () => {
+    const { client, rpc } = rpcClient([])
+    expect(await suggestNearby(client, '  ')).toEqual([])
+    expect(rpc).not.toHaveBeenCalled()
+  })
+})
+
+describe('searchBothDirections', () => {
+  it('does not try the reverse direction for a plain forward match', async () => {
+    const { client, rpc } = namedRpcClient({ search: [receiveViRow] })
+    const res = await searchBothDirections(client, 'receive')
+    expect(res.forward.en).toHaveLength(1)
+    expect(res.reverse).toEqual({ en: [], zh: [], es: [] })
+    expect(rpc).not.toHaveBeenCalledWith('search_vi', expect.anything())
+  })
+
+  it('tries the reverse direction whenever the query looks Vietnamese', async () => {
+    const { client, rpc } = namedRpcClient({ search_vi: [receiveViRow] })
+    const res = await searchBothDirections(client, 'nhận được')
+    expect(res.reverse.en).toHaveLength(1)
+    expect(rpc).toHaveBeenCalledWith('search_vi', expect.objectContaining({ p_q: 'nhận được' }))
+  })
+
+  it('falls back to the reverse direction when the forward search finds nothing (no diacritics typed)', async () => {
+    const { client } = namedRpcClient({ search_vi: [receiveViRow] })
+    const res = await searchBothDirections(client, 'nhan duoc')
+    expect(res.reverse.en).toHaveLength(1)
+  })
+
+  it('suggests nearby matches only when both directions come back empty', async () => {
+    const { client, rpc } = namedRpcClient({
+      suggest: [{ id: 'en:receive', lang: 'en', headword: 'receive', gloss_vi: 'nhận được', kind: 'headword', score: 0.5 }],
+    })
+    const res = await searchBothDirections(client, 'zzzz')
+    expect(res.suggestions).toEqual([{ id: 'en:receive', lang: 'en', headword: 'receive', glossVi: 'nhận được' }])
+    expect(rpc).toHaveBeenCalledWith('suggest', expect.objectContaining({ p_q: 'zzzz' }))
+  })
+
+  it('returns empty without calling any RPC for an empty query', async () => {
+    const { client, rpc } = namedRpcClient({})
+    const res = await searchBothDirections(client, '   ')
+    expect(res).toEqual({ forward: { en: [], zh: [], es: [] }, reverse: { en: [], zh: [], es: [] }, suggestions: [] })
     expect(rpc).not.toHaveBeenCalled()
   })
 })

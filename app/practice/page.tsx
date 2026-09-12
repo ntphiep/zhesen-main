@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getWordlistStats } from '@/lib/wordlist/stats'
 import { WordlistStats } from '@/components/wordlist/WordlistStats'
+import { WordlistDistribution } from '@/components/wordlist/WordlistDistribution'
 import { PracticeModes } from '@/components/wordlist/PracticeModes'
 
 // Practice hub: progress stats + every study mode, working over the saved wordlist.
@@ -22,6 +23,7 @@ export default async function PracticePage() {
       ) : (
         <>
           <WordlistStats stats={stats} />
+          <WordlistDistribution stats={stats} />
           <PracticeModes due={stats.due} />
         </>
       )}

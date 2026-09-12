@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { detectOrder } from '@/lib/dictionary/detect'
+import { detectOrder, looksVietnamese } from '@/lib/dictionary/detect'
 
 describe('detectOrder', () => {
   it('puts Chinese first when Han script is present', () => {
@@ -17,5 +17,24 @@ describe('detectOrder', () => {
   })
   it('always returns all three languages', () => {
     expect([...detectOrder('你好')].sort()).toEqual(['en', 'es', 'zh'])
+  })
+})
+
+describe('looksVietnamese', () => {
+  it('detects Vietnamese-exclusive diacritics', () => {
+    expect(looksVietnamese('nhận được')).toBe(true)
+    expect(looksVietnamese('đi học')).toBe(true)
+    expect(looksVietnamese('cảm ơn')).toBe(true)
+    expect(looksVietnamese('ăn cơm')).toBe(true)
+  })
+  it('does not flag plain Latin, English, or Spanish text (including a-with-accent shared with other languages)', () => {
+    expect(looksVietnamese('dog')).toBe(false)
+    expect(looksVietnamese('nhan duoc')).toBe(false)
+    expect(looksVietnamese('canción')).toBe(false)
+    expect(looksVietnamese('niño')).toBe(false)
+    // "xin chào" has only a plain grave-accented vowel (shared with French/Italian),
+    // no Vietnamese-exclusive mark -- relies on searchBothDirections' forward-miss
+    // fallback instead, see lib/dictionary/search.ts.
+    expect(looksVietnamese('xin chào')).toBe(false)
   })
 })

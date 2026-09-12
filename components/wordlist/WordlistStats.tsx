@@ -1,6 +1,8 @@
 import type { WordlistStats as Stats } from '@/lib/wordlist/stats'
 
-const CARDS: { key: keyof Stats; label: string; suffix?: string }[] = [
+type NumericStatKey = 'streak' | 'total' | 'due' | 'learned' | 'reviewedToday'
+
+const CARDS: { key: NumericStatKey; label: string; suffix?: string }[] = [
   { key: 'streak', label: 'Chuỗi ngày', suffix: ' 🔥' },
   { key: 'total', label: 'Tổng số từ' },
   { key: 'due', label: 'Cần ôn' },

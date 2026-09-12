@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { TagEditor } from './TagEditor'
 import type { UserWord, WordDraft, WordStatus } from '@/lib/wordlist/types'
 
 interface Props {
@@ -7,17 +8,6 @@ interface Props {
   open: boolean
   onClose: () => void
   onSave: (id: string, patch: Partial<WordDraft>) => void | Promise<void>
-}
-
-function tagsToString(tags: string[]): string {
-  return tags.join(', ')
-}
-
-function parseTags(raw: string): string[] {
-  return raw
-    .split(',')
-    .map((t) => t.trim())
-    .filter((t) => t.length > 0)
 }
 
 export function EditWordDialog({ word, open, onClose, onSave }: Props) {
@@ -32,7 +22,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
   const [exampleTranslation, setExampleTranslation] = useState('')
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState<WordStatus>('new')
-  const [tagsRaw, setTagsRaw] = useState('')
+  const [tags, setTags] = useState<string[]>([])
 
   // Sync form state when word changes or dialog reopens (so stale edits don't persist
   // across open/close). Adjust state during render instead of in an effect, per
@@ -51,7 +41,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
     setExampleTranslation(word.exampleTranslation ?? '')
     setNotes(word.notes ?? '')
     setStatus(word.status)
-    setTagsRaw(tagsToString(word.tags))
+    setTags(word.tags)
   }
 
   // Drive open/close via prop. Guard against the dialog's current state: showModal()
@@ -95,8 +85,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
 
     if (status !== word.status) patch.status = status
 
-    const newTags = parseTags(tagsRaw)
-    if (JSON.stringify(newTags) !== JSON.stringify(word.tags)) patch.tags = newTags
+    if (JSON.stringify(tags) !== JSON.stringify(word.tags)) patch.tags = tags
 
     await onSave(word.id, patch)
   }
@@ -207,13 +196,8 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/50">Tags (phân cách bằng dấu phẩy)</span>
-            <input
-              type="text"
-              value={tagsRaw}
-              onChange={(e) => setTagsRaw(e.target.value)}
-              className="rounded-lg border border-black/15 px-3 py-2 text-sm"
-            />
+            <span className="text-xs text-black/50">Thẻ phân loại</span>
+            <TagEditor tags={tags} onChange={setTags} />
           </label>
 
           <div className="flex justify-end gap-2 mt-1">

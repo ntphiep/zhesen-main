@@ -48,6 +48,15 @@ export interface DictEntryDetail extends DictEntryPreview {
   relations: DictRelation[]
   attributes: Record<string, unknown>
 }
+/** A "did you mean...?" candidate from `lex.suggest` (see
+ * supabase/migrations/0018_reverse_lookup.sql): the trigram-nearest headword or
+ * Vietnamese gloss to a query that had zero direct hits in either direction. */
+export interface SuggestionPreview {
+  id: string
+  lang: LangCode
+  headword: string
+  glossVi: string | null
+}
 export interface CrossLangSibling {
   id: string
   lang: LangCode

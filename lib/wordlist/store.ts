@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
-import { userWordRow, type UserWord, type WordDraft } from './types'
+import { userWordRow, type UserWord, type WordDraft, type WordStatus } from './types'
 
 export * from './types'
 
@@ -83,5 +83,22 @@ export async function deleteWord(supabase: SupabaseClient, id: string): Promise<
 export async function deleteWords(supabase: SupabaseClient, ids: string[]): Promise<void> {
   if (ids.length === 0) return
   const { error } = await supabase.from('user_words').delete().in('id', ids)
+  if (error) throw error
+}
+
+/** Bulk-insert drafts (e.g. from a CSV import). No duplicate check: the caller (the
+ * import preview) has already deduped against the current wordlist and within the file. */
+export async function addWords(supabase: SupabaseClient, drafts: WordDraft[]): Promise<UserWord[]> {
+  if (drafts.length === 0) return []
+  const { data, error } = await supabase.from('user_words').insert(drafts.map(draftToRow)).select()
+  if (error) throw error
+  return (data ?? []).map(parseUserWordRow)
+}
+
+/** Bulk status change (e.g. "mark selected as known"). Same status for every id, so a
+ * single query suffices; unlike tags this needs no per-row merge. */
+export async function updateWordsStatus(supabase: SupabaseClient, ids: string[], status: WordStatus): Promise<void> {
+  if (ids.length === 0) return
+  const { error } = await supabase.from('user_words').update({ status }).in('id', ids)
   if (error) throw error
 }

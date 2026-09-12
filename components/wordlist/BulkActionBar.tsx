@@ -1,0 +1,74 @@
+'use client'
+import { useState } from 'react'
+import { parseTagsInput } from '@/lib/wordlist/tags'
+import type { WordStatus } from '@/lib/wordlist/types'
+
+interface Props {
+  selectedCount: number
+  onBulkTag: (tags: string[]) => void
+  onBulkStatus: (status: WordStatus) => void
+  onBulkDelete: () => void
+}
+
+/** Toolbar shown once one or more rows are selected: tag, change status, or delete
+ * every selected word at once. */
+export function BulkActionBar({ selectedCount, onBulkTag, onBulkStatus, onBulkDelete }: Props) {
+  const [tagInput, setTagInput] = useState('')
+  const [bulkStatus, setBulkStatus] = useState<WordStatus>('learning')
+
+  if (selectedCount === 0) return null
+
+  function applyTags() {
+    const tags = parseTagsInput(tagInput)
+    if (tags.length === 0) return
+    onBulkTag(tags)
+    setTagInput('')
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-black/10 bg-black/2 px-3 py-2">
+      <span className="text-sm font-medium">{selectedCount} từ đã chọn</span>
+
+      <input
+        type="text"
+        value={tagInput}
+        onChange={(e) => setTagInput(e.target.value)}
+        placeholder="Gắn thẻ (phân cách bằng dấu phẩy)"
+        className="rounded-lg border border-black/15 px-3 py-1.5 text-sm"
+      />
+      <button
+        type="button"
+        className="rounded-lg border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5"
+        onClick={applyTags}
+      >
+        Gắn thẻ
+      </button>
+
+      <select
+        value={bulkStatus}
+        onChange={(e) => setBulkStatus(e.target.value as WordStatus)}
+        className="rounded-lg border border-black/15 bg-white px-3 py-1.5 text-sm"
+        aria-label="Trạng thái hàng loạt"
+      >
+        <option value="new">Mới</option>
+        <option value="learning">Đang học</option>
+        <option value="known">Đã biết</option>
+      </select>
+      <button
+        type="button"
+        className="rounded-lg border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5"
+        onClick={() => onBulkStatus(bulkStatus)}
+      >
+        Đổi trạng thái
+      </button>
+
+      <button
+        type="button"
+        className="ml-auto rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white"
+        onClick={onBulkDelete}
+      >
+        Xóa đã chọn ({selectedCount})
+      </button>
+    </div>
+  )
+}

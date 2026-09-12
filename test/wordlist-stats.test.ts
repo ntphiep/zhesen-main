@@ -6,6 +6,8 @@ const now = Date.parse('2026-06-21T12:00:00.000Z')
 const DAY = 86_400_000
 
 const row = (over: Partial<StatRow>): StatRow => ({
+  lang: 'en',
+  status: 'new',
   srsIntervalDays: 0,
   srsDueAt: new Date(now).toISOString(),
   srsLastReviewedAt: null,
@@ -35,6 +37,22 @@ describe('computeWordlistStats', () => {
   })
 
   it('is all zeros for an empty wordlist', () => {
-    expect(computeWordlistStats([], [], now)).toEqual({ total: 0, due: 0, learned: 0, reviewedToday: 0, streak: 0 })
+    expect(computeWordlistStats([], [], now)).toEqual({
+      total: 0, due: 0, learned: 0, reviewedToday: 0, streak: 0,
+      byStatus: { new: 0, learning: 0, known: 0 },
+      byLang: { en: 0, es: 0, zh: 0 },
+    })
+  })
+
+  it('tallies word counts by status and by language', () => {
+    const rows: StatRow[] = [
+      row({ lang: 'en', status: 'new' }),
+      row({ lang: 'en', status: 'known' }),
+      row({ lang: 'zh', status: 'learning' }),
+      row({ lang: 'es', status: 'known' }),
+    ]
+    const s = computeWordlistStats(rows, [], now)
+    expect(s.byStatus).toEqual({ new: 1, learning: 1, known: 2 })
+    expect(s.byLang).toEqual({ en: 2, es: 1, zh: 1 })
   })
 })

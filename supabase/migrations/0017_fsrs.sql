@@ -35,8 +35,8 @@ alter table public.user_words
 
 create index if not exists user_words_user_fsrs_due_idx on public.user_words (user_id, fsrs_due_at);
 
--- Backfill from the old SM-2 columns. Both updates are pure functions of the
--- untouched srs_* columns, so re-running this file is idempotent.
+-- Backfill from the old SM-2 columns. Both updates skip rows whose FSRS columns have
+-- already been written, which is what makes replaying this file safe.
 
 -- Cards never reviewed (srs_reps = 0 and srs_last_reviewed_at is null) become a
 -- fresh FSRS card, matching ts-fsrs's createEmptyCard(): stability/difficulty/
@@ -55,9 +55,9 @@ set
   fsrs_state = 0,
   fsrs_due_at = srs_due_at,
   fsrs_last_review_at = null
--- Guard: chi seed khi cot FSRS chua tung duoc ghi. Cac cot srs_* cu bi dong bang
--- ke tu khi app chuyen sang FSRS, nen neu thieu dieu kien nay, viec chay lai
--- migration se ghi de tien do FSRS that bang gia tri suy tu du lieu cu.
+-- Only seed rows whose FSRS columns are still untouched. The srs_* columns froze the
+-- moment the app switched to FSRS, so without this guard a replay of the migration
+-- would overwrite real review progress with values derived from stale data.
 where srs_reps = 0 and srs_last_reviewed_at is null
   and fsrs_reps = 0 and fsrs_last_review_at is null;
 
@@ -93,6 +93,6 @@ set
   fsrs_state = case when srs_lapses > 0 and srs_interval_days = 0 then 3 else 2 end,
   fsrs_due_at = srs_due_at,
   fsrs_last_review_at = srs_last_reviewed_at
--- Cung mot guard nhu tren: khong seed de len tien do FSRS da co that.
+-- Same guard: never seed over review progress that already exists.
 where not (srs_reps = 0 and srs_last_reviewed_at is null)
   and fsrs_reps = 0 and fsrs_last_review_at is null;

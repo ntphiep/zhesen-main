@@ -29,4 +29,17 @@ describe('EditWordDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: /Lưu/i }))
     expect(onSave).toHaveBeenCalledWith('id1', {})
   })
+
+  it('adds and removes tags via the tag editor', async () => {
+    const onSave = vi.fn()
+    const tagged: UserWord = { ...word, tags: ['animal'] }
+    render(<EditWordDialog word={tagged} open onClose={() => {}} onSave={onSave} />)
+    // remove the existing tag
+    await userEvent.click(screen.getByLabelText(/Bỏ thẻ animal/i))
+    // add a new one
+    await userEvent.type(screen.getByPlaceholderText(/Thêm thẻ/i), 'pet')
+    await userEvent.click(screen.getByRole('button', { name: /^Thêm thẻ$/i }))
+    await userEvent.click(screen.getByRole('button', { name: /Lưu/i }))
+    expect(onSave).toHaveBeenCalledWith('id1', expect.objectContaining({ tags: ['pet'] }))
+  })
 })

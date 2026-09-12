@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { LangCode } from '@/lib/languages'
-import type { DictEntryPreview, DictSense, DictPron } from './types'
+import type { DictEntryPreview, DictSense, DictPron, SuggestionPreview } from './types'
 import { cleanMtGloss } from './textQuality'
 
 /**
@@ -83,6 +83,18 @@ export const searchRpcRow = z.object({
 })
 export type SearchRpcRow = z.infer<typeof searchRpcRow>
 
+/** Row returned by the `lex.suggest` RPC (see supabase/migrations/0018_reverse_lookup.sql):
+ * a trigram-nearest headword or Vietnamese gloss for a query with zero direct hits. */
+export const suggestRow = z.object({
+  id: z.string(),
+  lang: langCode,
+  headword: z.string(),
+  gloss_vi: z.string().nullable(),
+  kind: z.enum(['headword', 'gloss_vi']),
+  score: z.number(),
+})
+export type SuggestRow = z.infer<typeof suggestRow>
+
 export const crossLangSiblingRow = z.object({
   id: z.string(),
   lang: langCode,
@@ -157,11 +169,16 @@ export function toPreview(r: EntryPreviewRow): DictEntryPreview {
   }
 }
 
-/** Same mapping as `toPreview`, for the already-flattened `lex.search` RPC row. */
+/** Same mapping as `toPreview`, for the already-flattened `lex.search`/`lex.search_vi`
+ * RPC row (both share the same shape, see 0016_search.sql and 0018_reverse_lookup.sql). */
 export function toPreviewFromSearchRow(r: SearchRpcRow): DictEntryPreview {
   return {
     id: r.id, lang: r.lang, headword: r.headword, traditional: r.traditional, level: r.level,
     ipa: r.ipa, pos: r.pos, glossVi: r.gloss_vi, glossEn: r.gloss_en, audioUrl: r.audio_url,
     frequencyRank: r.frequency_rank ?? null,
   }
+}
+
+export function toSuggestion(r: SuggestRow): SuggestionPreview {
+  return { id: r.id, lang: r.lang, headword: r.headword, glossVi: r.gloss_vi }
 }

@@ -1,0 +1,120 @@
+'use client'
+import { useState } from 'react'
+import type { LangCode } from '@/lib/languages'
+import type { ViewMode } from '@/lib/wordlist/useWordlistFilters'
+import type { WordStatus } from '@/lib/wordlist/types'
+
+interface Props {
+  query: string
+  onQueryChange: (q: string) => void
+  langFilter: LangCode | ''
+  onLangFilterChange: (l: LangCode | '') => void
+  statusFilter: WordStatus | ''
+  onStatusFilterChange: (s: WordStatus | '') => void
+  view: ViewMode
+  onViewChange: (v: ViewMode) => void
+  onAddClick: () => void
+  onExportCsv: () => void
+  onExportAnki: () => void
+  onImportClick: () => void
+}
+
+export function WordlistToolbar({
+  query, onQueryChange, langFilter, onLangFilterChange, statusFilter, onStatusFilterChange,
+  view, onViewChange, onAddClick, onExportCsv, onExportAnki, onImportClick,
+}: Props) {
+  const [exportOpen, setExportOpen] = useState(false)
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <button className="rounded-lg bg-black px-4 py-2 text-sm text-white" onClick={onAddClick}>
+        Thêm từ
+      </button>
+
+      <input
+        type="text"
+        placeholder="Tìm trong danh sách..."
+        value={query}
+        onChange={(e) => onQueryChange(e.target.value)}
+        className="rounded-lg border border-black/15 px-3 py-2 text-sm flex-1 min-w-40"
+      />
+
+      <select
+        value={langFilter}
+        onChange={(e) => onLangFilterChange(e.target.value as LangCode | '')}
+        className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
+        aria-label="Lọc ngôn ngữ"
+      >
+        <option value="">Tất cả ngôn ngữ</option>
+        <option value="en">Tiếng Anh</option>
+        <option value="zh">Tiếng Trung</option>
+        <option value="es">Tiếng Tây Ban Nha</option>
+      </select>
+
+      <select
+        value={statusFilter}
+        onChange={(e) => onStatusFilterChange(e.target.value as WordStatus | '')}
+        className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
+        aria-label="Lọc trạng thái"
+      >
+        <option value="">Tất cả trạng thái</option>
+        <option value="new">Mới</option>
+        <option value="learning">Đang học</option>
+        <option value="known">Đã biết</option>
+      </select>
+
+      <div className="flex rounded-lg border border-black/15 overflow-hidden">
+        <button
+          className={`px-3 py-2 text-sm ${view === 'table' ? 'bg-black text-white' : 'bg-white text-black/60'}`}
+          onClick={() => onViewChange('table')}
+          aria-label="Chế độ bảng"
+        >
+          Bảng
+        </button>
+        <button
+          className={`px-3 py-2 text-sm ${view === 'card' ? 'bg-black text-white' : 'bg-white text-black/60'}`}
+          onClick={() => onViewChange('card')}
+          aria-label="Chế độ thẻ"
+        >
+          Thẻ
+        </button>
+      </div>
+
+      <div className="relative">
+        <button
+          className="rounded-lg border border-black/15 px-3 py-2 text-sm hover:bg-black/5"
+          onClick={() => setExportOpen((v) => !v)}
+          aria-haspopup="menu"
+          aria-expanded={exportOpen}
+        >
+          Xuất ▾
+        </button>
+        {exportOpen && (
+          <div
+            role="menu"
+            className="absolute right-0 z-10 mt-1 flex flex-col rounded-lg border border-black/10 bg-white shadow-lg"
+          >
+            <button
+              role="menuitem"
+              className="px-4 py-2 text-left text-sm hover:bg-black/5 whitespace-nowrap"
+              onClick={() => { setExportOpen(false); onExportCsv() }}
+            >
+              Xuất CSV
+            </button>
+            <button
+              role="menuitem"
+              className="px-4 py-2 text-left text-sm hover:bg-black/5 whitespace-nowrap"
+              onClick={() => { setExportOpen(false); onExportAnki() }}
+            >
+              Xuất Anki (TSV)
+            </button>
+          </div>
+        )}
+      </div>
+
+      <button className="rounded-lg border border-black/15 px-3 py-2 text-sm hover:bg-black/5" onClick={onImportClick}>
+        Nhập CSV
+      </button>
+    </div>
+  )
+}

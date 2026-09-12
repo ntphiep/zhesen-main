@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [master, zhesen]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22.x'
+
+jobs:
+  verify:
+    name: Lint, types, tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm run test
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: verify
+    # The build prerenders pages that read from Supabase, so it only runs where
+    # the project secrets are available. Forked pull requests skip it.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Next build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+  migrations:
+    name: Migration hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Sequential numbering, no duplicates
+        run: |
+          cd supabase/migrations
+          ls *.sql | cut -d_ -f1 | sort > numbers.txt
+          if [ "$(uniq -d numbers.txt | wc -l)" -ne 0 ]; then
+            echo "Duplicate migration numbers:"; uniq -d numbers.txt; exit 1
+          fi
+          echo "$(ls *.sql | wc -l) migrations, all numbered uniquely."
+
+      - name: No destructive statements
+        run: |
+          cd supabase/migrations
+          # Migrations are replayed against a database that already holds real user
+          # data, so dropping or truncating has to be a deliberate, reviewed act.
+          if grep -rniE '^\s*(drop\s+(table|column|schema)|truncate|delete\s+from)' *.sql; then
+            echo "Destructive statement found. Review it before merging."; exit 1
+          fi
+          echo "No destructive statements."

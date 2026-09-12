@@ -1,99 +1,47 @@
 'use client'
 import { Fragment, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { addWord, updateWord, deleteWord, deleteWords } from '@/lib/wordlist/store'
+import { addWord, addWords, updateWord, updateWordsStatus, deleteWord, deleteWords } from '@/lib/wordlist/store'
+import { mergeTags } from '@/lib/wordlist/tags'
+import { wordsToCsv, wordsToAnkiTsv } from '@/lib/wordlist/csv'
+import { downloadTextFile } from '@/lib/wordlist/download'
+import { useWordlistFilters } from '@/lib/wordlist/useWordlistFilters'
+import { WordlistToolbar } from '@/components/wordlist/WordlistToolbar'
+import { TagFilterBar } from '@/components/wordlist/TagFilterBar'
+import { BulkActionBar } from '@/components/wordlist/BulkActionBar'
 import { AddWordDialog } from '@/components/wordlist/AddWordDialog'
 import { EditWordDialog } from '@/components/wordlist/EditWordDialog'
+import { ImportCsvDialog } from '@/components/wordlist/ImportCsvDialog'
 import { WordDetail } from '@/components/wordlist/WordDetail'
 import { AudioButton } from '@/components/AudioButton'
-import type { UserWord, WordDraft } from '@/lib/wordlist/types'
-import type { LangCode } from '@/lib/languages'
-
-type ViewMode = 'table' | 'card'
-type SortKey = 'headword' | 'createdAt'
-type SortDir = 'asc' | 'desc'
-
-function getInitialView(): ViewMode {
-  if (typeof window === 'undefined') return 'table'
-  const saved = window.localStorage.getItem('wordlist_view')
-  return saved === 'card' ? 'card' : 'table'
-}
+import type { UserWord, WordDraft, WordStatus } from '@/lib/wordlist/types'
 
 export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   const supabase = useMemo(() => createClient(), [])
 
   const [words, setWords] = useState<UserWord[]>(initialWords)
-  const [query, setQuery] = useState('')
-  const [langFilter, setLangFilter] = useState<LangCode | ''>('')
-  const [statusFilter, setStatusFilter] = useState<'new' | 'learning' | 'known' | ''>('')
-  const [sortKey, setSortKey] = useState<SortKey>('createdAt')
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
-  const [view, setView] = useState<ViewMode>(getInitialView)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [editWord, setEditWord] = useState<UserWord | null>(null)
 
-  // Derived visible list: filter + sort, no DB calls
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    let list = words.filter((w) => {
-      if (langFilter && w.lang !== langFilter) return false
-      if (statusFilter && w.status !== statusFilter) return false
-      if (q) {
-        const inHead = w.headword.toLowerCase().includes(q)
-        const inMeaningVi = (w.meaningVi ?? '').toLowerCase().includes(q)
-        const inMeaningEn = (w.meaningEn ?? '').toLowerCase().includes(q)
-        if (!inHead && !inMeaningVi && !inMeaningEn) return false
-      }
-      return true
-    })
-
-    list = [...list].sort((a, b) => {
-      let cmp = 0
-      if (sortKey === 'headword') {
-        cmp = a.headword.localeCompare(b.headword)
-      } else {
-        cmp = a.createdAt.localeCompare(b.createdAt)
-      }
-      return sortDir === 'asc' ? cmp : -cmp
-    })
-
-    return list
-  }, [words, query, langFilter, statusFilter, sortKey, sortDir])
-
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortKey(key)
-      setSortDir('asc')
-    }
-  }
-
-  function toggleView(v: ViewMode) {
-    setView(v)
-    localStorage.setItem('wordlist_view', v)
-  }
+  const {
+    query, setQuery, langFilter, setLangFilter, statusFilter, setStatusFilter,
+    tagFilter, toggleTagFilter, sortKey, sortDir, toggleSort, view, toggleView, visible,
+  } = useWordlistFilters(words)
 
   // Select/deselect logic
   const allVisibleIds = visible.map((w) => w.id)
   const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selected.has(id))
 
   function toggleSelectAll() {
-    if (allSelected) {
-      setSelected((prev) => {
-        const next = new Set(prev)
-        allVisibleIds.forEach((id) => next.delete(id))
-        return next
-      })
-    } else {
-      setSelected((prev) => {
-        const next = new Set(prev)
-        allVisibleIds.forEach((id) => next.add(id))
-        return next
-      })
-    }
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (allSelected) allVisibleIds.forEach((id) => next.delete(id))
+      else allVisibleIds.forEach((id) => next.add(id))
+      return next
+    })
   }
 
   function toggleSelect(id: string) {
@@ -139,6 +87,12 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     }
   }
 
+  // CSV import: bulk-insert already-deduped drafts, then append the real rows.
+  async function handleImport(drafts: WordDraft[]) {
+    const added = await addWords(supabase, drafts)
+    setWords((prev) => [...added, ...prev])
+  }
+
   // Optimistic delete
   async function handleDelete(id: string, headword: string) {
     if (!window.confirm(`Xóa từ "${headword}"?`)) return
@@ -174,6 +128,39 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     }
   }
 
+  // Bulk tag: union each selected word's own tags with the tags to add (per-row merge,
+  // since a plain bulk UPDATE would overwrite each row with the same tag array).
+  async function handleBulkTag(tagsToAdd: string[]) {
+    const ids = [...selected]
+    if (ids.length === 0) return
+    const snapshot = words
+    const targets = words.filter((w) => ids.includes(w.id))
+    setWords((prev) => prev.map((w) => (ids.includes(w.id) ? { ...w, tags: mergeTags(w.tags, tagsToAdd) } : w)))
+    try {
+      const updated = await Promise.all(
+        targets.map((w) => updateWord(supabase, w.id, { tags: mergeTags(w.tags, tagsToAdd) })),
+      )
+      setWords((prev) => prev.map((w) => updated.find((u) => u.id === w.id) ?? w))
+    } catch {
+      setWords(snapshot)
+      alert('Không gắn thẻ được. Vui lòng thử lại.')
+    }
+  }
+
+  // Bulk status change
+  async function handleBulkStatus(status: WordStatus) {
+    const ids = [...selected]
+    if (ids.length === 0) return
+    const snapshot = words
+    setWords((prev) => prev.map((w) => (ids.includes(w.id) ? { ...w, status } : w)))
+    try {
+      await updateWordsStatus(supabase, ids, status)
+    } catch {
+      setWords(snapshot)
+      alert('Không đổi được trạng thái. Vui lòng thử lại.')
+    }
+  }
+
   // Optimistic edit
   async function handleSave(id: string, patch: Partial<WordDraft>) {
     const original = words.find((w) => w.id === id)
@@ -189,6 +176,14 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     }
   }
 
+  function handleExportCsv() {
+    downloadTextFile('wordlist.csv', wordsToCsv(visible), 'text/csv;charset=utf-8')
+  }
+
+  function handleExportAnki() {
+    downloadTextFile('wordlist-anki.tsv', wordsToAnkiTsv(visible), 'text/tab-separated-values;charset=utf-8')
+  }
+
   function formatDate(iso: string) {
     try {
       return new Date(iso).toLocaleDateString('vi-VN')
@@ -201,73 +196,29 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          className="rounded-lg bg-black px-4 py-2 text-sm text-white"
-          onClick={() => setAddOpen(true)}
-        >
-          Thêm từ
-        </button>
+      <WordlistToolbar
+        query={query}
+        onQueryChange={setQuery}
+        langFilter={langFilter}
+        onLangFilterChange={setLangFilter}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        view={view}
+        onViewChange={toggleView}
+        onAddClick={() => setAddOpen(true)}
+        onExportCsv={handleExportCsv}
+        onExportAnki={handleExportAnki}
+        onImportClick={() => setImportOpen(true)}
+      />
 
-        <input
-          type="text"
-          placeholder="Tìm trong danh sách..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="rounded-lg border border-black/15 px-3 py-2 text-sm flex-1 min-w-40"
-        />
+      <TagFilterBar words={words} activeTag={tagFilter} onToggle={toggleTagFilter} />
 
-        <select
-          value={langFilter}
-          onChange={(e) => setLangFilter(e.target.value as LangCode | '')}
-          className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
-          aria-label="Lọc ngôn ngữ"
-        >
-          <option value="">Tất cả ngôn ngữ</option>
-          <option value="en">Tiếng Anh</option>
-          <option value="zh">Tiếng Trung</option>
-          <option value="es">Tiếng Tây Ban Nha</option>
-        </select>
-
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as 'new' | 'learning' | 'known' | '')}
-          className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
-          aria-label="Lọc trạng thái"
-        >
-          <option value="">Tất cả trạng thái</option>
-          <option value="new">Mới</option>
-          <option value="learning">Đang học</option>
-          <option value="known">Đã biết</option>
-        </select>
-
-        <div className="flex rounded-lg border border-black/15 overflow-hidden">
-          <button
-            className={`px-3 py-2 text-sm ${view === 'table' ? 'bg-black text-white' : 'bg-white text-black/60'}`}
-            onClick={() => toggleView('table')}
-            aria-label="Chế độ bảng"
-          >
-            Bảng
-          </button>
-          <button
-            className={`px-3 py-2 text-sm ${view === 'card' ? 'bg-black text-white' : 'bg-white text-black/60'}`}
-            onClick={() => toggleView('card')}
-            aria-label="Chế độ thẻ"
-          >
-            Thẻ
-          </button>
-        </div>
-
-        {selectedCount > 0 && (
-          <button
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white"
-            onClick={handleBulkDelete}
-          >
-            Xóa đã chọn ({selectedCount})
-          </button>
-        )}
-      </div>
+      <BulkActionBar
+        selectedCount={selectedCount}
+        onBulkTag={handleBulkTag}
+        onBulkStatus={handleBulkStatus}
+        onBulkDelete={handleBulkDelete}
+      />
 
       {/* Empty state */}
       {visible.length === 0 && (
@@ -306,6 +257,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                 <th className="py-2 pr-3">Nghĩa</th>
                 <th className="py-2 pr-3">Cấp độ</th>
                 <th className="py-2 pr-3">Ngữ cảnh</th>
+                <th className="py-2 pr-3">Thẻ</th>
                 <th className="py-2 pr-3">
                   <button
                     className="flex items-center gap-1 font-medium hover:text-black"
@@ -337,6 +289,13 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     <td className="py-2 pr-3">{w.meaningVi ?? ''}</td>
                     <td className="py-2 pr-3 text-black/50">{w.level ?? ''}</td>
                     <td className="py-2 pr-3 text-black/50 max-w-xs truncate">{w.example ?? ''}</td>
+                    <td className="py-2 pr-3">
+                      <div className="flex flex-wrap gap-1">
+                        {w.tags.map((t) => (
+                          <span key={t} className="rounded-full bg-black/5 px-1.5 py-0.5 text-xs text-black/60">{t}</span>
+                        ))}
+                      </div>
+                    </td>
                     <td className="py-2 pr-3 text-black/40">{formatDate(w.createdAt)}</td>
                     <td className="py-2 pr-3">
                       <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
@@ -369,7 +328,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                   </tr>
                   {expandedId === w.id && (
                     <tr className="bg-black/2">
-                      <td colSpan={10} className="px-4 py-3">
+                      <td colSpan={11} className="px-4 py-3">
                         <WordDetail word={w} />
                       </td>
                     </tr>
@@ -411,6 +370,13 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                 </span>
               )}
               {w.example && <p className="text-xs italic text-black/50">{w.example}</p>}
+              {w.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {w.tags.map((t) => (
+                    <span key={t} className="rounded-full bg-black/5 px-1.5 py-0.5 text-xs text-black/60">{t}</span>
+                  ))}
+                </div>
+              )}
 
               <div className="flex items-center justify-between mt-1">
                 <span className="text-xs text-black/30">{formatDate(w.createdAt)}</span>
@@ -461,6 +427,13 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         open={editWord !== null}
         onClose={() => setEditWord(null)}
         onSave={handleSave}
+      />
+
+      <ImportCsvDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        existing={words}
+        onImport={handleImport}
       />
     </div>
   )
