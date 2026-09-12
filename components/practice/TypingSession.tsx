@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listWords } from '@/lib/wordlist/store'
 import { logActivityDay } from '@/lib/wordlist/activity'
+import { gradeWordById } from '@/lib/wordlist/review'
+import { gradeForMode } from '@/lib/practice/grading'
 import { checkTypedAnswer, type TypedResult } from '@/lib/practice/typing'
 import { TypingCard, type TypingPrompt } from '@/components/practice/TypingCard'
 
@@ -35,7 +37,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
         if (!active) return
         const usable = words
           .filter((w) => w.headword && (mode === 'dictation' || (w.meaningVi && w.meaningVi.trim())))
-          .map((w): TypingPrompt => ({ headword: w.headword, meaningVi: w.meaningVi, ipa: w.ipa, audioUrl: w.audioUrl, lang: w.lang }))
+          .map((w): TypingPrompt => ({ id: w.id, headword: w.headword, meaningVi: w.meaningVi, ipa: w.ipa, audioUrl: w.audioUrl, lang: w.lang }))
         setQueue(shuffle(usable).slice(0, SIZE))
         setIndex(0); setValue(''); setResult(null); setScore(0)
       })
@@ -75,6 +77,10 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
     const r = checkTypedAnswer(value, current.headword)
     setResult(r)
     if (r !== 'wrong') setScore((s) => s + 1)
+    // A one-character typo counts as a hard recall, not a clean one: the learner
+    // produced the word, which is more than the quiz can tell.
+    const grade = gradeForMode(mode, { correct: r !== 'wrong', nearly: r === 'close' })
+    if (grade) void gradeWordById(supabase, current.id, grade).catch(() => {})
     if (!logged.current) { logged.current = true; void logActivityDay(supabase, Date.now()) }
   }
   function next() {

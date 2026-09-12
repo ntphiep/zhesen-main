@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TypingCard, type TypingPrompt } from '@/components/practice/TypingCard'
 
-const word: TypingPrompt = { headword: 'develop', meaningVi: 'phát triển', ipa: null, audioUrl: null, lang: 'en' }
+const word: TypingPrompt = { id: 'w1', headword: 'develop', meaningVi: 'phát triển', ipa: null, audioUrl: null, lang: 'en' }
 
 describe('TypingCard', () => {
   it('write mode prompts with the meaning and submits the typed answer', async () => {

@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listWords } from '@/lib/wordlist/store'
 import { logActivityDay } from '@/lib/wordlist/activity'
+import { gradeWordById } from '@/lib/wordlist/review'
+import { gradeForMode } from '@/lib/practice/grading'
 import { buildQuiz, type QuizQuestion } from '@/lib/practice/quiz'
 import { QuizCard } from '@/components/practice/QuizCard'
 
@@ -67,7 +69,13 @@ export function QuizClient() {
   function select(option: string) {
     if (selected !== null) return
     setSelected(option)
-    if (option === current.answer) setScore((s) => s + 1)
+    const correct = option === current.answer
+    if (correct) setScore((s) => s + 1)
+    // The answer counts towards the word's schedule. Deliberately not awaited: a
+    // slow or failed write must not hold up the next question, and the flashcard
+    // review remains the authority on a card either way.
+    const grade = gradeForMode('quiz', { correct })
+    if (grade) void gradeWordById(supabase, current.id, grade).catch(() => {})
     if (!logged.current) { logged.current = true; void logActivityDay(supabase, Date.now()) }
   }
   function next() {

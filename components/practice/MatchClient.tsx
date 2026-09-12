@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listWords } from '@/lib/wordlist/store'
 import { logActivityDay } from '@/lib/wordlist/activity'
+import { gradeWordById } from '@/lib/wordlist/review'
+import { gradeForMode } from '@/lib/practice/grading'
 import { buildMatchTiles, type MatchTile } from '@/lib/practice/match'
 
 const ROUND_SIZE = 6
@@ -17,6 +19,11 @@ export function MatchClient() {
   const [seconds, setSeconds] = useState(0)
   const [round, setRound] = useState(0)
   const logged = useRef(false)
+  // Words that were part of a wrong pairing this round. The game always ends with
+  // every pair matched, so a plain match says nothing about difficulty; hesitating
+  // over a word is the only signal it has, and it grades the pair `hard` instead of
+  // `good`. There is no outcome here that could mean forgetting.
+  const stumbled = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     let active = true
@@ -25,6 +32,7 @@ export function MatchClient() {
         if (!active) return
         setTiles(buildMatchTiles(words.map((w) => ({ id: w.id, headword: w.headword, meaningVi: w.meaningVi })), ROUND_SIZE))
         setSelected(null); setMatched(new Set()); setWrong([]); setSeconds(0)
+        stumbled.current = new Set()
       })
       .catch(() => active && setTiles([]))
     return () => { active = false }
@@ -59,7 +67,10 @@ export function MatchClient() {
     if (first.wordId === tile.wordId && first.kind !== tile.kind) {
       setMatched((m) => new Set(m).add(first.key).add(tile.key))
       setSelected(null)
+      const grade = gradeForMode('match', { correct: true, nearly: stumbled.current.has(tile.wordId) })
+      if (grade) void gradeWordById(supabase, tile.wordId, grade).catch(() => {})
     } else {
+      stumbled.current.add(first.wordId).add(tile.wordId)
       setWrong([first.key, tile.key])
       setSelected(null)
       setTimeout(() => setWrong([]), 600)

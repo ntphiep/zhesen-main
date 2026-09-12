@@ -6,6 +6,8 @@ import { listWords } from '@/lib/wordlist/store'
 import { AudioButton, speechLang } from '@/components/ui/AudioButton'
 import { checkTypedAnswer, type TypedResult } from '@/lib/practice/typing'
 import { logActivityDay } from '@/lib/wordlist/activity'
+import { gradeWordById } from '@/lib/wordlist/review'
+import { gradeForMode } from '@/lib/practice/grading'
 import type { LangCode } from '@/lib/languages'
 
 const SIZE = 10
@@ -30,7 +32,7 @@ function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
 }
 
-interface SpeakWord { headword: string; meaningVi: string | null; audioUrl: string | null; lang: LangCode }
+interface SpeakWord { id: string; headword: string; meaningVi: string | null; audioUrl: string | null; lang: LangCode }
 
 function shuffle<T>(input: T[]): T[] {
   const a = [...input]
@@ -60,7 +62,7 @@ export function SpeakSession() {
         if (!active) return
         const usable = words
           .filter((w) => w.headword)
-          .map((w): SpeakWord => ({ headword: w.headword, meaningVi: w.meaningVi, audioUrl: w.audioUrl, lang: w.lang }))
+          .map((w): SpeakWord => ({ id: w.id, headword: w.headword, meaningVi: w.meaningVi, audioUrl: w.audioUrl, lang: w.lang }))
         setQueue(shuffle(usable).slice(0, SIZE))
         setIndex(0); setHeard(null); setResult(null); setScore(0); setListening(false)
       })
@@ -117,6 +119,12 @@ export function SpeakSession() {
       setHeard(transcript)
       setResult(verdict)
       if (verdict !== 'wrong') setScore((s) => s + 1)
+      // Successes count towards the schedule; failures do not. The recogniser
+      // mishears for reasons that are not the learner's -- a noisy room, an accent
+      // it was not trained on -- and `gradeForMode` returns null for those rather
+      // than resetting a card over a microphone. See lib/practice/grading.ts.
+      const grade = gradeForMode('speak', { correct: verdict !== 'wrong', nearly: verdict === 'close' })
+      if (grade) void gradeWordById(supabase, current.id, grade).catch(() => {})
       void logActivityDay(supabase, Date.now())
     }
     r.onerror = () => setListening(false)

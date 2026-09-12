@@ -4,6 +4,8 @@ import type { TypedResult } from '@/lib/practice/typing'
 import type { LangCode } from '@/lib/languages'
 
 export interface TypingPrompt {
+  /** The saved word's id, so an answer can be recorded against its schedule. */
+  id: string
   headword: string
   meaningVi: string | null
   ipa: string | null

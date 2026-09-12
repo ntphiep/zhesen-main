@@ -126,6 +126,12 @@ stroke order.
 - **`s-maxage` không nói gì với trình duyệt.** Chỉ đặt mỗi nó thì trình duyệt tự suy ra độ
   tươi và giữ bản cũ; `revalidateTag` trên máy chủ không với tới được bản đó. Route API
   cache phải tách: `Cache-Control` cho trình duyệt, `CDN-Cache-Control` cho CDN.
+- **Mọi chế độ luyện tập PHẢI ghi vào lịch FSRS.** Trước đây `gradeCard` chỉ được gọi từ
+  `WordlistReview`, nên quiz, viết, chép chính tả, ghép đôi và luyện nói không ghi cột
+  `fsrs_*` nào: người dùng luyện cả buổi mà hàng đợi ôn hôm sau y nguyên. Thêm chế độ mới
+  thì gọi `gradeForMode` (`lib/practice/grading.ts`) rồi `gradeWordById`
+  (`lib/wordlist/review.ts`). Luyện nói cố tình KHÔNG báo thất bại: nhận dạng giọng sai vì
+  phòng ồn hay micro, ghi `again` sẽ xoá tiến độ thật vì một lỗi phần cứng.
 - **Middleware KHÔNG tạo phiên ẩn danh nữa.** Tra cứu không cần tài khoản, nên tài khoản
   chỉ sinh ra ở lần ghi đầu tiên (`lib/supabase/session.ts`). Trước đây mỗi request không
   cookie đều tạo một hàng `auth.users`: 122 tài khoản mà chỉ 1 có dữ liệu, và khi chạm

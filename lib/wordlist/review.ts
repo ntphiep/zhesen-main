@@ -112,3 +112,25 @@ export async function gradeCard(supabase: SupabaseClient, card: ReviewCard, grad
   try { await logActivityDay(supabase, now) } catch { /* ignore */ }
   return next
 }
+
+/**
+ * Grade a saved word by id, reading its current schedule first.
+ *
+ * The practice modes work from `listWords`, which carries no scheduling state, so
+ * they cannot call `gradeCard`. Fetching the one row costs a round trip per
+ * answered question -- a few a minute, against a `select` on the primary key --
+ * and keeps the modes from having to carry a full `ReviewCard` through their own
+ * question shapes.
+ *
+ * Returns null when the row is gone: a word deleted from the wordlist in another
+ * tab while a practice session is open is not an error worth interrupting the
+ * session for.
+ */
+export async function gradeWordById(
+  supabase: SupabaseClient, id: string, grade: Grade, now: number = Date.now(),
+): Promise<SrsState | null> {
+  const { data, error } = await supabase.from('user_words').select(CARD_SELECT).eq('id', id).maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  return gradeCard(supabase, rowToCard(cardRowSchema.parse(data)), grade, now)
+}
