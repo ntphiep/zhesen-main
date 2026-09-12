@@ -25,6 +25,7 @@ const entryPreview: z.ZodType<DictEntryPreview> = z.object({
   glossEn: z.string().nullable(),
   audioUrl: z.string().nullable(),
   frequencyRank: z.number().nullable().optional(),
+  matchScore: z.number().nullable().optional(),
 })
 
 const suggestion: z.ZodType<SuggestionPreview> = z.object({

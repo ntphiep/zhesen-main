@@ -176,6 +176,7 @@ export function toPreviewFromSearchRow(r: SearchRpcRow): DictEntryPreview {
     id: r.id, lang: r.lang, headword: r.headword, traditional: r.traditional, level: r.level,
     ipa: r.ipa, pos: r.pos, glossVi: r.gloss_vi, glossEn: r.gloss_en, audioUrl: r.audio_url,
     frequencyRank: r.frequency_rank ?? null,
+    matchScore: r.rank,
   }
 }
 

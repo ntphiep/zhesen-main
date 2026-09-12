@@ -27,6 +27,18 @@ const MAX_QUERY_CHARS = 64
 
 const EMPTY = { forward: { en: [], zh: [], es: [] }, reverse: { en: [], zh: [], es: [] }, suggestions: [] }
 
+// The two caches are told different things on purpose. The previous header gave
+// only `s-maxage`, which says nothing to a browser, so browsers applied heuristic
+// freshness and kept answering from their own copy: after the pipeline loaded new
+// data and /api/revalidate cleared the server cache, a returning visitor still saw
+// the old results, and nothing here could reach that copy. `max-age=0,
+// must-revalidate` makes the browser ask every time, which is cheap because the
+// server answer comes from `cachedSearch`. The shared cache keeps the long window.
+const CACHE_HEADERS = {
+  'Cache-Control': 'public, max-age=0, must-revalidate',
+  'CDN-Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+} as const
+
 function truncate(q: string): string {
   const chars = Array.from(q)
   return chars.length <= MAX_QUERY_CHARS ? q : chars.slice(0, MAX_QUERY_CHARS).join('')
@@ -44,7 +56,5 @@ export async function GET(request: Request) {
   const q = truncate(new URL(request.url).searchParams.get('q')?.trim() ?? '')
   if (!q) return Response.json(EMPTY)
   const data = await cachedSearch(q.toLowerCase())
-  return Response.json(data, {
-    headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
-  })
+  return Response.json(data, { headers: CACHE_HEADERS })
 }

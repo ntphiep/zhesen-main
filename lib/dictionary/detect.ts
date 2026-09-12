@@ -1,4 +1,5 @@
 import type { LangCode } from '@/lib/languages'
+import type { DictEntryPreview } from './types'
 
 const HAN = /\p{Script=Han}/u
 const SPANISH = /[ñáéíóúü¿¡]/iu
@@ -36,4 +37,27 @@ export function detectOrder(query: string): LangCode[] {
  */
 export function looksVietnamese(query: string): boolean {
   return VIETNAMESE.test(query.trim())
+}
+
+/**
+ * Reorder the language groups by how well each actually matched, keeping
+ * `fallback` as the tie-break.
+ *
+ * The script heuristic above only sees the letters typed, and for anything in the
+ * Latin alphabet it can only guess English first. Searching the Spanish gerund
+ * "corriendo" put corridor, condo and corridors above correr: three weak trigram
+ * guesses scoring under 1.0, ahead of the word the learner was reading at 3.51.
+ * The scores are already in hand by the time the groups are rendered, so the
+ * group with a real match leads and the guesses fall in behind it.
+ *
+ * Entries without a score (anything not from `lex.search`) count as zero, which
+ * leaves such a caller on the heuristic order.
+ */
+export function orderByBestMatch(
+  fallback: LangCode[],
+  ...groups: Partial<Record<LangCode, DictEntryPreview[]>>[]
+): LangCode[] {
+  const best = (lang: LangCode) =>
+    Math.max(0, ...groups.flatMap((g) => g[lang] ?? []).map((e) => e.matchScore ?? 0))
+  return [...fallback].sort((a, b) => best(b) - best(a) || fallback.indexOf(a) - fallback.indexOf(b))
 }

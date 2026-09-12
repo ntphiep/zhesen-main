@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { entryPath } from '@/lib/dictionary/entryId'
-import { detectOrder } from '@/lib/dictionary/detect'
+import { detectOrder, orderByBestMatch } from '@/lib/dictionary/detect'
 import { pushRecent } from '@/lib/dictionary/recent'
 import { LANG_LABELS, LANG_FLAGS } from '@/lib/dictionary/labels'
 import { posGroup } from '@/lib/dictionary/pos'
@@ -97,9 +97,12 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
     return () => { if (id) clearTimeout(id); ctrl.abort() }
   }, [query])
 
-  const order = useMemo(() => (lang ? [lang] : detectOrder(query)), [query, lang])
   const forward = data.forward
   const reverse = data.reverse
+  const order = useMemo(
+    () => (lang ? [lang] : orderByBestMatch(detectOrder(query), forward, reverse)),
+    [query, lang, forward, reverse],
+  )
   const hasReverse = order.some((l) => reverse[l].length > 0)
 
   // Every entry currently on screen (both directions, restricted to `order`),

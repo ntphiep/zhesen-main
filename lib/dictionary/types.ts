@@ -40,6 +40,9 @@ export interface DictEntryPreview {
   audioUrl: string | null
   /** Corpus frequency rank (1 = most frequent); null when unknown. */
   frequencyRank?: number | null
+  /** How well this entry matched the query, from `lex.search`. Present only on
+   * search results, so a caller can compare matches across languages. */
+  matchScore?: number | null
 }
 export interface DictEntryDetail extends DictEntryPreview {
   senses: DictSense[]
