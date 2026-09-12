@@ -5,6 +5,7 @@ import { resolveTokens, getZhSegmentCandidates } from '@/lib/dictionary/resolveT
 import { getCharacters } from '@/lib/dictionary/entryDetail'
 import { tokenize, type Segment } from '@/lib/reader/tokenize'
 import { WordPopover } from './WordPopover'
+import type { ResolvedText } from '@/lib/dictionary/tappable'
 import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 
@@ -13,11 +14,20 @@ import type { LangCode } from '@/lib/languages'
  * inline popover with its meaning. Unknown words render as plain text. Resolution
  * happens once per text via the public (anon) client; failures degrade to plain text.
  */
-export function TappableText({ text, lang }: { text: string; lang: LangCode }) {
+export function TappableText({
+  text, lang, resolved,
+}: {
+  text: string
+  lang: LangCode
+  /** Resolved on the server. When present the text renders on the first paint
+   * and no request is made; without it the effect below does the work in the
+   * browser, which is what the grammar pages still rely on. */
+  resolved?: ResolvedText
+}) {
   const supabase = useMemo(() => createClient(), [])
-  const [segments, setSegments] = useState<Segment[]>([])
-  const [entries, setEntries] = useState<Map<string, DictEntryPreview>>(new Map())
-  const [chars, setChars] = useState<Map<string, CharInfo>>(new Map())
+  const [segments, setSegments] = useState<Segment[]>(() => resolved?.segments ?? [])
+  const [entries, setEntries] = useState<Map<string, DictEntryPreview>>(() => new Map(resolved?.entries))
+  const [chars, setChars] = useState<Map<string, CharInfo>>(() => new Map(resolved?.chars))
   const [active, setActive] = useState<number | null>(null)
 
   // Close any open popover whenever the underlying text changes, without waiting for
@@ -31,6 +41,7 @@ export function TappableText({ text, lang }: { text: string; lang: LangCode }) {
   }
 
   useEffect(() => {
+    if (resolved) return
     let cancelled = false
     async function run() {
       try {
@@ -56,7 +67,7 @@ export function TappableText({ text, lang }: { text: string; lang: LangCode }) {
     }
     run()
     return () => { cancelled = true }
-  }, [text, lang, supabase])
+  }, [text, lang, supabase, resolved])
 
   return (
     <span className="leading-relaxed">

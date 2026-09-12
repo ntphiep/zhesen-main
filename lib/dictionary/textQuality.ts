@@ -121,3 +121,13 @@ export function isCleanExample(text: string): boolean {
   }
   return true
 }
+
+/** How many examples an entry page shows. */
+export const MAX_EXAMPLES = 6
+
+/** The examples a page will actually render. Shared between the list and the
+ * server-side resolver so both work from the same set: resolving a text the list
+ * then drops is wasted, and rendering one the resolver skipped shows nothing. */
+export function pickExamples<T extends { text: string }>(examples: T[]): T[] {
+  return examples.filter((e) => isCleanExample(e.text)).slice(0, MAX_EXAMPLES)
+}

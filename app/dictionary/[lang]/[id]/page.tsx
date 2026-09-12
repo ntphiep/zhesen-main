@@ -1,9 +1,10 @@
 import { notFound } from 'next/navigation'
-import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections, getCachedEntriesContaining, getCachedTermPreviews } from '@/lib/dictionary/cached'
+import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections, getCachedEntriesContaining, getCachedTermPreviews, getCachedTappableTexts } from '@/lib/dictionary/cached'
 import { getCachedGrammarPointsForEntry } from '@/lib/grammar/cached'
 import { buildEntryId } from '@/lib/dictionary/entryId'
 import { LookupView } from '@/components/lookup/LookupView'
 import { groupWordForms } from '@/lib/dictionary/family'
+import { pickExamples } from '@/lib/dictionary/textQuality'
 import { isLangCode } from '@/lib/languages'
 
 export default async function Page({ params }: { params: Promise<{ lang: string; id: string }> }) {
@@ -29,9 +30,14 @@ export default async function Page({ params }: { params: Promise<{ lang: string;
     ...detail.relations.map((r) => r.relatedText ?? ''),
     ...groupWordForms(inflections).map((f) => f.text),
   ]
-  const previews = Object.fromEntries(
-    (await getCachedTermPreviews(detail.lang, terms)).map((p) => [p.matchText.toLowerCase(), p]),
-  )
+  const [previewRows, resolvedExamples] = await Promise.all([
+    getCachedTermPreviews(detail.lang, terms),
+    // Resolve the example sentences here rather than letting each one do it from
+    // the browser. Done there, a Chinese entry issued eighteen requests and showed
+    // nothing until the last returned; done here the sentences are in the HTML.
+    getCachedTappableTexts(detail.lang, pickExamples(detail.examples).map((e) => e.text)),
+  ])
+  const previews = Object.fromEntries(previewRows.map((p) => [p.matchText.toLowerCase(), p]))
 
   return (
     <LookupView
@@ -42,6 +48,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string;
       grammarPoints={grammarPoints}
       containing={containing}
       previews={previews}
+      resolvedExamples={resolvedExamples}
     />
   )
 }

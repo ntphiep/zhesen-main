@@ -11,6 +11,7 @@ import { ExampleList } from './ExampleList'
 import { GrammarLinks } from './GrammarLinks'
 import { groupWordForms } from '@/lib/dictionary/family'
 import { buildConjugation } from '@/lib/dictionary/conjugation'
+import type { ResolvedText } from '@/lib/dictionary/tappable'
 import type { ContainingWord, DictEntryDetail, CharInfo, CrossLangSibling, TermPreview, WordForm } from '@/lib/dictionary/types'
 import type { GrammarPoint } from '@/lib/grammar/types'
 
@@ -27,6 +28,7 @@ import type { GrammarPoint } from '@/lib/grammar/types'
  */
 export function LookupView({
   detail, characters, siblings, inflections = [], grammarPoints = [], containing = [], previews = {},
+  resolvedExamples = [],
 }: {
   detail: DictEntryDetail
   characters: CharInfo[]
@@ -37,6 +39,8 @@ export function LookupView({
   /** What the dictionary knows about each related word and inflected form, keyed
    *  by the lowercased surface form. Missing entries render as plain text. */
   previews?: Record<string, TermPreview>
+  /** Example sentences already resolved on the server; see lib/dictionary/tappable.ts. */
+  resolvedExamples?: ResolvedText[]
 }) {
   const hanViet = characters.map((c) => c.hanViet[0]).filter(Boolean).join(' ') || null
   // Spanish verbs get a conjugation table; for them the flat "word family" chip list
@@ -57,7 +61,7 @@ export function LookupView({
           <SenseList senses={detail.senses} />
           {conjugation && <ConjugationTable conjugation={conjugation} />}
           <WordFamily headword={detail.headword} forms={forms} previews={previews} lang={detail.lang} />
-          <ExampleList examples={detail.examples} lang={detail.lang} />
+          <ExampleList examples={detail.examples} lang={detail.lang} resolved={resolvedExamples} />
           <RelatedWords relations={detail.relations} previews={previews} lang={detail.lang} />
         </div>
 

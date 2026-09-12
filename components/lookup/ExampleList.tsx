@@ -1,15 +1,22 @@
 import { AudioButton } from '@/components/ui/AudioButton'
 import { TappableText } from '@/components/reader/TappableText'
-import { isCleanExample } from '@/lib/dictionary/textQuality'
+import { pickExamples } from '@/lib/dictionary/textQuality'
+import type { ResolvedText } from '@/lib/dictionary/tappable'
 import type { DictExample } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 
-const MAX_EXAMPLES = 6
-
-export function ExampleList({ examples, lang }: { examples: DictExample[]; lang: LangCode }) {
-  // Drop examples whose words have run together (pipeline data corruption) and cap the list.
-  const clean = examples.filter((e) => isCleanExample(e.text)).slice(0, MAX_EXAMPLES)
+export function ExampleList({
+  examples, lang, resolved = [],
+}: {
+  examples: DictExample[]
+  lang: LangCode
+  /** Pre-resolved on the server, so the sentences are in the HTML. Without it
+   * each TappableText resolves itself in the browser. */
+  resolved?: ResolvedText[]
+}) {
+  const clean = pickExamples(examples)
   if (clean.length === 0) return null
+  const byText = new Map(resolved.map((r) => [r.text, r]))
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-lg font-semibold">Ví dụ</h2>
@@ -17,7 +24,9 @@ export function ExampleList({ examples, lang }: { examples: DictExample[]; lang:
         {clean.map((e, i) => (
           <li key={i} className="flex flex-col gap-0.5 border-l-2 border-black/10 pl-3">
             <div className="flex items-center gap-2">
-              <span className="text-black/80"><TappableText text={e.text} lang={lang} /></span>
+              <span className="text-black/80">
+                <TappableText text={e.text} lang={lang} resolved={byText.get(e.text)} />
+              </span>
               <AudioButton text={e.text} lang={lang} />
             </div>
             {e.translationVi && <p className="text-sm text-black/50">{e.translationVi}</p>}

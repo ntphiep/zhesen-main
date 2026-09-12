@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache'
 import { createContentClient } from '@/lib/supabase/content'
 import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getTermPreviews } from './entryDetail'
 import { getCommonWords } from './search'
+import { resolveTappableTexts, type ResolvedText } from './tappable'
 import { getEntriesContaining } from './containing'
 import { getWordOfDay, dayNumber, type DailyWord } from './wordOfDay'
 import { getLevelsForLanguage, getEntriesByLevel, type LevelSummary, type LevelPage } from './levels'
@@ -82,5 +83,14 @@ export const getCachedEntriesByLevel = unstable_cache(
   (lang: LangCode, level: string, offset: number, limit: number): Promise<LevelPage> =>
     getEntriesByLevel(createContentClient(), lang, level, offset, limit),
   ['dict-entries-by-level'],
+  { revalidate: 3600, tags: ['lex'] },
+)
+
+/** Tappable example sentences for one entry page, resolved server-side. Keyed by
+ * the texts themselves, so two entries quoting the same sentence share the entry. */
+export const getCachedTappableTexts = unstable_cache(
+  (lang: LangCode, texts: string[]): Promise<ResolvedText[]> =>
+    resolveTappableTexts(createContentClient(), lang, texts),
+  ['dict-tappable'],
   { revalidate: 3600, tags: ['lex'] },
 )

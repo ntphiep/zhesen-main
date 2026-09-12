@@ -78,7 +78,16 @@ function hanSubstrings(text: string): string[] {
  * text being tokenized, using the existing `(lang, headword_normalized)` index.
  */
 export async function getZhSegmentCandidates(supabase: SupabaseClient, text: string): Promise<string[]> {
-  const candidates = hanSubstrings(text)
+  return getZhSegmentCandidatesForTexts(supabase, [text])
+}
+
+/** The same, for several texts in one round trip. A headword that belongs to
+ * another text simply never matches during segmentation, so the union is safe to
+ * hand to every `tokenize` call. */
+export async function getZhSegmentCandidatesForTexts(
+  supabase: SupabaseClient, texts: string[],
+): Promise<string[]> {
+  const candidates = [...new Set(texts.flatMap(hanSubstrings))]
   if (candidates.length === 0) return []
   const { data, error } = await supabase.schema('lex').from('entries')
     .select('headword').eq('lang', 'zh').in('headword_normalized', candidates)
