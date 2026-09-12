@@ -68,22 +68,27 @@ as $$
       and lower(extensions.immutable_unaccent(i.form_text)) = q.q_norm
   ),
   -- One arm per way of matching, each a predicate on a single table so each can
-  -- use its own index. The language filter stays out of here: it is cheap on the
-  -- small result and would keep some arms from using their index.
+  -- use its own index.
   --
   -- Each arm keeps only its most frequent matches. A single letter matches 2,558
   -- headwords by prefix and ranking all of them is most of the cost of such a
   -- query; nothing past the first few hundred could place in a list of 24, because
   -- the score is a tier plus a frequency tie-break and the frequent words hold
   -- every tier they share. A specific query never reaches the cap.
+  --
+  -- The language filter has to be inside the cap, not after it. Applied after, a
+  -- search narrowed to one language would be served from 500 rows chosen across
+  -- all three: measured at 180 to 320 rows per language for common prefixes today,
+  -- comfortably more than the 24 shown, but that is a property of the data and not
+  -- something the query should depend on.
   cand as (
-          (select e.id from lex.entries e, q where q.q_raw <> '' and e.headword_normalized like q.q_prefix order by e.frequency_rank nulls last limit 500)
-    union (select e.id from lex.entries e, q where q.q_raw <> '' and e.lang::text in ('en', 'es') and e.headword_normalized % q.q_norm order by e.frequency_rank nulls last limit 500)
-    union (select e.id from lex.entries e, q where q.q_raw <> '' and e.lang::text = 'en' and e.search_vector @@ q.tq_en order by e.frequency_rank nulls last limit 500)
-    union (select e.id from lex.entries e, q where q.q_raw <> '' and e.lang::text = 'es' and e.search_vector @@ q.tq_es order by e.frequency_rank nulls last limit 500)
-    union (select e.id from lex.entries e, q where q.q_raw <> '' and e.headword &@ q.q_raw order by e.frequency_rank nulls last limit 500)
-    union (select e.id from lex.entries e, q where q.q_raw <> '' and e.traditional &@ q.q_raw order by e.frequency_rank nulls last limit 500)
-    union (select e.id from lex.entries e, q where q.q_pinyin <> '' and e.pinyin_toneless like q.q_pinyin || '%' order by e.frequency_rank nulls last limit 500)
+          (select e.id from lex.entries e, q where (p_langs is null or e.lang::text = any(p_langs)) and q.q_raw <> '' and e.headword_normalized like q.q_prefix order by e.frequency_rank nulls last limit 500)
+    union (select e.id from lex.entries e, q where (p_langs is null or e.lang::text = any(p_langs)) and q.q_raw <> '' and e.lang::text in ('en', 'es') and e.headword_normalized % q.q_norm order by e.frequency_rank nulls last limit 500)
+    union (select e.id from lex.entries e, q where (p_langs is null or e.lang::text = any(p_langs)) and q.q_raw <> '' and e.lang::text = 'en' and e.search_vector @@ q.tq_en order by e.frequency_rank nulls last limit 500)
+    union (select e.id from lex.entries e, q where (p_langs is null or e.lang::text = any(p_langs)) and q.q_raw <> '' and e.lang::text = 'es' and e.search_vector @@ q.tq_es order by e.frequency_rank nulls last limit 500)
+    union (select e.id from lex.entries e, q where (p_langs is null or e.lang::text = any(p_langs)) and q.q_raw <> '' and e.headword &@ q.q_raw order by e.frequency_rank nulls last limit 500)
+    union (select e.id from lex.entries e, q where (p_langs is null or e.lang::text = any(p_langs)) and q.q_raw <> '' and e.traditional &@ q.q_raw order by e.frequency_rank nulls last limit 500)
+    union (select e.id from lex.entries e, q where (p_langs is null or e.lang::text = any(p_langs)) and q.q_pinyin <> '' and e.pinyin_toneless like q.q_pinyin || '%' order by e.frequency_rank nulls last limit 500)
     union select id from infl
   ),
   ranked as (
