@@ -25,18 +25,17 @@ export async function proxy(request: NextRequest) {
     },
   )
 
-  // Use getSession (reads the session from the cookie locally, refreshing only
-  // when the token is expired) instead of getUser (which makes a network call to
-  // the Auth server on every request). We only need to know whether an anonymous
-  // session already exists, not to authorize anything, so the local check is safe.
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    const { error } = await supabase.auth.signInAnonymously()
-    if (error) console.error('[proxy] signInAnonymously failed:', error.message)
-  }
+  // Refresh the session and write the rotated cookies back, nothing more.
+  // getSession reads the cookie locally and only calls the Auth server when the
+  // access token has expired (see GoTrueClient.__loadSession), where getUser
+  // would make a network call on every single request.
+  //
+  // Creating the session is deliberately NOT done here. Reading the dictionary
+  // needs no account, so signing in on every cookie-less request minted an
+  // auth.users row for every crawler and prefetch, and a burst of them exhausted
+  // Supabase's sign-in limit for the real visitors behind it. The first saved
+  // word creates the account instead; see lib/supabase/session.ts.
+  await supabase.auth.getSession()
 
   return response
 }

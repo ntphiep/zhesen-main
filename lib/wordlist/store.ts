@@ -4,6 +4,7 @@ import type { LangCode } from '@/lib/languages'
 import { userWordRow, type UserWord, type WordDraft, type WordStatus } from './types'
 import { z } from 'zod'
 import { fetchAllRows } from '@/lib/supabase/paginate'
+import { ensureSession } from '@/lib/supabase/session'
 
 export * from './types'
 
@@ -69,6 +70,9 @@ export class WordAlreadyExistsError extends Error {
 }
 
 export async function addWord(supabase: SupabaseClient, draft: WordDraft): Promise<UserWord> {
+  // Saving the first word is what creates the account: browsing needs no session,
+  // so one is not minted until there is something to own. See lib/supabase/session.
+  await ensureSession(supabase)
   // Dictionary-sourced words are deduped by entry_id. RLS scopes the lookup to the
   // current user's rows. Custom words (entryId null) are never treated as duplicates.
   if (draft.entryId) {
@@ -103,6 +107,7 @@ export async function deleteWords(supabase: SupabaseClient, ids: string[]): Prom
  * import preview) has already deduped against the current wordlist and within the file. */
 export async function addWords(supabase: SupabaseClient, drafts: WordDraft[]): Promise<UserWord[]> {
   if (drafts.length === 0) return []
+  await ensureSession(supabase)
   const { data, error } = await supabase.from('user_words').insert(drafts.map(draftToRow)).select()
   if (error) throw error
   return (data ?? []).map(parseUserWordRow)

@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { parseUserWordRow, draftFromDictEntry, addWord, addWords, updateWordsStatus, listWords, listSavedEntryIds, WordAlreadyExistsError } from '@/lib/wordlist/store'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { WordDraft } from '@/lib/wordlist/types'
+import { resetSessionState } from '@/lib/supabase/session'
 
 const row = {
   id: '11111111-1111-1111-1111-111111111111', lang: 'en', entry_id: 'en:dog', headword: 'dog',
@@ -32,7 +33,7 @@ describe('draftFromDictEntry', () => {
 // check (select.eq.limit), and the paginated reads, which end in .range(). Reads
 // answer the first page in full and every later page empty, so fetchAllRows stops
 // after one round trip.
-function mockClient({ existing = [] as unknown[], inserted = row } = {}) {
+function mockClient({ existing = [] as unknown[], inserted = row, session = { user: { id: 'u1' } } as unknown } = {}) {
   const insertSingle = vi.fn(() => Promise.resolve({ data: inserted, error: null }))
   const insertSelect = vi.fn(() => ({ single: insertSingle }))
   const insert = vi.fn(() => ({ select: insertSelect }))
@@ -46,7 +47,14 @@ function mockClient({ existing = [] as unknown[], inserted = row } = {}) {
   const eq = vi.fn(() => ({ limit, not: notNull }))
   const select = vi.fn(() => ({ eq, order, limit, range: listRange, not: notNull }))
   const from = vi.fn(() => ({ insert, select }))
-  return { client: { from } as unknown as import('@supabase/supabase-js').SupabaseClient, insert, select }
+  // A real client always carries `auth`; the write paths use it to create the
+  // anonymous account on the first saved word (lib/supabase/session.ts).
+  const signInAnonymously = vi.fn(async () => ({ error: null }))
+  const auth = { getSession: vi.fn(async () => ({ data: { session } })), signInAnonymously }
+  return {
+    client: { from, auth } as unknown as import('@supabase/supabase-js').SupabaseClient,
+    insert, select, signInAnonymously,
+  }
 }
 
 const dogEntry: DictEntryPreview = {
@@ -61,6 +69,23 @@ describe('addWord', () => {
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({ entry_id: 'en:dog', meaning_vi: 'con chó' }))
     expect(insert).toHaveBeenCalledWith(expect.not.objectContaining({ user_id: expect.anything() }))
     expect(w.headword).toBe('dog')
+  })
+
+  it('creates the anonymous account on the first saved word', async () => {
+    // Browsing the dictionary deliberately creates no account, so the first write
+    // is where one has to appear or the insert fails against RLS.
+    resetSessionState()
+    const { client, insert, signInAnonymously } = mockClient({ session: null })
+    await addWord(client, draftFromDictEntry(dogEntry))
+    expect(signInAnonymously).toHaveBeenCalledTimes(1)
+    expect(insert).toHaveBeenCalled()
+  })
+
+  it('reuses the account a returning user already has', async () => {
+    resetSessionState()
+    const { client, signInAnonymously } = mockClient()
+    await addWord(client, draftFromDictEntry(dogEntry))
+    expect(signInAnonymously).not.toHaveBeenCalled()
   })
 
   it('throws WordAlreadyExistsError and does not insert when the entry is already saved', async () => {
@@ -105,10 +130,19 @@ describe('addWords', () => {
   it('bulk-inserts drafts (e.g. CSV import) with no duplicate check', async () => {
     const insertSelect = vi.fn(() => Promise.resolve({ data: [row], error: null }))
     const insert = vi.fn(() => ({ select: insertSelect }))
-    const client = { from: vi.fn(() => ({ insert })) } as unknown as import('@supabase/supabase-js').SupabaseClient
+    const signInAnonymously = vi.fn(async () => ({ error: null }))
+    const auth = { getSession: vi.fn(async () => ({ data: { session: null } })), signInAnonymously }
+    const client = { from: vi.fn(() => ({ insert })), auth } as unknown as import('@supabase/supabase-js').SupabaseClient
     const draft = draftFromDictEntry(dogEntry)
-    const res = await addWords(client, [draft])
-    expect(insert).toHaveBeenCalledWith([expect.objectContaining({ headword: 'dog' })])
+    resetSessionState()
+    const res = await addWords(client, [draft, draft, draft])
+    expect(insert).toHaveBeenCalledWith([
+      expect.objectContaining({ headword: 'dog' }),
+      expect.objectContaining({ headword: 'dog' }),
+      expect.objectContaining({ headword: 'dog' }),
+    ])
+    // One account for the whole import, not one per row.
+    expect(signInAnonymously).toHaveBeenCalledTimes(1)
     expect(res[0].headword).toBe('dog')
   })
 

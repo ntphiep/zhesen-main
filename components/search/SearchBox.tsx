@@ -7,21 +7,12 @@ import { detectOrder } from '@/lib/dictionary/detect'
 import { pushRecent } from '@/lib/dictionary/recent'
 import { LANG_LABELS, LANG_FLAGS } from '@/lib/dictionary/labels'
 import { posGroup } from '@/lib/dictionary/pos'
-import type { DictEntryPreview, SuggestionPreview } from '@/lib/dictionary/types'
+import type { DictEntryPreview } from '@/lib/dictionary/types'
+import { EMPTY_SEARCH_RESPONSE, searchResponse, type SearchResponse } from '@/lib/dictionary/response'
 import type { LangCode } from '@/lib/languages'
 
-type ByLang = Record<LangCode, DictEntryPreview[]>
-/** Shape returned by GET /dictionary/search, see app/dictionary/search/route.ts. */
-interface SearchResponse {
-  /** Direct search (query typed in en/es/zh). */
-  forward: ByLang
-  /** Reverse lookup (query typed in Vietnamese), grouped by the *target* language. */
-  reverse: ByLang
-  /** Trigram "did you mean" candidates, populated only when both of the above are empty. */
-  suggestions: SuggestionPreview[]
-}
-const EMPTY_BY_LANG: ByLang = { en: [], zh: [], es: [] }
-const EMPTY: SearchResponse = { forward: EMPTY_BY_LANG, reverse: EMPTY_BY_LANG, suggestions: [] }
+type ByLang = SearchResponse['forward']
+const EMPTY = EMPTY_SEARCH_RESPONSE
 const RECENT_KEY = 'zhesen:recent-searches'
 /** en levels only as of this writing (verified: 0 es/zh rows have a level), in
  * CEFR order; any level value not in this list (there shouldn't be one) still
@@ -88,7 +79,11 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
       id = setTimeout(async () => {
         try {
           const res = await fetch(`/dictionary/search?q=${encodeURIComponent(q)}`, { signal: ctrl.signal })
-          const json = (await res.json()) as SearchResponse
+          // A rejected request (rate limit, server error, a proxy's HTML page)
+          // carries a body that is not a result set. Show nothing rather than
+          // caching it, so the next keystroke tries again instead of replaying it.
+          if (!res.ok) { setData(EMPTY); return }
+          const json = searchResponse.parse(await res.json())
           cache.current.set(key, json)
           setData(json)
         } catch (e) {
@@ -133,14 +128,19 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
     () => (e: DictEntryPreview) => (!levelFilter || e.level === levelFilter) && (!posFilter || posGroup(e.pos)?.key === posFilter),
     [levelFilter, posFilter],
   )
-  const forwardShown = useMemo(
-    () => Object.fromEntries(order.map((l) => [l, forward[l].filter(matches)])) as ByLang,
-    [order, forward, matches],
+  // Filter every language rather than only those in `order`, so the result keeps
+  // all three keys and needs no cast to claim it does. `order` still decides what
+  // actually renders.
+  const applyFilters = useMemo(
+    () => (groups: ByLang): ByLang => ({
+      en: groups.en.filter(matches),
+      es: groups.es.filter(matches),
+      zh: groups.zh.filter(matches),
+    }),
+    [matches],
   )
-  const reverseShown = useMemo(
-    () => Object.fromEntries(order.map((l) => [l, reverse[l].filter(matches)])) as ByLang,
-    [order, reverse, matches],
-  )
+  const forwardShown = useMemo(() => applyFilters(forward), [applyFilters, forward])
+  const reverseShown = useMemo(() => applyFilters(reverse), [applyFilters, reverse])
 
   // Flat list in display order (forward groups, then reverse groups), for
   // keyboard navigation and Enter-to-open.

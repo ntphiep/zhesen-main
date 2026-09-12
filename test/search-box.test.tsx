@@ -21,6 +21,7 @@ beforeEach(() => {
   prefetch.mockClear()
   push.mockClear()
   vi.stubGlobal('fetch', vi.fn(async () => ({
+    ok: true,
     json: async () => response({ forward: { en: [preview('en:dog', 'en', 'dog', 'con chó')], zh: [], es: [] } }),
   })))
 })
@@ -55,6 +56,7 @@ describe('SearchBox', () => {
 
   it('labels reverse (Vietnamese -> other language) results separately from forward ones', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
       json: async () => response({ reverse: { en: [preview('en:receive', 'en', 'receive', 'nhận được')], zh: [], es: [] } }),
     })))
     render(<SearchBox initialQuery="" />)
@@ -66,6 +68,7 @@ describe('SearchBox', () => {
 
   it('shows "did you mean" suggestions when nothing matches in either direction', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
       json: async () => response({ suggestions: [{ id: 'en:receive', lang: 'en', headword: 'receive', glossVi: 'nhận được' }] }),
     })))
     render(<SearchBox initialQuery="" />)
@@ -76,6 +79,7 @@ describe('SearchBox', () => {
 
   it('filters results by level and auto-hides filters with no options', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
       json: async () => response({
         forward: {
           en: [
@@ -95,5 +99,47 @@ describe('SearchBox', () => {
     const a1 = screen.getByRole('button', { name: 'A1' })
     await userEvent.click(a1)
     expect(linkHrefs()).toEqual(['/dictionary/en/cat'])
+  })
+  /**
+   * The component used to cast whatever came back to the result type. A reply
+   * that was not a result set -- the route's 429 body, a server error, an HTML
+   * page from a proxy -- therefore had no `forward` field and the next render
+   * threw reading `forward[lang]`, blanking the page.
+   */
+  it('shows nothing instead of crashing when the route refuses the request', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: false,
+      status: 429,
+      json: async () => ({ error: 'Bạn tra cứu quá nhanh. Vui lòng thử lại sau ít giây.' }),
+    })))
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('textbox'), 'dog')
+    await new Promise((r) => setTimeout(r, 300))
+    // Still mounted and still usable: a render that threw would have torn the
+    // tree down and taken the input with it.
+    expect(screen.getByRole('textbox')).toHaveValue('dog')
+    expect(screen.queryAllByRole('link')).toHaveLength(0)
+  })
+
+  it('does not cache a refused request, so the next keystroke asks again', async () => {
+    const fetchMock = vi.fn(async () => ({ ok: false, status: 429, json: async () => ({ error: 'chậm lại' }) }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<SearchBox initialQuery="" />)
+    const box = screen.getByRole('textbox')
+    await userEvent.type(box, 'dog')
+    await new Promise((r) => setTimeout(r, 300))
+    await userEvent.clear(box)
+    await userEvent.type(box, 'dog')
+    await new Promise((r) => setTimeout(r, 300))
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(1)
+  })
+
+  it('survives a reply whose shape does not match the result type', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ forward: 'không phải kết quả' }) })))
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('textbox'), 'dog')
+    await new Promise((r) => setTimeout(r, 300))
+    expect(screen.getByRole('textbox')).toHaveValue('dog')
+    expect(screen.queryAllByRole('link')).toHaveLength(0)
   })
 })

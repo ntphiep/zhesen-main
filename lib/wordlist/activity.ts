@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { ensureSession } from '@/lib/supabase/session'
 import { fetchAllRows } from '@/lib/supabase/paginate'
 import { z } from 'zod'
 
@@ -53,6 +54,7 @@ export function computeStreak(days: string[], now: number): number {
 
 /** Record that the user practised today (idempotent per day). RLS sets user_id. */
 export async function logActivityDay(supabase: SupabaseClient, now: number = Date.now()): Promise<void> {
+  await ensureSession(supabase)
   const { error } = await supabase
     .from('review_log')
     .upsert({ day: localDay(now) }, { onConflict: 'user_id,day', ignoreDuplicates: true })
