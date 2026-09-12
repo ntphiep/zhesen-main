@@ -115,7 +115,12 @@ as $$
                       else 2 end
        limit 1) as ipa,
     (select p.audio_url from lex.pronunciations p where p.entry_id = e.id and p.audio_url is not null limit 1) as audio_url,
-    (greatest(coalesce(bs.score, 0), coalesce(ah.score, 0)) * (1.0 / sqrt(greatest(coalesce(e.frequency_rank, 100000), 1)::float8)))::real as rank
+    -- Frequency is a tie-breaker, not a multiplier. Multiplying let a rank-1 word
+    -- like "the" outrank an exact match on "get", because 1/sqrt(1) beat a
+    -- perfect score divided by sqrt(50). The bonus stays under the 1.0 gap
+    -- between score tiers, so match quality always wins first.
+    (greatest(coalesce(bs.score, 0), coalesce(ah.score, 0))
+     + 0.5 / sqrt(greatest(coalesce(e.frequency_rank, 100000), 1)::float8))::real as rank
   from lex.entries e
   join candidates c on c.entry_id = e.id
   left join best_sense bs on bs.entry_id = e.id
