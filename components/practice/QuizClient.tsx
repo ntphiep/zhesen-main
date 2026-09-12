@@ -76,7 +76,7 @@ export function QuizClient() {
     // review remains the authority on a card either way.
     const grade = gradeForMode('quiz', { correct })
     if (grade) void gradeWordById(supabase, current.id, grade).catch(() => {})
-    if (!logged.current) { logged.current = true; void logActivityDay(supabase, Date.now()) }
+    if (!logged.current) { logged.current = true; void logActivityDay(supabase) }
   }
   function next() {
     setSelected(null)

@@ -81,7 +81,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
     // produced the word, which is more than the quiz can tell.
     const grade = gradeForMode(mode, { correct: r !== 'wrong', nearly: r === 'close' })
     if (grade) void gradeWordById(supabase, current.id, grade).catch(() => {})
-    if (!logged.current) { logged.current = true; void logActivityDay(supabase, Date.now()) }
+    if (!logged.current) { logged.current = true; void logActivityDay(supabase) }
   }
   function next() {
     setResult(null); setValue(''); setIndex((i) => i + 1)

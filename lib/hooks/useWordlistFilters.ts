@@ -70,11 +70,9 @@ export function useWordlistFilters(words: UserWord[]) {
     query, setQuery,
     langFilter, setLangFilter,
     statusFilter, setStatusFilter,
-    tagFilter, toggleTagFilter, setTagFilter,
+    tagFilter, toggleTagFilter,
     sortKey, sortDir, toggleSort,
     view, toggleView,
     visible,
   }
 }
-
-export type WordlistFilters = ReturnType<typeof useWordlistFilters>

@@ -4,15 +4,12 @@ import { getCachedGrammarPointsForEntry } from '@/lib/grammar/cached'
 import { buildEntryId } from '@/lib/dictionary/entryId'
 import { LookupView } from '@/components/lookup/LookupView'
 import { groupWordForms } from '@/lib/dictionary/family'
-import type { LangCode } from '@/lib/languages'
-
-const VALID: LangCode[] = ['zh', 'es', 'en']
+import { isLangCode } from '@/lib/languages'
 
 export default async function Page({ params }: { params: Promise<{ lang: string; id: string }> }) {
   const { lang, id } = await params
-  if (!VALID.includes(lang as LangCode)) notFound()
-  const langCode = lang as LangCode
-  const entryId = buildEntryId(langCode, decodeURIComponent(id))
+  if (!isLangCode(lang)) notFound()
+  const entryId = buildEntryId(lang, decodeURIComponent(id))
 
   const detail = await getCachedEntryDetail(entryId)
   if (!detail) notFound()

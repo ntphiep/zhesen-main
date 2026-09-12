@@ -1,3 +1,13 @@
+import { z } from 'zod'
+
+const KEY = 'zhesen:recent-searches'
+
+/** The key holds whatever a previous version of the app, another tab, or the user
+ * put there. A bare `as string[]` would have satisfied the compiler and then thrown
+ * from `recent.map(...)` during render, blanking the page; `.catch` turns anything
+ * unexpected into an empty list instead. */
+const storedList = z.string().array().catch([])
+
 /** Prepend a query to the recent-searches list: trimmed, deduped case-insensitively
  * (newest casing wins), most-recent first, capped at `max`. Returns a new array. */
 export function pushRecent(list: string[], query: string, max = 8): string[] {
@@ -5,4 +15,24 @@ export function pushRecent(list: string[], query: string, max = 8): string[] {
   if (!q) return list
   const rest = list.filter((x) => x.toLowerCase() !== q.toLowerCase())
   return [q, ...rest].slice(0, max)
+}
+
+/** The stored list, or an empty one. Safe to call during the server-rendered pass. */
+export function readRecent(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(KEY)
+    return raw ? storedList.parse(JSON.parse(raw)) : []
+  } catch {
+    return []
+  }
+}
+
+/** Persist the list. Storage can be full or blocked, and neither is worth a crash. */
+export function writeRecent(list: string[]): void {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(list))
+  } catch {
+    /* quota exceeded, or storage disabled */
+  }
 }

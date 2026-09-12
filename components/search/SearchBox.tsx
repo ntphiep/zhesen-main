@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { detectOrder, orderByBestMatch } from '@/lib/dictionary/detect'
-import { pushRecent } from '@/lib/dictionary/recent'
+import { pushRecent, readRecent, writeRecent } from '@/lib/dictionary/recent'
 import { LANG_LABELS, LANG_FLAGS } from '@/lib/dictionary/labels'
 import { posGroup } from '@/lib/dictionary/pos'
 import { formatPronunciation } from '@/lib/dictionary/pronunciation'
@@ -20,7 +20,6 @@ function bestScore(groups: ByLang): number {
 }
 const EMPTY = EMPTY_SEARCH_RESPONSE
 const BUSY_MESSAGE = 'Đang có quá nhiều lượt tra cứu. Vui lòng thử lại sau ít giây.'
-const RECENT_KEY = 'zhesen:recent-searches'
 /** en levels only as of this writing (verified: 0 es/zh rows have a level), in
  * CEFR order; any level value not in this list (there shouldn't be one) still
  * renders, just after these. */
@@ -49,17 +48,9 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   const [active, setActive] = useState(0)
   const [levelFilter, setLevelFilter] = useState<string | null>(null)
   const [posFilter, setPosFilter] = useState<string | null>(null)
-  // Lazy-init from localStorage on mount; guarded for SSR (this runs during the
-  // server-rendered pass too, before 'use client' hydration takes over on the client).
-  const [recent, setRecent] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return []
-    try {
-      const raw = localStorage.getItem(RECENT_KEY)
-      return raw ? (JSON.parse(raw) as string[]) : []
-    } catch {
-      return []
-    }
-  })
+  // Lazy-init from localStorage on mount; readRecent is guarded for SSR, since this
+  // runs during the server-rendered pass too, before hydration takes over.
+  const [recent, setRecent] = useState<string[]>(readRecent)
   const [focused, setFocused] = useState(false)
   const cache = useRef(new Map<string, SearchResponse>())
   const router = useRouter()
@@ -179,7 +170,7 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   function remember(q: string) {
     const next = pushRecent(recent, q)
     setRecent(next)
-    try { localStorage.setItem(RECENT_KEY, JSON.stringify(next)) } catch { /* ignore */ }
+    writeRecent(next)
   }
   function open(e: DictEntryPreview) {
     remember(query)

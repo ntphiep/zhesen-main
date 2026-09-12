@@ -47,6 +47,7 @@ export function SpeakSession() {
   const supabase = useMemo(() => createClient(), [])
   const supported = useMemo(() => getRecognitionCtor() !== null, [])
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
+  const logged = useRef(false)
   const [queue, setQueue] = useState<SpeakWord[] | null>(null)
   const [index, setIndex] = useState(0)
   const [listening, setListening] = useState(false)
@@ -125,7 +126,7 @@ export function SpeakSession() {
       // than resetting a card over a microphone. See lib/practice/grading.ts.
       const grade = gradeForMode('speak', { correct: verdict !== 'wrong', nearly: verdict === 'close' })
       if (grade) void gradeWordById(supabase, current.id, grade).catch(() => {})
-      void logActivityDay(supabase, Date.now())
+      if (!logged.current) { logged.current = true; void logActivityDay(supabase) }
     }
     r.onerror = () => setListening(false)
     r.onend = () => setListening(false)
