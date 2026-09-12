@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildMatchTiles, type MatchWord } from '@/lib/wordlist/match'
+import { buildMatchTiles, type MatchWord } from '@/lib/practice/match'
 
 const w = (id: string, headword: string, meaningVi: string | null): MatchWord => ({ id, headword, meaningVi })
 const words = [

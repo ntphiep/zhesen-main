@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { checkTypedAnswer } from '@/lib/wordlist/typing'
+import { checkTypedAnswer } from '@/lib/practice/typing'
 
 describe('checkTypedAnswer', () => {
   it('accepts exact answers ignoring case, surrounding/extra spaces and diacritics', () => {

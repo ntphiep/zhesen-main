@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listWords } from '@/lib/wordlist/store'
 import { logActivityDay } from '@/lib/wordlist/activity'
-import { buildMatchTiles, type MatchTile } from '@/lib/wordlist/match'
+import { buildMatchTiles, type MatchTile } from '@/lib/practice/match'
 
 const ROUND_SIZE = 6
 

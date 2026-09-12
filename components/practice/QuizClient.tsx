@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listWords } from '@/lib/wordlist/store'
 import { logActivityDay } from '@/lib/wordlist/activity'
-import { buildQuiz, type QuizQuestion } from '@/lib/wordlist/quiz'
+import { buildQuiz, type QuizQuestion } from '@/lib/practice/quiz'
 import { QuizCard } from '@/components/practice/QuizCard'
 
 const QUIZ_SIZE = 10

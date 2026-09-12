@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QuizCard } from '@/components/practice/QuizCard'
-import type { QuizQuestion } from '@/lib/wordlist/quiz'
+import type { QuizQuestion } from '@/lib/practice/quiz'
 
 const q: QuizQuestion = {
   id: '1', headword: 'dog', ipa: 'dɒɡ', lang: 'en',

@@ -1,6 +1,6 @@
 'use client'
 import { AudioButton } from '@/components/ui/AudioButton'
-import type { TypedResult } from '@/lib/wordlist/typing'
+import type { TypedResult } from '@/lib/practice/typing'
 import type { LangCode } from '@/lib/languages'
 
 export interface TypingPrompt {

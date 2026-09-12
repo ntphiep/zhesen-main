@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listWords } from '@/lib/wordlist/store'
 import { AudioButton, speechLang } from '@/components/ui/AudioButton'
-import { checkTypedAnswer, type TypedResult } from '@/lib/wordlist/typing'
+import { checkTypedAnswer, type TypedResult } from '@/lib/practice/typing'
 import { logActivityDay } from '@/lib/wordlist/activity'
 import type { LangCode } from '@/lib/languages'
 

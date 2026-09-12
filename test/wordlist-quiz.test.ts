@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildQuiz, type QuizWord } from '@/lib/wordlist/quiz'
+import { buildQuiz, type QuizWord } from '@/lib/practice/quiz'
 
 const w = (id: string, headword: string, meaningVi: string | null): QuizWord =>
   ({ id, headword, ipa: null, lang: 'en', meaningVi })

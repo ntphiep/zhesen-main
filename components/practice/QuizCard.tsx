@@ -1,6 +1,6 @@
 'use client'
 import { AudioButton } from '@/components/ui/AudioButton'
-import type { QuizQuestion } from '@/lib/wordlist/quiz'
+import type { QuizQuestion } from '@/lib/practice/quiz'
 
 /** One multiple-choice question. Once `selected` is set, options are locked and
  * coloured: the correct answer green, a wrong pick red. */
