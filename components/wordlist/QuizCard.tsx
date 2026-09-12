@@ -1,5 +1,5 @@
 'use client'
-import { AudioButton } from '@/components/AudioButton'
+import { AudioButton } from '@/components/ui/AudioButton'
 import type { QuizQuestion } from '@/lib/wordlist/quiz'
 
 /** One multiple-choice question. Once `selected` is set, options are locked and

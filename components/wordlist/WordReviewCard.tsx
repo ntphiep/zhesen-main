@@ -1,5 +1,5 @@
 'use client'
-import { AudioButton } from '@/components/AudioButton'
+import { AudioButton } from '@/components/ui/AudioButton'
 import type { ReviewCard } from '@/lib/wordlist/review'
 import type { Grade } from '@/lib/progress/types'
 

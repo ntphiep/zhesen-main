@@ -1,5 +1,5 @@
 'use client'
-import { AudioButton } from '@/components/AudioButton'
+import { AudioButton } from '@/components/ui/AudioButton'
 import type { TypedResult } from '@/lib/wordlist/typing'
 import type { LangCode } from '@/lib/languages'
 

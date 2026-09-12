@@ -1,4 +1,4 @@
-import { AudioButton } from '@/components/AudioButton'
+import { AudioButton } from '@/components/ui/AudioButton'
 import { pickAccentRows } from '@/lib/dictionary/pronunciation'
 import type { DictPron } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'

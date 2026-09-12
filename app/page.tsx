@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { LANGUAGES } from '@/lib/languages'
-import { LanguageCard } from '@/components/LanguageCard'
-import { WordOfDayCard } from '@/components/WordOfDayCard'
+import { LanguageCard } from '@/components/home/LanguageCard'
+import { WordOfDayCard } from '@/components/home/WordOfDayCard'
 import { SearchBox } from '@/components/search/SearchBox'
 import { getCachedWordOfDay } from '@/lib/dictionary/cached'
 

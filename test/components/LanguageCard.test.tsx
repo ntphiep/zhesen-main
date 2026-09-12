@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { LanguageCard } from '@/components/LanguageCard'
+import { LanguageCard } from '@/components/home/LanguageCard'
 
 describe('LanguageCard', () => {
   it('renders name, native name, and links to the language', () => {

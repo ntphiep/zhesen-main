@@ -13,7 +13,7 @@ import { AddWordDialog } from '@/components/wordlist/AddWordDialog'
 import { EditWordDialog } from '@/components/wordlist/EditWordDialog'
 import { ImportCsvDialog } from '@/components/wordlist/ImportCsvDialog'
 import { WordDetail } from '@/components/wordlist/WordDetail'
-import { AudioButton } from '@/components/AudioButton'
+import { AudioButton } from '@/components/ui/AudioButton'
 import type { UserWord, WordDraft, WordStatus } from '@/lib/wordlist/types'
 
 export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {

@@ -1,4 +1,4 @@
-import { AudioButton } from '@/components/AudioButton'
+import { AudioButton } from '@/components/ui/AudioButton'
 import { TappableText } from '@/components/reader/TappableText'
 import { isCleanExample } from '@/lib/dictionary/search'
 import type { DictExample } from '@/lib/dictionary/types'
