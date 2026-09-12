@@ -12,7 +12,10 @@ const SECTIONS: { key: keyof ClassifiedRelations; label: string; hint: string }[
   { key: 'antonyms', label: 'Trái nghĩa', hint: 'Nghĩa ngược lại' },
   { key: 'derived', label: 'Phái sinh', hint: 'Từ tạo ra từ từ này' },
   { key: 'compounds', label: 'Từ ghép & cụm từ', hint: 'Cụm cố định chứa từ này' },
-  { key: 'related', label: 'Thành ngữ & liên quan', hint: 'Cách nói gắn với từ này' },
+  // Wiktionary's "Related terms": words sharing an etymological root, not idioms.
+  // "holy" lists halibut, halidom, hallow and holiday -- all from the same root,
+  // none of them a phrase you would say. The old label promised idioms.
+  { key: 'related', label: 'Cùng gốc từ', hint: 'Chung nguồn gốc, nghĩa nay có thể đã khác xa' },
 ]
 
 // Some entries (Spanish verbs especially) carry dozens of idioms; cap each group
