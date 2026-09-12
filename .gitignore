@@ -47,3 +47,4 @@ next-env.d.ts
 # local artifacts (logs, stray screenshots dumped at repo root)
 *.log
 /*.png
+.claude/.verify-gate-last-run
