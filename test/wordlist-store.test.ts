@@ -29,15 +29,22 @@ describe('draftFromDictEntry', () => {
 })
 
 // Builder mock supporting insert (insert.select.single), the pre-insert duplicate
-// check (select.eq.limit) and listWords (select.order).
+// check (select.eq.limit), and the paginated reads, which end in .range(). Reads
+// answer the first page in full and every later page empty, so fetchAllRows stops
+// after one round trip.
 function mockClient({ existing = [] as unknown[], inserted = row } = {}) {
   const insertSingle = vi.fn(() => Promise.resolve({ data: inserted, error: null }))
   const insertSelect = vi.fn(() => ({ single: insertSingle }))
   const insert = vi.fn(() => ({ select: insertSelect }))
   const limit = vi.fn(() => Promise.resolve({ data: existing, error: null }))
-  const eq = vi.fn(() => ({ limit }))
-  const order = vi.fn(() => Promise.resolve({ data: [inserted], error: null }))
-  const select = vi.fn(() => ({ eq, order, limit }))
+  const pageOf = (rows: unknown[]) =>
+    vi.fn((from: number) => Promise.resolve({ data: from === 0 ? rows : [], error: null }))
+  const listRange = pageOf([inserted])
+  const savedRange = pageOf(existing)
+  const order = vi.fn(() => ({ range: listRange }))
+  const notNull = vi.fn(() => ({ range: savedRange }))
+  const eq = vi.fn(() => ({ limit, not: notNull }))
+  const select = vi.fn(() => ({ eq, order, limit, range: listRange, not: notNull }))
   const from = vi.fn(() => ({ insert, select }))
   return { client: { from } as unknown as import('@supabase/supabase-js').SupabaseClient, insert, select }
 }
@@ -80,7 +87,10 @@ describe('listWords', () => {
 
 describe('listSavedEntryIds', () => {
   it('returns the saved entry ids for a language as a Set, filtering out nulls in the query', async () => {
-    const not = vi.fn(() => Promise.resolve({ data: [{ entry_id: 'en:dog' }, { entry_id: 'en:cat' }], error: null }))
+    // The read pages through .range(); answer the first page and nothing after it.
+    const range = vi.fn((from: number) =>
+      Promise.resolve({ data: from === 0 ? [{ entry_id: 'en:dog' }, { entry_id: 'en:cat' }] : [], error: null }))
+    const not = vi.fn(() => ({ range }))
     const eq = vi.fn(() => ({ not }))
     const select = vi.fn(() => ({ eq }))
     const client = { from: vi.fn(() => ({ select })) } as unknown as import('@supabase/supabase-js').SupabaseClient

@@ -91,8 +91,19 @@ export function initialSrsState(vocabId: string, now: number): SrsState {
   return fromCard(vocabId, createEmptyCard(now))
 }
 
-/** Grade a card with FSRS and return its next schedule. */
+/**
+ * Grade a card with FSRS and return its next schedule.
+ *
+ * `now` and the stored last-review timestamp both come from a browser clock, and
+ * the two need not agree: a manual clock change, a second device in another
+ * timezone, or an NTP correction pulling the clock backwards all produce a review
+ * that appears to happen before the previous one. ts-fsrs rejects that with
+ * `Invalid delta_t "-5"`, which surfaced as a dead grading button. Treating such a
+ * review as happening at the earlier timestamp costs nothing — the elapsed time
+ * was going to be nonsense either way — and keeps the card gradeable.
+ */
 export function review(state: SrsState, grade: Grade, now: number): SrsState {
-  const { card } = scheduler.next(toCardInput(state), now, RATING_BY_GRADE[grade])
+  const at = Math.max(now, state.lastReviewedAt ?? now)
+  const { card } = scheduler.next(toCardInput(state), at, RATING_BY_GRADE[grade])
   return fromCard(state.vocabId, card)
 }

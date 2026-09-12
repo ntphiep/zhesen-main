@@ -1,13 +1,33 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { fetchAllRows } from '@/lib/supabase/paginate'
 
 const DAY = 86_400_000
 
-/** Local calendar day of a timestamp as 'YYYY-MM-DD'. */
+/**
+ * The timezone the study day is measured in.
+ *
+ * A fixed zone rather than the running process's own, because the two ends of a
+ * streak run in different places: the day is written by a Client Component in the
+ * reader's browser and read back by a Server Component. With `getFullYear` and
+ * friends, someone in Vietnam practising at 06:00 wrote "2026-09-12" while a
+ * UTC server reading the same row an instant later asked for "2026-09-11", found
+ * nothing, and reported a streak of zero — every day between midnight and 07:00.
+ *
+ * The audience is Vietnamese, so their calendar day is the one that counts.
+ */
+const STUDY_TIMEZONE = 'Asia/Ho_Chi_Minh'
+
+const dayFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: STUDY_TIMEZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
+/** Calendar day of a timestamp in the study timezone, as 'YYYY-MM-DD'. */
 export function localDay(ts: number): string {
-  const d = new Date(ts)
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${d.getFullYear()}-${m}-${day}`
+  // en-CA formats as YYYY-MM-DD, which is the shape review_log.day stores.
+  return dayFormatter.format(new Date(ts))
 }
 
 /**
@@ -40,7 +60,7 @@ export async function logActivityDay(supabase: SupabaseClient, now: number = Dat
 
 /** Distinct activity days for the current user. RLS scopes the read. */
 export async function getActivityDays(supabase: SupabaseClient): Promise<string[]> {
-  const { data, error } = await supabase.from('review_log').select('day')
-  if (error) throw error
-  return ((data ?? []) as { day: string }[]).map((r) => r.day)
+  const rows = await fetchAllRows<{ day: string }>((from, to) =>
+    supabase.from('review_log').select('day').range(from, to))
+  return rows.map((r) => r.day)
 }

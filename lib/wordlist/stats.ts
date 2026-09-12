@@ -3,6 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/languages'
 import { computeStreak, getActivityDays } from './activity'
 import type { WordStatus } from './types'
+import { localDay } from '@/lib/wordlist/activity'
+import { fetchAllRows } from '@/lib/supabase/paginate'
 
 export interface StatRow {
   lang: LangCode
@@ -28,10 +30,10 @@ export interface WordlistStats {
 
 const MATURE_DAYS = 21
 
+// Same fixed study timezone as the streak: this is read on the server and the
+// timestamps it compares were written in the reader's browser.
 function sameLocalDay(a: number, b: number): boolean {
-  const da = new Date(a)
-  const db = new Date(b)
-  return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate()
+  return localDay(a) === localDay(b)
 }
 
 export function computeWordlistStats(rows: StatRow[], activityDays: string[], now: number): WordlistStats {
@@ -63,12 +65,14 @@ const statRowDbSchema = z.object({
 
 /** Wordlist progress stats for the current user. RLS scopes the reads. */
 export async function getWordlistStats(supabase: SupabaseClient, now: number = Date.now()): Promise<WordlistStats> {
-  const [words, activityDays] = await Promise.all([
-    supabase.from('user_words').select('lang, status, fsrs_scheduled_days, fsrs_due_at, fsrs_last_review_at'),
+  const [wordRows, activityDays] = await Promise.all([
+    fetchAllRows((from, to) =>
+      supabase.from('user_words')
+        .select('lang, status, fsrs_scheduled_days, fsrs_due_at, fsrs_last_review_at')
+        .range(from, to)),
     getActivityDays(supabase),
   ])
-  if (words.error) throw words.error
-  const rows: StatRow[] = z.array(statRowDbSchema).parse(words.data ?? []).map((r) => ({
+  const rows: StatRow[] = z.array(statRowDbSchema).parse(wordRows).map((r) => ({
     lang: r.lang,
     status: r.status,
     srsIntervalDays: r.fsrs_scheduled_days,

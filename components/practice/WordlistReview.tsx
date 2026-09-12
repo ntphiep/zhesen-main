@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listDueCards, gradeCard, type ReviewCard } from '@/lib/wordlist/review'
-import type { Grade } from '@/lib/progress/types'
+import type { Grade, SrsState } from '@/lib/progress/types'
 import { WordReviewCard } from '@/components/practice/WordReviewCard'
 
 export function WordlistReview() {
@@ -33,12 +33,23 @@ export function WordlistReview() {
   const current = queue[0]
 
   async function grade(g: Grade) {
-    await gradeCard(supabase, current, g, Date.now())
+    let next: SrsState
+    try {
+      next = await gradeCard(supabase, current, g, Date.now())
+    } catch {
+      alert('Không lưu được kết quả ôn tập. Vui lòng thử lại.')
+      return
+    }
     setRevealed(false)
     setReviewed((n) => n + 1)
     setQueue((q) => {
       const rest = (q as ReviewCard[]).slice(1)
-      return g === 'again' ? [...rest, current] : rest // re-show "again" later this session
+      // A card graded "again" comes back later in the session, carrying the
+      // schedule it just earned. Re-queueing `current` untouched sent its old
+      // state into the next grade, so answering "good" on the second showing
+      // wrote a schedule computed from before the lapse: the interval jumped
+      // back out to weeks and the lapse count reset to zero.
+      return g === 'again' ? [...rest, { ...current, state: next }] : rest
     })
   }
 
