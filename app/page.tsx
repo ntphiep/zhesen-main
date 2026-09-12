@@ -7,6 +7,7 @@ import { getCachedWordOfDay } from '@/lib/dictionary/cached'
 
 const SECTIONS = [
   { href: '/dictionary', title: 'Tra cứu', desc: 'Tìm nghĩa, phát âm, ví dụ' },
+  { href: '/grammar', title: 'Ngữ pháp', desc: 'Điểm ngữ pháp theo cấp độ, có ví dụ' },
   { href: '/practice', title: 'Luyện tập', desc: 'Ôn từ, kiểm tra, nghe & nói' },
   { href: '/wordlist', title: 'Sổ tay', desc: 'Từ vựng bạn đã lưu' },
 ]
@@ -25,7 +26,7 @@ export default async function Home() {
         <WordOfDayCard word={wordOfDay} />
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {SECTIONS.map((s) => (
           <Link
             key={s.href}

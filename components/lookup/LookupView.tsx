@@ -7,9 +7,11 @@ import { RelatedWords } from './RelatedWords'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { ConjugationTable } from './ConjugationTable'
 import { ExampleList } from './ExampleList'
+import { GrammarLinks } from './GrammarLinks'
 import { groupWordForms } from '@/lib/dictionary/family'
 import { buildConjugation } from '@/lib/dictionary/conjugation'
 import type { DictEntryDetail, CharInfo, CrossLangSibling, WordForm } from '@/lib/dictionary/types'
+import type { GrammarPoint } from '@/lib/grammar/types'
 
 /**
  * Two-column lookup layout (hanzii-style): the hero spans the top, then a wide
@@ -17,11 +19,12 @@ import type { DictEntryDetail, CharInfo, CrossLangSibling, WordForm } from '@/li
  * examples) and a narrower side rail holds the link lists (other languages, related
  * words, word forms). Collapses to a single column below `lg`.
  */
-export function LookupView({ detail, characters, siblings, inflections = [] }: {
+export function LookupView({ detail, characters, siblings, inflections = [], grammarPoints = [] }: {
   detail: DictEntryDetail
   characters: CharInfo[]
   siblings: CrossLangSibling[]
   inflections?: WordForm[]
+  grammarPoints?: GrammarPoint[]
 }) {
   const hanViet = characters.map((c) => c.hanViet[0]).filter(Boolean).join(' ') || null
   // Spanish verbs get a conjugation table; for them the flat "word family" chip list
@@ -30,7 +33,7 @@ export function LookupView({ detail, characters, siblings, inflections = [] }: {
   const forms = conjugation ? [] : groupWordForms(inflections)
 
   const showChars = detail.lang === 'zh' && characters.length > 0
-  const hasSideRail = showChars || siblings.length > 0 || detail.relations.length > 0 || forms.length > 0
+  const hasSideRail = showChars || siblings.length > 0 || detail.relations.length > 0 || forms.length > 0 || grammarPoints.length > 0
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
@@ -50,6 +53,7 @@ export function LookupView({ detail, characters, siblings, inflections = [] }: {
             <CrossLanguagePanel siblings={siblings} />
             <RelatedWords relations={detail.relations} lang={detail.lang} />
             <WordFamily headword={detail.headword} forms={forms} lang={detail.lang} />
+            <GrammarLinks points={grammarPoints} />
           </aside>
         )}
       </div>

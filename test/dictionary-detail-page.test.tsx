@@ -8,6 +8,9 @@ vi.mock('@/lib/dictionary/cached', () => ({
   getCachedCharacters: vi.fn(async () => []),
   getCachedInflections: vi.fn(async () => []),
 }))
+vi.mock('@/lib/grammar/cached', () => ({
+  getCachedGrammarPointsForEntry: vi.fn(async () => []),
+}))
 vi.mock('@/components/lookup/LookupView', () => ({
   LookupView: ({ detail }: { detail: { headword: string } }) => <div>view:{detail.headword}</div>,
 }))

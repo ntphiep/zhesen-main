@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 
 const NAV = [
   { href: '/dictionary', label: 'Tra cứu' },
+  { href: '/grammar', label: 'Ngữ pháp' },
   { href: '/practice', label: 'Luyện tập' },
   { href: '/wordlist', label: 'Sổ tay' },
 ]
