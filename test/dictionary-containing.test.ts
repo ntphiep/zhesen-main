@@ -1,16 +1,13 @@
 import { describe, it, expect, vi } from 'vitest'
-import type { SupabaseClient } from '@supabase/supabase-js'
 import { getEntriesContaining } from '@/lib/dictionary/containing'
+import { rpcClientReturning } from './helpers/supabase'
 
 const row = (headword: string) => ({
   id: `zh:${headword}`, lang: 'zh', headword, traditional: null,
   level: null, frequency_rank: 10, gloss_vi: 'nghĩa', gloss_en: null,
 })
 
-function mockClient(data: unknown, error: unknown = null) {
-  const rpc = vi.fn(async () => ({ data, error }))
-  return { client: { schema: () => ({ rpc }) } as unknown as SupabaseClient, rpc }
-}
+const mockClient = rpcClientReturning
 
 describe('getEntriesContaining', () => {
   it('maps the rows to the camelCase shape the page renders', async () => {

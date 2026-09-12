@@ -1,19 +1,8 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { listGrammarPointsByLang, countGrammarPointsByLang, getGrammarPointDetail, getGrammarPointsForEntry } from '@/lib/grammar/queries'
+import { clientReturning } from './helpers/supabase'
 
-// Chainable, thenable query-builder mock: every method (select/eq/order/maybeSingle)
-// returns the same builder, and the builder resolves with `returnData` when awaited --
-// same as the real supabase-js query builder, which is itself a thenable, so any
-// number/order of chained calls (e.g. two .order()s) works without a fixed "terminal".
-function mockClient(returnData: unknown) {
-  const builder: Record<string, unknown> = {}
-  const chain = vi.fn(() => builder)
-  Object.assign(builder, {
-    select: chain, eq: chain, order: chain, maybeSingle: chain,
-    then: (resolve: (v: { data: unknown; error: null }) => void) => resolve({ data: returnData, error: null }),
-  })
-  return { schema: vi.fn(() => ({ from: vi.fn(() => builder) })) } as unknown as import('@supabase/supabase-js').SupabaseClient
-}
+const mockClient = (returnData: unknown) => clientReturning(returnData).client
 
 const pointRow = {
   id: 'zh:hsk1:cau-vi-ngu-dong-tu', lang: 'zh', level_scheme: 'HSK', level: 'HSK1', category_vi: 'Câu cơ bản',

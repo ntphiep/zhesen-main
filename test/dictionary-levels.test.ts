@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { getLevelsForLanguage, getEntriesByLevel, getAllEntriesByLevel } from '@/lib/dictionary/levels'
+import { clientReturning } from './helpers/supabase'
 
 function previewRow(headword: string) {
   return {

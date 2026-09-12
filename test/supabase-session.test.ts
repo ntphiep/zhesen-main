@@ -1,17 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { ensureSession, resetSessionState } from '@/lib/supabase/session'
+import { authStub } from './helpers/supabase'
 
 type SignIn = () => Promise<{ error: Error | null }>
 
-function client(session: unknown, signIn: SignIn = async () => ({ error: null })) {
-  return {
-    auth: {
-      getSession: vi.fn(async () => ({ data: { session } })),
-      signInAnonymously: signIn,
-    },
-  } as unknown as SupabaseClient
-}
+const client = (session: unknown, signIn?: SignIn) =>
+  authStub(session, signIn) as unknown as SupabaseClient
 
 beforeEach(() => resetSessionState())
 

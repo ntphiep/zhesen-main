@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { gradeWordById } from '@/lib/wordlist/review'
+import { authStub } from './helpers/supabase'
 
 const cardRow = {
   id: 'w1', lang: 'en', headword: 'dog', reading: null, ipa: null,
@@ -24,10 +25,7 @@ function mockClient({ row = cardRow as unknown }: { row?: unknown } = {}) {
     update,
     upsert,
   }))
-  const auth = {
-    getSession: vi.fn(async () => ({ data: { session: { user: { id: 'u1' } } } })),
-    signInAnonymously: vi.fn(async () => ({ error: null })),
-  }
+  const { auth } = authStub({ user: { id: 'u1' } })
   return { client: { from, auth } as unknown as SupabaseClient, update }
 }
 

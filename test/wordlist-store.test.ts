@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { parseUserWordRow, draftFromDictEntry, addWord, addWords, updateWordsStatus, listWords, listSavedEntryIds, WordAlreadyExistsError } from '@/lib/wordlist/store'
+import { authStub } from './helpers/supabase'
 import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 import type { WordDraft } from '@/lib/wordlist/types'
 import { resetSessionState } from '@/lib/supabase/session'
@@ -50,7 +51,7 @@ function mockClient({ existing = [] as unknown[], inserted = row, session = { us
   // A real client always carries `auth`; the write paths use it to create the
   // anonymous account on the first saved word (lib/supabase/session.ts).
   const signInAnonymously = vi.fn(async () => ({ error: null }))
-  const auth = { getSession: vi.fn(async () => ({ data: { session } })), signInAnonymously }
+  const { auth } = authStub(session, signInAnonymously)
   return {
     client: { from, auth } as unknown as import('@supabase/supabase-js').SupabaseClient,
     insert, select, signInAnonymously,
@@ -131,7 +132,7 @@ describe('addWords', () => {
     const insertSelect = vi.fn(() => Promise.resolve({ data: [row], error: null }))
     const insert = vi.fn(() => ({ select: insertSelect }))
     const signInAnonymously = vi.fn(async () => ({ error: null }))
-    const auth = { getSession: vi.fn(async () => ({ data: { session: null } })), signInAnonymously }
+    const { auth } = authStub(null, signInAnonymously)
     const client = { from: vi.fn(() => ({ insert })), auth } as unknown as import('@supabase/supabase-js').SupabaseClient
     const draft = draftFromDictEntry(dogEntry)
     resetSessionState()
