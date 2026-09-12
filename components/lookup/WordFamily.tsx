@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { searchPath } from '@/lib/dictionary/entryId'
+import { posGroup } from '@/lib/dictionary/pos'
 import type { FamilyForm } from '@/lib/dictionary/family'
 import type { TermPreview } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
@@ -30,8 +31,14 @@ export function WordFamily({ headword, forms, previews, lang }: {
   // fills it.
   const rows = others.map((f) => {
     const p = previews[f.text.toLowerCase()]
-    return { form: f, sound: (lang === 'zh' ? p?.reading : p?.ipa) ?? null, gloss: p?.glossVi || p?.glossEn || null }
+    return {
+      form: f,
+      pos: posGroup(p?.pos)?.labelVi ?? null,
+      sound: (lang === 'zh' ? p?.reading : p?.ipa) ?? null,
+      gloss: p?.glossVi || p?.glossEn || null,
+    }
   })
+  const hasPos = rows.some((r) => r.pos)
   const hasSound = rows.some((r) => r.sound)
   const hasGloss = rows.some((r) => r.gloss)
 
@@ -44,12 +51,13 @@ export function WordFamily({ headword, forms, previews, lang }: {
             <tr className="text-xs font-semibold uppercase tracking-wide text-black/40">
               <th className="px-2 py-1.5 text-left">Dạng</th>
               <th className="px-2 py-1.5 text-left">Từ</th>
+              {hasPos && <th className="px-2 py-1.5 text-left">Từ loại</th>}
               {hasSound && <th className="px-2 py-1.5 text-left">Phát âm</th>}
               {hasGloss && <th className="px-2 py-1.5 text-left">Nghĩa</th>}
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ form, sound, gloss }) => (
+            {rows.map(({ form, pos, sound, gloss }) => (
               <tr key={form.text} className="border-t border-black/5 align-baseline">
                 <td className="px-2 py-1.5 text-black/50">
                   {form.label}
@@ -62,6 +70,7 @@ export function WordFamily({ headword, forms, previews, lang }: {
                     {form.text}
                   </Link>
                 </td>
+                {hasPos && <td className="px-2 py-1.5 whitespace-nowrap text-xs text-black/40">{pos ?? ''}</td>}
                 {hasSound && <td className="px-2 py-1.5 text-black/45">{sound ? `/${sound}/` : ''}</td>}
                 {hasGloss && <td className="px-2 py-1.5 text-black/60">{gloss ?? ''}</td>}
               </tr>
