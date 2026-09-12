@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { TypingCard, type TypingPrompt } from '@/components/wordlist/TypingCard'
+import { TypingCard, type TypingPrompt } from '@/components/practice/TypingCard'
 
 const word: TypingPrompt = { headword: 'develop', meaningVi: 'phát triển', ipa: null, audioUrl: null, lang: 'en' }
 

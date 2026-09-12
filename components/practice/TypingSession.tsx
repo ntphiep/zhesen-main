@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { listWords } from '@/lib/wordlist/store'
 import { logActivityDay } from '@/lib/wordlist/activity'
 import { checkTypedAnswer, type TypedResult } from '@/lib/wordlist/typing'
-import { TypingCard, type TypingPrompt } from '@/components/wordlist/TypingCard'
+import { TypingCard, type TypingPrompt } from '@/components/practice/TypingCard'
 
 const SIZE = 10
 

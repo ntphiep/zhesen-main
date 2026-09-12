@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listDueCards, gradeCard, type ReviewCard } from '@/lib/wordlist/review'
 import type { Grade } from '@/lib/progress/types'
-import { WordReviewCard } from '@/components/wordlist/WordReviewCard'
+import { WordReviewCard } from '@/components/practice/WordReviewCard'
 
 export function WordlistReview() {
   const supabase = useMemo(() => createClient(), [])

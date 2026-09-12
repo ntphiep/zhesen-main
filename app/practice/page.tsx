@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getWordlistStats } from '@/lib/wordlist/stats'
 import { WordlistStats } from '@/components/wordlist/WordlistStats'
 import { WordlistDistribution } from '@/components/wordlist/WordlistDistribution'
-import { PracticeModes } from '@/components/wordlist/PracticeModes'
+import { PracticeModes } from '@/components/practice/PracticeModes'
 
 // Practice hub: progress stats + every study mode, working over the saved wordlist.
 export default async function PracticePage() {

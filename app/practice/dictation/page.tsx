@@ -1,4 +1,4 @@
-import { TypingSession } from '@/components/wordlist/TypingSession'
+import { TypingSession } from '@/components/practice/TypingSession'
 
 // "Nghe & chép": play the word's audio, type what you hear.
 export default function Page() {
