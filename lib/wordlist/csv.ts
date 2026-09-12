@@ -58,12 +58,23 @@ export function wordsToAnkiTsv(words: UserWord[]): string {
 
 // --- CSV import -------------------------------------------------------------------
 
+/** Raised when a quoted field is never closed, which silently swallows the rest of the file. */
+export class UnterminatedQuoteError extends Error {
+  constructor(public readonly line: number) {
+    super(`Dấu nháy kép mở ở dòng ${line} không được đóng.`)
+    this.name = 'UnterminatedQuoteError'
+  }
+}
+
 /** Minimal RFC4180-ish CSV parser: handles quoted fields with commas, quotes, newlines. */
 export function parseCsvTable(text: string): string[][] {
   const rows: string[][] = []
   let row: string[] = []
   let field = ''
   let inQuotes = false
+  // Where the currently open quote started, so an unclosed one can name its line.
+  let quoteOpenedAt = 0
+  let line = 1
   let i = 0
   const n = text.length
   while (i < n) {
@@ -73,14 +84,20 @@ export function parseCsvTable(text: string): string[][] {
         if (text[i + 1] === '"') { field += '"'; i += 2; continue }
         inQuotes = false; i++; continue
       }
+      if (c === '\n') line++
       field += c; i++; continue
     }
-    if (c === '"') { inQuotes = true; i++; continue }
+    if (c === '"') { inQuotes = true; quoteOpenedAt = line; i++; continue }
     if (c === ',') { row.push(field); field = ''; i++; continue }
     if (c === '\r') { i++; continue }
-    if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; i++; continue }
+    if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; line++; i++; continue }
     field += c; i++
   }
+  // Falling out of the loop still inside a quote means every line after the stray
+  // quote was absorbed into one field. Left unreported, a 500-row file with one
+  // unbalanced quote on line 12 imported eleven words and dropped the other 489
+  // without a word of warning.
+  if (inQuotes) throw new UnterminatedQuoteError(quoteOpenedAt)
   if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row) }
   return rows.filter((r) => !(r.length === 1 && r[0] === ''))
 }
@@ -109,7 +126,15 @@ function existingKey(lang: LangCode, headword: string): string {
  * are matched by name against `CSV_COLUMNS` and are optional.
  */
 export function parseImportCsv(text: string, existing: UserWord[]): ImportPreviewRow[] {
-  const table = parseCsvTable(text.trim())
+  let table: string[][]
+  try {
+    table = parseCsvTable(text.trim())
+  } catch (e) {
+    if (e instanceof UnterminatedQuoteError) {
+      return [{ kind: 'error', line: e.line, message: `${e.message} Sửa dòng này rồi nhập lại.` }]
+    }
+    throw e
+  }
   if (table.length === 0) return []
   const header = table[0].map((h) => h.trim())
   const headwordIdx = header.indexOf('headword')
