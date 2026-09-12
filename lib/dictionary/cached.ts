@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache'
 import { createContentClient } from '@/lib/supabase/content'
 import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getCommonWords } from './search'
 import { getWordOfDay, dayNumber, type DailyWord } from './wordOfDay'
+import { getLevelsForLanguage, getEntriesByLevel, type LevelSummary, type LevelPage } from './levels'
 import type { DictEntryDetail, DictEntryPreview, CrossLangSibling, CharInfo, WordForm } from './types'
 import type { LangCode } from '@/lib/languages'
 
@@ -45,5 +46,21 @@ export const getCachedWordOfDay = unstable_cache(
 export const getCachedCommonWords = unstable_cache(
   (lang: LangCode): Promise<DictEntryPreview[]> => getCommonWords(createContentClient(), lang),
   ['dict-common-words'],
+  { revalidate: 3600, tags: ['lex'] },
+)
+
+export const getCachedLevelsForLanguage = unstable_cache(
+  (lang: LangCode): Promise<LevelSummary[]> => getLevelsForLanguage(createContentClient(), lang),
+  ['dict-levels-for-language'],
+  { revalidate: 3600, tags: ['lex'] },
+)
+
+/** First page of a level's word list, for the initial server render of
+ * `/learn/[lang]/[level]`; "load more" beyond it calls the uncached query
+ * directly from the client, same as the search box does for live search. */
+export const getCachedEntriesByLevel = unstable_cache(
+  (lang: LangCode, level: string, offset: number, limit: number): Promise<LevelPage> =>
+    getEntriesByLevel(createContentClient(), lang, level, offset, limit),
+  ['dict-entries-by-level'],
   { revalidate: 3600, tags: ['lex'] },
 )

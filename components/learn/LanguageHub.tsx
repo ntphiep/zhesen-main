@@ -4,10 +4,11 @@ import { entryPath } from '@/lib/dictionary/entryId'
 import { LANG_FLAGS } from '@/lib/dictionary/labels'
 import type { Language } from '@/lib/languages'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
+import type { LevelSummary } from '@/lib/dictionary/levels'
 
-/** Per-language hub: a search scoped to this language, the practice entry point, and
- * a list of common words to study. */
-export function LanguageHub({ language, common }: { language: Language; common: DictEntryPreview[] }) {
+/** Per-language hub: a search scoped to this language, the practice entry point, a
+ * chip row to browse vocabulary by level, and a list of common words to study. */
+export function LanguageHub({ language, common, levels }: { language: Language; common: DictEntryPreview[]; levels: LevelSummary[] }) {
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>
@@ -19,11 +20,34 @@ export function LanguageHub({ language, common }: { language: Language; common: 
       <div className="mt-6">
         <SearchBox lang={language.code} />
       </div>
-      <div className="mt-3">
+      <div className="mt-3 flex flex-wrap gap-2">
         <Link href="/practice" className="inline-block rounded-lg bg-black px-4 py-2 text-sm font-medium text-white">
           Luyện tập từ đã lưu →
         </Link>
+        <Link href={`/grammar/${language.code}`} className="inline-block rounded-lg border border-black/15 px-4 py-2 text-sm font-medium text-black/70 hover:bg-black/5">
+          Ngữ pháp {language.name} →
+        </Link>
       </div>
+
+      {levels.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black/40">Duyệt theo cấp độ</h2>
+          <div className="flex flex-wrap gap-2">
+            {levels.map((l) => (
+              <Link
+                key={l.level}
+                href={`/learn/${language.code}/${encodeURIComponent(l.level)}`}
+                className="rounded-full border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5"
+              >
+                {l.level} <span className="text-black/40">({l.count})</span>
+              </Link>
+            ))}
+          </div>
+          {levels.some((l) => l.levelIsEstimated) && (
+            <p className="mt-2 text-xs text-black/40">Cấp độ ước lượng bởi hệ thống, không phải phân loại chính thức.</p>
+          )}
+        </section>
+      )}
 
       {common.length > 0 && (
         <section className="mt-8">

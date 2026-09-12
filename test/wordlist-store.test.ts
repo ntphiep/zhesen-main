@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { parseUserWordRow, draftFromDictEntry, addWord, addWords, updateWordsStatus, listWords, WordAlreadyExistsError } from '@/lib/wordlist/store'
+import { parseUserWordRow, draftFromDictEntry, addWord, addWords, updateWordsStatus, listWords, listSavedEntryIds, WordAlreadyExistsError } from '@/lib/wordlist/store'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { WordDraft } from '@/lib/wordlist/types'
 
@@ -75,6 +75,19 @@ describe('listWords', () => {
     const { client } = mockClient()
     const res = await listWords(client)
     expect(res[0].headword).toBe('dog')
+  })
+})
+
+describe('listSavedEntryIds', () => {
+  it('returns the saved entry ids for a language as a Set, filtering out nulls in the query', async () => {
+    const not = vi.fn(() => Promise.resolve({ data: [{ entry_id: 'en:dog' }, { entry_id: 'en:cat' }], error: null }))
+    const eq = vi.fn(() => ({ not }))
+    const select = vi.fn(() => ({ eq }))
+    const client = { from: vi.fn(() => ({ select })) } as unknown as import('@supabase/supabase-js').SupabaseClient
+    const ids = await listSavedEntryIds(client, 'en')
+    expect(eq).toHaveBeenCalledWith('lang', 'en')
+    expect(not).toHaveBeenCalledWith('entry_id', 'is', null)
+    expect(ids).toEqual(new Set(['en:dog', 'en:cat']))
   })
 })
 

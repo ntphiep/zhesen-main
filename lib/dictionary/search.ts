@@ -18,7 +18,7 @@ import { entryPreviewRow, searchRpcRow, suggestRow, toPreview, toPreviewFromSear
  * one 384-line file.
  */
 
-const PREVIEW_SELECT =
+export const PREVIEW_SELECT =
   'id, lang, headword, traditional, level, frequency_rank, attributes, senses(pos, gloss_vi, gloss_en, sense_order), pronunciations(accent, ipa, audio_url)'
 
 export async function searchEntries(
