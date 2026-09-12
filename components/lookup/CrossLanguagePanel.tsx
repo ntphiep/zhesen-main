@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { entryPath } from '@/lib/dictionary/entryId'
-import { LANG_FLAGS, LANG_LABELS } from '@/lib/dictionary/labels'
+import { LANG_LABELS } from '@/lib/dictionary/labels'
 import { posGroup } from '@/lib/dictionary/pos'
 import { genderFromCode } from '@/lib/dictionary/gender'
 import type { CrossLangSibling } from '@/lib/dictionary/types'
@@ -30,7 +30,7 @@ export function CrossLanguagePanel({ siblings }: { siblings: CrossLangSibling[] 
       {byLang.map(({ lang, rows }) => (
         <div key={lang} className="flex flex-col gap-1">
           <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-black/40">
-            <span aria-hidden>{LANG_FLAGS[lang]}</span>
+            
             {LANG_LABELS[lang]}
           </span>
           <ul className="flex flex-col">

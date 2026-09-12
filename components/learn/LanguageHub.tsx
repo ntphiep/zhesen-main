@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { Ipa } from '@/components/ui/Ipa'
 import { SearchBox } from '@/components/search/SearchBox'
 import { entryPath } from '@/lib/dictionary/entryId'
-import { LANG_FLAGS } from '@/lib/dictionary/labels'
 import type { Language } from '@/lib/languages'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { LevelSummary } from '@/lib/dictionary/levels'
@@ -14,7 +13,7 @@ export function LanguageHub({ language, common, levels }: { language: Language; 
     <main className="mx-auto max-w-3xl px-6 py-10">
       <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>
       <div className="mt-3 flex items-center gap-3">
-        <span className="text-3xl">{LANG_FLAGS[language.code]}</span>
+        <span className="text-xl font-medium text-black/70">{language.nativeName}</span>
         <h1 className="text-3xl font-bold">{language.name}</h1>
       </div>
 

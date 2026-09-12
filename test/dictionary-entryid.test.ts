@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { splitEntryId, buildEntryId, entryPath, searchPath } from '@/lib/dictionary/entryId'
-import { relationLabel, LANG_LABELS, LANG_FLAGS } from '@/lib/dictionary/labels'
+import { relationLabel, LANG_LABELS } from '@/lib/dictionary/labels'
 
 describe('entryId helpers', () => {
   it('splits at the first colon only', () => {
@@ -32,6 +32,5 @@ describe('labels', () => {
   })
   it('has a label and flag for every lang', () => {
     expect(LANG_LABELS.zh).toBe('Tiếng Trung')
-    expect(LANG_FLAGS.es).toBeTruthy()
   })
 })

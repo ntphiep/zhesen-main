@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import { Modal } from '@/components/ui/Modal'
 import { TagEditor } from './TagEditor'
 import { STATUS_OPTIONS, type UserWord, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
 
@@ -11,7 +12,6 @@ interface Props {
 }
 
 export function EditWordDialog({ word, open, onClose, onSave }: Props) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
 
   const [meaningVi, setMeaningVi] = useState('')
   const [meaningEn, setMeaningEn] = useState('')
@@ -43,17 +43,6 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
     setStatus(word.status)
     setTags(word.tags)
   }
-
-  // Drive open/close via prop. Guard against the dialog's current state: showModal()
-  // throws if it is already open (e.g. React Strict Mode double-invokes the effect),
-  // and the `open` attribute must NOT be set (that opens it non-modal, conflicting
-  // with showModal()).
-  useEffect(() => {
-    const el = dialogRef.current
-    if (!el) return
-    if (open && !el.open) el.showModal()
-    else if (!open && el.open) el.close()
-  }, [open])
 
   async function handleSave() {
     if (!word) return
@@ -91,22 +80,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
   }
 
   return (
-    <dialog
-      ref={dialogRef}
-      aria-labelledby="edit-word-title"
-      className="rounded-xl bg-white shadow-xl p-0 w-full max-w-lg backdrop:bg-black/30"
-      onClose={onClose}
-    >
-      <div className="flex items-center justify-between px-5 pt-4 pb-0">
-        <h2 id="edit-word-title" className="text-lg font-semibold">Chỉnh sửa từ</h2>
-        <button
-          className="text-black/40 hover:text-black/70 text-xl leading-none"
-          onClick={onClose}
-          aria-label="Đóng"
-        >
-          ×
-        </button>
-      </div>
+    <Modal open={open} onClose={onClose} title="Chỉnh sửa từ" titleId="edit-word-title" widthClass="max-w-lg">
 
       {word && (
         <div className="p-5 flex flex-col gap-3">
@@ -218,6 +192,6 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
           </div>
         </div>
       )}
-    </dialog>
+    </Modal>
   )
 }

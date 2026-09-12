@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import { Modal } from '@/components/ui/Modal'
 import { parseImportCsv, type ImportPreviewRow } from '@/lib/wordlist/csv'
 import type { UserWord, WordDraft } from '@/lib/wordlist/types'
 
@@ -23,17 +24,9 @@ const KIND_CLASS: Record<ImportPreviewRow['kind'], string> = {
 }
 
 export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
   const [rows, setRows] = useState<ImportPreviewRow[]>([])
   const [fileName, setFileName] = useState('')
   const [importing, setImporting] = useState(false)
-
-  useEffect(() => {
-    const el = dialogRef.current
-    if (!el) return
-    if (open && !el.open) el.showModal()
-    else if (!open && el.open) el.close()
-  }, [open])
 
   // Reset preview whenever the dialog is (re)opened.
   const [prevOpen, setPrevOpen] = useState(open)
@@ -66,16 +59,7 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
   }
 
   return (
-    <dialog
-      ref={dialogRef}
-      aria-labelledby="import-csv-title"
-      className="rounded-xl bg-white shadow-xl p-0 w-full max-w-xl backdrop:bg-black/30"
-      onClose={onClose}
-    >
-      <div className="flex items-center justify-between px-5 pt-4 pb-0">
-        <h2 id="import-csv-title" className="text-lg font-semibold">Nhập từ CSV</h2>
-        <button className="text-black/40 hover:text-black/70 text-xl leading-none" onClick={onClose} aria-label="Đóng">×</button>
-      </div>
+    <Modal open={open} onClose={onClose} title="Nhập từ CSV" titleId="import-csv-title" widthClass="max-w-xl">
 
       <div className="p-5 flex flex-col gap-3">
         <p className="text-sm text-black/60">
@@ -140,6 +124,6 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
           </button>
         </div>
       </div>
-    </dialog>
+    </Modal>
   )
 }

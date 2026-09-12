@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { LANGUAGES, LANG_CODES, byLang, getLanguage, isLangCode, speechLang } from '@/lib/languages'
-import { LANG_LABELS, LANG_FLAGS } from '@/lib/dictionary/labels'
+import { LANG_LABELS } from '@/lib/dictionary/labels'
 
 describe('speechLang', () => {
   it('maps lang codes to BCP-47', () => {
@@ -30,10 +30,9 @@ describe('byLang', () => {
 
   // The point of deriving these: a language added to LANGUAGES must not leave a
   // label or a flag behind in a file someone forgot to open.
-  it('leaves no language without a label or a flag', () => {
+  it('leaves no language without a label', () => {
     for (const code of LANG_CODES) {
       expect(LANG_LABELS[code]).toBeTruthy()
-      expect(LANG_FLAGS[code]).toBeTruthy()
     }
     expect(Object.keys(LANG_LABELS)).toHaveLength(LANGUAGES.length)
   })

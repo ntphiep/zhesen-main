@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Modal } from '@/components/ui/Modal'
 import { fetchSearch } from '@/lib/dictionary/searchClient'
 import { draftFromDictEntry } from '@/lib/wordlist/store'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
@@ -16,7 +17,6 @@ interface Props {
 }
 
 export function AddWordDialog({ open, onClose, onAdd }: Props) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
 
   const [tab, setTab] = useState<Tab>('dict')
 
@@ -34,17 +34,6 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
   const [pos, setPos] = useState('')
   const [example, setExample] = useState('')
   const [status, setStatus] = useState<WordStatus>('new')
-
-  // Drive open/close via prop. Guard against the dialog's current state: showModal()
-  // throws if it is already open (e.g. React Strict Mode double-invokes the effect),
-  // and the `open` attribute must NOT be set (that opens it non-modal, conflicting
-  // with showModal()).
-  useEffect(() => {
-    const el = dialogRef.current
-    if (!el) return
-    if (open && !el.open) el.showModal()
-    else if (!open && el.open) el.close()
-  }, [open])
 
   // Clear stale results synchronously as soon as the query is emptied, instead of in an
   // effect (adjust state during render, per react.dev/learn/you-might-not-need-an-effect).
@@ -100,22 +89,7 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
   }
 
   return (
-    <dialog
-      ref={dialogRef}
-      aria-labelledby="add-word-title"
-      className="rounded-xl bg-white shadow-xl p-0 w-full max-w-lg backdrop:bg-black/30"
-      onClose={onClose}
-    >
-      <div className="flex items-center justify-between px-5 pt-4 pb-0">
-        <h2 id="add-word-title" className="text-lg font-semibold">Thêm từ mới</h2>
-        <button
-          className="text-black/40 hover:text-black/70 text-xl leading-none"
-          onClick={onClose}
-          aria-label="Đóng"
-        >
-          ×
-        </button>
-      </div>
+    <Modal open={open} onClose={onClose} title="Thêm từ mới" titleId="add-word-title" widthClass="max-w-lg">
 
       {/* Tab bar */}
       <div role="tablist" className="flex gap-1 px-5 pt-3 pb-0 border-b border-black/10">
@@ -293,6 +267,6 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
           </div>
         )}
       </div>
-    </dialog>
+    </Modal>
   )
 }

@@ -32,13 +32,7 @@ describe('getLevelsForLanguage', () => {
 function mockEntriesClient(allRows: ReturnType<typeof previewRow>[]) {
   const range = vi.fn((from: number, to: number) =>
     Promise.resolve({ data: allRows.slice(from, to + 1), error: null, count: allRows.length }))
-  const builder: Record<string, unknown> = {}
-  const chain = vi.fn(() => builder)
-  Object.assign(builder, { select: chain, eq: chain, order: chain, range })
-  return {
-    client: { schema: vi.fn(() => ({ from: vi.fn(() => builder) })) } as unknown as import('@supabase/supabase-js').SupabaseClient,
-    range,
-  }
+  return { client: clientReturning(null, null, { range }).client, range }
 }
 
 describe('getEntriesByLevel', () => {

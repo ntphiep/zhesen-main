@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { getEntriesByLevel, getAllEntriesByLevel } from '@/lib/dictionary/levels'
 import { addWords, draftFromDictEntry, listSavedEntryIds } from '@/lib/wordlist/store'
 import { entryPath } from '@/lib/dictionary/entryId'
-import { LANG_FLAGS } from '@/lib/dictionary/labels'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { Language } from '@/lib/languages'
 import { Ipa } from '@/components/ui/Ipa'
@@ -61,7 +60,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
     <main className="mx-auto max-w-3xl px-6 py-10">
       <Link href={`/learn/${language.code}`} className="text-sm text-black/50 hover:underline">← {language.name}</Link>
       <div className="mt-3 flex items-center gap-3">
-        <span className="text-3xl">{LANG_FLAGS[language.code]}</span>
+        <span className="text-xl font-medium text-black/70">{language.nativeName}</span>
         <h1 className="text-3xl font-bold">{level}</h1>
         <span className="text-sm text-black/40">{total} từ</span>
       </div>

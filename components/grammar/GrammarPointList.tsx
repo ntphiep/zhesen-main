@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { LANG_FLAGS } from '@/lib/dictionary/labels'
 import { grammarPointPath } from '@/lib/grammar/path'
 import type { GrammarLevelGroup } from '@/lib/grammar/group'
 import type { Language } from '@/lib/languages'
@@ -10,7 +9,7 @@ export function GrammarPointList({ language, levels }: { language: Language; lev
     <main className="mx-auto max-w-3xl px-6 py-10">
       <Link href="/grammar" className="text-sm text-black/50 hover:underline">← Ngữ pháp</Link>
       <div className="mt-3 flex items-center gap-3">
-        <span className="text-3xl">{LANG_FLAGS[language.code]}</span>
+        <span className="text-xl font-medium text-black/70">{language.nativeName}</span>
         <h1 className="text-3xl font-bold">Ngữ pháp {language.name}</h1>
       </div>
 

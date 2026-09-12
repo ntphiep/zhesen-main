@@ -13,6 +13,7 @@ import { AddWordDialog } from '@/components/wordlist/AddWordDialog'
 import { EditWordDialog } from '@/components/wordlist/EditWordDialog'
 import { ImportCsvDialog } from '@/components/wordlist/ImportCsvDialog'
 import { WordDetail } from '@/components/wordlist/WordDetail'
+import { TagChips, WordRowActions } from '@/components/wordlist/WordRowActions'
 import { AudioButton } from '@/components/ui/AudioButton'
 import type { UserWord, WordDraft, WordStatus } from '@/lib/wordlist/types'
 import { Ipa } from '@/components/ui/Ipa'
@@ -288,40 +289,20 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     <td className="py-2 pr-3 text-black/50">{w.level ?? ''}</td>
                     <td className="py-2 pr-3 text-black/50 max-w-xs truncate">{w.example ?? ''}</td>
                     <td className="py-2 pr-3">
-                      <div className="flex flex-wrap gap-1">
-                        {w.tags.map((t) => (
-                          <span key={t} className="rounded-full bg-black/5 px-1.5 py-0.5 text-xs text-black/60">{t}</span>
-                        ))}
-                      </div>
+                      <TagChips tags={w.tags} />
                     </td>
                     <td className="py-2 pr-3 text-black/40">{formatDate(w.createdAt)}</td>
                     <td className="py-2 pr-3">
                       <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
                     </td>
                     <td className="py-2">
-                      <div className="flex items-center gap-1">
-                        <button
-                          className="rounded px-2 py-1 text-xs hover:bg-black/5"
-                          onClick={() => setExpandedId(expandedId === w.id ? null : w.id)}
-                          aria-label={`Xem chi tiết ${w.headword}`}
-                        >
-                          Xem
-                        </button>
-                        <button
-                          className="rounded px-2 py-1 text-xs hover:bg-black/5"
-                          onClick={() => setEditWord(w)}
-                          aria-label={`Sửa từ ${w.headword}`}
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-                          onClick={() => handleDelete(w.id, w.headword)}
-                          aria-label={`Xóa từ ${w.headword}`}
-                        >
-                          Xóa
-                        </button>
-                      </div>
+                      <WordRowActions
+                        word={w}
+                        expanded={expandedId === w.id}
+                        onToggleDetail={() => setExpandedId(expandedId === w.id ? null : w.id)}
+                        onEdit={() => setEditWord(w)}
+                        onDelete={() => handleDelete(w.id, w.headword)}
+                      />
                     </td>
                   </tr>
                   {expandedId === w.id && (
@@ -368,39 +349,17 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                 </span>
               )}
               {w.example && <p className="text-xs italic text-black/50">{w.example}</p>}
-              {w.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {w.tags.map((t) => (
-                    <span key={t} className="rounded-full bg-black/5 px-1.5 py-0.5 text-xs text-black/60">{t}</span>
-                  ))}
-                </div>
-              )}
+                              <TagChips tags={w.tags} />
 
               <div className="flex items-center justify-between mt-1">
                 <span className="text-xs text-black/30">{formatDate(w.createdAt)}</span>
-                <div className="flex gap-1">
-                  <button
-                    className="rounded px-2 py-1 text-xs hover:bg-black/5"
-                    onClick={() => setExpandedId(expandedId === w.id ? null : w.id)}
-                    aria-label={`Xem chi tiết ${w.headword}`}
-                  >
-                    Xem
-                  </button>
-                  <button
-                    className="rounded px-2 py-1 text-xs hover:bg-black/5"
-                    onClick={() => setEditWord(w)}
-                    aria-label={`Sửa từ ${w.headword}`}
-                  >
-                    Sửa
-                  </button>
-                  <button
-                    className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-                    onClick={() => handleDelete(w.id, w.headword)}
-                    aria-label={`Xóa từ ${w.headword}`}
-                  >
-                    Xóa
-                  </button>
-                </div>
+                <WordRowActions
+                  word={w}
+                  expanded={expandedId === w.id}
+                  onToggleDetail={() => setExpandedId(expandedId === w.id ? null : w.id)}
+                  onEdit={() => setEditWord(w)}
+                  onDelete={() => handleDelete(w.id, w.headword)}
+                />
               </div>
 
               {expandedId === w.id && (

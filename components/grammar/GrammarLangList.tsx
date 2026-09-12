@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { grammarLangPath } from '@/lib/grammar/path'
-import { LANG_FLAGS } from '@/lib/dictionary/labels'
 import type { Language, LangCode } from '@/lib/languages'
 
 /** `/grammar` landing page: one card per language, linking into `/grammar/[lang]`. */
@@ -18,7 +17,7 @@ export function GrammarLangList({ languages, counts }: { languages: readonly Lan
             href={grammarLangPath(l.code)}
             className="group rounded-2xl border border-black/10 p-5 transition hover:border-black/30 hover:shadow-lg hover:-translate-y-0.5"
           >
-            <div className="text-2xl">{LANG_FLAGS[l.code]}</div>
+            <div className="text-lg font-medium text-black/70">{l.nativeName}</div>
             <div className="mt-2 text-lg font-semibold">{l.name}</div>
             <div className="mt-1 text-sm text-black/55">{counts[l.code]} điểm ngữ pháp</div>
           </Link>

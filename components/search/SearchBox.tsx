@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { detectOrder, orderByBestMatch } from '@/lib/dictionary/detect'
 import { pushRecent, readRecent, writeRecent } from '@/lib/dictionary/recent'
-import { LANG_LABELS, LANG_FLAGS } from '@/lib/dictionary/labels'
+import { LANG_LABELS } from '@/lib/dictionary/labels'
 import { posGroup } from '@/lib/dictionary/pos'
 import { Ipa } from '@/components/ui/Ipa'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
@@ -192,7 +192,7 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
     return (
       <div key={`${reversed ? 'rev' : 'fwd'}-${lang}`} className="flex flex-col gap-1">
         <span className="text-xs font-semibold uppercase tracking-wide text-black/40">
-          {LANG_FLAGS[lang]} {LANG_LABELS[lang]}
+          {LANG_LABELS[lang]}
           {reversed && <span className="ml-1 normal-case text-black/30">· dịch từ tiếng Việt</span>}
         </span>
         <ul className="flex flex-col gap-0.5">
@@ -281,7 +281,7 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
                 onMouseDown={(e) => { e.preventDefault(); setQuery(s.headword) }}
                 className="rounded-full bg-black/5 px-3 py-1 text-sm text-black/70 hover:bg-black/10"
               >
-                {LANG_FLAGS[s.lang]} {s.headword}
+                {s.headword}
                 {s.glossVi && <span className="text-black/40"> · {s.glossVi}</span>}
               </button>
             ))}
