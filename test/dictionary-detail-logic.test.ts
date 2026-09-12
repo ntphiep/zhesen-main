@@ -131,13 +131,30 @@ describe('classifyRelations', () => {
 })
 
 describe('groupWordForms', () => {
-  it('dedupes inflected forms preserving first-seen order', () => {
+  // The contract changed on 2026-09-12: it used to return bare strings and the page
+  // rendered them as identical chips, which is what made a dialect spelling
+  // indistinguishable from a past participle. It now names each form.
+  it('dedupes forms, keeping the first label seen for a repeated spelling', () => {
     const forms = groupWordForms([
       { formText: 'drinks', formLabel: 'plural' },
       { formText: 'drinking', formLabel: 'present participle' },
       { formText: 'drank', formLabel: 'past' },
       { formText: 'drinks', formLabel: 'third-person singular' },
     ])
-    expect(forms).toEqual(['drinks', 'drinking', 'drank'])
+    expect(forms.map((f) => f.text)).toEqual(['drinking', 'drank', 'drinks'])
+    expect(forms.find((f) => f.text === 'drinks')?.label).toBe('Số nhiều')
+  })
+
+  it('names each form in Vietnamese and carries its usage markers', () => {
+    const forms = groupWordForms([{ formText: 'smeeth', formLabel: 'alternative dialectal rare' }])
+    expect(forms[0]).toMatchObject({ label: 'Biến thể', markers: ['hiếm', 'phương ngữ'], standard: false })
+  })
+
+  it('drops the Spanish clitic-attached forms, which the conjugation table covers', () => {
+    const forms = groupWordForms([
+      { formText: 'dígamelo', formLabel: 'accusative combined-form formal imperative object-singular' },
+      { formText: 'gatos', formLabel: 'plural' },
+    ])
+    expect(forms.map((f) => f.text)).toEqual(['gatos'])
   })
 })

@@ -55,11 +55,29 @@ describe('searchEntries', () => {
     const { client } = rpcClient([
       {
         id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', frequency_rank: 500,
-        attributes: {}, pos: 'noun', gloss_vi: 'con chó', gloss_en: 'dog', ipa: '/dɔːɡ/', audio_url: 'x.ogg', rank: 0.9,
+        attributes: {}, pos: 'noun', gloss_vi: 'con chó', gloss_en: 'dog', ipa: '/dɔːɡ/',
+        audio_url: 'https://upload.wikimedia.org/wikipedia/commons/1/15/En-uk-dog.ogg', rank: 0.9,
       },
     ])
     const res = await searchEntries(client, 'en', 'dog')
-    expect(res[0]).toMatchObject({ id: 'en:dog', headword: 'dog', ipa: '/dɔːɡ/', glossVi: 'con chó', pos: 'noun', audioUrl: 'x.ogg', level: 'A1' })
+    expect(res[0]).toMatchObject({
+      id: 'en:dog', headword: 'dog', ipa: '/dɔːɡ/', glossVi: 'con chó', pos: 'noun', level: 'A1',
+      audioUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/15/En-uk-dog.ogg',
+    })
+  })
+
+  it('drops a recording that is of a phrase rather than the word', async () => {
+    // En-uk-a_cat.ogg says "a cat". It was sitting on the entry for "cat", and the
+    // wordlist saved it with the word, so the review card said "a cat" too.
+    const { client } = rpcClient([
+      {
+        id: 'en:cat', lang: 'en', headword: 'cat', traditional: null, level: 'A1', frequency_rank: 300,
+        attributes: {}, pos: 'noun', gloss_vi: 'con mèo', gloss_en: 'cat', ipa: 'kæt',
+        audio_url: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/En-uk-a_cat.ogg?utm_source=x', rank: 4,
+      },
+    ])
+    const res = await searchEntries(client, 'en', 'cat')
+    expect(res[0].audioUrl).toBeNull()
   })
 
   it('calls the RPC with the trimmed query, the single language, and the limit', async () => {
@@ -239,7 +257,7 @@ function crossClient(results: { data: unknown; error: null }[]) {
 }
 
 const sib = (id: string, lang: string, headword: string, gloss_vi: string | null, gloss_en: string | null) =>
-  ({ id, lang, headword, gloss_vi, gloss_en })
+  ({ id, lang, headword, reading: null, pos: null, gloss_vi, gloss_en })
 
 describe('getCrossLanguage', () => {
   it('maps the matcher result for an English word, snake_case to camelCase', async () => {

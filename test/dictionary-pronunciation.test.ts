@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { audioAccent, pickAccentRows } from '@/lib/dictionary/pronunciation'
+import { audioAccent, audioMatchesHeadword, pickAccentRows } from '@/lib/dictionary/pronunciation'
 import type { DictPron } from '@/lib/dictionary/types'
 
 const p = (accent: string, ipa: string | null, audioUrl: string | null = null): DictPron => ({ accent, ipa, audioUrl })
@@ -76,5 +76,42 @@ describe('pickAccentRows (other languages)', () => {
     const rows = pickAccentRows([], 'zh', '狗')
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ label: '', ipa: null, ttsLang: 'zh-CN' })
+  })
+})
+
+const COMMONS = 'https://upload.wikimedia.org/wikipedia/commons/1/1e/'
+
+describe('audioMatchesHeadword', () => {
+  it('accepts a recording named after the word', () => {
+    expect(audioMatchesHeadword(`${COMMONS}En-us-cat.ogg`, 'cat')).toBe(true)
+  })
+  it('accepts one with an extra region tag in front', () => {
+    expect(audioMatchesHeadword(`${COMMONS}En-us-inlandnorth-cat.ogg`, 'cat')).toBe(true)
+  })
+  it('accepts a multiword headword written with underscores', () => {
+    expect(audioMatchesHeadword(`${COMMONS}En-us-give_up.ogg`, 'give up')).toBe(true)
+  })
+  it('accepts a hyphenated headword', () => {
+    expect(audioMatchesHeadword(`${COMMONS}En-us-e-mail.ogg`, 'e-mail')).toBe(true)
+  })
+  it('rejects a recording of a phrase built around the word', () => {
+    // The reported bug: the speaker button on "cat" played someone saying "a cat".
+    expect(audioMatchesHeadword(`${COMMONS}En-uk-a_cat.ogg?utm_source=x`, 'cat')).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En-uk-to_have.ogg`, 'have')).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-ham-and-eggs.ogg`, 'and')).toBe(false)
+  })
+  it('rejects nothing at all', () => {
+    expect(audioMatchesHeadword(null, 'cat')).toBe(false)
+  })
+})
+
+describe('pickAccentRows audio filtering', () => {
+  it('leaves an accent row without audio rather than playing the wrong clip', () => {
+    const rows = pickAccentRows(
+      [p('en-UK', 'kat', `${COMMONS}En-uk-a_cat.ogg`), p('en-US', 'kæt', `${COMMONS}En-us-cat.ogg`)],
+      'en', 'cat',
+    )
+    expect(rows.find((r) => r.label === 'UK')!.audioUrl).toBeNull()
+    expect(rows.find((r) => r.label === 'US')!.audioUrl).toBe(`${COMMONS}En-us-cat.ogg`)
   })
 })

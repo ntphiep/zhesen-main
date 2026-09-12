@@ -1,10 +1,10 @@
 import { unstable_cache } from 'next/cache'
 import { createContentClient } from '@/lib/supabase/content'
-import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getCommonWords } from './search'
+import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getTermPreviews, getCommonWords } from './search'
 import { getEntriesContaining } from './containing'
 import { getWordOfDay, dayNumber, type DailyWord } from './wordOfDay'
 import { getLevelsForLanguage, getEntriesByLevel, type LevelSummary, type LevelPage } from './levels'
-import type { ContainingWord, DictEntryDetail, DictEntryPreview, CrossLangSibling, CharInfo, WordForm } from './types'
+import type { ContainingWord, DictEntryDetail, DictEntryPreview, CrossLangSibling, TermPreview, CharInfo, WordForm } from './types'
 import type { LangCode } from '@/lib/languages'
 
 export const getCachedEntryDetail = unstable_cache(
@@ -29,6 +29,16 @@ export const getCachedEntriesContaining = unstable_cache(
   (lang: LangCode, headword: string): Promise<ContainingWord[]> =>
     getEntriesContaining(createContentClient(), lang, headword),
   ['dict-entries-containing'],
+  { revalidate: 3600, tags: ['lex'] },
+)
+
+/** Cached per (language, exact list of terms). The entry page asks once for every
+ *  related word and inflected form it is about to render, so the key is stable
+ *  for as long as the entry's relations are. */
+export const getCachedTermPreviews = unstable_cache(
+  (lang: LangCode, texts: string[]): Promise<TermPreview[]> =>
+    getTermPreviews(createContentClient(), lang, texts),
+  ['dict-term-previews'],
   { revalidate: 3600, tags: ['lex'] },
 )
 

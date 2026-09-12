@@ -26,6 +26,35 @@ export function audioAccent(url: string | null): Accent | null {
   return m[1] === 'gb' ? 'uk' : (m[1] as Accent)
 }
 
+/**
+ * Whether a recording is of the headword itself.
+ *
+ * Wiktionary files some recordings under a phrase: "cat" carried
+ * `En-uk-a_cat.ogg`, which says "a cat", and "and" carried
+ * `En-us-ham-and-eggs.ogg`. The page played them as if they were the word.
+ *
+ * A Wikimedia pronunciation filename is dash-separated tags followed by the
+ * word, with spaces written as underscores: `En-us-cat`, `En-us-inlandnorth-cat`,
+ * `En-us-give_up`. So the word is a suffix of the dash-separated segments, and a
+ * phrase recording fails that test because the extra word arrives inside the same
+ * segment ("a_cat" reads as "a cat", not "cat"). Measured over the 699 recordings
+ * in the data: 631 match their headword, 68 do not. The 68 include valid
+ * recordings named after a speaker (`En-au_ck1_have`) as well as the wrong ones,
+ * and dropping both is the right trade -- what replaces them is the speech
+ * synthesiser saying the correct word, not silence.
+ */
+export function audioMatchesHeadword(url: string | null, headword: string): boolean {
+  if (!url) return false
+  const file = decodeURIComponent(url.split('?')[0]).split('/').pop() ?? ''
+  const base = file.replace(/\.[a-z0-9]+$/i, '').toLowerCase()
+  const segments = base.split('-')
+  const want = headword.trim().toLowerCase()
+  for (let k = 1; k <= Math.min(4, segments.length); k += 1) {
+    if (segments.slice(-k).join('-').replace(/_/g, ' ') === want) return true
+  }
+  return false
+}
+
 function deaccent(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '')
 }
@@ -61,10 +90,16 @@ function bestIpa(prons: DictPron[], headword: string): string | null {
 function pickBucket(prons: DictPron[], accent: Accent, label: string, headword: string, ttsLang: string): AccentRow | null {
   const candidates = prons.filter((p) => p.accent.toLowerCase().includes(accent) || audioAccent(p.audioUrl) === accent)
   if (candidates.length === 0) return null
-  const audioMatch = candidates.find((p) => audioAccent(p.audioUrl) === accent)
+  const audioMatch = candidates.find(
+    (p) => audioAccent(p.audioUrl) === accent && audioMatchesHeadword(p.audioUrl, headword),
+  )
   const ipa =
     audioMatch?.ipa && scoreIpa(audioMatch.ipa, headword) >= 0 ? audioMatch.ipa : bestIpa(candidates, headword)
   return { label, ipa, audioUrl: audioMatch?.audioUrl ?? null, ttsLang }
+}
+
+function firstMatchingAudio(prons: DictPron[], headword: string): string | null {
+  return prons.find((p) => audioMatchesHeadword(p.audioUrl, headword))?.audioUrl ?? null
 }
 
 /**
@@ -80,12 +115,12 @@ export function pickAccentRows(prons: DictPron[], lang: LangCode, headword: stri
       pickBucket(prons, 'us', 'US', headword, 'en-US'),
     ].filter((r): r is AccentRow => r !== null)
     if (rows.length > 0) return rows
-    return [{ label: '', ipa: bestIpa(prons, headword), audioUrl: prons.find((p) => p.audioUrl)?.audioUrl ?? null, ttsLang: 'en-US' }]
+    return [{ label: '', ipa: bestIpa(prons, headword), audioUrl: firstMatchingAudio(prons, headword), ttsLang: 'en-US' }]
   }
   return [{
     label: '',
     ipa: bestIpa(prons, headword),
-    audioUrl: prons.find((p) => p.audioUrl)?.audioUrl ?? null,
+    audioUrl: firstMatchingAudio(prons, headword),
     ttsLang: TTS_LANG[lang],
   }]
 }

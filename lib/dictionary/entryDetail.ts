@@ -1,8 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { DictEntryDetail, DictSense, DictExample, DictRelation, CrossLangSibling, CharInfo, WordForm } from './types'
-import { entryDetailRow, crossLanguageSourceRow, crossLangSiblingRow, pivotViRow, inflectionRow, charRow, toPreview, toSenses, toProns } from './rows'
+import type { DictEntryDetail, DictSense, DictExample, DictRelation, CrossLangSibling, TermPreview, CharInfo, WordForm } from './types'
+import { entryDetailRow, crossLanguageSourceRow, crossLangSiblingRow, termPreviewRow, pivotViRow, inflectionRow, charRow, toPreview, toSenses, toProns } from './rows'
 import { fillPivotVi, cleanMtGloss } from './textQuality'
 import { entryPivots, cleanGlossTerm } from './crosslang'
+import type { LangCode } from '@/lib/languages'
 
 /** Everything the entry detail page needs beyond the search-result preview:
  * senses/pronunciations/examples/relations for one entry, its cross-language
@@ -57,6 +58,10 @@ async function withPivotVi(supabase: SupabaseClient, senses: DictSense[]): Promi
   return fillPivotVi(senses, viByTerm)
 }
 
+/** Per language, not overall: a word with a dozen Spanish equivalents used to
+ *  fill the panel and push Chinese out of it entirely. */
+const PER_LANGUAGE = 3
+
 /**
  * Equivalents of an entry in the other languages, bridged through an English
  * pivot (see crosslang.ts). Pivot terms are computed here; the actual match runs
@@ -78,11 +83,34 @@ export async function getCrossLanguage(
   if (pivots.length === 0) return []
 
   const { data, error } = await supabase.schema('lex').rpc('match_cross_language', {
-    p_terms: pivots, p_exclude_lang: row.lang, p_exclude_id: entryId,
+    p_terms: pivots, p_exclude_lang: row.lang, p_exclude_id: entryId, p_per_lang: PER_LANGUAGE,
   })
   if (error) throw error
   return crossLangSiblingRow.array().parse(data ?? []).map((r) => ({
-    id: r.id, lang: r.lang, headword: r.headword, glossVi: r.gloss_vi, glossEn: r.gloss_en,
+    id: r.id, lang: r.lang, headword: r.headword, reading: r.reading, pos: r.pos,
+    glossVi: r.gloss_vi, glossEn: r.gloss_en,
+  }))
+}
+
+/**
+ * What the dictionary knows about a list of surface forms. Synonyms, derived
+ * terms and inflections are stored as plain text, so without this the page can
+ * only print the word itself; with it each one carries its part of speech and
+ * first meaning. Forms that are not entries of their own come back missing and
+ * the caller falls back to plain text.
+ */
+export async function getTermPreviews(
+  supabase: SupabaseClient, lang: LangCode, texts: string[],
+): Promise<TermPreview[]> {
+  const wanted = [...new Set(texts.map((t) => t.trim()).filter(Boolean))]
+  if (wanted.length === 0) return []
+  const { data, error } = await supabase.schema('lex').rpc('term_previews', {
+    p_lang: lang, p_texts: wanted,
+  })
+  if (error) throw error
+  return termPreviewRow.array().parse(data ?? []).map((r) => ({
+    matchText: r.match_text, id: r.id, headword: r.headword, pos: r.pos,
+    ipa: r.ipa, reading: r.reading, glossVi: r.gloss_vi, glossEn: r.gloss_en,
   }))
 }
 

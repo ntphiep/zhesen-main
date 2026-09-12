@@ -76,12 +76,29 @@ export interface CrossLangSibling {
   id: string
   lang: LangCode
   headword: string
+  /** Pinyin for a Chinese equivalent; null for the Latin-script languages. */
+  reading: string | null
+  pos: string | null
   glossVi: string | null
   glossEn: string | null
 }
 export interface WordForm {
   formText: string
   formLabel: string | null
+}
+/** What the dictionary knows about a word that is only stored as text elsewhere:
+ *  a synonym in `lex.lex_relations`, an inflected form in `lex.inflections`.
+ *  See `lex.term_previews` (supabase/migrations/0027). */
+export interface TermPreview {
+  /** The surface form asked about, so the caller can match it back. */
+  matchText: string
+  id: string
+  headword: string
+  pos: string | null
+  ipa: string | null
+  reading: string | null
+  glossVi: string | null
+  glossEn: string | null
 }
 export interface CharInfo {
   char: string

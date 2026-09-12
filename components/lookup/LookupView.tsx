@@ -11,22 +11,32 @@ import { ExampleList } from './ExampleList'
 import { GrammarLinks } from './GrammarLinks'
 import { groupWordForms } from '@/lib/dictionary/family'
 import { buildConjugation } from '@/lib/dictionary/conjugation'
-import type { ContainingWord, DictEntryDetail, CharInfo, CrossLangSibling, WordForm } from '@/lib/dictionary/types'
+import type { ContainingWord, DictEntryDetail, CharInfo, CrossLangSibling, TermPreview, WordForm } from '@/lib/dictionary/types'
 import type { GrammarPoint } from '@/lib/grammar/types'
 
 /**
  * Two-column lookup layout (hanzii-style): the hero spans the top, then a wide
  * main column holds the dense content (meanings, character breakdown, conjugation,
- * examples) and a narrower side rail holds the link lists (other languages, related
- * words, word forms). Collapses to a single column below `lg`.
+ * examples, the related-word and word-form tables) and a narrower side rail holds
+ * the link lists (other languages, compounds, grammar). Collapses to a single
+ * column below `lg`.
+ *
+ * The related words and the word family moved out of the rail when they stopped
+ * being chips: each row now carries a part of speech and a meaning, which does not
+ * fit a 320px column.
  */
-export function LookupView({ detail, characters, siblings, inflections = [], grammarPoints = [], containing = [] }: {
+export function LookupView({
+  detail, characters, siblings, inflections = [], grammarPoints = [], containing = [], previews = {},
+}: {
   detail: DictEntryDetail
   characters: CharInfo[]
   siblings: CrossLangSibling[]
   inflections?: WordForm[]
   grammarPoints?: GrammarPoint[]
   containing?: ContainingWord[]
+  /** What the dictionary knows about each related word and inflected form, keyed
+   *  by the lowercased surface form. Missing entries render as plain text. */
+  previews?: Record<string, TermPreview>
 }) {
   const hanViet = characters.map((c) => c.hanViet[0]).filter(Boolean).join(' ') || null
   // Spanish verbs get a conjugation table; for them the flat "word family" chip list
@@ -35,7 +45,7 @@ export function LookupView({ detail, characters, siblings, inflections = [], gra
   const forms = conjugation ? [] : groupWordForms(inflections)
 
   const showChars = detail.lang === 'zh' && characters.length > 0
-  const hasSideRail = showChars || siblings.length > 0 || detail.relations.length > 0 || forms.length > 0 || grammarPoints.length > 0 || containing.length > 0
+  const hasSideRail = showChars || siblings.length > 0 || grammarPoints.length > 0 || containing.length > 0
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
@@ -46,7 +56,9 @@ export function LookupView({ detail, characters, siblings, inflections = [], gra
         <div className="flex flex-col gap-8 lg:col-span-2">
           <SenseList senses={detail.senses} />
           {conjugation && <ConjugationTable conjugation={conjugation} />}
+          <WordFamily headword={detail.headword} forms={forms} previews={previews} lang={detail.lang} />
           <ExampleList examples={detail.examples} lang={detail.lang} />
+          <RelatedWords relations={detail.relations} previews={previews} lang={detail.lang} />
         </div>
 
         {hasSideRail && (
@@ -54,8 +66,6 @@ export function LookupView({ detail, characters, siblings, inflections = [], gra
             {showChars && <CharacterPanel characters={characters} />}
             <ContainingWords words={containing} lang={detail.lang} />
             <CrossLanguagePanel siblings={siblings} />
-            <RelatedWords relations={detail.relations} lang={detail.lang} />
-            <WordFamily headword={detail.headword} forms={forms} lang={detail.lang} />
             <GrammarLinks points={grammarPoints} />
           </aside>
         )}

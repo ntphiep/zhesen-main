@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { LangCode } from '@/lib/languages'
 import type { ContainingWord, DictEntryPreview, DictSense, DictPron, SuggestionPreview } from './types'
 import { cleanMtGloss } from './textQuality'
+import { audioMatchesHeadword } from './pronunciation'
 
 /**
  * Zod schemas for every row shape read from Supabase/PostgREST in this feature,
@@ -99,6 +100,19 @@ export const crossLangSiblingRow = z.object({
   id: z.string(),
   lang: langCode,
   headword: z.string(),
+  reading: z.string().nullable(),
+  pos: z.string().nullable(),
+  gloss_vi: z.string().nullable(),
+  gloss_en: z.string().nullable(),
+})
+
+export const termPreviewRow = z.object({
+  match_text: z.string(),
+  id: z.string(),
+  headword: z.string(),
+  pos: z.string().nullable(),
+  ipa: z.string().nullable(),
+  reading: z.string().nullable(),
   gloss_vi: z.string().nullable(),
   gloss_en: z.string().nullable(),
 })
@@ -164,7 +178,7 @@ export function toPreview(r: EntryPreviewRow): DictEntryPreview {
     pos: primary?.pos ?? null,
     glossVi: primary?.glossVi ?? null,
     glossEn: primary?.glossEn ?? null,
-    audioUrl: prons.find((p) => p.audioUrl)?.audioUrl ?? null,
+    audioUrl: prons.find((p) => audioMatchesHeadword(p.audioUrl, r.headword))?.audioUrl ?? null,
     frequencyRank: r.frequency_rank ?? null,
   }
 }
@@ -174,7 +188,8 @@ export function toPreview(r: EntryPreviewRow): DictEntryPreview {
 export function toPreviewFromSearchRow(r: SearchRpcRow): DictEntryPreview {
   return {
     id: r.id, lang: r.lang, headword: r.headword, traditional: r.traditional, level: r.level,
-    ipa: r.ipa, pos: r.pos, glossVi: r.gloss_vi, glossEn: r.gloss_en, audioUrl: r.audio_url,
+    ipa: r.ipa, pos: r.pos, glossVi: r.gloss_vi, glossEn: r.gloss_en,
+    audioUrl: audioMatchesHeadword(r.audio_url, r.headword) ? r.audio_url : null,
     frequencyRank: r.frequency_rank ?? null,
     matchScore: r.rank,
   }

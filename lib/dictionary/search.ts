@@ -175,4 +175,4 @@ export async function getCommonWords(
 export { pickIpa, pickPrimarySense } from './rows'
 export { cleanMtGloss, pickSenses, fillPivotVi, isClassifierGloss, parseClassifiers, isCleanExample } from './textQuality'
 export { resolveTokens, getZhSegmentCandidates } from './resolveTokens'
-export { getEntryDetail, getCrossLanguage, getInflections, getCharacters } from './entryDetail'
+export { getEntryDetail, getCrossLanguage, getInflections, getTermPreviews, getCharacters } from './entryDetail'
