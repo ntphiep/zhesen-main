@@ -1,7 +1,7 @@
 'use client'
 import { useMemo, useState } from 'react'
 import type { LangCode } from '@/lib/languages'
-import type { UserWord, WordStatus } from './types'
+import type { UserWord, WordStatus } from '@/lib/wordlist/types'
 
 export type ViewMode = 'table' | 'card'
 export type SortKey = 'headword' | 'createdAt'

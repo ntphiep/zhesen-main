@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import type { LangCode } from '@/lib/languages'
-import type { ViewMode } from '@/lib/wordlist/useWordlistFilters'
+import type { ViewMode } from '@/lib/hooks/useWordlistFilters'
 import type { WordStatus } from '@/lib/wordlist/types'
 
 interface Props {

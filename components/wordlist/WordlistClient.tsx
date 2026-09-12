@@ -5,7 +5,7 @@ import { addWord, addWords, updateWord, updateWordsStatus, deleteWord, deleteWor
 import { mergeTags } from '@/lib/wordlist/tags'
 import { wordsToCsv, wordsToAnkiTsv } from '@/lib/wordlist/csv'
 import { downloadTextFile } from '@/lib/wordlist/download'
-import { useWordlistFilters } from '@/lib/wordlist/useWordlistFilters'
+import { useWordlistFilters } from '@/lib/hooks/useWordlistFilters'
 import { WordlistToolbar } from '@/components/wordlist/WordlistToolbar'
 import { TagFilterBar } from '@/components/wordlist/TagFilterBar'
 import { BulkActionBar } from '@/components/wordlist/BulkActionBar'

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useWordlistFilters } from '@/lib/wordlist/useWordlistFilters'
+import { useWordlistFilters } from '@/lib/hooks/useWordlistFilters'
 import type { UserWord } from '@/lib/wordlist/types'
 
 function mk(id: string, over: Partial<UserWord> = {}): UserWord {
