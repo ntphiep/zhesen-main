@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { parseTagsInput } from '@/lib/wordlist/tags'
-import type { WordStatus } from '@/lib/wordlist/types'
+import { STATUS_OPTIONS, type WordStatus } from '@/lib/wordlist/types'
 
 interface Props {
   selectedCount: number
@@ -50,9 +50,9 @@ export function BulkActionBar({ selectedCount, onBulkTag, onBulkStatus, onBulkDe
         className="rounded-lg border border-black/15 bg-white px-3 py-1.5 text-sm"
         aria-label="Trạng thái hàng loạt"
       >
-        <option value="new">Mới</option>
-        <option value="learning">Đang học</option>
-        <option value="known">Đã biết</option>
+        {STATUS_OPTIONS.map(([value, label]) => (
+          <option key={value} value={value}>{label}</option>
+        ))}
       </select>
       <button
         type="button"

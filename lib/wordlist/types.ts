@@ -3,6 +3,17 @@ import type { LangCode } from '@/lib/languages'
 
 export type WordStatus = 'new' | 'learning' | 'known'
 
+/** The label shown for each status, in the order they are offered to the user.
+ * Typed as a full Record, so a new status cannot compile until it has a label. */
+export const STATUS_LABELS: Record<WordStatus, string> = {
+  new: 'Mới',
+  learning: 'Đang học',
+  known: 'Đã biết',
+}
+
+/** Entries of STATUS_LABELS with the key still typed, for rendering option lists. */
+export const STATUS_OPTIONS = Object.entries(STATUS_LABELS) as [WordStatus, string][]
+
 export interface UserWord {
   id: string
   lang: LangCode

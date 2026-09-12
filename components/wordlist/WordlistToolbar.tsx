@@ -1,8 +1,8 @@
 'use client'
 import { useState } from 'react'
-import type { LangCode } from '@/lib/languages'
+import { LANGUAGES, type LangCode } from '@/lib/languages'
 import type { ViewMode } from '@/lib/hooks/useWordlistFilters'
-import type { WordStatus } from '@/lib/wordlist/types'
+import { STATUS_OPTIONS, type WordStatus } from '@/lib/wordlist/types'
 
 interface Props {
   query: string
@@ -46,9 +46,9 @@ export function WordlistToolbar({
         aria-label="Lọc ngôn ngữ"
       >
         <option value="">Tất cả ngôn ngữ</option>
-        <option value="en">Tiếng Anh</option>
-        <option value="zh">Tiếng Trung</option>
-        <option value="es">Tiếng Tây Ban Nha</option>
+        {LANGUAGES.map((l) => (
+          <option key={l.code} value={l.code}>{l.name}</option>
+        ))}
       </select>
 
       <select
@@ -58,9 +58,9 @@ export function WordlistToolbar({
         aria-label="Lọc trạng thái"
       >
         <option value="">Tất cả trạng thái</option>
-        <option value="new">Mới</option>
-        <option value="learning">Đang học</option>
-        <option value="known">Đã biết</option>
+        {STATUS_OPTIONS.map(([value, label]) => (
+          <option key={value} value={value}>{label}</option>
+        ))}
       </select>
 
       <div className="flex rounded-lg border border-black/15 overflow-hidden">

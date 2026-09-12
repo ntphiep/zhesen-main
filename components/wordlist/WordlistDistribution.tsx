@@ -1,7 +1,6 @@
 import type { WordlistStats } from '@/lib/wordlist/stats'
-
-const STATUS_LABEL = { new: 'Mới', learning: 'Đang học', known: 'Đã biết' } as const
-const LANG_LABEL = { en: 'Tiếng Anh', es: 'Tiếng Tây Ban Nha', zh: 'Tiếng Trung' } as const
+import { STATUS_OPTIONS } from '@/lib/wordlist/types'
+import { LANGUAGES } from '@/lib/languages'
 
 function Bar({ label, count, total }: { label: string; count: number; total: number }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0
@@ -23,14 +22,14 @@ export function WordlistDistribution({ stats }: { stats: WordlistStats }) {
     <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
       <div className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-black/70">Theo trạng thái</h2>
-        {(Object.keys(STATUS_LABEL) as (keyof typeof STATUS_LABEL)[]).map((k) => (
-          <Bar key={k} label={STATUS_LABEL[k]} count={stats.byStatus[k]} total={stats.total} />
+        {STATUS_OPTIONS.map(([status, label]) => (
+          <Bar key={status} label={label} count={stats.byStatus[status]} total={stats.total} />
         ))}
       </div>
       <div className="flex flex-col gap-2">
         <h2 className="text-sm font-medium text-black/70">Theo ngôn ngữ</h2>
-        {(Object.keys(LANG_LABEL) as (keyof typeof LANG_LABEL)[]).map((k) => (
-          <Bar key={k} label={LANG_LABEL[k]} count={stats.byLang[k]} total={stats.total} />
+        {LANGUAGES.map((l) => (
+          <Bar key={l.code} label={l.name} count={stats.byLang[l.code]} total={stats.total} />
         ))}
       </div>
     </div>

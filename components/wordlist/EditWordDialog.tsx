@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { TagEditor } from './TagEditor'
-import type { UserWord, WordDraft, WordStatus } from '@/lib/wordlist/types'
+import { STATUS_OPTIONS, type UserWord, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
 
 interface Props {
   word: UserWord | null
@@ -191,9 +191,9 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
               onChange={(e) => setStatus(e.target.value as WordStatus)}
               className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
             >
-              <option value="new">Mới</option>
-              <option value="learning">Đang học</option>
-              <option value="known">Đã biết</option>
+              {STATUS_OPTIONS.map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
           </label>
           <label className="flex flex-col gap-1">

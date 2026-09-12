@@ -1,10 +1,8 @@
-import type { LangCode } from '@/lib/languages'
+import { byLang, type LangCode } from '@/lib/languages'
 
-export const LANG_LABELS: Record<LangCode, string> = {
-  en: 'Tiếng Anh',
-  zh: 'Tiếng Trung',
-  es: 'Tiếng Tây Ban Nha',
-}
+/** The Vietnamese name of each language. Derived from LANGUAGES rather than
+ * retyped, because the two copies had already started to be edited separately. */
+export const LANG_LABELS: Record<LangCode, string> = byLang((l) => l.name)
 
 export const LANG_FLAGS: Record<LangCode, string> = {
   en: '🇬🇧',

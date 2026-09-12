@@ -34,3 +34,16 @@ export function getLanguage(code: string): Language | undefined {
 export function isLangCode(code: string): code is LangCode {
   return LANGUAGES.some((l) => l.code === code)
 }
+
+/**
+ * A record keyed by every language code, derived from LANGUAGES. Anything that
+ * needs one value per language builds it through here, so adding a language is a
+ * single edit rather than a hunt for the places that spelled the list out again.
+ */
+export function byLang<T>(pick: (language: Language) => T): Record<LangCode, T> {
+  // The seed is empty by construction and filled for every code in the same
+  // statement; the Record type is what the loop makes true.
+  const out = {} as Record<LangCode, T>
+  for (const language of LANGUAGES) out[language.code] = pick(language)
+  return out
+}

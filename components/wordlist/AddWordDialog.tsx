@@ -4,8 +4,8 @@ import { createClient } from '@/lib/supabase/client'
 import { searchEntries } from '@/lib/dictionary/search'
 import { draftFromDictEntry } from '@/lib/wordlist/store'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
-import type { WordDraft, WordStatus } from '@/lib/wordlist/types'
-import type { LangCode } from '@/lib/languages'
+import { STATUS_OPTIONS, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
+import { LANGUAGES, type LangCode } from '@/lib/languages'
 
 type Tab = 'dict' | 'manual'
 
@@ -14,12 +14,6 @@ interface Props {
   onClose: () => void
   onAdd: (draft: WordDraft) => void | Promise<void>
 }
-
-const LANGS: { code: LangCode; label: string }[] = [
-  { code: 'en', label: 'Tiếng Anh' },
-  { code: 'zh', label: 'Tiếng Trung' },
-  { code: 'es', label: 'Tiếng Tây Ban Nha' },
-]
 
 export function AddWordDialog({ open, onClose, onAdd }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -152,8 +146,8 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
                 onChange={(e) => setLang(e.target.value as LangCode)}
                 className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
               >
-                {LANGS.map((l) => (
-                  <option key={l.code} value={l.code}>{l.label}</option>
+                {LANGUAGES.map((l) => (
+                  <option key={l.code} value={l.code}>{l.name}</option>
                 ))}
               </select>
               <input
@@ -210,8 +204,8 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
                   onChange={(e) => setManualLang(e.target.value as LangCode)}
                   className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
                 >
-                  {LANGS.map((l) => (
-                    <option key={l.code} value={l.code}>{l.label}</option>
+                  {LANGUAGES.map((l) => (
+                    <option key={l.code} value={l.code}>{l.name}</option>
                   ))}
                 </select>
               </label>
@@ -285,9 +279,9 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
                 onChange={(e) => setStatus(e.target.value as WordStatus)}
                 className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
               >
-                <option value="new">Mới</option>
-                <option value="learning">Đang học</option>
-                <option value="known">Đã biết</option>
+                {STATUS_OPTIONS.map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
               </select>
             </label>
             <button
