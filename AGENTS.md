@@ -102,6 +102,19 @@ stroke order.
 - **`pg_database_size` lớn hơn tổng `pg_total_relation_size` của `lex` và `public`.**
   Phần chênh nằm ở `pg_catalog`, `auth`, `storage` và chỗ trống trong tệp dữ liệu. Muốn
   biết chỗ nào phình thì nhóm theo schema, đừng chỉ nhìn hai schema quen thuộc.
+- **PGroonga giữ dữ liệu index trong tệp riêng, Postgres không nhìn thấy.**
+  `pg_relation_size` của cả hai index PGroonga đều trả về 0, nên phần chênh giữa
+  `pg_database_size` và tổng `pg_total_relation_size` chính là PGroonga, không phải
+  chỗ trống trong bảng. Đo ngày 2026-09-12: 425 MB tổng, 227 MB bảng, 198 MB là
+  PGroonga.
+- **KHÔNG chạy `VACUUM FULL` trên `lex.entries`.** Nó dựng lại index, PGroonga tạo
+  một bộ tệp Groonga mới theo `relfilenode` mới, còn bộ cũ nằm lại. Đã đo: cơ sở dữ
+  liệu **phình từ 425 MB lên 486 MB**. Muốn dọn thì chạy `vacuum lex.entries` thường
+  (không FULL): PGroonga móc vào đó để xoá đối tượng Groonga không còn dùng. Một lần
+  chạy trả lại 105 MB, còn 381 MB.
+  Kiểm tra đối tượng thừa: `select extensions.pgroonga_command('object_list')`, các
+  khoá `Sources<relfilenode>` phải khớp `relfilenode` của index đang sống trong
+  `pg_class`. Nguồn: https://pgroonga.github.io/reference/functions/pgroonga-vacuum.html
 - **Gói Supabase Free trần 500 MB.** Tính tới 2026-09-12 database ở khoảng 400 MB. Trước
   khi nạp thêm dữ liệu phải đo trước và đặt ngân sách, đừng nạp rồi mới đếm.
 - **Kiểm giấy phép TRƯỚC khi nạp, và đọc đủ chữ.** Chinese Grammar Wiki của AllSet
@@ -126,6 +139,14 @@ stroke order.
 - **`s-maxage` không nói gì với trình duyệt.** Chỉ đặt mỗi nó thì trình duyệt tự suy ra độ
   tươi và giữ bản cũ; `revalidateTag` trên máy chủ không với tới được bản đó. Route API
   cache phải tách: `Cache-Control` cho trình duyệt, `CDN-Cache-Control` cho CDN.
+- **Tệp audio của Wiktionary không phải lúc nào cũng đọc đúng từ đó.** `En-uk-a_cat.ogg`
+  đọc "a cat" và nằm ngay trên mục từ "cat"; `En-uk-to_have.ogg` đọc "to have". Mọi
+  nơi lấy `audio_url` phải đi qua `audioMatchesHeadword` (`lib/dictionary/pronunciation.ts`):
+  tên tệp tách theo dấu `-`, phần đuôi phải đúng bằng từ. Đo trên 699 bản ghi: 631 khớp.
+- **Không đọc bằng giọng sai ngôn ngữ.** `speechSynthesis` nhận utterance kể cả khi máy
+  không có giọng cho ngôn ngữ đó, và phát ra im lặng. Tiếng Trung không có một bản ghi
+  nào (0/4042), nên trên máy chưa cài giọng tiếng Trung thì nút phát âm chết lặng. Nay
+  `AudioButton` kiểm tra danh sách giọng trước và đổi sang biểu tượng tắt tiếng kèm lý do.
 - **Mọi chế độ luyện tập PHẢI ghi vào lịch FSRS.** Trước đây `gradeCard` chỉ được gọi từ
   `WordlistReview`, nên quiz, viết, chép chính tả, ghép đôi và luyện nói không ghi cột
   `fsrs_*` nào: người dùng luyện cả buổi mà hàng đợi ôn hôm sau y nguyên. Thêm chế độ mới
