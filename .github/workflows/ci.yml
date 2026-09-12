@@ -77,12 +77,32 @@ jobs:
           fi
           echo "$(ls *.sql | wc -l) migrations, all numbered uniquely."
 
-      - name: No destructive statements
+      - name: Destructive statements are declared
         run: |
           cd supabase/migrations
           # Migrations are replayed against a database that already holds real user
           # data, so dropping or truncating has to be a deliberate, reviewed act.
-          if grep -rniE '^\s*(drop\s+(table|column|schema)|truncate|delete\s+from)' *.sql; then
-            echo "Destructive statement found. Review it before merging."; exit 1
+          # A migration is allowed to do it, but it has to say so on its own line:
+          #
+          #   -- reviewed-destructive: <who approved it, and why>
+          #
+          # A destructive statement nobody wrote that line for fails the build. The
+          # line cannot appear by accident, and it keeps the reason in the file
+          # rather than in a pull request comment nobody reads again.
+          pattern='^[[:space:]]*(drop[[:space:]]+(table|column|schema)|truncate|delete[[:space:]]+from)'
+          status=0
+          for f in *.sql; do
+            grep -qiE "$pattern" "$f" || continue
+            if grep -qi '^-- reviewed-destructive:' "$f"; then
+              echo "$f: destructive, declared."
+            else
+              echo "$f: destructive and undeclared:"
+              grep -niE "$pattern" "$f"
+              status=1
+            fi
+          done
+          if [ "$status" -ne 0 ]; then
+            echo "Add '-- reviewed-destructive: <reason>' to the migration, or remove the statement."
+            exit 1
           fi
-          echo "No destructive statements."
+          echo "Every destructive statement is declared."

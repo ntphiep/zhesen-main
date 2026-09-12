@@ -23,6 +23,10 @@
 --   srs_state: zh-1 reps=1 interval=1d due 2026-06-18T16:35:18.587Z;
 --              zh-2..zh-5 reps=0 interval=0 due 2026-06-17T16:33:59.832Z
 
+-- reviewed-destructive: Hiệp approved these eight drops on 2026-09-12, after a
+-- check that no code, no view and no foreign key from outside the group reads
+-- them. 39 rows lost, 33 of which 0001 and 0002 recreate.
+
 drop table if exists public.lesson_progress;
 drop table if exists public.lesson_vocab;
 drop table if exists public.lessons;
