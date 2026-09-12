@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { parseUserWordRow, draftFromDictEntry, addWord, addWords, updateWordsStatus, listWords, listSavedEntryIds, WordAlreadyExistsError } from '@/lib/wordlist/store'
-import type { DictEntryPreview } from '@/lib/dictionary/types'
+import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 import type { WordDraft } from '@/lib/wordlist/types'
 import { resetSessionState } from '@/lib/supabase/session'
 
@@ -169,5 +169,75 @@ describe('updateWordsStatus', () => {
     const client = { from: vi.fn(() => ({ update })) } as unknown as import('@supabase/supabase-js').SupabaseClient
     await updateWordsStatus(client, [], 'known')
     expect(update).not.toHaveBeenCalled()
+  })
+})
+
+describe('draftFromDictEntry with the full entry', () => {
+  const detail = (over: Partial<DictEntryDetail> = {}): DictEntryDetail => ({
+    ...dogEntry,
+    senses: [], pronunciations: [], relations: [],
+    examples: [{ text: 'The dog barked.', reading: null, translationVi: 'Con chó sủa.', translationEn: null }],
+    attributes: {},
+    ...over,
+  })
+
+  it('puts an example sentence on the card', () => {
+    // WordReviewCard has rendered card.example all along; the draft hardcoded null,
+    // so every card added from the lookup page was a bare word with no context.
+    const d = draftFromDictEntry(detail())
+    expect(d.example).toBe('The dog barked.')
+    expect(d.exampleTranslation).toBe('Con chó sủa.')
+  })
+
+  it('skips an example with no Vietnamese translation', () => {
+    const d = draftFromDictEntry(detail({
+      examples: [{ text: 'The dog barked.', reading: null, translationVi: null, translationEn: 'x' }],
+    }))
+    expect(d.example).toBeNull()
+  })
+
+  it('skips the run-together strings the dump carries', () => {
+    const d = draftFromDictEntry(detail({
+      examples: [{ text: 'Thequickbrownfoxjumps', reading: null, translationVi: 'x', translationEn: null }],
+    }))
+    expect(d.example).toBeNull()
+  })
+
+  it('prefers the shortest usable sentence, since a card has room for one line', () => {
+    const d = draftFromDictEntry(detail({
+      examples: [
+        { text: 'A very long sentence about a dog and many other things.', reading: null, translationVi: 'a', translationEn: null },
+        { text: 'The dog ran.', reading: null, translationVi: 'b', translationEn: null },
+      ],
+    }))
+    expect(d.example).toBe('The dog ran.')
+  })
+
+  it('takes the reading from the whole-word pinyin', () => {
+    const d = draftFromDictEntry(detail({ attributes: { pinyin: 'gǒu' } }))
+    expect(d.reading).toBe('gǒu')
+  })
+
+  it('does not repeat the pinyin the entry already shows as its pronunciation', () => {
+    // For Chinese the pipeline puts pinyin in the ipa column, so filling both
+    // printed "xué xí" twice on the review card.
+    const d = draftFromDictEntry(detail({ ipa: 'xué xí', attributes: { pinyin: 'xué xí' } }))
+    expect(d.reading).toBeNull()
+    expect(d.ipa).toBe('xué xí')
+  })
+
+  it('keeps the reading when it differs from the pronunciation shown', () => {
+    const d = draftFromDictEntry(detail({ ipa: '/ɕɥě ɕǐ/', attributes: { pinyin: 'xué xí' } }))
+    expect(d.reading).toBe('xué xí')
+  })
+
+  it('leaves the reading empty when there is no pinyin', () => {
+    expect(draftFromDictEntry(detail({ attributes: { pinyin: '  ' } })).reading).toBeNull()
+    expect(draftFromDictEntry(detail({ attributes: {} })).reading).toBeNull()
+  })
+
+  it('still works from a preview, which has neither to offer', () => {
+    const d = draftFromDictEntry(dogEntry)
+    expect(d).toMatchObject({ headword: 'dog', example: null, exampleTranslation: null, reading: null })
   })
 })

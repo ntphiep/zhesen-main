@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { DictEntryPreview } from '@/lib/dictionary/types'
+import type { DictEntryDetail, DictEntryPreview, DictExample } from '@/lib/dictionary/types'
+import { isCleanExample } from '@/lib/dictionary/textQuality'
 import type { LangCode } from '@/lib/languages'
 import { userWordRow, type UserWord, type WordDraft, type WordStatus } from './types'
 import { z } from 'zod'
@@ -18,10 +19,54 @@ export function parseUserWordRow(r: unknown): UserWord {
   }
 }
 
-export function draftFromDictEntry(e: DictEntryPreview): WordDraft {
+/**
+ * Pick an example sentence worth putting on a flashcard.
+ *
+ * `isCleanExample` rejects the run-together strings the Wiktionary dump carries in
+ * places, and a sentence with no Vietnamese translation teaches nothing to a
+ * learner who cannot read it yet. Shortest first: a flashcard has room for one
+ * line, and a short sentence is the one a learner can hold in their head.
+ */
+function pickExample(examples: DictExample[]): DictExample | null {
+  const usable = examples.filter((x) => isCleanExample(x.text) && x.translationVi?.trim())
+  if (usable.length === 0) return null
+  return usable.reduce((best, x) => (x.text.length < best.text.length ? x : best))
+}
+
+/**
+ * The whole-word pinyin `lex.entries.attributes` carries for Chinese entries.
+ *
+ * Skipped when the entry's IPA field already holds the same text: for Chinese the
+ * pipeline puts the pinyin there, so filling both printed "xué xí" twice on the
+ * review card, once as the reading and once as the pronunciation.
+ */
+function readingFrom(attributes: Record<string, unknown> | undefined, ipa: string | null): string | null {
+  const pinyin = attributes?.pinyin
+  if (typeof pinyin !== 'string' || !pinyin.trim()) return null
+  const reading = pinyin.trim()
+  return reading === ipa?.trim() ? null : reading
+}
+
+/**
+ * Build a wordlist draft from a dictionary entry.
+ *
+ * Given the full entry rather than a preview, the draft also carries an example
+ * sentence and, for Chinese, the reading. Those fields were hardcoded to null,
+ * and `WordReviewCard` has rendered `card.example` all along -- so every card
+ * added from the lookup page was a bare word with no context, on a page built to
+ * show one. A preview (the reader's tap-to-lookup popover) has neither to offer
+ * and still produces the draft it always did.
+ */
+export function draftFromDictEntry(e: DictEntryPreview | DictEntryDetail): WordDraft {
+  const detail = 'examples' in e ? e : null
+  const example = detail ? pickExample(detail.examples) : null
   return {
-    lang: e.lang, entryId: e.id, headword: e.headword, reading: null, ipa: e.ipa, pos: e.pos,
-    meaningVi: e.glossVi, meaningEn: e.glossEn, level: e.level, example: null, exampleTranslation: null,
+    lang: e.lang, entryId: e.id, headword: e.headword,
+    reading: detail ? readingFrom(detail.attributes, e.ipa) : null,
+    ipa: e.ipa, pos: e.pos,
+    meaningVi: e.glossVi, meaningEn: e.glossEn, level: e.level,
+    example: example?.text ?? null,
+    exampleTranslation: example?.translationVi ?? null,
     audioUrl: e.audioUrl, notes: null, status: 'new', tags: [],
   }
 }

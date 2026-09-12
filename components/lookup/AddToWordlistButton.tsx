@@ -2,11 +2,11 @@
 import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addWord, draftFromDictEntry, WordAlreadyExistsError } from '@/lib/wordlist/store'
-import type { DictEntryPreview } from '@/lib/dictionary/types'
+import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 
 type State = 'idle' | 'saving' | 'added' | 'exists' | 'error'
 
-export function AddToWordlistButton({ entry }: { entry: DictEntryPreview }) {
+export function AddToWordlistButton({ entry }: { entry: DictEntryPreview | DictEntryDetail }) {
   const supabase = useMemo(() => createClient(), [])
   const [state, setState] = useState<State>('idle')
 
