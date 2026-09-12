@@ -111,6 +111,26 @@ stroke order.
   Octanove C1/C2 mới là.
 - **Build trước khi bấm thử.** `next start` phục vụ bản đã build; sửa mã xong mà không
   build lại thì đang bấm thử mã cũ. Đã vấp đúng lỗi này khi nghiệm thu tìm kiếm.
+- **Postgres chỉ dùng index cho chuỗi `OR` khi MỌI nhánh là điều kiện trên đúng cái bảng
+  đang quét.** Thêm một nhánh với tới bảng khác (join hay subplan) là mất bitmap, quét
+  toàn bảng. Khi cần thêm nguồn khớp mới cho `lex.search`, viết thành một nhánh `UNION`
+  riêng trong CTE `cand`, đừng nối thêm `or`.
+- **Xếp hạng trước, làm giàu dữ liệu sau.** Các subquery lấy nghĩa/phát âm/audio phải chạy
+  sau `limit`, không phải cho mọi ứng viên. `lex.search` và `lex.search_vi` đều theo khuôn
+  này; giữ nguyên khi sửa.
+- **`= any (subquery)` bị hiểu là dạng `IN`, không phải dạng mảng.** Muốn so với một mảng
+  trả từ CTE phải ép kiểu: `e.id = any ((select ids from t)::text[])`. Không ép thì lỗi
+  `operator does not exist: text = text[]`.
+- **Chặn số lượng ứng viên phải nằm SAU bộ lọc ngôn ngữ, không phải trước.** Chặn trước
+  thì một truy vấn thu hẹp về một ngôn ngữ lại được phục vụ từ tập lấy chung cả ba.
+- **`s-maxage` không nói gì với trình duyệt.** Chỉ đặt mỗi nó thì trình duyệt tự suy ra độ
+  tươi và giữ bản cũ; `revalidateTag` trên máy chủ không với tới được bản đó. Route API
+  cache phải tách: `Cache-Control` cho trình duyệt, `CDN-Cache-Control` cho CDN.
+- **Middleware KHÔNG tạo phiên ẩn danh nữa.** Tra cứu không cần tài khoản, nên tài khoản
+  chỉ sinh ra ở lần ghi đầu tiên (`lib/supabase/session.ts`). Trước đây mỗi request không
+  cookie đều tạo một hàng `auth.users`: 122 tài khoản mà chỉ 1 có dữ liệu, và khi chạm
+  trần đăng nhập của Supabase thì người dùng thật cũng không có phiên. Thêm đường ghi mới
+  thì gọi `ensureSession` ở đó.
 
 ## Cách làm việc ở đây
 - Việc lớn theo luồng spec, plan, implement, review (superpowers; spec và plan ở
