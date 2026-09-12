@@ -36,14 +36,14 @@ $$;
 -- MAPPING pattern this mirrors.
 do $$
 begin
-  if not exists (select 1 from pg_ts_config where cfgname = 'chesen_en') then
-    create text search configuration lex.chesen_en (copy = pg_catalog.english);
-    alter text search configuration lex.chesen_en
+  if not exists (select 1 from pg_ts_config where cfgname = 'zhesen_en') then
+    create text search configuration lex.zhesen_en (copy = pg_catalog.english);
+    alter text search configuration lex.zhesen_en
       alter mapping for hword, hword_part, word with unaccent, english_stem;
   end if;
-  if not exists (select 1 from pg_ts_config where cfgname = 'chesen_es') then
-    create text search configuration lex.chesen_es (copy = pg_catalog.spanish);
-    alter text search configuration lex.chesen_es
+  if not exists (select 1 from pg_ts_config where cfgname = 'zhesen_es') then
+    create text search configuration lex.zhesen_es (copy = pg_catalog.spanish);
+    alter text search configuration lex.zhesen_es
       alter mapping for hword, hword_part, word with unaccent, spanish_stem;
   end if;
 end
@@ -55,8 +55,8 @@ $$;
 -- the pgroonga + pinyin columns below instead.
 alter table lex.entries add column if not exists search_vector tsvector generated always as (
   case lang
-    when 'en' then to_tsvector('lex.chesen_en'::regconfig, extensions.immutable_unaccent(coalesce(headword, '') || ' ' || coalesce(headword_normalized, '')))
-    when 'es' then to_tsvector('lex.chesen_es'::regconfig, extensions.immutable_unaccent(coalesce(headword, '') || ' ' || coalesce(headword_normalized, '')))
+    when 'en' then to_tsvector('lex.zhesen_en'::regconfig, extensions.immutable_unaccent(coalesce(headword, '') || ' ' || coalesce(headword_normalized, '')))
+    when 'es' then to_tsvector('lex.zhesen_es'::regconfig, extensions.immutable_unaccent(coalesce(headword, '') || ' ' || coalesce(headword_normalized, '')))
     else null
   end
 ) stored;
@@ -134,10 +134,10 @@ as $$
         case when e.lang::text in ('en', 'es')
                then coalesce(extensions.similarity(e.headword_normalized, (select q_norm from q)), 0) * 2.0
              else 0 end,
-        case when e.lang::text = 'en' and e.search_vector @@ websearch_to_tsquery('lex.chesen_en', (select q_raw from q))
-               then ts_rank(e.search_vector, websearch_to_tsquery('lex.chesen_en', (select q_raw from q)))
-             when e.lang::text = 'es' and e.search_vector @@ websearch_to_tsquery('lex.chesen_es', (select q_raw from q))
-               then ts_rank(e.search_vector, websearch_to_tsquery('lex.chesen_es', (select q_raw from q)))
+        case when e.lang::text = 'en' and e.search_vector @@ websearch_to_tsquery('lex.zhesen_en', (select q_raw from q))
+               then ts_rank(e.search_vector, websearch_to_tsquery('lex.zhesen_en', (select q_raw from q)))
+             when e.lang::text = 'es' and e.search_vector @@ websearch_to_tsquery('lex.zhesen_es', (select q_raw from q))
+               then ts_rank(e.search_vector, websearch_to_tsquery('lex.zhesen_es', (select q_raw from q)))
              else 0 end,
         case when e.lang::text = 'zh' and (select q_raw from q) <> '' and e.headword &@ (select q_raw from q) then 1.5
              else 0 end,
@@ -152,8 +152,8 @@ as $$
     and (
       e.headword_normalized like q.q_norm || '%'
       or (e.lang::text in ('en', 'es') and e.headword_normalized % q.q_norm)
-      or (e.lang::text = 'en' and e.search_vector @@ websearch_to_tsquery('lex.chesen_en', q.q_raw))
-      or (e.lang::text = 'es' and e.search_vector @@ websearch_to_tsquery('lex.chesen_es', q.q_raw))
+      or (e.lang::text = 'en' and e.search_vector @@ websearch_to_tsquery('lex.zhesen_en', q.q_raw))
+      or (e.lang::text = 'es' and e.search_vector @@ websearch_to_tsquery('lex.zhesen_es', q.q_raw))
       or (e.lang::text = 'zh' and e.headword &@ q.q_raw)
       or (e.lang::text = 'zh' and q.q_pinyin <> '' and e.pinyin_toneless like q.q_pinyin || '%')
     )

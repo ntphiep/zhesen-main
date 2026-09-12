@@ -51,11 +51,15 @@ stroke order.
 ## Bản đồ kiến trúc (chi tiết trong vault)
 - `app/`: routes App Router. Chính: `/`, `/dictionary` và `/dictionary/[lang]/[id]`,
   `/practice/*` (review, quiz, match, write, speak, dictation), `/wordlist`, `/learn/[lang]`.
-- `lib/`: logic không phụ thuộc UI. `dictionary/` (search, crosslang, conjugation,
-  radicals, characters), `progress/` (thuật toán lặp lại ngắt quãng), `wordlist/`
-  (store, review, quiz, stats), `supabase/` (client/server), `reader/` (tokenize),
-  `languages.ts` (ba ngôn ngữ đích, hằng số).
-- `components/`: `lookup/`, `wordlist/`, `search/`, `reader/`.
+- `lib/`: logic không phụ thuộc UI. `dictionary/` (search, entryDetail, rows, crosslang,
+  conjugation, radicals, pos), `wordlist/` (store, review, stats, tags, csv), `practice/`
+  (match, quiz, typing), `progress/` (thuật toán lặp lại ngắt quãng), `hooks/` (hook
+  React dùng chung), `supabase/` (client/server), `reader/` (tokenize), `languages.ts`.
+- `components/`: `lookup/`, `wordlist/`, `practice/`, `search/`, `reader/`, `learn/`,
+  `home/`, `layout/`, `ui/`.
+- **`app/` chỉ chứa route, layout và `globals.css`.** Không đặt component trong đó; mọi
+  component nằm dưới `components/<nhóm>/`. Hook React nằm ở `lib/hooks/`, không nằm lẫn
+  trong `lib/wordlist/`.
 - `supabase/`: migrations. Schema `lex.*` read-only cho anon; `public.user_words` và
   `public.review_log` dùng RLS theo user.
 - **Mapping bắt buộc nhớ:** DB dùng snake_case, TS dùng camelCase; chuyển đổi làm explicit
@@ -69,8 +73,8 @@ stroke order.
 ## Red flags đã biết (dễ vấp, cẩn thận)
 - Dialog `showModal()` race với React Strict Mode (effect double-invoke), cần guard
   `if (open && !el.open)`.
-- File lớn đọc kỹ trước khi đụng: `app/wordlist/WordlistClient.tsx` (~467 dòng),
-  `components/wordlist/AddWordDialog.tsx` (~289).
+- File lớn đọc kỹ trước khi đụng: `components/wordlist/WordlistClient.tsx`,
+  `components/wordlist/AddWordDialog.tsx`.
 - Vitest: PHẢI import tường minh lifecycle hook (`beforeEach`...) dù có `globals: true`,
   nếu không `tsc` báo TS2304. Mock constructor (vd `Audio`) bằng `vi.fn(function(){...})`,
   KHÔNG dùng arrow function (arrow không phải constructor).
@@ -89,10 +93,22 @@ stroke order.
   guard theo cột `fsrs_*`.
 - **`unaccent()` là STABLE, không phải IMMUTABLE**, nên không dùng trực tiếp trong
   generated column hay index được (`ERROR 42P17`). Hai cách đã dùng: text search
-  configuration `lex.chesen_en`/`lex.chesen_es` có `unaccent` trong chain dictionary, và
+  configuration `lex.zhesen_en`/`lex.zhesen_es` có `unaccent` trong chain dictionary, và
   hàm bọc `extensions.immutable_unaccent()` cho chỗ không đi qua tsvector.
 - **Pinyin lấy từ `lex.entries.attributes->>'pinyin'`** (phủ 100% entries zh, kể cả từ
   nhiều âm tiết), KHÔNG phải `lex.characters.pinyin` (chỉ theo từng ký tự đơn).
+- **`VACUUM` thường KHÔNG trả dung lượng về đĩa**, chỉ đánh dấu chỗ trống để tái dùng.
+  Sau khi xoá hàng loạt phải chạy `vacuum full <bảng>` mới thấy `pg_database_size` giảm.
+- **`pg_database_size` lớn hơn tổng `pg_total_relation_size` của `lex` và `public`.**
+  Phần chênh nằm ở `pg_catalog`, `auth`, `storage` và chỗ trống trong tệp dữ liệu. Muốn
+  biết chỗ nào phình thì nhóm theo schema, đừng chỉ nhìn hai schema quen thuộc.
+- **Gói Supabase Free trần 500 MB.** Tính tới 2026-09-12 database ở khoảng 400 MB. Trước
+  khi nạp thêm dữ liệu phải đo trước và đặt ngân sách, đừng nạp rồi mới đếm.
+- **Kiểm giấy phép TRƯỚC khi nạp, và đọc đủ chữ.** Chinese Grammar Wiki của AllSet
+  Learning là CC BY-NC-SA 3.0, trang bản quyền cấm cả web có quảng cáo. Một báo cáo
+  nghiên cứu từng ghi gọn là "Creative Commons" và suýt kéo dự án vào ràng buộc phi
+  thương mại. CEFR-J cũng vậy: danh sách chính A1-B2 KHÔNG phải CC-BY-SA, chỉ phần
+  Octanove C1/C2 mới là.
 - **Build trước khi bấm thử.** `next start` phục vụ bản đã build; sửa mã xong mà không
   build lại thì đang bấm thử mã cũ. Đã vấp đúng lỗi này khi nghiệm thu tìm kiếm.
 

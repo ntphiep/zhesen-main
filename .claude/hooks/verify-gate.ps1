@@ -1,4 +1,4 @@
-# Stop hook: verify gate cho chesen. Chi chay khi working tree co file .ts/.tsx thay doi.
+# Stop hook: verify gate cho zhesen. Chi chay khi working tree co file .ts/.tsx thay doi.
 # Chay tsc --noEmit (toan project) + eslint (file da doi) + vitest (test lien quan).
 # BLOCKING: neu bat ky buoc nao fail thi exit 2 va day loi ra stderr, buoc Claude sua
 # truoc khi ket thuc luot. Neu khong co code thay doi thi exit 0 (bo qua, nhanh).
@@ -54,7 +54,7 @@ try {
   }
 
   if ($problems.Count -gt 0) {
-    $msg = "=== VERIFY GATE chesen: co loi, phai sua truoc khi ket thuc luot ===`n" + ($problems -join "`n`n")
+    $msg = "=== VERIFY GATE zhesen: co loi, phai sua truoc khi ket thuc luot ===`n" + ($problems -join "`n`n")
     $msg += "`n`nNhac: tinh nang UI phai mo app that va bam thu; doi du lieu phai COUNT/query dan so lieu."
     [Console]::Error.WriteLine($msg)
     exit 2
