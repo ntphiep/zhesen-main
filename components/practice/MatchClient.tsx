@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listPracticeWords } from '@/lib/wordlist/store'
-import { logActivityDay } from '@/lib/wordlist/activity'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { gradeForMode } from '@/lib/practice/grading'
@@ -13,7 +12,7 @@ const ROUND_SIZE = 6
 
 export function MatchClient() {
   const supabase = useMemo(() => createClient(), [])
-  const { record: recordGrade, failed: syncFailed } = useGradeSync(supabase)
+  const { record: recordGrade, logDay, failed: syncFailed } = useGradeSync(supabase)
   const [tiles, setTiles] = useState<MatchTile[] | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [matched, setMatched] = useState<Set<string>>(new Set())
@@ -62,7 +61,7 @@ export function MatchClient() {
 
   function clickTile(tile: MatchTile) {
     if (wrong.length > 0 || matched.has(tile.key)) return
-    if (!logged.current) { logged.current = true; void logActivityDay(supabase) }
+    if (!logged.current) { logged.current = true; logDay() }
     if (selected === null) { setSelected(tile.key); return }
     if (selected === tile.key) { setSelected(null); return }
     const first = tiles!.find((t) => t.key === selected)!

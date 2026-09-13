@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listPracticeWords } from '@/lib/wordlist/store'
-import { logActivityDay } from '@/lib/wordlist/activity'
 import { shuffle } from '@/lib/practice/shuffle'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
@@ -15,7 +14,7 @@ const SIZE = 10
 
 export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
   const supabase = useMemo(() => createClient(), [])
-  const { record: recordGrade, failed: syncFailed } = useGradeSync(supabase)
+  const { record: recordGrade, logDay, failed: syncFailed } = useGradeSync(supabase)
   const [queue, setQueue] = useState<TypingPrompt[] | null>(null)
   const [index, setIndex] = useState(0)
   const [value, setValue] = useState('')
@@ -75,7 +74,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
     // A one-character typo counts as a hard recall, not a clean one: the learner
     // produced the word, which is more than the quiz can tell.
     recordGrade(current.id, gradeForMode(mode, { correct: r !== 'wrong', nearly: r === 'close' }))
-    if (!logged.current) { logged.current = true; void logActivityDay(supabase) }
+    if (!logged.current) { logged.current = true; logDay() }
   }
   function next() {
     setResult(null); setValue(''); setIndex((i) => i + 1)

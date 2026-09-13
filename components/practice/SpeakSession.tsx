@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { listPracticeWords } from '@/lib/wordlist/store'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { checkTypedAnswer, type TypedResult } from '@/lib/practice/typing'
-import { logActivityDay } from '@/lib/wordlist/activity'
 import { shuffle } from '@/lib/practice/shuffle'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
@@ -38,7 +37,7 @@ interface SpeakWord { id: string; headword: string; meaningVi: string | null; au
 
 export function SpeakSession() {
   const supabase = useMemo(() => createClient(), [])
-  const { record: recordGrade, failed: syncFailed } = useGradeSync(supabase)
+  const { record: recordGrade, logDay, failed: syncFailed } = useGradeSync(supabase)
   const supported = useMemo(() => getRecognitionCtor() !== null, [])
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const logged = useRef(false)
@@ -120,7 +119,7 @@ export function SpeakSession() {
       // it was not trained on -- and `gradeForMode` returns null for those rather
       // than resetting a card over a microphone. See lib/practice/grading.ts.
       recordGrade(current.id, gradeForMode('speak', { correct: verdict !== 'wrong', nearly: verdict === 'close' }))
-      if (!logged.current) { logged.current = true; void logActivityDay(supabase) }
+      if (!logged.current) { logged.current = true; logDay() }
     }
     r.onerror = () => setListening(false)
     r.onend = () => setListening(false)

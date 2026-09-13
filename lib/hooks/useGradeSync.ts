@@ -2,6 +2,7 @@
 import { useCallback, useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { gradeWordById } from '@/lib/wordlist/review'
+import { logActivityDay } from '@/lib/wordlist/activity'
 import type { Grade } from '@/lib/progress/types'
 
 /**
@@ -31,5 +32,20 @@ export function useGradeSync(supabase: SupabaseClient) {
     void gradeWordById(supabase, wordId, grade).catch(() => setFailed(true))
   }, [supabase])
 
-  return { record, failed }
+  /**
+   * Mark today as practised, for the streak.
+   *
+   * This sat next to the grade as a bare `void logActivityDay(supabase)` -- no
+   * catch at all, so a failure was an unhandled rejection rather than a quiet
+   * one. It matters more than the wording suggests: `computeStreak` counts
+   * consecutive days, so one unrecorded day resets a forty-day streak to zero
+   * with no way to put it back from the interface, and the streak is the number
+   * a learner watches. It reports through the same flag, so the warning the
+   * result screen already renders covers it.
+   */
+  const logDay = useCallback(() => {
+    void logActivityDay(supabase).catch(() => setFailed(true))
+  }, [supabase])
+
+  return { record, logDay, failed }
 }

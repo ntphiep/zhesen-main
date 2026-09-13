@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listPracticeWords } from '@/lib/wordlist/store'
-import { logActivityDay } from '@/lib/wordlist/activity'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { gradeForMode } from '@/lib/practice/grading'
@@ -14,7 +13,7 @@ const QUIZ_SIZE = 10
 
 export function QuizClient() {
   const supabase = useMemo(() => createClient(), [])
-  const { record: recordGrade, failed: syncFailed } = useGradeSync(supabase)
+  const { record: recordGrade, logDay, failed: syncFailed } = useGradeSync(supabase)
   const [questions, setQuestions] = useState<QuizQuestion[] | null>(null)
   const [index, setIndex] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
@@ -78,7 +77,7 @@ export function QuizClient() {
     // slow or failed write must not hold up the next question, and the flashcard
     // review remains the authority on a card either way.
     recordGrade(current.id, gradeForMode('quiz', { correct }))
-    if (!logged.current) { logged.current = true; void logActivityDay(supabase) }
+    if (!logged.current) { logged.current = true; logDay() }
   }
   function next() {
     setSelected(null)

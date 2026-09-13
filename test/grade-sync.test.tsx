@@ -4,12 +4,14 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { gradeWordById } from '@/lib/wordlist/review'
+import { logActivityDay } from '@/lib/wordlist/activity'
 
 vi.mock('@/lib/wordlist/review', () => ({ gradeWordById: vi.fn() }))
+vi.mock('@/lib/wordlist/activity', () => ({ logActivityDay: vi.fn() }))
 
 const supabase = {} as SupabaseClient
 
-beforeEach(() => { vi.mocked(gradeWordById).mockReset() })
+beforeEach(() => { vi.mocked(gradeWordById).mockReset(); vi.mocked(logActivityDay).mockReset() })
 
 describe('useGradeSync', () => {
   it('writes the grade without making the caller wait', async () => {
@@ -46,6 +48,25 @@ describe('useGradeSync', () => {
     await act(async () => { result.current.record('w1', 'good') })
     await act(async () => { result.current.record('w2', 'good') })
     expect(result.current.failed).toBe(true)
+  })
+
+  // `void logActivityDay(supabase)` with no catch at all was an unhandled
+  // rejection, and worse than a quiet one: computeStreak counts consecutive
+  // days, so a single unrecorded day resets a forty-day streak to zero with no
+  // way to restore it from the interface.
+  it('reports a failed streak write through the same warning', async () => {
+    vi.mocked(logActivityDay).mockRejectedValue(new Error('offline'))
+    const { result } = renderHook(() => useGradeSync(supabase))
+    await act(async () => { result.current.logDay() })
+    expect(result.current.failed).toBe(true)
+  })
+
+  it('says nothing when the streak write lands', async () => {
+    vi.mocked(logActivityDay).mockResolvedValue(undefined)
+    const { result } = renderHook(() => useGradeSync(supabase))
+    await act(async () => { result.current.logDay() })
+    expect(logActivityDay).toHaveBeenCalledWith(supabase)
+    expect(result.current.failed).toBe(false)
   })
 })
 
