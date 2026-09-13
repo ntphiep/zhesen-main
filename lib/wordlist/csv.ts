@@ -4,9 +4,14 @@
 import { isLangCode, type LangCode } from '@/lib/languages'
 import type { UserWord, WordDraft, WordStatus } from './types'
 
+// `entryId` and `audioUrl` are here because the export is a backup: without them a
+// restored word has lost its link to the dictionary, so WordDetail falls back to the
+// bare stored fields (no senses, no pronunciations, no related words) and playback
+// falls back to speech synthesis instead of the recording. Both columns are optional
+// on import, so a file written by hand or by another tool still works.
 const CSV_COLUMNS = [
-  'headword', 'lang', 'reading', 'ipa', 'pos', 'meaningVi', 'meaningEn', 'level',
-  'example', 'exampleTranslation', 'notes', 'status', 'tags', 'createdAt',
+  'headword', 'lang', 'entryId', 'reading', 'ipa', 'pos', 'meaningVi', 'meaningEn', 'level',
+  'example', 'exampleTranslation', 'audioUrl', 'notes', 'status', 'tags', 'createdAt',
 ] as const
 
 function csvEscape(value: string): string {
@@ -21,6 +26,7 @@ export function wordsToCsv(words: UserWord[]): string {
     const fields: Record<(typeof CSV_COLUMNS)[number], string> = {
       headword: w.headword,
       lang: w.lang,
+      entryId: w.entryId ?? '',
       reading: w.reading ?? '',
       ipa: w.ipa ?? '',
       pos: w.pos ?? '',
@@ -29,6 +35,7 @@ export function wordsToCsv(words: UserWord[]): string {
       level: w.level ?? '',
       example: w.example ?? '',
       exampleTranslation: w.exampleTranslation ?? '',
+      audioUrl: w.audioUrl ?? '',
       notes: w.notes ?? '',
       status: w.status,
       tags: w.tags.join(';'),
@@ -171,9 +178,16 @@ export function parseImportCsv(text: string, existing: UserWord[]): ImportPrevie
       return v.length > 0 ? v : null
     }
 
+    // An entry id names a row in lex.entries, and user_words has a foreign key to it.
+    // Keep one only when it is shaped like this row's language ("en:holy"); anything
+    // else is a value from somewhere unrelated, and a foreign key violation would
+    // fail the whole import rather than this one row.
+    const entryIdRaw = field('entryId')
+    const entryId = entryIdRaw?.startsWith(`${lang}:`) ? entryIdRaw : null
+
     const draft: WordDraft = {
       lang,
-      entryId: null,
+      entryId,
       headword,
       reading: field('reading'),
       ipa: field('ipa'),
@@ -183,7 +197,7 @@ export function parseImportCsv(text: string, existing: UserWord[]): ImportPrevie
       level: field('level'),
       example: field('example'),
       exampleTranslation: field('exampleTranslation'),
-      audioUrl: null,
+      audioUrl: field('audioUrl'),
       notes: field('notes'),
       status,
       tags,

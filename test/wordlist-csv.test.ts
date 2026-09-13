@@ -15,7 +15,7 @@ describe('wordsToCsv', () => {
   it('emits a header row and one row per word', () => {
     const csv = wordsToCsv([mk()])
     const lines = csv.trim().split('\r\n')
-    expect(lines[0]).toBe('headword,lang,reading,ipa,pos,meaningVi,meaningEn,level,example,exampleTranslation,notes,status,tags,createdAt')
+    expect(lines[0]).toBe('headword,lang,entryId,reading,ipa,pos,meaningVi,meaningEn,level,example,exampleTranslation,audioUrl,notes,status,tags,createdAt')
     expect(lines[1]).toContain('dog')
     expect(lines[1]).toContain('animal')
   })
@@ -29,7 +29,7 @@ describe('wordsToCsv', () => {
     const csv = wordsToCsv([mk({ headword: 'a"b', example: 'x, y' })])
     const table = parseCsvTable(csv)
     expect(table[1][0]).toBe('a"b')
-    expect(table[1][8]).toBe('x, y')
+    expect(table[1][9]).toBe('x, y')
   })
 })
 
@@ -52,6 +52,25 @@ describe('wordsToAnkiTsv', () => {
 
 describe('parseImportCsv', () => {
   const header = 'headword,lang,meaningVi,status,tags\n'
+
+  // The export exists so a wordlist survives cleared cookies. A restored word that
+  // lost its entry id is a different, poorer word: WordDetail falls back to the bare
+  // stored fields and playback falls back to speech synthesis.
+  it('restores the dictionary link and the audio url when re-importing an export', () => {
+    const word = mk({ entryId: 'en:dog', audioUrl: 'https://example.org/dog.ogg' })
+    const rows = parseImportCsv(wordsToCsv([word]), [])
+    expect(rows[0]).toMatchObject({
+      kind: 'ok',
+      draft: { entryId: 'en:dog', audioUrl: 'https://example.org/dog.ogg' },
+    })
+  })
+
+  // An entry id from an unrelated file would break the foreign key on user_words,
+  // and the insert is one statement for the whole import.
+  it('drops an entry id that does not belong to the row language', () => {
+    const rows = parseImportCsv('headword,lang,entryId\ncasa,es,en:dog\n', [])
+    expect(rows[0]).toMatchObject({ kind: 'ok', draft: { entryId: null, headword: 'casa' } })
+  })
 
   it('parses a new row as ok', () => {
     const rows = parseImportCsv(header + 'cat,en,con mèo,new,animal;pet', [])
