@@ -11,6 +11,12 @@ export function WordlistReview() {
   const [queue, setQueue] = useState<ReviewCard[] | null>(null)
   const [revealed, setRevealed] = useState(false)
   const [reviewed, setReviewed] = useState(0)
+  // A grade is a network round trip, and `current` does not change until it
+  // returns. Without this, a second tap graded the same card again from its old
+  // state and dropped one off the front of the queue for each tap: the next card
+  // was never shown and the session claimed to have reviewed it. One double-tap
+  // on a phone, or one impatient tap on a slow connection, was enough.
+  const [grading, setGrading] = useState(false)
 
   useEffect(() => {
     listDueCards(supabase, Date.now()).then(setQueue).catch(() => setQueue([]))
@@ -33,12 +39,16 @@ export function WordlistReview() {
   const current = queue[0]
 
   async function grade(g: Grade) {
+    if (grading) return
+    setGrading(true)
     let next: SrsState
     try {
       next = await gradeCard(supabase, current, g, Date.now())
     } catch {
       alert('Không lưu được kết quả ôn tập. Vui lòng thử lại.')
       return
+    } finally {
+      setGrading(false)
     }
     setRevealed(false)
     setReviewed((n) => n + 1)
@@ -59,7 +69,13 @@ export function WordlistReview() {
         <Link href="/practice" className="hover:underline">← Thoát</Link>
         <span>Còn lại: {queue.length}</span>
       </div>
-      <WordReviewCard card={current} revealed={revealed} onReveal={() => setRevealed(true)} onGrade={grade} />
+      <WordReviewCard
+        card={current}
+        revealed={revealed}
+        onReveal={() => setRevealed(true)}
+        onGrade={grade}
+        grading={grading}
+      />
     </main>
   )
 }

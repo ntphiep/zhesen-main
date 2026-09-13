@@ -1,0 +1,60 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent } from '@testing-library/react'
+import { WordlistReview } from '@/components/practice/WordlistReview'
+import { listDueCards, gradeCard, type ReviewCard } from '@/lib/wordlist/review'
+import type { SrsState } from '@/lib/progress/types'
+
+vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
+vi.mock('@/lib/wordlist/review', () => ({ listDueCards: vi.fn(), gradeCard: vi.fn() }))
+
+const state = (vocabId: string): SrsState => ({
+  vocabId, stability: 1, difficulty: 5, elapsedDays: 0, scheduledDays: 1,
+  learningSteps: 0, reps: 1, lapses: 0, cardState: 'review', dueAt: 0, lastReviewedAt: null,
+})
+
+const card = (id: string): ReviewCard => ({
+  id, lang: 'en', headword: id, reading: null, ipa: null,
+  meaningVi: `nghĩa ${id}`, meaningEn: null, example: null, exampleTranslation: null,
+  audioUrl: null, state: state(id),
+})
+
+beforeEach(() => {
+  vi.mocked(listDueCards).mockReset()
+  vi.mocked(gradeCard).mockReset()
+})
+
+describe('WordlistReview', () => {
+  it('walks the queue one card at a time', async () => {
+    vi.mocked(listDueCards).mockResolvedValue([card('A'), card('B')])
+    vi.mocked(gradeCard).mockImplementation(async (_c, cardArg) => state(cardArg.id))
+    render(<WordlistReview />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /Hiện nghĩa/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tốt' }))
+    await waitFor(() => expect(screen.getByText('B')).toBeInTheDocument())
+  })
+
+  // No disabled state while the grade is in flight: `current` has not changed
+  // yet, so a second tap graded the SAME card again from its old state and ran
+  // slice(1) twice. On a phone that is one double-tap, or one tap on a slow
+  // connection: card B is never shown, and A's schedule is written twice.
+  it('grades once and skips nothing when the button is tapped twice', async () => {
+    vi.mocked(listDueCards).mockResolvedValue([card('A'), card('B')])
+    let release!: (s: SrsState) => void
+    vi.mocked(gradeCard).mockImplementation(
+      () => new Promise<SrsState>((resolve) => { release = resolve }),
+    )
+    render(<WordlistReview />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /Hiện nghĩa/i }))
+    const good = screen.getByRole('button', { name: 'Tốt' })
+    fireEvent.click(good)
+    fireEvent.click(good)
+
+    expect(gradeCard).toHaveBeenCalledTimes(1)
+    release(state('A'))
+    await waitFor(() => expect(screen.getByText('B')).toBeInTheDocument())
+    expect(screen.queryByText(/Hết thẻ cần ôn/)).toBeNull()
+  })
+})

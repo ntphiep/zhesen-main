@@ -12,12 +12,14 @@ const GRADES: { grade: Grade; label: string; cls: string }[] = [
 ]
 
 export function WordReviewCard({
-  card, revealed, onReveal, onGrade,
+  card, revealed, onReveal, onGrade, grading = false,
 }: {
   card: ReviewCard
   revealed: boolean
   onReveal: () => void
   onGrade: (g: Grade) => void
+  /** A grade is in flight; the buttons must not accept a second tap. */
+  grading?: boolean
 }) {
   return (
     <div className="rounded-2xl border border-black/10 p-8 text-center">
@@ -45,7 +47,8 @@ export function WordReviewCard({
               <button
                 key={g.grade}
                 onClick={() => onGrade(g.grade)}
-                className={`rounded-lg border py-2 text-sm font-medium ${g.cls}`}
+                disabled={grading}
+                className={`rounded-lg border py-2 text-sm font-medium disabled:opacity-40 ${g.cls}`}
               >
                 {g.label}
               </button>
