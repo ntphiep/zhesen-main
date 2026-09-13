@@ -63,15 +63,35 @@ describe('signInByEmail', () => {
 })
 
 describe('safeNext', () => {
-  it('keeps a path on this site', () => {
-    expect(safeNext('/practice')).toBe('/practice')
+  const here = 'https://zhesen.app'
+  const lands = (raw: string | null) => new URL(safeNext(raw, here), here).origin
+
+  it('keeps a path on this site, query included', () => {
+    expect(safeNext('/practice?mode=quiz', here)).toBe('/practice?mode=quiz')
   })
   it('falls back for a missing value', () => {
-    expect(safeNext(null)).toBe('/wordlist')
+    expect(safeNext(null, here)).toBe('/wordlist')
   })
-  // The value arrives in a URL anyone can hand the user.
-  it('refuses an absolute URL and a protocol-relative one', () => {
-    expect(safeNext('https://evil.test/steal')).toBe('/wordlist')
-    expect(safeNext('//evil.test/steal')).toBe('/wordlist')
+
+  // The value arrives in a URL anyone can hand the user. Checking the resolved
+  // origin rather than a list of forbidden prefixes is the point: the first
+  // version rejected '//evil.test' and let the backslash form through, because
+  // WHATWG URL reads a backslash as a slash in an http(s) URL.
+  const BACKSLASH = String.fromCharCode(92)
+
+  it('sends the browser nowhere but this origin, whatever the input', () => {
+    for (const hostile of [
+      'https://evil.test/steal',
+      '//evil.test/steal',
+      '/' + BACKSLASH + 'evil.test/steal',
+      '/' + BACKSLASH + BACKSLASH + 'evil.test',
+      BACKSLASH + BACKSLASH + 'evil.test',
+    ]) {
+      expect(lands(hostile)).toBe(here)
+    }
+  })
+
+  it('does not silently keep a hostile path either', () => {
+    expect(safeNext('/' + BACKSLASH + 'evil.test/steal', here)).toBe('/wordlist')
   })
 })
