@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { resolveTokens, getZhSegmentCandidates } from '@/lib/dictionary/resolveTokens'
 import { getCharacters } from '@/lib/dictionary/entryDetail'
@@ -40,6 +40,27 @@ export function TappableText({
     setActive(null)
   }
 
+  // Dismiss the popover the way every other popover on the web does: Escape, or a
+  // click anywhere outside it. Tapping the word again still closes it, but that was
+  // the only way out, so reading on past an open popover left it hanging over the
+  // text. Listeners exist only while one is open.
+  const root = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    if (active === null) return
+    function onPointerDown(e: MouseEvent | TouchEvent) {
+      if (!root.current?.contains(e.target as Node)) setActive(null)
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setActive(null)
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [active])
+
   useEffect(() => {
     if (resolved) return
     let cancelled = false
@@ -70,7 +91,7 @@ export function TappableText({
   }, [text, lang, supabase, resolved])
 
   return (
-    <span className="leading-relaxed">
+    <span className="leading-relaxed" ref={root}>
       {segments.map((seg, i) => {
         if (!seg.word) return <span key={i}>{seg.text}</span>
         const entry = entries.get(seg.text.toLowerCase())

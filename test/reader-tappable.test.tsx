@@ -50,4 +50,37 @@ describe('TappableText', () => {
     await userEvent.click(btn)
     expect(await screen.findByText('con chó')).toBeInTheDocument()
   })
+
+  // Tapping the word again was the only way to dismiss the popover, so reading on
+  // past it left it hanging over the rest of the sentence.
+  it('closes the popover when Escape is pressed', async () => {
+    resolveTokens.mockResolvedValueOnce(new Map([['dog', dog]]))
+    render(<TappableText text="the dog" lang="en" />)
+    await userEvent.click(await screen.findByRole('button', { name: 'dog' }))
+    expect(await screen.findByText('con chó')).toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByText('con chó')).toBeNull()
+  })
+
+  it('closes the popover when the reader clicks elsewhere on the page', async () => {
+    resolveTokens.mockResolvedValueOnce(new Map([['dog', dog]]))
+    render(
+      <div>
+        <TappableText text="the dog" lang="en" />
+        <p>đoạn văn khác</p>
+      </div>,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'dog' }))
+    expect(await screen.findByText('con chó')).toBeInTheDocument()
+    await userEvent.click(screen.getByText('đoạn văn khác'))
+    expect(screen.queryByText('con chó')).toBeNull()
+  })
+
+  it('keeps the popover open while the reader interacts with it', async () => {
+    resolveTokens.mockResolvedValueOnce(new Map([['dog', dog]]))
+    render(<TappableText text="the dog" lang="en" />)
+    await userEvent.click(await screen.findByRole('button', { name: 'dog' }))
+    await userEvent.click(await screen.findByText('con chó'))
+    expect(screen.getByText('con chó')).toBeInTheDocument()
+  })
 })
