@@ -43,20 +43,33 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
     if (!query.trim()) setResults([])
   }
 
+  // Clear the previous search whenever the dialog is (re)opened, the same way
+  // ImportCsvDialog clears its preview. Modal keeps its children mounted while
+  // closed, so without this the box still shows the last word looked up.
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
+    if (open) { setQuery(''); setPrevQuery(''); setResults([]) }
+  }
+
   useEffect(() => {
     if (!query.trim()) return
+    // Abort the in-flight request when the query changes, the same way SearchBox
+    // does. Without it a slow request for "cat" could land after a fast one for
+    // "cats" and overwrite the list with results for a query no longer typed.
+    const ctrl = new AbortController()
     const id = setTimeout(async () => {
       try {
         // Through the cached route, like the main search box. Going straight to
         // Supabase from here spent a cross-region round trip per keystroke and
         // skipped both the shared cache and the per-address budget.
-        const outcome = await fetchSearch(query)
+        const outcome = await fetchSearch(query, ctrl.signal)
         setResults(outcome.status === 'ok' ? outcome.data.forward[lang] : [])
-      } catch {
-        setResults([])
+      } catch (e) {
+        if ((e as Error).name !== 'AbortError') setResults([])
       }
     }, 250)
-    return () => clearTimeout(id)
+    return () => { clearTimeout(id); ctrl.abort() }
   }, [query, lang])
 
   async function handleDictAdd(entry: DictEntryPreview) {
