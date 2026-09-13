@@ -119,6 +119,13 @@ const practiceWordRow = z.object({
  *  `buildQuiz` draws its distractors from the same pool. */
 export const PRACTICE_POOL = 60
 
+export interface PracticePoolOptions {
+  pool?: number
+  /** The mode cannot use a word with no Vietnamese meaning. */
+  needsMeaning?: boolean
+  rand?: () => number
+}
+
 /**
  * A pool of words for one practice round.
  *
@@ -130,20 +137,38 @@ export const PRACTICE_POOL = 60
  *
  * The window starts at a random offset so the same sixty words do not come up
  * every session; `rand` is injectable for the same reason `buildQuiz` takes one.
+ *
+ * `needsMeaning` matters because the window is sixty ADJACENT rows by
+ * created_at, not sixty scattered ones. Modes that need a Vietnamese meaning
+ * used to filter what came back, which was safe while the caller received the
+ * whole wordlist and stopped being safe the moment it received a fixed window:
+ * a run of words saved together without meanings could empty the window and
+ * tell someone with hundreds of words that they had too few. Measured on this
+ * project's own account the risk is currently remote -- 2 of 410 rows lack a
+ * meaning, and every sixty-row window holds at least 59 usable -- but the
+ * filter belongs on the same side as the cap either way, and the wordlist is
+ * about to be rebuilt from different data.
  */
 export async function listPracticeWords(
-  supabase: SupabaseClient, pool: number = PRACTICE_POOL, rand: () => number = Math.random,
+  supabase: SupabaseClient, options: PracticePoolOptions = {},
 ): Promise<PracticeWord[]> {
-  const { count, error: countError } = await supabase
-    .from('user_words').select('*', { count: 'exact', head: true })
+  const { pool = PRACTICE_POOL, needsMeaning = false, rand = Math.random } = options
+  // PostgREST filters attach after select(), so the two queries each apply them
+  // rather than sharing a pre-built scope. Both must apply the same ones: the
+  // count decides the offset the window is taken from.
+  const countQuery = supabase.from('user_words').select('*', { count: 'exact', head: true })
+  const { count, error: countError } = await (needsMeaning
+    ? countQuery.not('meaning_vi', 'is', null).neq('meaning_vi', '')
+    : countQuery)
   if (countError) throw countError
   const total = count ?? 0
   if (total === 0) return []
 
   const offset = total > pool ? Math.floor(rand() * (total - pool + 1)) : 0
-  const { data, error } = await supabase
-    .from('user_words')
-    .select('id, lang, headword, ipa, meaning_vi, audio_url')
+  const rowQuery = supabase.from('user_words').select('id, lang, headword, ipa, meaning_vi, audio_url')
+  const { data, error } = await (needsMeaning
+    ? rowQuery.not('meaning_vi', 'is', null).neq('meaning_vi', '')
+    : rowQuery)
     .order('created_at', { ascending: false })
     .range(offset, offset + pool - 1)
   if (error) throw error

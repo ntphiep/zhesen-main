@@ -26,7 +26,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
 
   useEffect(() => {
     let active = true
-    listPracticeWords(supabase)
+    listPracticeWords(supabase, { needsMeaning: mode === 'write' })
       .then((words) => {
         if (!active) return
         const usable = words

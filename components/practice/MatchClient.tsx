@@ -29,7 +29,7 @@ export function MatchClient() {
 
   useEffect(() => {
     let active = true
-    listPracticeWords(supabase)
+    listPracticeWords(supabase, { needsMeaning: true })
       .then((words) => {
         if (!active) return
         setTiles(buildMatchTiles(words.map((w) => ({ id: w.id, headword: w.headword, meaningVi: w.meaningVi })), ROUND_SIZE))

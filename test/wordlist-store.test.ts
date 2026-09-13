@@ -345,16 +345,25 @@ describe('draftFromDictEntry with the full entry', () => {
 })
 
 describe('listPracticeWords', () => {
-  /** Records the projection and the range asked for; answers with `rows`. */
+  /** Records the projection, the filters and the range asked for. */
   function mockClient(total: number, rows: unknown[]) {
-    const seen: { columns?: string; from?: number; to?: number } = {}
+    const seen: { columns?: string; from?: number; to?: number; filters: string[] } = { filters: [] }
     const from = vi.fn(() => {
       const chain = {
         select: (columns: string, opts?: { head?: boolean }) => {
-          if (opts?.head) return Promise.resolve({ count: total, error: null })
+          if (opts?.head) {
+            const head = {
+              not: (c: string, op: string, v: unknown) => { seen.filters.push(`not:${c}:${op}:${v}`); return head },
+              neq: (c: string, v: unknown) => { seen.filters.push(`neq:${c}:${v}`); return head },
+              then: (res: (r: unknown) => void) => res({ count: total, error: null }),
+            }
+            return head
+          }
           seen.columns = columns
           return chain
         },
+        not: (c: string, op: string, v: unknown) => { seen.filters.push(`not:${c}:${op}:${v}`); return chain },
+        neq: (c: string, v: unknown) => { seen.filters.push(`neq:${c}:${v}`); return chain },
         order: () => chain,
         range: (a: number, b: number) => {
           seen.from = a; seen.to = b
@@ -374,7 +383,7 @@ describe('listPracticeWords', () => {
   // six-tile round, and paid it again on every change of mode.
   it('asks for six columns and one pool, not the whole wordlist', async () => {
     const { client, seen } = mockClient(407, [practiceRow])
-    const res = await listPracticeWords(client, PRACTICE_POOL, () => 0)
+    const res = await listPracticeWords(client, { rand: () => 0 })
     expect(seen.columns).toBe('id, lang, headword, ipa, meaning_vi, audio_url')
     expect((seen.to ?? 0) - (seen.from ?? 0) + 1).toBe(PRACTICE_POOL)
     expect(res[0]).toEqual({ id: 'w1', lang: 'en', headword: 'dog', ipa: '/dɔːɡ/', meaningVi: 'con chó', audioUrl: null })
@@ -383,13 +392,13 @@ describe('listPracticeWords', () => {
   // Otherwise the same sixty words come up every session.
   it('starts the window somewhere different each round', async () => {
     const { client, seen } = mockClient(407, [practiceRow])
-    await listPracticeWords(client, PRACTICE_POOL, () => 0.5)
+    await listPracticeWords(client, { rand: () => 0.5 })
     expect(seen.from).toBe(Math.floor(0.5 * (407 - PRACTICE_POOL + 1)))
   })
 
   it('never leaves the end of a wordlist smaller than the pool', async () => {
     const { client, seen } = mockClient(12, [practiceRow])
-    await listPracticeWords(client, PRACTICE_POOL, () => 0.99)
+    await listPracticeWords(client, { rand: () => 0.99 })
     expect(seen.from).toBe(0)
   })
 
@@ -397,5 +406,25 @@ describe('listPracticeWords', () => {
     const { client, seen } = mockClient(0, [])
     expect(await listPracticeWords(client)).toEqual([])
     expect(seen.columns).toBeUndefined()
+  })
+
+  // The window is sixty ADJACENT rows by created_at. A mode that needs a
+  // Vietnamese meaning and filters what comes back can be handed a window with
+  // none in it -- a run of words saved together without meanings -- and tell
+  // someone with hundreds of words they have too few. The filter has to be on
+  // the same side as the cap, and on BOTH queries: the count picks the offset.
+  it('filters on the server for a mode that needs a meaning', async () => {
+    const { client, seen } = mockClient(407, [practiceRow])
+    await listPracticeWords(client, { needsMeaning: true, rand: () => 0 })
+    expect(seen.filters).toEqual([
+      'not:meaning_vi:is:null', 'neq:meaning_vi:',
+      'not:meaning_vi:is:null', 'neq:meaning_vi:',
+    ])
+  })
+
+  it('asks for everything when the mode does not need a meaning', async () => {
+    const { client, seen } = mockClient(407, [practiceRow])
+    await listPracticeWords(client, { rand: () => 0 })
+    expect(seen.filters).toEqual([])
   })
 })

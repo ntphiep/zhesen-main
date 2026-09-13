@@ -24,7 +24,7 @@ export function QuizClient() {
 
   useEffect(() => {
     let active = true
-    listPracticeWords(supabase)
+    listPracticeWords(supabase, { needsMeaning: true })
       .then((words) => {
         if (!active) return
         const qs = buildQuiz(
