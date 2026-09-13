@@ -11,9 +11,15 @@ export type SortDir = 'asc' | 'desc'
  * sideways; matches Tailwind's `lg`. */
 const TABLE_MIN_WIDTH = 1024
 
+/** Storage can be full or blocked, and neither is worth a crash -- same guard as
+ *  lib/dictionary/recent.ts. A lost view preference costs one click. */
+function readStored(): string | null {
+  try { return window.localStorage.getItem('wordlist_view') } catch { return null }
+}
+
 function getInitialView(): ViewMode {
   if (typeof window === 'undefined') return 'table'
-  const saved = window.localStorage.getItem('wordlist_view')
+  const saved = readStored()
   if (saved === 'card' || saved === 'table') return saved
   // Without a stored choice, pick by what fits: on a phone the table clipped its
   // last columns off the screen, and cards say the same thing in one column.
@@ -66,7 +72,7 @@ export function useWordlistFilters(words: UserWord[]) {
 
   function toggleView(v: ViewMode) {
     setView(v)
-    window.localStorage.setItem('wordlist_view', v)
+    try { window.localStorage.setItem('wordlist_view', v) } catch { /* see readStored */ }
   }
 
   function toggleTagFilter(tag: string) {

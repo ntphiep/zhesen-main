@@ -3,9 +3,11 @@
 // just a tag someone filters by, so we don't introduce a separate table for them.
 import type { UserWord } from './types'
 
-/** Parse a comma-separated tag input into a clean, deduped tag list (case-sensitive). */
+/** Parse a typed tag input into a clean, deduped tag list (case-sensitive). Commas and
+ *  semicolons both separate, so a tag list copied out of a CSV export -- which joins
+ *  with ";" -- pastes back in as several tags rather than one long one. */
 export function parseTagsInput(raw: string): string[] {
-  return dedupeTags(raw.split(',').map((t) => t.trim()).filter((t) => t.length > 0))
+  return dedupeTags(raw.split(/[;,]/).map((t) => t.trim()).filter((t) => t.length > 0))
 }
 
 function dedupeTags(tags: string[]): string[] {
