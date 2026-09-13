@@ -23,11 +23,17 @@ describe('EditWordDialog', () => {
     expect(onSave).toHaveBeenCalledWith('id1', expect.objectContaining({ meaningVi: 'chó nhà', status: 'learning' }))
   })
 
-  it('calls onSave with empty patch when nothing changed', async () => {
+  // This asserted the opposite until 2026-09-14: that pressing Lưu with nothing
+  // changed must call onSave with an empty patch. It went green for a year while
+  // the app sent an empty PATCH to PostgREST. A passing test means the behaviour
+  // has not changed, not that it is right.
+  it('saves nothing and just closes when nothing changed', async () => {
     const onSave = vi.fn()
-    render(<EditWordDialog word={word} open onClose={() => {}} onSave={onSave} />)
+    const onClose = vi.fn()
+    render(<EditWordDialog word={word} open onClose={onClose} onSave={onSave} />)
     await userEvent.click(screen.getByRole('button', { name: /Lưu/i }))
-    expect(onSave).toHaveBeenCalledWith('id1', {})
+    expect(onSave).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
   })
 
   it('adds and removes tags via the tag editor', async () => {
@@ -62,8 +68,10 @@ describe('EditWordDialog', () => {
     rerender(<EditWordDialog word={word} open onClose={() => {}} onSave={onSave} />)
 
     expect(screen.getByLabelText(/Nghĩa/i)).toHaveValue('con chó')
+    // And because the fields hold the real values again, pressing Lưu has
+    // nothing to write -- which is the stronger form of the same claim.
     await userEvent.click(screen.getByRole('button', { name: /Lưu/i }))
-    expect(onSave).toHaveBeenCalledWith('id1', {})
+    expect(onSave).not.toHaveBeenCalled()
   })
 
   it('still syncs when a different word is opened', async () => {

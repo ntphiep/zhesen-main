@@ -85,6 +85,14 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
 
     if (JSON.stringify(tags) !== JSON.stringify(word.tags)) patch.tags = tags
 
+    // Nothing changed. This dialog is the only place a note or an example
+    // translation can be read, so opening a word to look at it and then pressing
+    // Lưu out of habit is ordinary -- and it used to send a PATCH with an empty
+    // body, which either fails and reports "Không lưu được thay đổi" for a save
+    // with nothing to save, or succeeds and lets the updated_at trigger record
+    // when the word was last LOOKED AT rather than last edited.
+    if (Object.keys(patch).length === 0) { onClose(); return }
+
     await onSave(word.id, patch)
   }
 
