@@ -12,18 +12,38 @@ type DetailState =
   | { status: 'ok'; detail: DictEntryDetail | null }
   | { status: 'error' }
 
+// The wordlist mounts this only while a row is expanded, so collapsing and expanding
+// the same word unmounts and remounts it, and every remount was another Supabase round
+// trip from the browser -- the entry page serves the same data from a one-hour server
+// cache. Dictionary entries do not change while a page is open, so remember them for
+// the life of the tab.
+// ponytail: never evicted; add a cap if a session can realistically expand thousands.
+const detailCache = new Map<string, DictEntryDetail | null>()
+
+/** Empty the cache. Tests need it for the same reason `resetSessionState` exists:
+ *  module-level state outlives a single render and leaks between cases. */
+export function resetDetailCache(): void {
+  detailCache.clear()
+}
+
 export function WordDetail({ word }: { word: UserWord }) {
   const supabase = useMemo(() => createClient(), [])
-  const [state, setState] = useState<DetailState>({ status: 'loading' })
+  const [state, setState] = useState<DetailState>(() => {
+    const id = word.entryId
+    return id && detailCache.has(id)
+      ? { status: 'ok', detail: detailCache.get(id) ?? null }
+      : { status: 'loading' }
+  })
 
   useEffect(() => {
     const entryId = word.entryId
-    if (!entryId) return
+    if (!entryId || detailCache.has(entryId)) return
     let cancelled = false
     async function run(id: string) {
       setState({ status: 'loading' })
       try {
         const d = await getEntryDetail(supabase, id)
+        detailCache.set(id, d)
         if (!cancelled) setState({ status: 'ok', detail: d })
       } catch {
         if (!cancelled) setState({ status: 'error' })

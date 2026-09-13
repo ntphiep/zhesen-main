@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { WordDetail } from '@/components/wordlist/WordDetail'
+import { WordDetail, resetDetailCache } from '@/components/wordlist/WordDetail'
 import { getEntryDetail } from '@/lib/dictionary/entryDetail'
 import type { UserWord } from '@/lib/wordlist/types'
 
@@ -24,6 +24,10 @@ const base: UserWord = {
 }
 
 describe('WordDetail', () => {
+  // The component remembers entries for the life of the tab, so a case would
+  // otherwise be served the previous case's entry instead of calling the mock.
+  beforeEach(resetDetailCache)
+
   it('loads and shows dictionary detail when entryId present', async () => {
     render(<WordDetail word={base} />)
     expect(await screen.findByText('Con chó sủa.')).toBeInTheDocument()
@@ -34,6 +38,19 @@ describe('WordDetail', () => {
     render(<WordDetail word={{ ...base, entryId: null, meaningVi: 'tự nhập', notes: 'ghi chú' }} />)
     expect(screen.getByText('tự nhập')).toBeInTheDocument()
     expect(screen.getByText('ghi chú')).toBeInTheDocument()
+  })
+
+  // Expanding a row, collapsing it and expanding it again unmounts and remounts
+  // this component; each remount used to be another round trip to Supabase from the
+  // browser, while the entry page serves the same data from a one-hour server cache.
+  it('does not ask Supabase again for an entry it already loaded', async () => {
+    const { unmount } = render(<WordDetail word={base} />)
+    expect(await screen.findByText('Con chó sủa.')).toBeInTheDocument()
+    const callsAfterFirst = vi.mocked(getEntryDetail).mock.calls.length
+    unmount()
+    render(<WordDetail word={base} />)
+    expect(screen.getByText('Con chó sủa.')).toBeInTheDocument()
+    expect(vi.mocked(getEntryDetail).mock.calls.length).toBe(callsAfterFirst)
   })
 
   it('shows error message when detail fetch fails', async () => {
