@@ -111,9 +111,14 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   }
 
   // CSV import: bulk-insert already-deduped drafts, then append the real rows.
+  // The preview dedupes against the list as it was when the file was opened, so
+  // a word saved in another tab since then comes back as one fewer row here
+  // rather than as an error. Say so instead of quietly importing less.
   async function handleImport(drafts: WordDraft[]) {
     const added = await addWords(supabase, drafts)
     setWords((prev) => [...added, ...prev])
+    const skipped = drafts.length - added.length
+    if (skipped > 0) alert(`Đã bỏ qua ${skipped} từ vì đã có trong sổ tay.`)
   }
 
   async function handleDelete(id: string, headword: string) {

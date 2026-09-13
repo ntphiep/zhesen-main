@@ -152,24 +152,70 @@ export async function deleteWords(supabase: SupabaseClient, ids: string[]): Prom
   if (error) throw error
 }
 
-/** Bulk-insert drafts (e.g. from a CSV import). No duplicate check: the caller (the
- * import preview) has already deduped against the current wordlist and within the file. */
+/**
+ * PostgREST returns at most 1000 rows in one response whatever was asked for, so
+ * a bulk insert of more than that inserted everything and reported back a
+ * thousand: the list on screen was short by the difference until a reload. Also
+ * the unit a failed chunk is retried in, which is why it is not larger.
+ */
+const INSERT_CHUNK = 500
+
+/** Insert one draft, recovering from the two constraint failures an import can
+ *  legitimately hit. Returns null for a word already in the wordlist. */
+async function insertOne(supabase: SupabaseClient, draft: WordDraft): Promise<UserWord | null> {
+  const { data, error } = await supabase.from('user_words').insert(draftToRow(draft)).select().single()
+  if (!error) return parseUserWordRow(data)
+
+  // 23505 unique_violation: `user_words_user_entry_key` (migration 0031). The
+  // word is already saved, which for an import is a row to skip, not a failure.
+  if (error.code === '23505') return null
+
+  // 23503 foreign_key_violation: the imported entry_id no longer names a row in
+  // lex.entries, because the dictionary changed since the backup was written.
+  // Keep the word and drop the link -- a restored word without its dictionary
+  // link is still the user's word.
+  if (error.code === '23503' && draft.entryId !== null) {
+    const retry = await supabase.from('user_words')
+      .insert(draftToRow({ ...draft, entryId: null })).select().single()
+    if (retry.error) throw retry.error
+    return parseUserWordRow(retry.data)
+  }
+
+  throw error
+}
+
+/**
+ * Bulk-insert drafts (e.g. from a CSV import).
+ *
+ * The fast path is one request per chunk. A chunk the database refuses is
+ * retried row by row, because a single bad row must not lose the other 499 --
+ * which is what the previous shape did in two ways: it retried the whole import
+ * with every `entry_id` stripped the moment one link was stale, throwing away
+ * the dictionary links of words that were perfectly fine, and it had no answer
+ * at all for a duplicate, so one word already in the wordlist failed the lot.
+ *
+ * Returns the rows that went in. Fewer than were asked for means some were
+ * already saved; the caller reports that.
+ */
 export async function addWords(supabase: SupabaseClient, drafts: WordDraft[]): Promise<UserWord[]> {
   if (drafts.length === 0) return []
   await ensureSession(supabase)
-  const { data, error } = await supabase.from('user_words').insert(drafts.map(draftToRow)).select()
-  // 23503 is foreign_key_violation: an imported entry_id no longer names a row in
-  // lex.entries, because the dictionary changed since the backup was written. One
-  // such row would otherwise fail the whole import, so drop the dictionary links and
-  // keep the words -- a restored word without its link is still the user's word.
-  if (error?.code === '23503') {
-    const retry = await supabase.from('user_words')
-      .insert(drafts.map((d) => draftToRow({ ...d, entryId: null }))).select()
-    if (retry.error) throw retry.error
-    return (retry.data ?? []).map(parseUserWordRow)
+
+  const inserted: UserWord[] = []
+  for (let i = 0; i < drafts.length; i += INSERT_CHUNK) {
+    const chunk = drafts.slice(i, i + INSERT_CHUNK)
+    const { data, error } = await supabase.from('user_words').insert(chunk.map(draftToRow)).select()
+    if (!error) {
+      inserted.push(...(data ?? []).map(parseUserWordRow))
+      continue
+    }
+    if (error.code !== '23505' && error.code !== '23503') throw error
+    for (const draft of chunk) {
+      const row = await insertOne(supabase, draft)
+      if (row) inserted.push(row)
+    }
   }
-  if (error) throw error
-  return (data ?? []).map(parseUserWordRow)
+  return inserted
 }
 
 /** Bulk status change (e.g. "mark selected as known"). Same status for every id, so a

@@ -161,24 +161,91 @@ describe('addWords', () => {
     expect(res[0].headword).toBe('dog')
   })
 
-  // Restoring a backup written before the dictionary changed carries entry ids that
-  // no longer exist. One of them would fail the whole import, and the point of the
-  // export is not losing words.
-  it('retries without dictionary links when a restored entry id no longer exists', async () => {
-    const results = [
+  /**
+   * A client whose bulk insert fails with `code`, and whose per-row retries are
+   * answered by `perRow` in order. Mirrors the two shapes the store uses:
+   * `insert(rows).select()` for a chunk, `insert(row).select().single()` for one.
+   */
+  function chunkFailsClient(code: string, perRow: Array<{ data: unknown; error: unknown }>) {
+    const rowsSeen: unknown[] = []
+    const insert = vi.fn((payload: unknown) => {
+      rowsSeen.push(payload)
+      if (Array.isArray(payload)) {
+        return { select: () => Promise.resolve({ data: null, error: { code, message: code } }) }
+      }
+      return { select: () => ({ single: () => Promise.resolve(perRow.shift()!) }) }
+    })
+    const { auth } = authStub({ user: { id: 'u1' } })
+    return {
+      client: { from: vi.fn(() => ({ insert })), auth } as unknown as import('@supabase/supabase-js').SupabaseClient,
+      rowsSeen,
+    }
+  }
+
+  // Restoring a backup written before the dictionary changed carries entry ids
+  // that no longer exist. The first shape of this retried the WHOLE import with
+  // every entry_id stripped, so one stale link cost every other word its
+  // dictionary link. Only the offending row loses its link now.
+  it('drops the stale dictionary link on that row alone', async () => {
+    const cat = { ...dogEntry, id: 'en:cat', headword: 'cat' }
+    const { client, rowsSeen } = chunkFailsClient('23503', [
       { data: null, error: { code: '23503', message: 'violates foreign key constraint' } },
-      { data: [row], error: null },
-    ]
-    const insertSelect = vi.fn(() => Promise.resolve(results.shift()!))
-    const insert = vi.fn(() => ({ select: insertSelect }))
+      { data: { ...row, entry_id: null }, error: null },
+      { data: { ...row, id: '2', entry_id: 'en:cat', headword: 'cat' }, error: null },
+    ])
+    resetSessionState()
+    const res = await addWords(client, [draftFromDictEntry(dogEntry), draftFromDictEntry(cat)])
+
+    const single = rowsSeen.filter((r) => !Array.isArray(r)) as Record<string, unknown>[]
+    expect(single[0]).toMatchObject({ entry_id: 'en:dog' })     // tried with its link
+    expect(single[1]).toMatchObject({ entry_id: null })          // retried without
+    expect(single[2]).toMatchObject({ entry_id: 'en:cat' })      // the other keeps its link
+    expect(res).toHaveLength(2)
+  })
+
+  // The unique index from migration 0031 makes a duplicate an error, so a CSV
+  // holding one word already saved used to fail the entire import.
+  it('skips a word already saved instead of failing the import', async () => {
+    const cat = { ...dogEntry, id: 'en:cat', headword: 'cat' }
+    const { client } = chunkFailsClient('23505', [
+      { data: null, error: { code: '23505', message: 'duplicate key value' } },
+      { data: { ...row, id: '2', entry_id: 'en:cat', headword: 'cat' }, error: null },
+    ])
+    resetSessionState()
+    const res = await addWords(client, [draftFromDictEntry(dogEntry), draftFromDictEntry(cat)])
+    expect(res.map((w) => w.headword)).toEqual(['cat'])
+  })
+
+  // Anything that is not a constraint the import knows how to recover from is a
+  // real failure and must not be quietly swallowed row by row.
+  it('raises an error it has no recovery for', async () => {
+    const insert = vi.fn(() => ({
+      select: () => Promise.resolve({ data: null, error: { code: '42501', message: 'permission denied' } }),
+    }))
     const { auth } = authStub({ user: { id: 'u1' } })
     const client = { from: vi.fn(() => ({ insert })), auth } as unknown as import('@supabase/supabase-js').SupabaseClient
     resetSessionState()
-    const res = await addWords(client, [draftFromDictEntry(dogEntry)])
-    expect(insert).toHaveBeenCalledTimes(2)
-    expect(insert).toHaveBeenNthCalledWith(1, [expect.objectContaining({ entry_id: 'en:dog' })])
-    expect(insert).toHaveBeenNthCalledWith(2, [expect.objectContaining({ entry_id: null, headword: 'dog' })])
-    expect(res[0].headword).toBe('dog')
+    await expect(addWords(client, [draftFromDictEntry(dogEntry)])).rejects.toMatchObject({ code: '42501' })
+  })
+
+  // PostgREST caps a response at 1000 rows however many were inserted, so a
+  // single insert of more than that reported back a thousand and the list on
+  // screen was short by the difference until a reload.
+  it('inserts more than a thousand words in chunks and returns all of them', async () => {
+    let n = 0
+    const insert = vi.fn((payload: unknown[]) => ({
+      select: () => {
+        const batch = payload.map(() => ({ ...row, id: `id${n++}` }))
+        return Promise.resolve({ data: batch, error: null })
+      },
+    }))
+    const { auth } = authStub({ user: { id: 'u1' } })
+    const client = { from: vi.fn(() => ({ insert })), auth } as unknown as import('@supabase/supabase-js').SupabaseClient
+    resetSessionState()
+    const drafts = Array.from({ length: 1200 }, () => draftFromDictEntry(dogEntry))
+    const res = await addWords(client, drafts)
+    expect(res).toHaveLength(1200)
+    expect(insert.mock.calls.every((c) => (c[0] as unknown[]).length <= 500)).toBe(true)
   })
 
   it('is a no-op for an empty draft list', async () => {
