@@ -35,10 +35,18 @@ import { clientKey, createRateLimiter } from '@/lib/http/rateLimit'
 // better than no cap on spending. It sits above the per-address limit so a
 // deployment behind a proxy still gets fair sharing underneath it.
 const CALLS_PER_MINUTE = 20
-const rateLimit = createRateLimiter({ limit: CALLS_PER_MINUTE, windowMs: 60_000 })
+let rateLimit = createRateLimiter({ limit: CALLS_PER_MINUTE, windowMs: 60_000 })
 
 const GLOBAL_CALLS_PER_MINUTE = 60
-const globalBudget = createRateLimiter({ limit: GLOBAL_CALLS_PER_MINUTE, windowMs: 60_000 })
+let globalBudget = createRateLimiter({ limit: GLOBAL_CALLS_PER_MINUTE, windowMs: 60_000 })
+
+/** Start both budgets over. For tests, which reuse the module and would
+ *  otherwise have one case's flood decide the next case's answer -- the same
+ *  reason `resetSessionState` and `resetDetailCache` exist. */
+export function resetAiBudgets(): void {
+  rateLimit = createRateLimiter({ limit: CALLS_PER_MINUTE, windowMs: 60_000 })
+  globalBudget = createRateLimiter({ limit: GLOBAL_CALLS_PER_MINUTE, windowMs: 60_000 })
+}
 
 /** The envelope, parsed rather than cast. `JSON.parse('null')` succeeds, so the
  *  try/catch around `request.json()` does not stop `null` reaching the field
@@ -57,22 +65,6 @@ export async function POST(request: Request) {
   const cfg = aiConfig()
   if (!cfg) return Response.json({ error: 'Trợ lý AI chưa được cấu hình.' }, { status: 503 })
 
-  const caller = clientKey(request)
-  const allowance = caller ? rateLimit(caller) : globalBudget('all')
-  if (!allowance.allowed) {
-    return Response.json(
-      { error: 'Bạn đang dùng trợ lý quá nhanh. Thử lại sau ít giây.' },
-      { status: 429, headers: { 'Retry-After': String(allowance.retryAfterSeconds) } },
-    )
-  }
-  // The global cap applies either way: identified callers are also spending.
-  if (caller && !globalBudget('all').allowed) {
-    return Response.json(
-      { error: 'Trợ lý đang bận. Thử lại sau ít giây.' },
-      { status: 429, headers: { 'Retry-After': '60' } },
-    )
-  }
-
   let body: unknown
   try {
     body = await request.json()
@@ -89,6 +81,26 @@ export async function POST(request: Request) {
   const prompt = spec.promptFor(envelope.data.input)
   if (prompt === null) {
     return Response.json({ error: 'Dữ liệu đầu vào không hợp lệ.' }, { status: 400 })
+  }
+
+  // Budget is spent here, not on arrival. The global bucket is one bucket for
+  // everyone, so charging a request that never reaches the model turned it into
+  // a lever: sixty pieces of junk a minute cost the sender nothing and answered
+  // every real user with "Trợ lý đang bận". Only a request that is about to cost
+  // something takes a slot. Malformed input is still refused instantly above.
+  const caller = clientKey(request)
+  const allowance = caller ? rateLimit(caller) : globalBudget('all')
+  if (!allowance.allowed) {
+    return Response.json(
+      { error: 'Bạn đang dùng trợ lý quá nhanh. Thử lại sau ít giây.' },
+      { status: 429, headers: { 'Retry-After': String(allowance.retryAfterSeconds) } },
+    )
+  }
+  if (caller && !globalBudget('all').allowed) {
+    return Response.json(
+      { error: 'Trợ lý đang bận. Thử lại sau ít giây.' },
+      { status: 429, headers: { 'Retry-After': '60' } },
+    )
   }
 
   const timeout = AbortSignal.timeout(TIMEOUT_MS)

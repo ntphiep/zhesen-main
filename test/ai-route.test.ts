@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { GET, POST } from '@/app/api/ai/route'
+import { GET, POST, resetAiBudgets } from '@/app/api/ai/route'
 
 const ENV = ['AI_BASE_URL', 'AI_API_KEY', 'AI_MODEL'] as const
 const saved: Record<string, string | undefined> = {}
@@ -21,6 +21,7 @@ describe('/api/ai', () => {
   const realFetch = globalThis.fetch
 
   beforeEach(() => {
+    resetAiBudgets()
     for (const k of ENV) saved[k] = process.env[k]
     process.env.AI_BASE_URL = 'http://router.test/v1'
     process.env.AI_API_KEY = 'sk-secret-must-not-leak'
@@ -127,5 +128,19 @@ describe('/api/ai', () => {
     }
     expect(statuses).toContain(429)
     expect(statuses.filter((s) => s === 200).length).toBeLessThanOrEqual(60)
+  })
+
+  // The global bucket is one bucket for everyone, so charging a request that
+  // never reaches the model turned it into a lever: sixty pieces of junk a
+  // minute cost the sender nothing and answered every real user with 429.
+  it('does not spend the shared budget on requests that never reach the model', async () => {
+    for (let i = 0; i < 70; i++) {
+      expect((await post({ task: 'nope', input: {} })).status).toBe(400)
+    }
+    modelReplies(JSON.stringify({
+      meaningVi: 'x', ipa: 'x', pos: 'noun', level: 'A1', example: 'x', exampleVi: 'x',
+    }))
+    const real = await post({ task: 'enrich', input: { lang: 'en', headword: 'dog' } })
+    expect(real.status).toBe(200)
   })
 })
