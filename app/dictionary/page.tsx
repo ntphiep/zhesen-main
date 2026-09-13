@@ -1,5 +1,5 @@
 import { SearchBox } from '@/components/search/SearchBox'
-import { LANGUAGES } from '@/lib/languages'
+import { LANGUAGES, isLangCode } from '@/lib/languages'
 
 /** What the box accepts, shown because none of it is guessable from an empty
  * field: that Vietnamese works as a query, that accents and tone marks are
@@ -11,8 +11,12 @@ const HINTS: { label: string; example: string }[] = [
   { label: 'Gõ sai hoặc thiếu dấu vẫn tìm được', example: 'comio · nino' },
 ]
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string; lang?: string }> }) {
   const sp = await searchParams
+  // `searchPath` (lib/dictionary/entryId.ts) appends the language, because a chip
+  // for a related word or an inflected form already knows which language it came
+  // from. Dropping it here made every such chip search all three.
+  const lang = sp.lang && isLangCode(sp.lang) ? sp.lang : undefined
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
       <h1 className="text-3xl font-bold">Tra cứu</h1>
@@ -20,7 +24,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
         Gõ một từ tiếng Anh, Trung hoặc Tây Ban Nha — hệ thống tự nhận diện ngôn ngữ.
       </p>
       <div className="mt-6">
-        <SearchBox initialQuery={sp.q ?? ''} autoFocus />
+        <SearchBox initialQuery={sp.q ?? ''} lang={lang} autoFocus />
       </div>
 
       {!sp.q && (
