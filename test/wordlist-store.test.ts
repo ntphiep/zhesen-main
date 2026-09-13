@@ -95,6 +95,20 @@ describe('addWord', () => {
     expect(insert).not.toHaveBeenCalled()
   })
 
+  // The read above cannot see a request that is still in flight, so two overlapping
+  // adds both pass it and the unique index (migration 0031) is what rejects the
+  // second. The caller has to get the same error either way.
+  it('reports a duplicate when the unique index rejects the insert', async () => {
+    const insertSingle = vi.fn(() => Promise.resolve({ data: null, error: { code: '23505', message: 'duplicate key' } }))
+    const insert = vi.fn(() => ({ select: () => ({ single: insertSingle }) }))
+    const limit = vi.fn(() => Promise.resolve({ data: [], error: null }))
+    const select = vi.fn(() => ({ eq: () => ({ limit }) }))
+    const { auth } = authStub({ user: { id: 'u1' } })
+    const client = { from: vi.fn(() => ({ insert, select })), auth } as unknown as import('@supabase/supabase-js').SupabaseClient
+    resetSessionState()
+    await expect(addWord(client, draftFromDictEntry(dogEntry))).rejects.toBeInstanceOf(WordAlreadyExistsError)
+  })
+
   it('skips the duplicate check for custom words without an entryId', async () => {
     const { client, insert, select } = mockClient({ existing: [{ id: 'x' }] })
     await addWord(client, { ...draftFromDictEntry(dogEntry), entryId: null })
@@ -144,6 +158,26 @@ describe('addWords', () => {
     ])
     // One account for the whole import, not one per row.
     expect(signInAnonymously).toHaveBeenCalledTimes(1)
+    expect(res[0].headword).toBe('dog')
+  })
+
+  // Restoring a backup written before the dictionary changed carries entry ids that
+  // no longer exist. One of them would fail the whole import, and the point of the
+  // export is not losing words.
+  it('retries without dictionary links when a restored entry id no longer exists', async () => {
+    const results = [
+      { data: null, error: { code: '23503', message: 'violates foreign key constraint' } },
+      { data: [row], error: null },
+    ]
+    const insertSelect = vi.fn(() => Promise.resolve(results.shift()!))
+    const insert = vi.fn(() => ({ select: insertSelect }))
+    const { auth } = authStub({ user: { id: 'u1' } })
+    const client = { from: vi.fn(() => ({ insert })), auth } as unknown as import('@supabase/supabase-js').SupabaseClient
+    resetSessionState()
+    const res = await addWords(client, [draftFromDictEntry(dogEntry)])
+    expect(insert).toHaveBeenCalledTimes(2)
+    expect(insert).toHaveBeenNthCalledWith(1, [expect.objectContaining({ entry_id: 'en:dog' })])
+    expect(insert).toHaveBeenNthCalledWith(2, [expect.objectContaining({ entry_id: null, headword: 'dog' })])
     expect(res[0].headword).toBe('dog')
   })
 

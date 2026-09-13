@@ -127,6 +127,10 @@ export async function addWord(supabase: SupabaseClient, draft: WordDraft): Promi
     if (existing && existing.length > 0) throw new WordAlreadyExistsError(draft.entryId)
   }
   const { data, error } = await supabase.from('user_words').insert(draftToRow(draft)).select().single()
+  // The read above cannot see a request that is still in flight, so two overlapping
+  // adds both pass it. `user_words_user_entry_key` (migration 0031) is what actually
+  // stops the second one; 23505 is Postgres' unique_violation.
+  if (error?.code === '23505' && draft.entryId) throw new WordAlreadyExistsError(draft.entryId)
   if (error) throw error
   return parseUserWordRow(data)
 }
@@ -154,6 +158,16 @@ export async function addWords(supabase: SupabaseClient, drafts: WordDraft[]): P
   if (drafts.length === 0) return []
   await ensureSession(supabase)
   const { data, error } = await supabase.from('user_words').insert(drafts.map(draftToRow)).select()
+  // 23503 is foreign_key_violation: an imported entry_id no longer names a row in
+  // lex.entries, because the dictionary changed since the backup was written. One
+  // such row would otherwise fail the whole import, so drop the dictionary links and
+  // keep the words -- a restored word without its link is still the user's word.
+  if (error?.code === '23503') {
+    const retry = await supabase.from('user_words')
+      .insert(drafts.map((d) => draftToRow({ ...d, entryId: null }))).select()
+    if (retry.error) throw retry.error
+    return (retry.data ?? []).map(parseUserWordRow)
+  }
   if (error) throw error
   return (data ?? []).map(parseUserWordRow)
 }
