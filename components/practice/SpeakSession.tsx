@@ -7,7 +7,8 @@ import { AudioButton } from '@/components/ui/AudioButton'
 import { checkTypedAnswer, type TypedResult } from '@/lib/practice/typing'
 import { logActivityDay } from '@/lib/wordlist/activity'
 import { shuffle } from '@/lib/practice/shuffle'
-import { gradeWordById } from '@/lib/wordlist/review'
+import { useGradeSync } from '@/lib/hooks/useGradeSync'
+import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { gradeForMode } from '@/lib/practice/grading'
 import { speechLang, type LangCode } from '@/lib/languages'
 
@@ -37,6 +38,7 @@ interface SpeakWord { id: string; headword: string; meaningVi: string | null; au
 
 export function SpeakSession() {
   const supabase = useMemo(() => createClient(), [])
+  const { record: recordGrade, failed: syncFailed } = useGradeSync(supabase)
   const supported = useMemo(() => getRecognitionCtor() !== null, [])
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const logged = useRef(false)
@@ -88,6 +90,7 @@ export function SpeakSession() {
     return (
       <main className="mx-auto max-w-md px-6 py-16 text-center">
         <div className="text-2xl font-semibold">Kết quả: {score}/{queue.length}</div>
+        <GradeSyncWarning failed={syncFailed} />
         <div className="mt-6 flex justify-center gap-3">
           <button onClick={() => setRound((r) => r + 1)} className="rounded-lg bg-black px-5 py-2 text-white">Làm lại</button>
           <Link href="/practice" className="rounded-lg border border-black/15 px-5 py-2 hover:bg-black/5">Về luyện tập</Link>
@@ -116,8 +119,7 @@ export function SpeakSession() {
       // mishears for reasons that are not the learner's -- a noisy room, an accent
       // it was not trained on -- and `gradeForMode` returns null for those rather
       // than resetting a card over a microphone. See lib/practice/grading.ts.
-      const grade = gradeForMode('speak', { correct: verdict !== 'wrong', nearly: verdict === 'close' })
-      if (grade) void gradeWordById(supabase, current.id, grade).catch(() => {})
+      recordGrade(current.id, gradeForMode('speak', { correct: verdict !== 'wrong', nearly: verdict === 'close' }))
       if (!logged.current) { logged.current = true; void logActivityDay(supabase) }
     }
     r.onerror = () => setListening(false)

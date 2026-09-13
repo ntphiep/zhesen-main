@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { listWords } from '@/lib/wordlist/store'
 import { logActivityDay } from '@/lib/wordlist/activity'
 import { shuffle } from '@/lib/practice/shuffle'
-import { gradeWordById } from '@/lib/wordlist/review'
+import { useGradeSync } from '@/lib/hooks/useGradeSync'
+import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { gradeForMode } from '@/lib/practice/grading'
 import { checkTypedAnswer, type TypedResult } from '@/lib/practice/typing'
 import { TypingCard, type TypingPrompt } from '@/components/practice/TypingCard'
@@ -14,6 +15,7 @@ const SIZE = 10
 
 export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
   const supabase = useMemo(() => createClient(), [])
+  const { record: recordGrade, failed: syncFailed } = useGradeSync(supabase)
   const [queue, setQueue] = useState<TypingPrompt[] | null>(null)
   const [index, setIndex] = useState(0)
   const [value, setValue] = useState('')
@@ -53,6 +55,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
     return (
       <main className="mx-auto max-w-md px-6 py-16 text-center">
         <div className="text-2xl font-semibold">Kết quả: {score}/{queue.length}</div>
+        <GradeSyncWarning failed={syncFailed} />
         <div className="mt-6 flex justify-center gap-3">
           <button onClick={() => setRound((r) => r + 1)} className="rounded-lg bg-black px-5 py-2 text-white">Làm lại</button>
           <Link href="/practice" className="rounded-lg border border-black/15 px-5 py-2 hover:bg-black/5">Về luyện tập</Link>
@@ -71,8 +74,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
     if (r !== 'wrong') setScore((s) => s + 1)
     // A one-character typo counts as a hard recall, not a clean one: the learner
     // produced the word, which is more than the quiz can tell.
-    const grade = gradeForMode(mode, { correct: r !== 'wrong', nearly: r === 'close' })
-    if (grade) void gradeWordById(supabase, current.id, grade).catch(() => {})
+    recordGrade(current.id, gradeForMode(mode, { correct: r !== 'wrong', nearly: r === 'close' }))
     if (!logged.current) { logged.current = true; void logActivityDay(supabase) }
   }
   function next() {

@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listWords } from '@/lib/wordlist/store'
 import { logActivityDay } from '@/lib/wordlist/activity'
-import { gradeWordById } from '@/lib/wordlist/review'
+import { useGradeSync } from '@/lib/hooks/useGradeSync'
+import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { gradeForMode } from '@/lib/practice/grading'
 import { buildMatchTiles, type MatchTile } from '@/lib/practice/match'
 
@@ -12,6 +13,7 @@ const ROUND_SIZE = 6
 
 export function MatchClient() {
   const supabase = useMemo(() => createClient(), [])
+  const { record: recordGrade, failed: syncFailed } = useGradeSync(supabase)
   const [tiles, setTiles] = useState<MatchTile[] | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [matched, setMatched] = useState<Set<string>>(new Set())
@@ -67,8 +69,7 @@ export function MatchClient() {
     if (first.wordId === tile.wordId && first.kind !== tile.kind) {
       setMatched((m) => new Set(m).add(first.key).add(tile.key))
       setSelected(null)
-      const grade = gradeForMode('match', { correct: true, nearly: stumbled.current.has(tile.wordId) })
-      if (grade) void gradeWordById(supabase, tile.wordId, grade).catch(() => {})
+      recordGrade(tile.wordId, gradeForMode('match', { correct: true, nearly: stumbled.current.has(tile.wordId) }))
     } else {
       stumbled.current.add(first.wordId).add(tile.wordId)
       setWrong([first.key, tile.key])
@@ -87,6 +88,7 @@ export function MatchClient() {
       {done ? (
         <div role="status" aria-live="polite" className="rounded-2xl border border-black/10 p-8 text-center">
           <div className="text-2xl font-semibold">Hoàn thành trong {seconds}s 🎉</div>
+          <GradeSyncWarning failed={syncFailed} />
           <div className="mt-6 flex justify-center gap-3">
             <button onClick={() => setRound((r) => r + 1)} className="rounded-lg bg-black px-5 py-2 text-white">Chơi lại</button>
             <Link href="/practice" className="rounded-lg border border-black/15 px-5 py-2 hover:bg-black/5">Về luyện tập</Link>

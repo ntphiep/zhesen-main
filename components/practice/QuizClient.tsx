@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listWords } from '@/lib/wordlist/store'
 import { logActivityDay } from '@/lib/wordlist/activity'
-import { gradeWordById } from '@/lib/wordlist/review'
+import { useGradeSync } from '@/lib/hooks/useGradeSync'
+import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { gradeForMode } from '@/lib/practice/grading'
 import { buildQuiz, type QuizQuestion } from '@/lib/practice/quiz'
 import { QuizCard } from '@/components/practice/QuizCard'
@@ -13,6 +14,7 @@ const QUIZ_SIZE = 10
 
 export function QuizClient() {
   const supabase = useMemo(() => createClient(), [])
+  const { record: recordGrade, failed: syncFailed } = useGradeSync(supabase)
   const [questions, setQuestions] = useState<QuizQuestion[] | null>(null)
   const [index, setIndex] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
@@ -55,6 +57,7 @@ export function QuizClient() {
     return (
       <main className="mx-auto max-w-md px-6 py-16 text-center">
         <div className="text-2xl font-semibold">Kết quả: {score}/{questions.length}</div>
+        <GradeSyncWarning failed={syncFailed} />
         <p className="mt-2 text-black/50">{score === questions.length ? 'Tuyệt vời! 🎉' : 'Tiếp tục luyện nhé.'}</p>
         <div className="mt-6 flex justify-center gap-3">
           <button onClick={() => setRound((r) => r + 1)} className="rounded-lg bg-black px-5 py-2 text-white">Làm lại</button>
@@ -74,8 +77,7 @@ export function QuizClient() {
     // The answer counts towards the word's schedule. Deliberately not awaited: a
     // slow or failed write must not hold up the next question, and the flashcard
     // review remains the authority on a card either way.
-    const grade = gradeForMode('quiz', { correct })
-    if (grade) void gradeWordById(supabase, current.id, grade).catch(() => {})
+    recordGrade(current.id, gradeForMode('quiz', { correct }))
     if (!logged.current) { logged.current = true; void logActivityDay(supabase) }
   }
   function next() {
