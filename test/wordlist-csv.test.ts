@@ -112,4 +112,20 @@ describe('parseImportCsv', () => {
   it('returns an empty list for empty input', () => {
     expect(parseImportCsv('', [])).toEqual([])
   })
+
+  // A note typed across two lines in a spreadsheet is saved with CRLF. The CR
+  // stayed inside the quoted field and travelled to the database with the note.
+  it('does not carry a Windows line ending into a quoted field', () => {
+    const csv = [
+      'headword,lang,entryId,reading,ipa,pos,meaningVi,meaningEn,level,example,exampleTranslation,audioUrl,notes,status,tags,createdAt',
+      'dog,en,,,,,con chó,,,,,,"dòng một\r\ndòng hai",new,,',
+    ].join('\r\n')
+
+    const rows = parseImportCsv(csv, [])
+    expect(rows).toHaveLength(1)
+    expect(rows[0].kind).toBe('ok')
+    const notes = rows[0].kind === 'ok' ? rows[0].draft.notes : null
+    expect(notes).toBe('dòng một\ndòng hai')
+    expect(notes).not.toContain('\r')
+  })
 })

@@ -34,12 +34,15 @@ export const getCachedEntriesContaining = unstable_cache(
   { revalidate: 3600, tags: ['lex'] },
 )
 
-/** Cached per (language, exact list of terms). The entry page asks once for every
+/** Cached per (language, set of terms). The entry page asks once for every
  *  related word and inflected form it is about to render, so the key is stable
- *  for as long as the entry's relations are. */
+ *  for as long as the entry's relations are -- but only once the list is sorted:
+ *  the same words arriving in a different order were two cache entries and two
+ *  round trips for one answer. The caller keys the result by term, so order
+ *  never mattered to it. */
 export const getCachedTermPreviews = unstable_cache(
   (lang: LangCode, texts: string[]): Promise<TermPreview[]> =>
-    getTermPreviews(createContentClient(), lang, texts),
+    getTermPreviews(createContentClient(), lang, [...texts].sort()),
   ['dict-term-previews'],
   { revalidate: 3600, tags: ['lex'] },
 )
