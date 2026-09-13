@@ -98,4 +98,34 @@ describe('/api/ai', () => {
     expect((init.headers as Record<string, string>)['x-api-key']).toBe('sk-secret-must-not-leak')
     expect(JSON.stringify(await res.json())).not.toContain('sk-secret-must-not-leak')
   })
+
+  // `JSON.parse('null')` succeeds, so the try/catch around request.json() does
+  // not stop null reaching the field reads. Casting it and dereferencing .task
+  // threw, and the handler answered 500 to an ordinary bad request.
+  it('answers 400, not 500, to a null body', async () => {
+    expect((await post('null')).status).toBe(400)
+  })
+
+  it('answers 400 to a body that is not an object', async () => {
+    for (const body of ['42', '"hello"', '[]']) {
+      expect((await post(body)).status).toBe(400)
+    }
+  })
+
+  // clientKey returns null unless TRUST_PROXY_HEADER is set, so on a bare
+  // `next start` the per-address limit never runs -- measured at 25 of 25 POSTs
+  // admitted. The search route survives that because its cold-query limiter
+  // does not need to know who is asking; this route spends money per call and
+  // had no second line at all.
+  it('caps total calls even when the caller cannot be identified', async () => {
+    modelReplies(JSON.stringify({
+      meaningVi: 'x', ipa: 'x', pos: 'noun', level: 'A1', example: 'x', exampleVi: 'x',
+    }))
+    const statuses: number[] = []
+    for (let i = 0; i < 70; i++) {
+      statuses.push((await post({ task: 'enrich', input: { lang: 'en', headword: 'dog' } })).status)
+    }
+    expect(statuses).toContain(429)
+    expect(statuses.filter((s) => s === 200).length).toBeLessThanOrEqual(60)
+  })
 })
