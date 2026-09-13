@@ -171,4 +171,11 @@ describe('WordlistClient', () => {
 
     expect(await screen.findAllByText('toeic')).toHaveLength(2)
   })
+
+  it('does not send an update when the edit changed nothing', async () => {
+    render(<WordlistClient initialWords={[mk('w1', { headword: 'alpha' })]} />)
+    await userEvent.click(screen.getByRole('button', { name: /Sửa từ alpha/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^Lưu/i }))
+    expect(updateWord).not.toHaveBeenCalled()
+  })
 })

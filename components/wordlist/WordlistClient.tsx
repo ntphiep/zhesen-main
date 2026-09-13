@@ -205,8 +205,13 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   async function handleSave(id: string, patch: Partial<WordDraft>) {
     const original = words.find((w) => w.id === id)
     if (!original) return
-    setWords((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)))
     setEditWord(null)
+    // The dialog reports only the fields that changed, so opening a word and
+    // pressing Lưu without touching anything sends an empty patch. PostgREST
+    // refuses an empty update, which surfaced as "Không lưu được thay đổi" for
+    // a save that had nothing to save.
+    if (Object.keys(patch).length === 0) return
+    setWords((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)))
     try {
       const updated = await updateWord(supabase, id, patch)
       setWords((prev) => prev.map((w) => (w.id === id ? updated : w)))
