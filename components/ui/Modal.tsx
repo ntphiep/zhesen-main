@@ -35,7 +35,10 @@ export function Modal({
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}
-      className={`rounded-xl bg-white shadow-xl p-0 w-full ${widthClass} backdrop:bg-black/30`}
+      // `m-auto` is load-bearing: the UA stylesheet centres a modal dialog with
+      // `margin: auto`, and Tailwind's preflight resets `margin: 0` on every
+      // element, which pinned all three dialogs to the top-left corner.
+      className={`m-auto rounded-xl bg-white shadow-xl p-0 w-full ${widthClass} backdrop:bg-black/30`}
       onClose={onClose}
     >
       <div className="flex items-center justify-between px-5 pt-4 pb-0">
