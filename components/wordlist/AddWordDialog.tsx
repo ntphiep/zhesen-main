@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { fetchSearch } from '@/lib/dictionary/searchClient'
 import { draftFromDictEntry } from '@/lib/wordlist/store'
+import { callAi } from '@/lib/ai/browser'
+import { useAiEnabled } from '@/lib/hooks/useAiEnabled'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import { STATUS_OPTIONS, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
 import { LANGUAGES, type LangCode } from '@/lib/languages'
@@ -14,9 +16,12 @@ interface Props {
   open: boolean
   onClose: () => void
   onAdd: (draft: WordDraft) => void | Promise<void>
+  /** Entry ids already in the wordlist, so the list can say so instead of letting
+   *  the add fail against the unique index (migration 0031). */
+  savedEntryIds?: ReadonlySet<string>
 }
 
-export function AddWordDialog({ open, onClose, onAdd }: Props) {
+export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
 
   const [tab, setTab] = useState<Tab>('dict')
 
@@ -33,7 +38,13 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
   const [ipa, setIpa] = useState('')
   const [pos, setPos] = useState('')
   const [example, setExample] = useState('')
+  const [exampleVi, setExampleVi] = useState('')
   const [status, setStatus] = useState<WordStatus>('new')
+
+  // Assistant state for the manual tab.
+  const aiOn = useAiEnabled()
+  const [filling, setFilling] = useState(false)
+  const [fillError, setFillError] = useState<string | null>(null)
 
   // Clear stale results synchronously as soon as the query is emptied, instead of in an
   // effect (adjust state during render, per react.dev/learn/you-might-not-need-an-effect).
@@ -49,7 +60,7 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
   const [prevOpen, setPrevOpen] = useState(open)
   if (open !== prevOpen) {
     setPrevOpen(open)
-    if (open) { setQuery(''); setPrevQuery(''); setResults([]) }
+    if (open) { setQuery(''); setPrevQuery(''); setResults([]); setFillError(null) }
   }
 
   useEffect(() => {
@@ -64,7 +75,14 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
         // Supabase from here spent a cross-region round trip per keystroke and
         // skipped both the shared cache and the per-address budget.
         const outcome = await fetchSearch(query, ctrl.signal)
-        setResults(outcome.status === 'ok' ? outcome.data.forward[lang] : [])
+        // Both directions, deduped. The box only read `forward`, so typing the
+        // Vietnamese meaning of a word -- the natural thing to do when you know
+        // what you want to save but not how it is spelled -- found nothing, even
+        // though the route had already answered with it under `reverse`.
+        if (outcome.status !== 'ok') { setResults([]); return }
+        const seen = new Set<string>()
+        setResults([...outcome.data.forward[lang], ...outcome.data.reverse[lang]]
+          .filter((e) => !seen.has(e.id) && seen.add(e.id)))
       } catch (e) {
         if ((e as Error).name !== 'AbortError') setResults([])
       }
@@ -91,14 +109,36 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
       meaningEn: meaningEn.trim() || null,
       level: null,
       example: example.trim() || null,
-      exampleTranslation: null,
+      exampleTranslation: exampleVi.trim() || null,
       audioUrl: null,
       notes: null,
       status,
       tags: [],
     }
     await onAdd(draft)
-    setHeadword(''); setMeaningVi(''); setMeaningEn(''); setIpa(''); setPos(''); setExample(''); setStatus('new')
+    setHeadword(''); setMeaningVi(''); setMeaningEn(''); setIpa(''); setPos(''); setExample(''); setExampleVi(''); setStatus('new')
+    setFillError(null)
+  }
+
+  // Fill the empty fields of the manual form from the model. Only the empty ones:
+  // anything already typed is the learner's own wording and outranks a guess.
+  async function handleAiFill() {
+    const word = headword.trim()
+    if (!word || filling) return
+    setFilling(true)
+    setFillError(null)
+    const outcome = await callAi('enrich', { lang: manualLang, headword: word })
+    if (outcome.status === 'ok') {
+      const d = outcome.data
+      setMeaningVi((v) => v || d.meaningVi)
+      setIpa((v) => v || d.ipa)
+      setPos((v) => v || d.pos)
+      setExample((v) => v || d.example)
+      setExampleVi((v) => v || d.exampleVi)
+    } else {
+      setFillError(outcome.message)
+    }
+    setFilling(false)
   }
 
   return (
@@ -154,24 +194,31 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
 
             {results.length > 0 && (
               <ul className="flex flex-col gap-1 max-h-60 overflow-y-auto">
-                {results.map((entry) => (
-                  <li
-                    key={entry.id}
-                    className="flex items-center justify-between rounded-lg bg-black/5 px-3 py-2"
-                  >
-                    <div>
-                      <span className="font-medium">{entry.headword}</span>
-                      <Ipa value={entry.ipa} lang={entry.lang} className="ml-2 text-xs text-black/50" />
-                      {entry.glossVi && <span className="ml-2 text-sm text-black/60">{entry.glossVi}</span>}
-                    </div>
-                    <button
-                      className="ml-3 rounded-lg bg-black px-3 py-1 text-sm text-white"
-                      onClick={() => handleDictAdd(entry)}
+                {results.map((entry) => {
+                  const saved = savedEntryIds?.has(entry.id) ?? false
+                  return (
+                    <li
+                      key={entry.id}
+                      className="flex items-center justify-between rounded-lg bg-black/5 px-3 py-2"
                     >
-                      Thêm
-                    </button>
-                  </li>
-                ))}
+                      <div>
+                        <span className="font-medium">{entry.headword}</span>
+                        <Ipa value={entry.ipa} lang={entry.lang} className="ml-2 text-xs text-black/50" />
+                        {entry.glossVi && <span className="ml-2 text-sm text-black/60">{entry.glossVi}</span>}
+                      </div>
+                      {saved ? (
+                        <span className="ml-3 shrink-0 text-sm text-black/40">Đã có</span>
+                      ) : (
+                        <button
+                          className="ml-3 shrink-0 rounded-lg bg-black px-3 py-1 text-sm text-white"
+                          onClick={() => handleDictAdd(entry)}
+                        >
+                          Thêm
+                        </button>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
             )}
 
@@ -229,6 +276,22 @@ export function AddWordDialog({ open, onClose, onAdd }: Props) {
                 />
               </label>
             </div>
+            {aiOn && (
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleAiFill}
+                  disabled={!headword.trim() || filling}
+                  className="rounded-lg border border-black/15 px-3 py-1.5 text-xs font-medium text-black/70 hover:bg-black/5 disabled:opacity-40"
+                >
+                  {filling ? 'Đang điền…' : 'Điền bằng AI'}
+                </button>
+                <span className="text-xs text-black/40">
+                  {fillError ?? 'Chỉ điền vào ô còn trống.'}
+                </span>
+              </div>
+            )}
+
             <label className="flex flex-col gap-1">
               <span className="text-xs text-black/50">Nghĩa tiếng Việt</span>
               <input

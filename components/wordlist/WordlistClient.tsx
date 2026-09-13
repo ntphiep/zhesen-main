@@ -37,6 +37,27 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   const allVisibleIds = visible.map((w) => w.id)
   const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selected.has(id))
 
+  // Render a page at a time. The list is 400+ rows for a real learner and every
+  // row mounts an audio button and a row-actions group, so rendering the whole
+  // thing cost a visible pause on every keystroke in the filter box. Selection
+  // and export still work on the full filtered set, not on what is on screen.
+  const PAGE_SIZE = 50
+  const [limit, setLimit] = useState(PAGE_SIZE)
+  const filterSignature = `${query}|${langFilter}|${statusFilter}|${tagFilter}|${sortKey}|${sortDir}`
+  const [prevSignature, setPrevSignature] = useState(filterSignature)
+  if (filterSignature !== prevSignature) {
+    setPrevSignature(filterSignature)
+    setLimit(PAGE_SIZE)
+  }
+  const shown = visible.slice(0, limit)
+
+  // Which dictionary entries are already saved, so the add dialog can say "Đã có"
+  // rather than let the insert fail against the unique index from migration 0031.
+  const savedEntryIds = useMemo(
+    () => new Set(words.map((w) => w.entryId).filter((id): id is string => id !== null)),
+    [words],
+  )
+
   function toggleSelectAll() {
     setSelected((prev) => {
       const next = new Set(prev)
@@ -230,7 +251,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       )}
 
       {/* Table view */}
-      {view === 'table' && visible.length > 0 && (
+      {view === 'table' && shown.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
@@ -272,7 +293,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
               </tr>
             </thead>
             <tbody>
-              {visible.map((w) => (
+              {shown.map((w) => (
                 <Fragment key={w.id}>
                   <tr className="border-b border-black/5 hover:bg-black/2">
                     <td className="py-2 pr-3">
@@ -321,9 +342,9 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       )}
 
       {/* Card view */}
-      {view === 'card' && visible.length > 0 && (
+      {view === 'card' && shown.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {visible.map((w) => (
+          {shown.map((w) => (
             <div
               key={w.id}
               className="rounded-xl border border-black/10 p-4 flex flex-col gap-2 bg-white"
@@ -373,11 +394,24 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         </div>
       )}
 
+      {visible.length > shown.length && (
+        <div className="flex items-center justify-center gap-3 py-2 text-sm">
+          <span className="text-black/40">Đang xem {shown.length} / {visible.length} từ</span>
+          <button
+            className="rounded-lg border border-black/15 px-3 py-1.5 font-medium text-black/70 hover:bg-black/5"
+            onClick={() => setLimit((n) => n + PAGE_SIZE)}
+          >
+            Xem thêm
+          </button>
+        </div>
+      )}
+
       {/* Dialogs */}
       <AddWordDialog
         open={addOpen}
         onClose={() => setAddOpen(false)}
         onAdd={handleAdd}
+        savedEntryIds={savedEntryIds}
       />
 
       <EditWordDialog

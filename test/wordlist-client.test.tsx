@@ -91,4 +91,44 @@ describe('WordlistClient', () => {
     expect(screen.queryByText('beta')).not.toBeInTheDocument()
     expect(deleteWords).toHaveBeenCalledWith(expect.anything(), expect.arrayContaining(['x', 'y']))
   })
+
+  // 400+ rows is a real wordlist, and every row mounts an audio button and a
+  // row-actions group. Rendering all of them stalled visibly on each keystroke
+  // in the filter box, so the table shows a page at a time.
+  it('shows one page of a long list, and more on request', async () => {
+    const many = Array.from({ length: 120 }, (_, i) =>
+      mk(`w${i}`, { headword: `word${i}`, entryId: `en:word${i}` }))
+    render(<WordlistClient initialWords={many} />)
+
+    expect(screen.getByText('word0')).toBeInTheDocument()
+    expect(screen.queryByText('word60')).toBeNull()
+    expect(screen.getByText(/Đang xem 50 \/ 120 từ/)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Xem thêm' }))
+    expect(screen.getByText('word60')).toBeInTheDocument()
+    expect(screen.queryByText('word110')).toBeNull()
+  })
+
+  // Selecting all then acting on the selection must cover the whole filtered
+  // list, not only the rows the pager happens to have rendered.
+  it('selects every filtered word, not just the page on screen', async () => {
+    const many = Array.from({ length: 70 }, (_, i) =>
+      mk(`w${i}`, { headword: `word${i}`, entryId: `en:word${i}` }))
+    render(<WordlistClient initialWords={many} />)
+    await userEvent.click(screen.getByLabelText('Chọn tất cả'))
+    expect(screen.getByText('70 từ đã chọn')).toBeInTheDocument()
+  })
+
+  // A narrower filter must not leave the reader on page three of the old list.
+  it('returns to the first page when the filter changes', async () => {
+    const many = Array.from({ length: 120 }, (_, i) =>
+      mk(`w${i}`, { headword: `word${i}`, entryId: `en:word${i}` }))
+    render(<WordlistClient initialWords={many} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Xem thêm' }))
+    expect(screen.getByText('word60')).toBeInTheDocument()
+
+    await userEvent.type(screen.getByPlaceholderText(/Tìm trong danh sách/i), 'word')
+    expect(screen.getByText(/Đang xem 50 \/ 120 từ/)).toBeInTheDocument()
+    expect(screen.queryByText('word60')).toBeNull()
+  })
 })
