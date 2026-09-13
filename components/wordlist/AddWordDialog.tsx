@@ -80,9 +80,15 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
         // what you want to save but not how it is spelled -- found nothing, even
         // though the route had already answered with it under `reverse`.
         if (outcome.status !== 'ok') { setResults([]); return }
-        const seen = new Set<string>()
-        setResults([...outcome.data.forward[lang], ...outcome.data.reverse[lang]]
-          .filter((e) => !seen.has(e.id) && seen.add(e.id)))
+        // A Map keyed by id keeps the first of each and the order they came in,
+        // forward before reverse. The earlier version deduped inside a filter
+        // predicate that relied on Set.add returning the Set -- correct, and one
+        // more thing to decode at three in the morning.
+        const byId = new Map<string, DictEntryPreview>()
+        for (const e of [...outcome.data.forward[lang], ...outcome.data.reverse[lang]]) {
+          if (!byId.has(e.id)) byId.set(e.id, e)
+        }
+        setResults([...byId.values()])
       } catch (e) {
         if ((e as Error).name !== 'AbortError') setResults([])
       }
@@ -127,18 +133,23 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
     if (!word || filling) return
     setFilling(true)
     setFillError(null)
-    const outcome = await callAi('enrich', { lang: manualLang, headword: word })
-    if (outcome.status === 'ok') {
-      const d = outcome.data
-      setMeaningVi((v) => v || d.meaningVi)
-      setIpa((v) => v || d.ipa)
-      setPos((v) => v || d.pos)
-      setExample((v) => v || d.example)
-      setExampleVi((v) => v || d.exampleVi)
-    } else {
-      setFillError(outcome.message)
+    try {
+      const outcome = await callAi('enrich', { lang: manualLang, headword: word })
+      if (outcome.status === 'ok') {
+        const d = outcome.data
+        setMeaningVi((v) => v || d.meaningVi)
+        setIpa((v) => v || d.ipa)
+        setPos((v) => v || d.pos)
+        setExample((v) => v || d.example)
+        setExampleVi((v) => v || d.exampleVi)
+      } else {
+        setFillError(outcome.message)
+      }
+    } finally {
+      // Without this the button sticks on "Đang điền…" for the life of the
+      // dialog if anything throws, and only closing and reopening frees it.
+      setFilling(false)
     }
-    setFilling(false)
   }
 
   return (

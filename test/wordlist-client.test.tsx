@@ -131,4 +131,44 @@ describe('WordlistClient', () => {
     expect(screen.getByText(/Đang xem 50 \/ 120 từ/)).toBeInTheDocument()
     expect(screen.queryByText('word60')).toBeNull()
   })
+
+  // Promise.all rejected on the first failure while the rest were already in
+  // flight and landed anyway: 199 of 200 rows tagged in the database, the whole
+  // list rolled back on screen, and an alert saying it had failed. The learner
+  // then filtered by that tag and found words the app said were not tagged.
+  it('keeps the tags that saved when one row fails', async () => {
+    const alerts: string[] = []
+    vi.stubGlobal('alert', (m: string) => alerts.push(m))
+    const words = [
+      mk('w1', { headword: 'alpha', entryId: 'en:alpha' }),
+      mk('w2', { headword: 'beta', entryId: 'en:beta' }),
+      mk('w3', { headword: 'gamma', entryId: 'en:gamma' }),
+    ]
+    updateWord.mockImplementation(async (_c: unknown, id: string, patch: Partial<UserWord>) => {
+      if (id === 'w2') throw new Error('offline')
+      return { ...words.find((w) => w.id === id)!, ...patch }
+    })
+    render(<WordlistClient initialWords={words} />)
+
+    await userEvent.click(screen.getByLabelText('Chọn tất cả'))
+    await userEvent.type(screen.getByPlaceholderText(/Gắn thẻ/i), 'toeic')
+    await userEvent.click(screen.getByRole('button', { name: 'Gắn thẻ' }))
+
+    // The two that saved keep the tag; only the one that failed goes back.
+    expect(await screen.findAllByText('toeic')).toHaveLength(2)
+    expect(alerts.join(' ')).toMatch(/1 từ/)
+  })
+
+  it('keeps every tag when nothing fails', async () => {
+    const words = [mk('w1', { headword: 'alpha' }), mk('w2', { headword: 'beta' })]
+    updateWord.mockImplementation(async (_c: unknown, id: string, patch: Partial<UserWord>) =>
+      ({ ...words.find((w) => w.id === id)!, ...patch }))
+    render(<WordlistClient initialWords={words} />)
+
+    await userEvent.click(screen.getByLabelText('Chọn tất cả'))
+    await userEvent.type(screen.getByPlaceholderText(/Gắn thẻ/i), 'toeic')
+    await userEvent.click(screen.getByRole('button', { name: 'Gắn thẻ' }))
+
+    expect(await screen.findAllByText('toeic')).toHaveLength(2)
+  })
 })
