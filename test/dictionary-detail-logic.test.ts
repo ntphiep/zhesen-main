@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { pickSenses, isCleanExample, isClassifierGloss, parseClassifiers, fillPivotVi, cleanMtGloss } from '@/lib/dictionary/textQuality'
+import { pickSenses, isCleanExample, isClassifierGloss, parseClassifiers, fillPivotVi, cleanMtGloss, isSentenceTranslation, hasUnknownLongWord } from '@/lib/dictionary/textQuality'
+import { tokenize } from '@/lib/reader/tokenize'
 import { classifyRelations } from '@/lib/dictionary/relations'
 import { groupWordForms } from '@/lib/dictionary/family'
 import type { DictSense, DictRelation } from '@/lib/dictionary/types'
@@ -156,5 +157,40 @@ describe('groupWordForms', () => {
       { formText: 'gatos', formLabel: 'plural' },
     ])
     expect(forms.map((f) => f.text)).toEqual(['gatos'])
+  })
+})
+
+describe('isSentenceTranslation', () => {
+  it('rejects the entry gloss copied into the translation field', () => {
+    expect(isSentenceTranslation('con chó', ['con chó', 'chó'])).toBe(false)
+  })
+  it('ignores case and surrounding space when comparing', () => {
+    expect(isSentenceTranslation('  Con Chó ', ['con chó'])).toBe(false)
+  })
+  it('keeps a real translation of the sentence', () => {
+    expect(isSentenceTranslation('Con chó sủa.', ['con chó'])).toBe(true)
+  })
+  it('treats a missing translation as nothing to show', () => {
+    expect(isSentenceTranslation(null, ['con chó'])).toBe(false)
+    expect(isSentenceTranslation('   ', ['con chó'])).toBe(false)
+  })
+})
+
+describe('hasUnknownLongWord', () => {
+  // The word list behind isCleanExample cannot catch these: "holy" and "ground" are
+  // ordinary English words that simply are not on it. The dictionary knows better.
+  const known = new Set(['the', 'a', 'dog', 'barked', 'development', 'economy', 'holy'])
+
+  it('flags a run-together token the dictionary does not know', () => {
+    expect(hasUnknownLongWord(tokenize('en', 'holyground.'), known)).toBe(true)
+  })
+  it('passes a sentence whose long words are all in the dictionary', () => {
+    expect(hasUnknownLongWord(tokenize('en', 'The development of the economy.'), known)).toBe(false)
+  })
+  it('leaves short unknown tokens alone, since a missing headword is the likelier cause', () => {
+    expect(hasUnknownLongWord(tokenize('en', 'The cat sat.'), known)).toBe(false)
+  })
+  it('ignores non-Latin text, where an unresolved token is an ordinary character', () => {
+    expect(hasUnknownLongWord(tokenize('zh', '我有一本很好看的中文书'), new Set())).toBe(false)
   })
 })

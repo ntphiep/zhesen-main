@@ -99,6 +99,63 @@ describe('ExampleList', () => {
     expect(screen.getByText('The dog barked.')).toBeInTheDocument()
     expect(screen.getByText('Con chó sủa.')).toBeInTheDocument()
   })
+
+  // The crawler filled the translation field with the entry's own meaning whenever
+  // the source page carried no per-sentence translation, which is most of the time.
+  // Printing it under the sentence claims it is a translation of that sentence.
+  it('hides a "translation" that is really the entry gloss copied over', () => {
+    render(
+      <ExampleList
+        lang="en"
+        glosses={['con chó']}
+        examples={[{ text: 'The dog barked.', reading: null, translationVi: 'con chó', translationEn: null }]}
+      />,
+    )
+    expect(screen.getByText('The dog barked.')).toBeInTheDocument()
+    expect(screen.queryByText('con chó')).toBeNull()
+  })
+
+  // "holyground." reached the page because the hand-written word list behind
+  // isCleanExample has neither "holy" nor "ground" on it. The server already
+  // resolved every token against the dictionary to make them tappable, so the
+  // sentence can be judged against the dictionary instead of a list.
+  it('drops a sentence whose long words the dictionary does not know', () => {
+    const { container } = render(
+      <ExampleList
+        lang="en"
+        examples={[{ text: 'holyground.', reading: null, translationVi: null, translationEn: null }]}
+        resolved={[{ text: 'holyground.', segments: [{ text: 'holyground', word: true }, { text: '.', word: false }], entries: [], chars: [] }]}
+      />,
+    )
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  it('keeps a sentence whose words all resolved', () => {
+    render(
+      <ExampleList
+        lang="en"
+        examples={[{ text: 'The dog barked.', reading: null, translationVi: null, translationEn: null }]}
+        resolved={[{
+          text: 'The dog barked.',
+          segments: [{ text: 'The', word: true }, { text: ' ', word: false }, { text: 'dog', word: true }, { text: ' ', word: false }, { text: 'barked', word: true }, { text: '.', word: false }],
+          entries: [['barked', { id: 'en:bark' } as never]],
+          chars: [],
+        }]}
+      />,
+    )
+    expect(screen.getByText('The dog barked.')).toBeInTheDocument()
+  })
+
+  it('still shows a real translation when the entry gloss is given', () => {
+    render(
+      <ExampleList
+        lang="en"
+        glosses={['con chó']}
+        examples={[{ text: 'The dog barked.', reading: null, translationVi: 'Con chó sủa.', translationEn: null }]}
+      />,
+    )
+    expect(screen.getByText('Con chó sủa.')).toBeInTheDocument()
+  })
 })
 
 describe('AddToWordlistButton', () => {

@@ -1,3 +1,4 @@
+import type { Segment } from '@/lib/reader/tokenize'
 import type { DictSense } from './types'
 import { cleanGlossTerm } from './crosslang'
 
@@ -120,6 +121,60 @@ export function isCleanExample(text: string): boolean {
     if (letters.length >= 11 && segmentCommon(letters.toLowerCase()) >= 3) return false
   }
   return true
+}
+
+/**
+ * Whether an example's "translation" is really a translation of the sentence, or
+ * the entry's own meaning copied into the field.
+ *
+ * The Cambridge crawler filled `translation_vi` from the sense gloss whenever the
+ * page carried no per-example translation, which is nearly always: measured over
+ * the loaded data, 30.4% of Cambridge examples carry the entry's meaning instead of
+ * the sentence's. On the page that reads as a translation and it is not one -- under
+ * "It's time to take the dog for a walk" it said "con chó".
+ *
+ * The comparison is exact rather than a similarity score: the bad rows are a copy,
+ * so nothing is guessed, and a real translation that happens to equal a gloss is a
+ * one-word sentence whose meaning the gloss already gave.
+ */
+export function isSentenceTranslation(translation: string | null, glosses: (string | null)[]): boolean {
+  const t = translation?.trim().toLowerCase()
+  if (!t) return false
+  return !glosses.some((g) => g?.trim().toLowerCase() === t)
+}
+
+/**
+ * Whether a sentence contains a long word the dictionary has never heard of.
+ *
+ * `isCleanExample` above catches run-together text with a hand-written list of
+ * common words, and that list is the limit of it: "holyground." decomposes into two
+ * ordinary English words that are not on it, so it went through and reached the page.
+ * This check uses the dictionary instead. The page already resolved every token of
+ * every example against `lex.entries` to make the words tappable, so the answer is
+ * sitting in memory and costs nothing to ask.
+ *
+ * Eight letters, because the corruption joins two words and the join is what makes
+ * the token long. Measured over a 20,000-example sample of the loaded English data,
+ * against all 21,004 headwords plus all 41,939 inflected forms:
+ *
+ *   threshold   Cambridge sentences hidden   Tatoeba sentences hidden
+ *      8                 77.7%                        6.4%
+ *     11                 57.1%                        2.4%
+ *     14                 35.5%                        0.5%
+ *
+ * Cambridge is the corrupted source; Tatoeba's text is clean, so its column is the
+ * cost -- a good sentence hidden because the dictionary does not carry the word
+ * ("breadfruit", "oceanographer", "hibernate"). Eight buys the most corruption
+ * removed per good sentence lost, and an entry usually stores far more examples
+ * than the six it shows, so the loss rarely reaches the page. The check costs
+ * nothing once the crawler stops producing the corruption.
+ *
+ * Latin scripts only -- a Chinese token that resolves to nothing is an ordinary
+ * character, handled by the character lookup.
+ */
+export function hasUnknownLongWord(segments: Segment[], known: Set<string>, minLength = 8): boolean {
+  return segments.some((s) =>
+    s.word && s.text.length >= minLength && /^\p{Script=Latin}+$/u.test(s.text) && !known.has(s.text.toLowerCase()))
 }
 
 /** How many examples an entry page shows. */

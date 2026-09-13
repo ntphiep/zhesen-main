@@ -68,7 +68,12 @@ export function LookupView({
               radicals, stroke counts and the writing practice belong in the wide
               column, where they were squeezed into a 299px rail before. */}
           {showChars && <CharacterPanel characters={characters} />}
-          <ExampleList examples={detail.examples} lang={detail.lang} resolved={resolvedExamples} />
+          <ExampleList
+            examples={detail.examples}
+            lang={detail.lang}
+            resolved={resolvedExamples}
+            glosses={[detail.glossVi, ...detail.senses.map((s) => s.glossVi)]}
+          />
         </div>
 
         {hasSideRail && (
