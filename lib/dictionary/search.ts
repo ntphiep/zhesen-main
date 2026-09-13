@@ -38,18 +38,6 @@ export async function searchAllLanguages(
   return { en, zh, es }
 }
 
-/** Reverse lookup: Vietnamese query -> matching en/es/zh entries, via the
- * `lex.search_vi` RPC (see supabase/migrations/0018_reverse_lookup.sql). */
-export async function searchEntriesVi(
-  supabase: SupabaseClient, lang: LangCode, query: string, limit = 20,
-): Promise<DictEntryPreview[]> {
-  const q = query.trim()
-  if (!q) return []
-  const { data, error } = await supabase.schema('lex').rpc('search_vi', { p_q: q, p_langs: [lang], p_limit: limit })
-  if (error) throw error
-  return searchRpcRow.array().parse(data ?? []).map(toPreviewFromSearchRow)
-}
-
 /**
  * Reverse lookup across all three languages at once, grouped by language.
  *

@@ -91,6 +91,10 @@ export function parseCsvTable(text: string): string[][] {
         if (text[i + 1] === '"') { field += '"'; i += 2; continue }
         inQuotes = false; i++; continue
       }
+      // A quoted field may span lines, and a file written on Windows separates
+      // them with CRLF. Keeping the CR stored a stray carriage return inside the
+      // note. A lone CR, which no CSV writer emits, is left alone.
+      if (c === '\r' && text[i + 1] === '\n') { i++; continue }
       if (c === '\n') line++
       field += c; i++; continue
     }
@@ -107,11 +111,6 @@ export function parseCsvTable(text: string): string[][] {
   if (inQuotes) throw new UnterminatedQuoteError(quoteOpenedAt)
   if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row) }
   return rows.filter((r) => !(r.length === 1 && r[0] === ''))
-}
-
-export interface ParsedImportRow {
-  line: number
-  draft: WordDraft
 }
 
 export type ImportPreviewRow =

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { pickIpa, pickPrimarySense } from '@/lib/dictionary/rows'
-import { searchEntries, searchEntriesVi, searchAllLanguagesVi, suggestNearby, searchBothDirections } from '@/lib/dictionary/search'
+import { searchEntries, searchAllLanguagesVi, suggestNearby, searchBothDirections } from '@/lib/dictionary/search'
 import { getEntryDetail, getCrossLanguage, getCharacters } from '@/lib/dictionary/entryDetail'
 import { resolveTokens, getZhSegmentCandidates } from '@/lib/dictionary/resolveTokens'
 
@@ -148,25 +148,6 @@ describe('searchAllLanguagesVi', () => {
   })
 })
 
-describe('searchEntriesVi', () => {
-  it('maps the lex.search_vi RPC row to a preview', async () => {
-    const { client } = rpcClient([receiveViRow])
-    const res = await searchEntriesVi(client, 'en', 'nhận được')
-    expect(res[0]).toMatchObject({ id: 'en:receive', headword: 'receive', glossVi: 'nhận được' })
-  })
-
-  it('calls the RPC with the trimmed query, the single language, and the limit', async () => {
-    const { client, rpc } = rpcClient([])
-    await searchEntriesVi(client, 'en', '  nhận được  ', 5)
-    expect(rpc).toHaveBeenCalledWith('search_vi', { p_q: 'nhận được', p_langs: ['en'], p_limit: 5 })
-  })
-
-  it('returns [] without calling the RPC for an empty query', async () => {
-    const { client, rpc } = rpcClient([])
-    expect(await searchEntriesVi(client, 'en', '   ')).toEqual([])
-    expect(rpc).not.toHaveBeenCalled()
-  })
-})
 
 describe('suggestNearby', () => {
   it('maps the lex.suggest RPC row to a suggestion', async () => {
