@@ -9,6 +9,7 @@ import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { ConjugationTable } from './ConjugationTable'
 import { ExampleList } from './ExampleList'
 import { GrammarLinks } from './GrammarLinks'
+import { AiCoach } from '@/components/ai/AiCoach'
 import { groupWordForms } from '@/lib/dictionary/family'
 import { buildConjugation } from '@/lib/dictionary/conjugation'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
@@ -74,6 +75,9 @@ export function LookupView({
             resolved={resolvedExamples}
             glosses={[detail.glossVi, ...detail.senses.map((s) => s.glossVi)]}
           />
+          {/* Under the dictionary's own material, never in place of it: what the
+              assistant says is generated, what is above it is sourced. */}
+          <AiCoach lang={detail.lang} headword={detail.headword} meaningVi={detail.glossVi} />
         </div>
 
         {hasSideRail && (

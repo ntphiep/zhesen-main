@@ -9,6 +9,7 @@ vi.mock('@/lib/wordlist/store', () => ({
   addWord: vi.fn(async () => ({})),
   draftFromDictEntry: (e: { headword: string }) => ({ headword: e.headword }),
 }))
+vi.mock('@/lib/ai/browser', () => ({ callAi: vi.fn(), aiEnabled: vi.fn(async () => true) }))
 
 const base: DictEntryDetail = {
   id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', ipa: '/dɔːɡ/', pos: 'noun',
@@ -32,5 +33,14 @@ describe('LookupView', () => {
       />,
     )
     expect(screen.getByText('Chữ và bộ thủ')).toBeInTheDocument()
+  })
+
+  // The assistant sits under the dictionary's own material, never in place of it:
+  // everything above it is sourced, what it says is generated.
+  it('offers the assistant below the sourced content', async () => {
+    render(<LookupView detail={base} characters={[]} siblings={[]} />)
+    const coach = await screen.findByRole('button', { name: /Hỏi trợ lý/i })
+    const meaning = screen.getAllByText('con chó')[0]
+    expect(meaning.compareDocumentPosition(coach) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })
