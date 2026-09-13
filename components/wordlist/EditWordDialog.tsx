@@ -24,24 +24,33 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
   const [status, setStatus] = useState<WordStatus>('new')
   const [tags, setTags] = useState<string[]>([])
 
-  // Sync form state when word changes or dialog reopens (so stale edits don't persist
-  // across open/close). Adjust state during render instead of in an effect, per
-  // react.dev/learn/you-might-not-need-an-effect: track the (word, open) combination we
-  // last synced from, and re-sync synchronously whenever it changes.
+  // Sync form state when the word changes or the dialog reopens, so a draft the
+  // user cancelled does not come back. Adjust state during render instead of in
+  // an effect, per react.dev/learn/you-might-not-need-an-effect: track the
+  // (word, open) combination last synced from and re-sync when it changes.
+  //
+  // The comparison has to run on the way OUT as well, which is what the first
+  // version got wrong. Closing sets `word` to null (WordlistClient passes
+  // `editWord`), so a guard of `word && open && ...` skipped the whole block and
+  // left the key on the old id; reopening that same word then matched, no sync
+  // happened, and the cancelled draft was still in the fields -- one click from
+  // overwriting the real meaning.
   const resetKey = open && word ? word.id : null
   const [prevResetKey, setPrevResetKey] = useState<string | null>(null)
-  if (word && open && resetKey !== prevResetKey) {
+  if (resetKey !== prevResetKey) {
     setPrevResetKey(resetKey)
-    setMeaningVi(word.meaningVi ?? '')
-    setMeaningEn(word.meaningEn ?? '')
-    setPos(word.pos ?? '')
-    setIpa(word.ipa ?? '')
-    setLevel(word.level ?? '')
-    setExample(word.example ?? '')
-    setExampleTranslation(word.exampleTranslation ?? '')
-    setNotes(word.notes ?? '')
-    setStatus(word.status)
-    setTags(word.tags)
+    if (word && open) {
+      setMeaningVi(word.meaningVi ?? '')
+      setMeaningEn(word.meaningEn ?? '')
+      setPos(word.pos ?? '')
+      setIpa(word.ipa ?? '')
+      setLevel(word.level ?? '')
+      setExample(word.example ?? '')
+      setExampleTranslation(word.exampleTranslation ?? '')
+      setNotes(word.notes ?? '')
+      setStatus(word.status)
+      setTags(word.tags)
+    }
   }
 
   async function handleSave() {
