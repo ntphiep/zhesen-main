@@ -77,6 +77,10 @@ export interface DueOptions {
   newLimit?: number
 }
 
+/** The session size. One constant, because `countDueCards` promises what
+ *  `listDueCards` will hand over, and two copies of these numbers drift. */
+export const SESSION_LIMITS = { limit: 50, newLimit: 20 } as const
+
 /**
  * The session queue: cards already being learned that are due, then a bounded
  * number of cards never seen before.
@@ -95,7 +99,7 @@ export interface DueOptions {
 export async function listDueCards(
   supabase: SupabaseClient, now: number, options: DueOptions = {},
 ): Promise<ReviewCard[]> {
-  const { limit = 50, newLimit = 20 } = options
+  const { limit = SESSION_LIMITS.limit, newLimit = SESSION_LIMITS.newLimit } = options
   const dueBy = new Date(now).toISOString()
 
   const page = (fresh: boolean, take: number) =>
@@ -119,14 +123,39 @@ export async function listDueCards(
   return [...learned, ...z.array(cardRowSchema).parse(fresh ?? []).map(rowToCard)]
 }
 
-/** Number of wordlist cards currently due. RLS scopes to the user. */
-export async function countDueCards(supabase: SupabaseClient, now: number = Date.now()): Promise<number> {
-  const { count, error } = await supabase
-    .from('user_words')
-    .select('*', { count: 'exact', head: true })
-    .lte('fsrs_due_at', new Date(now).toISOString())
-  if (error) throw error
-  return count ?? 0
+/**
+ * How many cards the next session will actually hand over. RLS scopes to the user.
+ *
+ * Counted with the queue's own formula, not a flat COUNT of due rows. A new card
+ * is due the moment it is saved, so a flat count is dominated by the backlog:
+ * measured on this project's own account, the button said 406 while the session
+ * served 22 -- two cards genuinely due for review plus the twenty-new allowance.
+ * The learner finished, was told "Hết thẻ cần ôn", went back, and the button
+ * still claimed several hundred. A number nobody can drive to zero is not a
+ * workload, it is discouragement.
+ *
+ * Two head-only COUNTs, so it costs about what the single flat one did.
+ */
+export async function countDueCards(
+  supabase: SupabaseClient, now: number = Date.now(), options: DueOptions = {},
+): Promise<number> {
+  const { limit = SESSION_LIMITS.limit, newLimit = SESSION_LIMITS.newLimit } = options
+  const dueBy = new Date(now).toISOString()
+
+  const countBy = async (fresh: boolean): Promise<number> => {
+    const { count, error } = await supabase
+      .from('user_words')
+      .select('*', { count: 'exact', head: true })
+      .lte('fsrs_due_at', dueBy)
+      .filter('fsrs_reps', fresh ? 'eq' : 'gt', 0)
+    if (error) throw error
+    return count ?? 0
+  }
+
+  const learned = Math.min(await countBy(false), limit)
+  const room = Math.min(newLimit, limit - learned)
+  if (room <= 0) return learned
+  return learned + Math.min(room, await countBy(true))
 }
 
 /** Grade a card with FSRS and persist the new schedule. */

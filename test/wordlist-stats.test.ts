@@ -11,6 +11,7 @@ const row = (over: Partial<StatRow>): StatRow => ({
   srsIntervalDays: 0,
   srsDueAt: new Date(now).toISOString(),
   srsLastReviewedAt: null,
+  srsReps: 0,
   ...over,
 })
 
@@ -54,5 +55,26 @@ describe('computeWordlistStats', () => {
     const s = computeWordlistStats(rows, [], now)
     expect(s.byStatus).toEqual({ new: 1, learning: 1, known: 2 })
     expect(s.byLang).toEqual({ en: 2, es: 1, zh: 1 })
+  })
+
+  // "Cần ôn" has to be what the session will actually hand over. A new card is
+  // due the moment it is saved, so a flat count of overdue rows is dominated by
+  // the backlog: measured on this project's own account, 406 rows were past due
+  // while the session served 22. The learner finished, was told there was
+  // nothing left, went back, and the label still said several hundred.
+  it('reports what a session serves, not the size of the backlog', () => {
+    const past = new Date(now - DAY).toISOString()
+    const rows: StatRow[] = [
+      ...Array.from({ length: 404 }, () => row({ srsDueAt: past, srsReps: 0 })),
+      ...Array.from({ length: 2 }, () => row({ srsDueAt: past, srsReps: 3 })),
+    ]
+    expect(computeWordlistStats(rows, [], now).due).toBe(22)
+  })
+
+  it('counts every genuinely due review, up to the session limit', () => {
+    const past = new Date(now - DAY).toISOString()
+    const rows: StatRow[] = Array.from({ length: 80 }, () => row({ srsDueAt: past, srsReps: 5 }))
+    // 50 reviews fill the session; no room is left for new cards.
+    expect(computeWordlistStats(rows, [], now).due).toBe(50)
   })
 })

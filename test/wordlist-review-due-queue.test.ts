@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { listDueCards } from '@/lib/wordlist/review'
+import { countDueCards, listDueCards } from '@/lib/wordlist/review'
 
 const card = (id: string, reps: number) => ({
   id, lang: 'en', headword: id, reading: null, ipa: null,
@@ -80,5 +80,46 @@ describe('listDueCards', () => {
   it('comes back empty when nothing is due', async () => {
     const { client } = mockClient({})
     expect(await listDueCards(client, NOW)).toEqual([])
+  })
+})
+
+/** Head-only COUNTs: no rows come back, only the total per (fresh?) bucket. */
+function mockCounter({ learned = 0, fresh = 0 }: { learned?: number; fresh?: number }) {
+  const from = vi.fn(() => {
+    let kind = ''
+    const chain = {
+      select: () => chain,
+      lte: () => chain,
+      filter: (_col: string, op: string) => {
+        kind = op
+        return Promise.resolve({ count: kind === 'eq' ? fresh : learned, error: null })
+      },
+    }
+    return chain
+  })
+  return { from } as unknown as SupabaseClient
+}
+
+describe('countDueCards', () => {
+  // The number on the button is a promise about the next session. A flat COUNT
+  // of overdue rows broke that promise badly: measured on this project's own
+  // account, 406 rows were past due while the session served 22.
+  it('promises exactly what the session will serve', async () => {
+    await expect(countDueCards(mockCounter({ learned: 2, fresh: 404 }), NOW)).resolves.toBe(22)
+  })
+
+  it('counts every due review up to the session limit, leaving no room for new cards', async () => {
+    await expect(countDueCards(mockCounter({ learned: 80, fresh: 404 }), NOW)).resolves.toBe(50)
+  })
+
+  it('is zero when nothing is due', async () => {
+    await expect(countDueCards(mockCounter({}), NOW)).resolves.toBe(0)
+  })
+
+  it('agrees with the queue it describes', async () => {
+    for (const pool of [{ learned: 2, fresh: 404 }, { learned: 0, fresh: 7 }, { learned: 12, fresh: 0 }]) {
+      const queue = await listDueCards(mockClient(pool).client, NOW)
+      await expect(countDueCards(mockCounter(pool), NOW)).resolves.toBe(queue.length)
+    }
   })
 })
