@@ -84,6 +84,11 @@ thời gian trong `.claude/.verify-gate-last-run`.
   định, nơi gọi bỏ đối số đi. KHÔNG dùng `eslint-disable` để bịt.
 - Dialog `showModal()` đua với React Strict Mode (effect chạy hai lần), cần guard
   `if (open && !el.open)`.
+- **Preflight của Tailwind 4 đặt `margin: 0` cho MỌI thẻ, kể cả `<dialog>`.** Trình
+  duyệt căn giữa dialog modal bằng `margin: auto` của UA stylesheet, nên mất nó là
+  cả ba hộp thoại dính góc trên bên trái (đo được x=0, y=0 trong khung 1396x700).
+  `components/ui/Modal.tsx` phải giữ lớp `m-auto`; jsdom không áp UA stylesheet nên
+  test chỉ kiểm được chính lớp đó.
 
 ## Bẫy dữ liệu và Postgres
 
@@ -128,6 +133,13 @@ thời gian trong `.claude/.verify-gate-last-run`.
   mới thì gọi `gradeForMode` (`lib/practice/grading.ts`) rồi `gradeWordById`
   (`lib/wordlist/review.ts`). Luyện nói cố tình KHÔNG báo thất bại: nhận dạng giọng sai
   vì phòng ồn hay micro, ghi `again` sẽ xoá tiến độ thật vì một lỗi phần cứng.
+- **Tài khoản ẩn danh nằm trong cookie của MỘT trình duyệt.** Xoá dữ liệu duyệt web
+  là mất sạch: đã xảy ra thật, 407 từ đã lưu nằm lại trong một tài khoản không còn
+  đường nào với tới, trong khi trình duyệt đang dùng chỉ thấy 1 từ. `lib/auth/account.ts`
+  là lối thoát: `attachEmail` gắn email vào CHÍNH tài khoản đang có nên giữ nguyên
+  user id và mọi hàng treo dưới nó; `signInByEmail` chỉ dành cho trình duyệt chưa có
+  từ nào, và từ chối nếu phiên hiện tại đang có dữ liệu, vì đăng nhập là đổi tài
+  khoản và sẽ bỏ rơi đúng thứ cần cứu.
 - **Middleware KHÔNG tạo phiên ẩn danh.** Tra cứu không cần tài khoản, nên tài khoản chỉ
   sinh ra ở lần ghi đầu tiên qua `ensureSession` (`lib/supabase/session.ts`). Trước đây
   mỗi request không cookie đều tạo một hàng `auth.users`: 122 tài khoản mà chỉ 1 có dữ
@@ -148,6 +160,19 @@ thời gian trong `.claude/.verify-gate-last-run`.
   nghiên cứu từng ghi gọn là "Creative Commons" và suýt kéo dự án vào ràng buộc phi
   thương mại. CEFR-J cũng vậy: danh sách chính A1-B2 KHÔNG phải CC-BY-SA, chỉ phần
   Octanove C1/C2 mới là.
+
+## Trợ lý AI
+
+- Khoá model chỉ nằm ở máy chủ: mọi lời gọi đi qua `POST /api/ai` (`lib/ai/`). KHÔNG
+  đặt biến `NEXT_PUBLIC_` cho nó.
+- `aiConfig()` trả null là trạng thái HỢP LỆ, không phải lỗi. Router mà dự án trỏ tới
+  nằm trong mạng riêng, nên bản triển khai không với tới được sẽ trả
+  `{"enabled": false}` và mọi nút trợ lý biến mất thay vì bấm vào là hỏng.
+- **Cùng một đường `/v1/messages` trả hai kiểu thân phản hồi.** Có `stream: false` thì
+  ra thân `chat.completion` kiểu OpenAI, còn khi stream thì ra sự kiện kiểu Anthropic.
+  `lib/ai/client.ts` đọc được cả hai; đừng rút gọn còn một. Đo trên router ngày 2026-09-14.
+- Thêm tác vụ mới thì khai trong `lib/ai/tasks.ts` (schema vào, schema ra, prompt) rồi
+  thêm một dòng vào `ERASED_TASKS`. Route không cần sửa.
 
 ## Đã gỡ bỏ, đừng dựng lại
 
