@@ -42,9 +42,16 @@ Sáu lỗ hổng, xếp theo mức nghiêm trọng:
    Không có mục từ nào ở mức C1 hay C2 trong mẫu 3.000 dòng.
 6. **Tiếng Tây Ban Nha không có câu ví dụ nào; tiếng Trung không có quan hệ từ vựng nào.**
 
-Ba lỗi đầu đã sửa ở gốc trong repo `zhesen-pipeline` ngày 13/09/2026, chưa nạp lại.
-Phía web app có hai lớp chắn tạm ở `lib/dictionary/textQuality.ts`, sẽ tự vô hiệu khi
-dữ liệu sạch về.
+Cả sáu lỗ hổng trừ hai cái về nghĩa tiếng Việt đã được sửa ở gốc trong repo
+`zhesen-pipeline` ngày 13/09/2026 (commit `844a5d3`, `fe3b485`, `23a44c3`), chưa nạp
+lại. Phía web app có hai lớp chắn tạm ở `lib/dictionary/textQuality.ts`, sẽ tự vô hiệu
+khi dữ liệu sạch về.
+
+Riêng lỗ hổng 6 hoá ra là cùng một dạng lỗi lặp lại hai lần: cả hai builder đều thiếu
+hẳn một bước trích xuất, không phải trích sai. `es_build.py` chưa bao giờ gọi nguồn câu
+ví dụ nào; `zh_build.py` được dựng từ CC-CEDICT và Unihan, không cái nào có quan hệ từ
+vựng, và chưa bao giờ gọi `wiktextract` như hai builder kia. Chỉ mục wiktextract cục bộ
+có sẵn 322.458 dòng tiếng Trung, tra thử từ 狗 trả về 417 quan hệ.
 
 ### Rác trong cơ sở dữ liệu
 
