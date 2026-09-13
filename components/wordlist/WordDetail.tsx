@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getEntryDetail } from '@/lib/dictionary/entryDetail'
 import { AudioButton } from '@/components/ui/AudioButton'
+import { AiCoach } from '@/components/ai/AiCoach'
+import { pickExamples, isSentenceTranslation } from '@/lib/dictionary/textQuality'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 import type { UserWord } from '@/lib/wordlist/types'
 import { Ipa } from '@/components/ui/Ipa'
@@ -55,10 +57,11 @@ export function WordDetail({ word }: { word: UserWord }) {
 
   if (!word.entryId) {
     return (
-      <div className="flex flex-col gap-2 text-sm text-black/80">
+      <div className="flex flex-col gap-3 text-sm text-black/80">
         {word.meaningVi && <p>{word.meaningVi}</p>}
         {word.example && <p className="italic text-black/60">{word.example}</p>}
         {word.notes && <p className="text-black/50">{word.notes}</p>}
+        <AiCoach lang={word.lang} headword={word.headword} meaningVi={word.meaningVi} />
       </div>
     )
   }
@@ -73,6 +76,9 @@ export function WordDetail({ word }: { word: UserWord }) {
 
   const { detail } = state
   if (!detail) return null
+
+  const glosses = [detail.glossVi, ...detail.senses.map((sense) => sense.glossVi)]
+  const examples = pickExamples(detail.examples)
 
   // Group relations by relationType
   const relationGroups = detail.relations.reduce<Record<string, string[]>>((acc, r) => {
@@ -111,13 +117,18 @@ export function WordDetail({ word }: { word: UserWord }) {
         </div>
       )}
 
-      {/* Examples */}
-      {detail.examples.length > 0 && (
+      {/* Examples. Filtered exactly like the lookup page: the same corrupted
+          sentences and the same gloss-copied-into-the-translation-field rows
+          are in this data, and hiding them on one page but not the other was
+          the wordlist quietly showing what the dictionary had already rejected. */}
+      {examples.length > 0 && (
         <div className="flex flex-col gap-1 border-l-2 border-black/10 pl-3">
-          {detail.examples.map((e, i) => (
+          {examples.map((e, i) => (
             <div key={i} className="flex flex-col gap-0.5">
               <p className="italic text-black/70">{e.text}</p>
-              {e.translationVi && <p className="text-black/50">{e.translationVi}</p>}
+              {isSentenceTranslation(e.translationVi, glosses) && (
+                <p className="text-black/50">{e.translationVi}</p>
+              )}
             </div>
           ))}
         </div>
@@ -136,6 +147,8 @@ export function WordDetail({ word }: { word: UserWord }) {
           ))}
         </div>
       )}
+
+      <AiCoach lang={detail.lang} headword={detail.headword} meaningVi={word.meaningVi} />
     </div>
   )
 }
