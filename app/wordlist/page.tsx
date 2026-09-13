@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { listWords } from '@/lib/wordlist/store'
 import { countDueCards } from '@/lib/wordlist/review'
 import { WordlistClient } from '@/components/wordlist/WordlistClient'
+import { AccountPanel } from '@/components/account/AccountPanel'
 
 export default async function WordlistPage() {
   const supabase = await createClient()
@@ -22,7 +23,10 @@ export default async function WordlistPage() {
           </Link>
         )}
       </div>
-      <p className="mt-1 text-sm text-black/60">Các từ bạn đã lưu. Danh sách gắn với phiên trình duyệt hiện tại.</p>
+      <p className="mt-1 text-sm text-black/60">Các từ bạn đã lưu.</p>
+      <div className="mt-4">
+        <AccountPanel wordCount={words.length} />
+      </div>
       <div className="mt-6">
         <WordlistClient initialWords={words} />
       </div>
