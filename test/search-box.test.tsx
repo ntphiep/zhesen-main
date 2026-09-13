@@ -32,7 +32,7 @@ beforeEach(() => {
 describe('SearchBox', () => {
   it('queries the search route and links each result to its detail page', async () => {
     render(<SearchBox initialQuery="" />)
-    await userEvent.type(screen.getByRole('textbox'), 'dog')
+    await userEvent.type(screen.getByRole('combobox'), 'dog')
     const link = await screen.findByRole('link', { name: /dog/ })
     expect(link).toHaveAttribute('href', '/dictionary/en/dog')
     expect(screen.getByText('con chó')).toBeInTheDocument()
@@ -41,7 +41,7 @@ describe('SearchBox', () => {
 
   it('prefetches a result route on hover', async () => {
     render(<SearchBox initialQuery="" />)
-    await userEvent.type(screen.getByRole('textbox'), 'dog')
+    await userEvent.type(screen.getByRole('combobox'), 'dog')
     const link = await screen.findByRole('link', { name: /dog/ })
     await userEvent.hover(link)
     expect(prefetch).toHaveBeenCalledWith('/dictionary/en/dog')
@@ -49,12 +49,30 @@ describe('SearchBox', () => {
 
   it('opens the highlighted result when Enter is pressed', async () => {
     render(<SearchBox initialQuery="" />)
-    const box = screen.getByRole('textbox')
-    await userEvent.type(screen.getByRole('textbox'), 'dog')
+    const box = screen.getByRole('combobox')
+    await userEvent.type(screen.getByRole('combobox'), 'dog')
     await screen.findByRole('link', { name: /dog/ })
     box.focus()
     await userEvent.keyboard('{Enter}')
     expect(push).toHaveBeenCalledWith('/dictionary/en/dog')
+  })
+
+  // Arrow keys moved the highlight but a screen reader heard nothing: the rows
+  // carried aria-selected without being options of anything, so there was no way to
+  // announce which one is current. See w3.org/WAI/ARIA/apg/patterns/combobox.
+  it('names the highlighted row so a screen reader can announce it', async () => {
+    render(<SearchBox initialQuery="" />)
+    const box = screen.getByRole('combobox')
+    await userEvent.type(box, 'dog')
+    await screen.findByRole('link', { name: /dog/ })
+    const options = screen.getAllByRole('option')
+    expect(box).toHaveAttribute('aria-expanded', 'true')
+    expect(box).toHaveAttribute('aria-controls', 'dictionary-search-results')
+    expect(box).toHaveAttribute('aria-activedescendant', options[0].id)
+    expect(options[0]).toHaveAttribute('aria-selected', 'true')
+    // The row is an option, and the result inside it is still a link a reader can
+    // follow or open in a new tab.
+    expect(options[0].querySelector('a')).toHaveAttribute('href', '/dictionary/en/dog')
   })
 
   it('labels reverse (Vietnamese -> other language) results separately from forward ones', async () => {
@@ -63,7 +81,7 @@ describe('SearchBox', () => {
       json: async () => response({ reverse: { en: [preview('en:receive', 'en', 'receive', 'nhận được')], zh: [], es: [] } }),
     })))
     render(<SearchBox initialQuery="" />)
-    await userEvent.type(screen.getByRole('textbox'), 'nhận được')
+    await userEvent.type(screen.getByRole('combobox'), 'nhận được')
     const link = await screen.findByRole('link', { name: /receive/ })
     expect(link).toHaveAttribute('href', '/dictionary/en/receive')
     expect(screen.getByText('· dịch từ tiếng Việt')).toBeInTheDocument()
@@ -75,7 +93,7 @@ describe('SearchBox', () => {
       json: async () => response({ suggestions: [{ id: 'en:receive', lang: 'en', headword: 'receive', glossVi: 'nhận được' }] }),
     })))
     render(<SearchBox initialQuery="" />)
-    await userEvent.type(screen.getByRole('textbox'), 'recieve')
+    await userEvent.type(screen.getByRole('combobox'), 'recieve')
     expect(await screen.findByText(/Có phải bạn tìm/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /receive/ })).toBeInTheDocument()
   })
@@ -94,7 +112,7 @@ describe('SearchBox', () => {
       }),
     })))
     render(<SearchBox initialQuery="" />)
-    await userEvent.type(screen.getByRole('textbox'), 'cat')
+    await userEvent.type(screen.getByRole('combobox'), 'cat')
     await screen.findByText('cat')
     const linkHrefs = () => screen.getAllByRole('link').map((l) => l.getAttribute('href'))
     expect(linkHrefs()).toEqual(['/dictionary/en/cat', '/dictionary/en/catalyze'])
@@ -116,11 +134,11 @@ describe('SearchBox', () => {
       json: async () => ({ error: 'Bạn tra cứu quá nhanh. Vui lòng thử lại sau ít giây.' }),
     })))
     render(<SearchBox initialQuery="" />)
-    await userEvent.type(screen.getByRole('textbox'), 'dog')
+    await userEvent.type(screen.getByRole('combobox'), 'dog')
     await new Promise((r) => setTimeout(r, 300))
     // Still mounted and still usable: a render that threw would have torn the
     // tree down and taken the input with it.
-    expect(screen.getByRole('textbox')).toHaveValue('dog')
+    expect(screen.getByRole('combobox')).toHaveValue('dog')
     expect(screen.queryAllByRole('link')).toHaveLength(0)
   })
 
@@ -132,7 +150,7 @@ describe('SearchBox', () => {
       ok: false, status: 429, json: async () => ({ error: 'chậm lại' }),
     })))
     render(<SearchBox initialQuery="" />)
-    await userEvent.type(screen.getByRole('textbox'), 'dog')
+    await userEvent.type(screen.getByRole('combobox'), 'dog')
     await new Promise((r) => setTimeout(r, 300))
     expect(screen.queryByText('Không tìm thấy kết quả.')).toBeNull()
     expect(screen.getAllByText(/quá nhiều lượt tra cứu/).length).toBeGreaterThan(0)
@@ -148,7 +166,7 @@ describe('SearchBox', () => {
       })
     vi.stubGlobal('fetch', fetchMock)
     render(<SearchBox initialQuery="" />)
-    const box = screen.getByRole('textbox')
+    const box = screen.getByRole('combobox')
     await userEvent.type(box, 'dog')
     await new Promise((r) => setTimeout(r, 300))
     await userEvent.clear(box)
@@ -161,7 +179,7 @@ describe('SearchBox', () => {
     const fetchMock = vi.fn(async () => ({ ok: false, status: 429, json: async () => ({ error: 'chậm lại' }) }))
     vi.stubGlobal('fetch', fetchMock)
     render(<SearchBox initialQuery="" />)
-    const box = screen.getByRole('textbox')
+    const box = screen.getByRole('combobox')
     await userEvent.type(box, 'dog')
     await new Promise((r) => setTimeout(r, 300))
     await userEvent.clear(box)
@@ -173,9 +191,9 @@ describe('SearchBox', () => {
   it('survives a reply whose shape does not match the result type', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ forward: 'không phải kết quả' }) })))
     render(<SearchBox initialQuery="" />)
-    await userEvent.type(screen.getByRole('textbox'), 'dog')
+    await userEvent.type(screen.getByRole('combobox'), 'dog')
     await new Promise((r) => setTimeout(r, 300))
-    expect(screen.getByRole('textbox')).toHaveValue('dog')
+    expect(screen.getByRole('combobox')).toHaveValue('dog')
     expect(screen.queryAllByRole('link')).toHaveLength(0)
   })
   it('leads with the direction that answered better', async () => {
@@ -190,7 +208,7 @@ describe('SearchBox', () => {
       }),
     })))
     render(<SearchBox initialQuery="" />)
-    await userEvent.type(screen.getByRole('textbox'), 'con mèo')
+    await userEvent.type(screen.getByRole('combobox'), 'con mèo')
     await screen.findByRole('link', { name: /cat/ })
     expect(screen.getAllByRole('link').map((l) => l.getAttribute('href')))
       .toEqual(['/dictionary/en/cat', '/dictionary/en/con'])
@@ -205,7 +223,7 @@ describe('SearchBox', () => {
       }),
     })))
     render(<SearchBox initialQuery="" />)
-    await userEvent.type(screen.getByRole('textbox'), 'dog')
+    await userEvent.type(screen.getByRole('combobox'), 'dog')
     await screen.findByRole('link', { name: /dog/ })
     expect(screen.getAllByRole('link').map((l) => l.getAttribute('href')))
       .toEqual(['/dictionary/en/dog', '/dictionary/en/hound'])

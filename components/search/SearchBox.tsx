@@ -187,28 +187,41 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   const showSuggestions = !loading && !refused && query.trim() && allShown.length === 0 && data.suggestions.length > 0
   const showFilteredEmpty = !loading && query.trim() && allShown.length > 0 && total === 0
 
+  // ARIA combobox wiring (w3.org/WAI/ARIA/apg/patterns/combobox). Arrow keys moved the
+  // highlight without telling a screen reader anything: it read out the result count
+  // and then went silent, because the list carried `aria-selected` on elements that
+  // were never options. `aria-activedescendant` is what announces the row.
+  const optionId = (entryId: string) => `search-option-${entryId.replace(/[^\w-]/g, '_')}`
+  const activeId = flat[active] ? optionId(flat[active].id) : undefined
+  const groupLabel = (l: LangCode, reversed: boolean) =>
+    reversed ? `${LANG_LABELS[l]}, dịch từ tiếng Việt` : LANG_LABELS[l]
+
   function renderGroup(lang: LangCode, entries: DictEntryPreview[], reversed: boolean) {
     if (entries.length === 0) return null
     return (
       <div key={`${reversed ? 'rev' : 'fwd'}-${lang}`} className="flex flex-col gap-1">
-        <span className="text-xs font-semibold uppercase tracking-wide text-black/40">
+        <span className="text-xs font-semibold uppercase tracking-wide text-black/40" aria-hidden="true">
           {LANG_LABELS[lang]}
           {reversed && <span className="ml-1 normal-case text-black/30">· dịch từ tiếng Việt</span>}
         </span>
-        <ul className="flex flex-col gap-0.5">
+        {/* The group carries the language name the heading above shows visually, so a
+            listbox reader hears which language a row belongs to. */}
+        <ul role="group" aria-label={groupLabel(lang, reversed)} className="flex flex-col gap-0.5">
           {entries.map((e) => {
             const href = entryPath(e.id)
             const warm = () => router.prefetch(href)
             const isActive = indexById.get(e.id) === active
             return (
-              <li key={e.id}>
+              // The option is the row, not the link inside it: a result is still a
+              // link a reader can follow or open in a new tab, and `role="option"`
+              // on the anchor itself would take that away.
+              <li key={e.id} role="option" id={optionId(e.id)} aria-selected={isActive}>
                 <Link
                   href={href}
                   prefetch={false}
                   onMouseEnter={() => { warm(); setActive(indexById.get(e.id) ?? 0) }}
                   onFocus={warm}
                   onClick={() => remember(query)}
-                  aria-selected={isActive}
                   className={`flex items-baseline gap-2 rounded-lg px-3 py-2 ${isActive ? 'bg-black/5' : 'hover:bg-black/5'}`}
                 >
                   <span className="font-medium">{e.headword}</span>
@@ -236,6 +249,11 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
         id="dictionary-search"
         name="q"
         aria-label="Tra cứu từ"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={total > 0}
+        aria-controls="dictionary-search-results"
+        aria-activedescendant={activeId}
         placeholder="Nhập từ cần tra (Anh · Trung · Tây Ban Nha · Việt)..."
         className="w-full rounded-xl border border-black/15 px-4 py-3 text-base shadow-sm focus:border-black/40 focus:outline-none"
       />
@@ -315,9 +333,11 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
         </div>
       )}
       {showFilteredEmpty && <p className="text-sm text-black/40">Không có kết quả khớp bộ lọc đã chọn.</p>}
-      {reverseLeads && hasReverse && order.map((l) => renderGroup(l, reverseShown[l], true))}
-      {order.map((l) => renderGroup(l, forwardShown[l], false))}
-      {!reverseLeads && hasReverse && order.map((l) => renderGroup(l, reverseShown[l], true))}
+      <div id="dictionary-search-results" role="listbox" aria-label="Kết quả tra cứu" className="flex flex-col gap-3">
+        {reverseLeads && hasReverse && order.map((l) => renderGroup(l, reverseShown[l], true))}
+        {order.map((l) => renderGroup(l, forwardShown[l], false))}
+        {!reverseLeads && hasReverse && order.map((l) => renderGroup(l, reverseShown[l], true))}
+      </div>
     </div>
   )
 }
