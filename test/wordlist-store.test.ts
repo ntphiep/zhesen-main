@@ -344,6 +344,54 @@ describe('draftFromDictEntry with the full entry', () => {
   })
 })
 
+describe('addWords batch splitting', () => {
+  /** Fails any insert whose batch contains `badId`; counts the requests made. */
+  function splittingClient(badId: string) {
+    let requests = 0
+    const insert = vi.fn((payload: unknown) => {
+      requests++
+      const rows = Array.isArray(payload) ? payload : [payload]
+      const bad = rows.some((r) => (r as { headword: string }).headword === badId)
+      const answer = bad
+        ? { data: null, error: { code: '23505', message: 'duplicate key value' } }
+        : { data: rows.map((r, i) => ({ ...row, id: `${requests}-${i}`, headword: (r as { headword: string }).headword })), error: null }
+      return Array.isArray(payload)
+        ? { select: () => Promise.resolve(answer) }
+        : { select: () => ({ single: () => Promise.resolve(bad ? answer : { data: answer.data?.[0], error: null }) }) }
+    })
+    const { auth } = authStub({ user: { id: 'u1' } })
+    return {
+      client: { from: vi.fn(() => ({ insert })), auth } as unknown as import('@supabase/supabase-js').SupabaseClient,
+      count: () => requests,
+    }
+  }
+
+  // Dropping straight from a refused 500 to 500 sequential inserts is correct
+  // and slow: at a tenth of a second each that is fifty seconds with the button
+  // frozen, and a learner who reloads lands back in the half-written state.
+  it('finds one bad row in a large batch without inserting them one at a time', async () => {
+    const { client, count } = splittingClient('w137')
+    const drafts = Array.from({ length: 500 }, (_, i) =>
+      ({ ...draftFromDictEntry(dogEntry), headword: `w${i}`, entryId: `en:w${i}` }))
+    resetSessionState()
+
+    const res = await addWords(client, drafts)
+
+    expect(res).toHaveLength(499)
+    expect(count()).toBeLessThan(100)
+  })
+
+  it('still inserts a clean batch in a single request', async () => {
+    const { client, count } = splittingClient('nothing-matches')
+    const drafts = Array.from({ length: 400 }, (_, i) =>
+      ({ ...draftFromDictEntry(dogEntry), headword: `w${i}`, entryId: `en:w${i}` }))
+    resetSessionState()
+
+    expect(await addWords(client, drafts)).toHaveLength(400)
+    expect(count()).toBe(1)
+  })
+})
+
 describe('listPracticeWords', () => {
   /** Records the projection, the filters and the range asked for. */
   function mockClient(total: number, rows: unknown[]) {

@@ -1,6 +1,6 @@
 // test/wordlist-client.test.tsx
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { WordlistClient } from '@/components/wordlist/WordlistClient'
 import type { UserWord } from '@/lib/wordlist/types'
@@ -8,16 +8,20 @@ import type { UserWord } from '@/lib/wordlist/types'
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
 
 // Use vi.hoisted so these are initialized before vi.mock factory runs
-const { addWord, deleteWord, deleteWords, updateWord } = vi.hoisted(() => ({
+const { addWord, addWords, listWords, deleteWord, deleteWords, updateWord } = vi.hoisted(() => ({
   addWord: vi.fn(),
+  addWords: vi.fn(),
+  listWords: vi.fn(),
   deleteWord: vi.fn(async () => {}),
   deleteWords: vi.fn(async () => {}),
   updateWord: vi.fn(),
 }))
 
 vi.mock('@/lib/wordlist/store', async (orig) => ({
-  ...(await orig()),
+  ...(await orig<typeof import('@/lib/wordlist/store')>()),
   addWord,
+  addWords,
+  listWords,
   deleteWord,
   deleteWords,
   updateWord,
@@ -177,5 +181,33 @@ describe('WordlistClient', () => {
     await userEvent.click(screen.getByRole('button', { name: /Sửa từ alpha/i }))
     await userEvent.click(screen.getByRole('button', { name: /^Lưu/i }))
     expect(updateWord).not.toHaveBeenCalled()
+  })
+
+  // An import is chunked, so a failure part way through leaves the earlier
+  // chunks written. Reporting "không nhập được" over a list still showing the
+  // old words told the learner the opposite of the truth, and their next move
+  // was to import the same file again.
+  it('shows what the database holds even when the import fails part way', async () => {
+    const before = mk('w1', { headword: 'alpha', entryId: 'en:alpha' })
+    const written = [before, mk('w2', { headword: 'beta', entryId: 'en:beta' })]
+    addWords.mockRejectedValue(new Error('mất mạng ở lô thứ ba'))
+    listWords.mockResolvedValue(written)
+    render(<WordlistClient initialWords={[before]} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Nhập CSV' }))
+    const NL = String.fromCharCode(10)
+    const csv = [
+      'headword,lang,entryId,reading,ipa,pos,meaningVi,meaningEn,level,example,exampleTranslation,audioUrl,notes,status,tags,createdAt',
+      'beta,en,en:beta,,,,con beta,,,,,,,new,,',
+    ].join(NL)
+    await userEvent.upload(
+      screen.getByLabelText(/Chọn file CSV/i),
+      new File([csv], 'wordlist.csv', { type: 'text/csv' }),
+    )
+    await userEvent.click(await screen.findByRole('button', { name: /Nhập 1 từ/i }))
+
+    // addWords rejected, yet the row the database kept is on screen.
+    await waitFor(() => expect(listWords).toHaveBeenCalled())
+    expect(await screen.findByText('beta')).toBeInTheDocument()
   })
 })

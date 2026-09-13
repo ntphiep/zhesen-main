@@ -286,19 +286,43 @@ export async function addWords(supabase: SupabaseClient, drafts: WordDraft[]): P
 
   const inserted: UserWord[] = []
   for (let i = 0; i < drafts.length; i += INSERT_CHUNK) {
-    const chunk = drafts.slice(i, i + INSERT_CHUNK)
-    const { data, error } = await supabase.from('user_words').insert(chunk.map(draftToRow)).select()
-    if (!error) {
-      inserted.push(...(data ?? []).map(parseUserWordRow))
-      continue
-    }
-    if (error.code !== '23505' && error.code !== '23503') throw error
-    for (const draft of chunk) {
-      const row = await insertOne(supabase, draft)
-      if (row) inserted.push(row)
-    }
+    inserted.push(...await insertBatch(supabase, drafts.slice(i, i + INSERT_CHUNK)))
   }
   return inserted
+}
+
+/** Below this, split no further and insert one row at a time. */
+const SPLIT_FLOOR = 16
+
+/**
+ * Insert a batch, halving it when the database refuses.
+ *
+ * The first shape of this dropped straight from a refused 500 to 500 sequential
+ * inserts. That is correct and slow: at a tenth of a second each it is fifty
+ * seconds for one chunk, with "Đang thêm…" motionless the whole time, and a
+ * learner who reloads in the middle lands back in the half-written state the
+ * chunking was meant to avoid. Halving finds one bad row in a 500-row chunk in
+ * about forty requests instead.
+ */
+async function insertBatch(supabase: SupabaseClient, batch: WordDraft[]): Promise<UserWord[]> {
+  if (batch.length === 0) return []
+  const { data, error } = await supabase.from('user_words').insert(batch.map(draftToRow)).select()
+  if (!error) return (data ?? []).map(parseUserWordRow)
+  if (error.code !== '23505' && error.code !== '23503') throw error
+
+  if (batch.length <= SPLIT_FLOOR) {
+    const kept: UserWord[] = []
+    for (const draft of batch) {
+      const row = await insertOne(supabase, draft)
+      if (row) kept.push(row)
+    }
+    return kept
+  }
+
+  const mid = Math.ceil(batch.length / 2)
+  const head = await insertBatch(supabase, batch.slice(0, mid))
+  const tail = await insertBatch(supabase, batch.slice(mid))
+  return [...head, ...tail]
 }
 
 /** Bulk status change (e.g. "mark selected as known"). Same status for every id, so a

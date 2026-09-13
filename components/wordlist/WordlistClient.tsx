@@ -1,7 +1,7 @@
 'use client'
 import { Fragment, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { addWord, addWords, updateWord, updateWordsStatus, deleteWord, deleteWords } from '@/lib/wordlist/store'
+import { addWord, addWords, listWords, updateWord, updateWordsStatus, deleteWord, deleteWords } from '@/lib/wordlist/store'
 import { mergeTags } from '@/lib/wordlist/tags'
 import { formatWordDate } from '@/lib/wordlist/format'
 import { posGroup } from '@/lib/dictionary/pos'
@@ -115,10 +115,19 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   // a word saved in another tab since then comes back as one fewer row here
   // rather than as an error. Say so instead of quietly importing less.
   async function handleImport(drafts: WordDraft[]) {
-    const added = await addWords(supabase, drafts)
-    setWords((prev) => [...added, ...prev])
-    const skipped = drafts.length - added.length
-    if (skipped > 0) alert(`Đã bỏ qua ${skipped} từ vì đã có trong sổ tay.`)
+    try {
+      const added = await addWords(supabase, drafts)
+      const skipped = drafts.length - added.length
+      if (skipped > 0) alert(`Đã bỏ qua ${skipped} từ vì đã có trong sổ tay.`)
+    } finally {
+      // Whatever happened, show what the database now holds. An import is
+      // chunked, so a failure part way through leaves the earlier chunks
+      // written: reporting "Không nhập được" over a list that still shows the
+      // old words told the learner the opposite of the truth, and their next
+      // move was to import the same file again.
+      const fresh = await listWords(supabase).catch(() => null)
+      if (fresh) setWords(fresh)
+    }
   }
 
   async function handleDelete(id: string, headword: string) {
