@@ -47,11 +47,33 @@ describe('LookupHero', () => {
     render(<LookupHero detail={{ ...detail, lang: 'zh' }} hanViet="khuyển" />)
     expect(screen.getByText(/khuyển/)).toBeInTheDocument()
   })
-  it('shows a "Thông dụng" badge for high-frequency words only', () => {
+  it('shows a "Hay gặp" badge for high-frequency words only', () => {
     const { rerender } = render(<LookupHero detail={{ ...detail, frequencyRank: 500 }} />)
-    expect(screen.getByText('Thông dụng')).toBeInTheDocument()
+    expect(screen.getByText('Hay gặp')).toBeInTheDocument()
     rerender(<LookupHero detail={{ ...detail, frequencyRank: 9000 }} />)
-    expect(screen.queryByText('Thông dụng')).not.toBeInTheDocument()
+    expect(screen.queryByText('Hay gặp')).not.toBeInTheDocument()
+  })
+
+  // The pronunciation row below the heading already shows the pinyin beside the
+  // audio button, so the heading printed the same syllables twice in a row.
+  it('does not repeat the pinyin the pronunciation row already shows', () => {
+    const withReading = {
+      ...detail, lang: 'zh' as const,
+      attributes: { pinyin: 'yǒu méi yǒu' },
+      pronunciations: [{ accent: '', ipa: 'yǒu méi yǒu', audioUrl: null }],
+    }
+    render(<LookupHero detail={withReading} />)
+    expect(screen.getAllByText('yǒu méi yǒu')).toHaveLength(1)
+  })
+
+  it('still shows the pinyin when there is no pronunciation row at all', () => {
+    const noProns = {
+      ...detail, lang: 'zh' as const,
+      attributes: { pinyin: 'gǒu' },
+      pronunciations: [],
+    }
+    render(<LookupHero detail={noProns} />)
+    expect(screen.getByText('gǒu')).toBeInTheDocument()
   })
 })
 

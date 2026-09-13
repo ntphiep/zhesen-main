@@ -29,7 +29,7 @@ function Row({ text, preview, lang }: { text: string; preview?: TermPreview; lan
       <td className="px-2 py-1.5">
         <Link href={searchPath(lang, text)} className="font-medium hover:underline">{text}</Link>
       </td>
-      <td className="px-2 py-1.5 whitespace-nowrap text-xs text-black/40">{pos?.labelVi ?? ''}</td>
+      <td className="px-2 py-1.5 whitespace-nowrap text-xs text-black/55">{pos?.labelVi ?? ''}</td>
       <td className="px-2 py-1.5 text-black/60">{preview?.glossVi || preview?.glossEn || ''}</td>
     </tr>
   )
@@ -67,18 +67,49 @@ export function RelatedWords({ relations, previews, lang }: {
         return (
           <div key={s.key} className="flex flex-col gap-1">
             <div className="flex flex-wrap items-baseline gap-x-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-black/40">{s.label}</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-black/55">{s.label}</span>
               <span className="text-xs text-black/30">{s.hint}</span>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <tbody>
-                  {shown.map((text) => (
-                    <Row key={text} text={text} preview={previews[text.toLowerCase()]} lang={lang} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {/* A word the dictionary knows nothing about fills neither the part of
+                speech nor the meaning column, and a ruled row holding one word and
+                two blanks reads as broken data -- five of the eight rows under
+                "holy" looked like that. Those become a line of chips instead, and
+                the table is left to the rows that have something to put in it. */}
+            {(() => {
+              const described = shown.filter((t) => {
+                const p = previews[t.toLowerCase()]
+                return p?.glossVi || p?.glossEn || p?.pos
+              })
+              const bare = shown.filter((t) => !described.includes(t))
+              return (
+                <>
+                  {described.length > 0 && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-sm">
+                        <tbody>
+                          {described.map((text) => (
+                            <Row key={text} text={text} preview={previews[text.toLowerCase()]} lang={lang} />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {bare.length > 0 && (
+                    <div className="flex flex-wrap gap-x-2 gap-y-1 px-2 text-sm">
+                      {bare.map((text) => (
+                        <Link
+                          key={text}
+                          href={searchPath(lang, text)}
+                          className="rounded-full bg-black/5 px-2.5 py-0.5 text-black/70 hover:bg-black/10"
+                        >
+                          {text}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )
+            })()}
             {!expanded && hidden > 0 && (
               <span className="px-2 text-xs text-black/35">còn {hidden} từ nữa</span>
             )}

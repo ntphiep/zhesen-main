@@ -7,10 +7,17 @@ export type ViewMode = 'table' | 'card'
 export type SortKey = 'headword' | 'createdAt'
 export type SortDir = 'asc' | 'desc'
 
+/** Width below which the eleven-column table cannot be read without scrolling
+ * sideways; matches Tailwind's `lg`. */
+const TABLE_MIN_WIDTH = 1024
+
 function getInitialView(): ViewMode {
   if (typeof window === 'undefined') return 'table'
   const saved = window.localStorage.getItem('wordlist_view')
-  return saved === 'card' ? 'card' : 'table'
+  if (saved === 'card' || saved === 'table') return saved
+  // Without a stored choice, pick by what fits: on a phone the table clipped its
+  // last columns off the screen, and cards say the same thing in one column.
+  return window.innerWidth < TABLE_MIN_WIDTH ? 'card' : 'table'
 }
 
 /** Filter/sort/view-mode state for the wordlist table, plus the derived visible list.

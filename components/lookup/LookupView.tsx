@@ -56,23 +56,34 @@ export function LookupView({
       <Link href="/dictionary" className="text-sm text-black/50 hover:underline">← Tra cứu</Link>
       <LookupHero detail={detail} hanViet={detail.lang === 'zh' ? hanViet : null} />
 
+      {/* Three blocks, in the order they matter on a phone: what the word means,
+          then the links across languages, then the reference material. On a wide
+          screen the grid puts the first two side by side and drops the third
+          underneath, which also stops the rail from stranding content in a column
+          that ends two thirds of the way up the page. */}
       <div className={hasSideRail ? 'grid gap-x-10 gap-y-8 lg:grid-cols-3' : 'flex flex-col gap-8'}>
         <div className="flex flex-col gap-8 lg:col-span-2">
           <SenseList senses={detail.senses} />
-          {conjugation && <ConjugationTable conjugation={conjugation} />}
-          <WordFamily headword={detail.headword} forms={forms} previews={previews} lang={detail.lang} />
+          {/* Characters are the substance of a Chinese entry, not an appendix:
+              radicals, stroke counts and the writing practice belong in the wide
+              column, where they were squeezed into a 299px rail before. */}
+          {showChars && <CharacterPanel characters={characters} />}
           <ExampleList examples={detail.examples} lang={detail.lang} resolved={resolvedExamples} />
-          <RelatedWords relations={detail.relations} previews={previews} lang={detail.lang} />
         </div>
 
         {hasSideRail && (
           <aside className="flex flex-col gap-8">
-            {showChars && <CharacterPanel characters={characters} />}
-            <ContainingWords words={containing} lang={detail.lang} />
             <CrossLanguagePanel siblings={siblings} />
+            <ContainingWords words={containing} lang={detail.lang} />
             <GrammarLinks points={grammarPoints} />
           </aside>
         )}
+
+        <div className="flex flex-col gap-8 lg:col-span-2">
+          {conjugation && <ConjugationTable conjugation={conjugation} />}
+          <WordFamily headword={detail.headword} forms={forms} previews={previews} lang={detail.lang} />
+          <RelatedWords relations={detail.relations} previews={previews} lang={detail.lang} />
+        </div>
       </div>
     </main>
   )

@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { pickSenses, isClassifierGloss, parseClassifiers } from '@/lib/dictionary/textQuality'
+import { posGroup } from '@/lib/dictionary/pos'
 import type { DictSense } from '@/lib/dictionary/types'
 
 export function SenseList({ senses }: { senses: DictSense[] }) {
@@ -28,7 +29,11 @@ export function SenseList({ senses }: { senses: DictSense[] }) {
       <h2 className="text-lg font-semibold">Nghĩa</h2>
       {groups.map((g, gi) => (
         <div key={gi} className="flex flex-col gap-1.5">
-          {g.pos && <span className="text-xs font-semibold uppercase tracking-wide text-black/40">{g.pos}</span>}
+          {g.pos && (
+            <span className="text-xs font-semibold uppercase tracking-wide text-black/55">
+              {posGroup(g.pos)?.labelVi ?? g.pos}
+            </span>
+          )}
           <ol className="flex list-inside list-decimal flex-col gap-1">
             {g.items.map((s, i) => (
               <li key={i}>
@@ -40,7 +45,10 @@ export function SenseList({ senses }: { senses: DictSense[] }) {
                       <span className="ml-1 align-middle text-[10px] uppercase tracking-wide text-amber-700/70" title="Nghĩa suy ra qua tiếng Anh">qua tiếng Anh</span>
                     </span>
                   )}
-                {s.glossEn && <span className="ml-2 text-sm text-black/50">{s.glossEn}</span>}
+                {/* On its own line, and visibly smaller: on a Vietnamese page the
+                    English gloss is a cross-check, not a second meaning to read
+                    through. Inline at the same size, the two ran together. */}
+                {s.glossEn && <span className="mt-0.5 block text-xs text-black/45">{s.glossEn}</span>}
                 {!s.glossVi && !s.pivotVi && !s.glossEn && <span className="italic text-black/30">(chưa có nghĩa)</span>}
               </li>
             ))}

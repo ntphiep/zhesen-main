@@ -9,7 +9,7 @@ export default async function WordlistPage() {
   const supabase = await createClient()
   const [words, due] = await Promise.all([listWords(supabase), countDueCards(supabase)])
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
+    <main className="mx-auto max-w-5xl px-6 py-10">
       <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold">Sổ tay</h1>

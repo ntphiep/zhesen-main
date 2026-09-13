@@ -3,6 +3,7 @@ import { Fragment, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addWord, addWords, updateWord, updateWordsStatus, deleteWord, deleteWords } from '@/lib/wordlist/store'
 import { mergeTags } from '@/lib/wordlist/tags'
+import { posGroup } from '@/lib/dictionary/pos'
 import { wordsToCsv, wordsToAnkiTsv } from '@/lib/wordlist/csv'
 import { downloadTextFile } from '@/lib/wordlist/download'
 import { useWordlistFilters } from '@/lib/hooks/useWordlistFilters'
@@ -284,7 +285,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     </td>
                     <td className="py-2 pr-3 font-medium">{w.headword}</td>
                     <td className="py-2 pr-3 text-black/50"><Ipa value={w.ipa} lang={w.lang} /></td>
-                    <td className="py-2 pr-3 text-black/50">{w.pos ?? ''}</td>
+                    <td className="py-2 pr-3 text-black/50">{posGroup(w.pos)?.labelVi ?? w.pos ?? ''}</td>
                     <td className="py-2 pr-3">{w.meaningVi ?? ''}</td>
                     <td className="py-2 pr-3 text-black/50">{w.level ?? ''}</td>
                     <td className="py-2 pr-3 text-black/50 max-w-xs truncate">{w.example ?? ''}</td>
@@ -341,7 +342,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                 <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
               </div>
 
-              {w.pos && <span className="text-xs text-black/40 uppercase">{w.pos}</span>}
+              {w.pos && <span className="text-xs text-black/55">{posGroup(w.pos)?.labelVi ?? w.pos}</span>}
               {w.meaningVi && <p className="text-sm text-black/80">{w.meaningVi}</p>}
               {w.level && (
                 <span className="self-start rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/50">

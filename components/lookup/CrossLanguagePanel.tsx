@@ -29,7 +29,7 @@ export function CrossLanguagePanel({ siblings }: { siblings: CrossLangSibling[] 
       <h2 className="text-lg font-semibold">Từ này ở ngôn ngữ khác</h2>
       {byLang.map(({ lang, rows }) => (
         <div key={lang} className="flex flex-col gap-1">
-          <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-black/40">
+          <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-black/55">
             
             {LANG_LABELS[lang]}
           </span>

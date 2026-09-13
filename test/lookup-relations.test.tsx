@@ -63,13 +63,19 @@ describe('WordFamily', () => {
     { formText: 'smoother', formLabel: 'comparative' },
   ])
 
+  // With no preview for any form there is no part of speech, pronunciation or
+  // meaning to tabulate, so these render as a running line rather than a table of
+  // one word per row. The order still matters: real inflections first, dialectal
+  // and archaic spellings last.
   it('names each form and sinks the variants below the real inflections', () => {
-    render(<WordFamily headword="smooth" lang="en" forms={forms} previews={{}} />)
-    expect(screen.getByText('Phân từ II (quá khứ)')).toBeInTheDocument()
-    expect(screen.getByText('So sánh hơn')).toBeInTheDocument()
-    const rows = screen.getAllByRole('row').slice(1).map((r) => r.textContent ?? '')
-    expect(rows.at(-1)).toContain('smeeth')
-    expect(rows.at(-1)).toContain('phương ngữ')
+    const { container } = render(<WordFamily headword="smooth" lang="en" forms={forms} previews={{}} />)
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(screen.getByText(/Phân từ II \(quá khứ\)/)).toBeInTheDocument()
+    expect(screen.getByText(/So sánh hơn/)).toBeInTheDocument()
+    const text = container.textContent ?? ''
+    expect(text).toContain('smeeth')
+    expect(text).toContain('phương ngữ')
+    expect(text.indexOf('smeeth')).toBeGreaterThan(text.indexOf('smoother'))
   })
 
   it('shows the pronunciation and meaning when the form is an entry of its own', () => {

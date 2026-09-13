@@ -1,0 +1,35 @@
+-- Drop lex.cross_language_links.
+--
+-- The table was the Phase 3 design for "this word in another language": explicit
+-- rows linking an entry to its counterpart. The data that arrived was about 99.7%
+-- intra-English (see the comment at lib/dictionary/crosslang.ts:6), so the feature
+-- was rebuilt as a query over shared Vietnamese glosses -- `lex.match_cross_language`,
+-- introduced in 0012 and refined through 0029. That function reads only lex.entries
+-- and lex.senses; it has never touched this table.
+--
+-- Verified unused before writing this:
+--   * no application read: `grep -rn "cross_language_links" app lib components test`
+--     finds one explanatory comment and nothing else.
+--   * no SQL read: the only references in supabase/migrations are this table's own
+--     DDL (0003), a foreign-key fix (0004) and a select policy (0007).
+--   * nothing depends on it: no `references lex.cross_language_links` anywhere.
+--
+-- NOT dropped alongside it: public.languages. It reads as dead from the
+-- application -- lib/languages.ts holds the three languages as constants and
+-- nothing queries the table -- but lex.entries.lang, lex.characters.lang and
+-- lex.grammar_points.lang all carry `references public.languages(code)`. It is a
+-- referential-integrity anchor, not leftover data, and dropping it would take the
+-- lexicon's language constraint with it.
+--
+-- reviewed-destructive: approved by the project owner on 2026-09-13, after asking
+-- for the table to be verified as junk before removal. It holds 13,124 rows that no
+-- code path can reach. Recreating it means re-running the pipeline's Phase 3 load,
+-- which the cross-language feature no longer needs.
+--
+-- Measure the space this returns, before and after:
+--   select pg_size_pretty(pg_total_relation_size('lex.cross_language_links'));
+--   select pg_size_pretty(pg_database_size(current_database()));
+-- Then `vacuum lex.entries` -- plain, never FULL, see AGENTS.md on PGroonga.
+
+drop policy if exists "lex_cross_language_links_select_anon" on lex.cross_language_links;
+drop table if exists lex.cross_language_links;
