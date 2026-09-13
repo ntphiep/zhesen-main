@@ -26,7 +26,7 @@ Bảng nhỏ còn lại: `characters` 1.841, `grammar_points` 114, `grammar_exam
 
 Sáu lỗ hổng, xếp theo mức nghiêm trọng:
 
-1. **77,9% câu ví dụ nguồn Cambridge bị dính chữ.** Đo trên mẫu 20.000 câu tiếng Anh,
+1. **77,7% câu ví dụ nguồn Cambridge bị dính chữ.** Đo trên mẫu 20.000 câu tiếng Anh,
    đối chiếu với toàn bộ 21.004 mục từ và 41.939 dạng biến đổi. Tatoeba sạch hơn hẳn,
    chỉ 6,4% bị nghi (và phần lớn trong số đó là dương tính giả, do từ điển thiếu từ như
    "breadfruit" hay "oceanographer"). Tính chung cả hai nguồn là 45,3%. Con số "6% số
