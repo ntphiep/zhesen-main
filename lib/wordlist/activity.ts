@@ -17,7 +17,7 @@ const DAY = 86_400_000
  *
  * The audience is Vietnamese, so their calendar day is the one that counts.
  */
-const STUDY_TIMEZONE = 'Asia/Ho_Chi_Minh'
+export const STUDY_TIMEZONE = 'Asia/Ho_Chi_Minh'
 
 const dayFormatter = new Intl.DateTimeFormat('en-CA', {
   timeZone: STUDY_TIMEZONE,

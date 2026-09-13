@@ -3,6 +3,7 @@ import { Fragment, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addWord, addWords, updateWord, updateWordsStatus, deleteWord, deleteWords } from '@/lib/wordlist/store'
 import { mergeTags } from '@/lib/wordlist/tags'
+import { formatWordDate } from '@/lib/wordlist/format'
 import { posGroup } from '@/lib/dictionary/pos'
 import { wordsToCsv, wordsToAnkiTsv } from '@/lib/wordlist/csv'
 import { downloadTextFile } from '@/lib/wordlist/download'
@@ -151,23 +152,36 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     }
   }
 
-  // Bulk tag: union each selected word's own tags with the tags to add (per-row merge,
-  // since a plain bulk UPDATE would overwrite each row with the same tag array).
+  // Bulk tag: union each selected word's own tags with the tags to add. It has to
+  // be one request per row, because a flat bulk UPDATE would write the same tag
+  // array over every row and an upsert cannot carry a partial row past the
+  // table's NOT NULL columns.
+  //
+  // `allSettled`, not `all`. `all` rejects on the first failure while the other
+  // requests are already in flight and land anyway: tagging 200 words with one
+  // network blip left 199 rows tagged in the database, the whole list rolled
+  // back on screen, and an alert saying it had failed. The learner then filtered
+  // by that tag and found words the app had just told them were not tagged.
+  //
+  // So each row is settled on its own result: the ones that saved keep the tag,
+  // only the ones that failed go back, and the message says how many.
   async function handleBulkTag(tagsToAdd: string[]) {
     const ids = [...selected]
     if (ids.length === 0) return
-    const snapshot = words
     const targets = words.filter((w) => ids.includes(w.id))
     setWords((prev) => prev.map((w) => (ids.includes(w.id) ? { ...w, tags: mergeTags(w.tags, tagsToAdd) } : w)))
-    try {
-      const updated = await Promise.all(
-        targets.map((w) => updateWord(supabase, w.id, { tags: mergeTags(w.tags, tagsToAdd) })),
-      )
-      setWords((prev) => prev.map((w) => updated.find((u) => u.id === w.id) ?? w))
-    } catch {
-      setWords(snapshot)
-      alert('Không gắn thẻ được. Vui lòng thử lại.')
-    }
+
+    const results = await Promise.allSettled(
+      targets.map((w) => updateWord(supabase, w.id, { tags: mergeTags(w.tags, tagsToAdd) })),
+    )
+    const saved = new Map<string, UserWord>()
+    const lost = new Map<string, UserWord>()
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') saved.set(r.value.id, r.value)
+      else lost.set(targets[i].id, targets[i])
+    })
+    setWords((prev) => prev.map((w) => saved.get(w.id) ?? lost.get(w.id) ?? w))
+    if (lost.size > 0) alert(`Không gắn thẻ được cho ${lost.size} từ. Vui lòng thử lại.`)
   }
 
   async function handleBulkStatus(status: WordStatus) {
@@ -203,14 +217,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
 
   function handleExportAnki() {
     downloadTextFile('wordlist-anki.tsv', wordsToAnkiTsv(visible), 'text/tab-separated-values;charset=utf-8')
-  }
-
-  function formatDate(iso: string) {
-    try {
-      return new Date(iso).toLocaleDateString('vi-VN')
-    } catch {
-      return iso
-    }
   }
 
   const selectedCount = selected.size
@@ -313,7 +319,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     <td className="py-2 pr-3">
                       <TagChips tags={w.tags} />
                     </td>
-                    <td className="py-2 pr-3 text-black/40">{formatDate(w.createdAt)}</td>
+                    <td className="py-2 pr-3 text-black/40">{formatWordDate(w.createdAt)}</td>
                     <td className="py-2 pr-3">
                       <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
                     </td>
@@ -374,7 +380,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                               <TagChips tags={w.tags} />
 
               <div className="flex items-center justify-between mt-1">
-                <span className="text-xs text-black/30">{formatDate(w.createdAt)}</span>
+                <span className="text-xs text-black/30">{formatWordDate(w.createdAt)}</span>
                 <WordRowActions
                   word={w}
                   expanded={expandedId === w.id}

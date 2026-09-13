@@ -45,4 +45,34 @@ describe('useWordlistFilters', () => {
     act(() => result.current.toggleSort('headword'))
     expect(result.current.visible.map((w) => w.id)).toEqual(['a', 'b'])
   })
+
+  // The hook runs once on the server, where `window` does not exist, and again
+  // in the browser. Reading innerWidth and localStorage in the initial state
+  // meant a phone got a table from the server and a card grid from the first
+  // client render: React discarded the server HTML and rebuilt all 400 rows.
+  // Both sides must start from the same answer and settle afterwards.
+  it('starts from the same view on both sides, then settles', () => {
+    const width = window.innerWidth
+    try {
+      Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true })
+      const { result } = renderHook(() => useWordlistFilters([mk('a')]))
+      // renderHook has already flushed effects, so this is the settled value.
+      expect(result.current.view).toBe('card')
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { value: width, configurable: true })
+    }
+  })
+
+  it('honours a stored choice over the screen width', () => {
+    const width = window.innerWidth
+    window.localStorage.setItem('wordlist_view', 'table')
+    try {
+      Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true })
+      const { result } = renderHook(() => useWordlistFilters([mk('a')]))
+      expect(result.current.view).toBe('table')
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { value: width, configurable: true })
+      window.localStorage.removeItem('wordlist_view')
+    }
+  })
 })

@@ -2,29 +2,11 @@
 import { useMemo, useState } from 'react'
 import type { LangCode } from '@/lib/languages'
 import type { UserWord, WordStatus } from '@/lib/wordlist/types'
+import { useStoredView, type ViewMode } from './useStoredView'
 
-export type ViewMode = 'table' | 'card'
+export type { ViewMode }
 export type SortKey = 'headword' | 'createdAt'
 export type SortDir = 'asc' | 'desc'
-
-/** Width below which the eleven-column table cannot be read without scrolling
- * sideways; matches Tailwind's `lg`. */
-const TABLE_MIN_WIDTH = 1024
-
-/** Storage can be full or blocked, and neither is worth a crash -- same guard as
- *  lib/dictionary/recent.ts. A lost view preference costs one click. */
-function readStored(): string | null {
-  try { return window.localStorage.getItem('wordlist_view') } catch { return null }
-}
-
-function getInitialView(): ViewMode {
-  if (typeof window === 'undefined') return 'table'
-  const saved = readStored()
-  if (saved === 'card' || saved === 'table') return saved
-  // Without a stored choice, pick by what fits: on a phone the table clipped its
-  // last columns off the screen, and cards say the same thing in one column.
-  return window.innerWidth < TABLE_MIN_WIDTH ? 'card' : 'table'
-}
 
 /** Filter/sort/view-mode state for the wordlist table, plus the derived visible list.
  * Pulled out of WordlistClient so the filtering logic can be tested and reasoned about
@@ -36,7 +18,7 @@ export function useWordlistFilters(words: UserWord[]) {
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [sortKey, setSortKey] = useState<SortKey>('createdAt')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
-  const [view, setView] = useState<ViewMode>(getInitialView)
+  const [view, toggleView] = useStoredView()
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -68,11 +50,6 @@ export function useWordlistFilters(words: UserWord[]) {
       setSortKey(key)
       setSortDir('asc')
     }
-  }
-
-  function toggleView(v: ViewMode) {
-    setView(v)
-    try { window.localStorage.setItem('wordlist_view', v) } catch { /* see readStored */ }
   }
 
   function toggleTagFilter(tag: string) {
