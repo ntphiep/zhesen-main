@@ -44,8 +44,12 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
         listSavedEntryIds(supabase, language.code),
       ])
       const missing = all.filter((e) => !saved.has(e.id))
-      if (missing.length > 0) await addWords(supabase, missing.map(draftFromDictEntry))
-      setAddAll({ kind: 'done', added: missing.length, skipped: all.length - missing.length })
+      // Count what `addWords` actually inserted, not what we asked it to. The
+      // read above cannot see a save still in flight from another tab, or from
+      // an impatient second click on this button, so some of `missing` can come
+      // back already present -- and the count would have claimed them anyway.
+      const added = missing.length > 0 ? await addWords(supabase, missing.map(draftFromDictEntry)) : []
+      setAddAll({ kind: 'done', added: added.length, skipped: all.length - added.length })
     } catch {
       setAddAll({ kind: 'error' })
     }

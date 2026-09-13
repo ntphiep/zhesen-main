@@ -52,7 +52,7 @@ describe('LevelWordList', () => {
   it('"add all" skips entries already saved and reports the counts', async () => {
     getAllEntriesByLevel.mockResolvedValueOnce([entry('a'), entry('b'), entry('c')])
     listSavedEntryIds.mockResolvedValueOnce(new Set(['en:b']))
-    addWords.mockResolvedValueOnce([])
+    addWords.mockResolvedValueOnce([{ id: '1' }, { id: '2' }])
     render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[]} total={3} pageSize={40} />)
 
     await userEvent.click(screen.getByRole('button', { name: /Thêm cả A1/i }))
@@ -74,5 +74,20 @@ describe('LevelWordList', () => {
 
     expect(await screen.findByText(/Đã thêm 0 từ/)).toBeInTheDocument()
     expect(addWords).not.toHaveBeenCalled()
+  })
+
+  // The read of what is already saved cannot see a write still in flight -- from
+  // another tab, or from an impatient second click on this very button. Those
+  // rows come back skipped, and the count used to claim them anyway.
+  it('"add all" counts what was inserted, not what it hoped to insert', async () => {
+    getAllEntriesByLevel.mockResolvedValueOnce([entry('a'), entry('b'), entry('c')])
+    listSavedEntryIds.mockResolvedValueOnce(new Set())
+    addWords.mockResolvedValueOnce([{ id: '1' }])
+    render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[]} total={3} pageSize={40} />)
+
+    await userEvent.click(screen.getByRole('button', { name: /Thêm cả A1/i }))
+
+    expect(await screen.findByText(/Đã thêm 1 từ/)).toBeInTheDocument()
+    expect(screen.getByText(/bỏ qua 2 từ đã có/)).toBeInTheDocument()
   })
 })
