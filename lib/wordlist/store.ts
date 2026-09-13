@@ -96,6 +96,64 @@ export async function listWords(supabase: SupabaseClient): Promise<UserWord[]> {
   return rows.map(parseUserWordRow)
 }
 
+/** The six fields every practice mode reads. Nothing else is fetched. */
+export interface PracticeWord {
+  id: string
+  lang: LangCode
+  headword: string
+  ipa: string | null
+  meaningVi: string | null
+  audioUrl: string | null
+}
+
+const practiceWordRow = z.object({
+  id: z.string(),
+  lang: z.enum(['zh', 'es', 'en']),
+  headword: z.string().min(1),
+  ipa: z.string().nullable(),
+  meaning_vi: z.string().nullable(),
+  audio_url: z.string().nullable(),
+})
+
+/** Enough words to fill a round and still have wrong answers to choose from:
+ *  `buildQuiz` draws its distractors from the same pool. */
+export const PRACTICE_POOL = 60
+
+/**
+ * A pool of words for one practice round.
+ *
+ * The four modes used `listWords`, which is `select('*')` over a 26-column table
+ * paginated a thousand rows at a time. A 407-word account therefore pulled 407
+ * full rows -- examples, notes, all ten FSRS columns -- to build a six-tile
+ * matching round, and paid it again on every change of mode. Six columns and a
+ * server-side cap instead.
+ *
+ * The window starts at a random offset so the same sixty words do not come up
+ * every session; `rand` is injectable for the same reason `buildQuiz` takes one.
+ */
+export async function listPracticeWords(
+  supabase: SupabaseClient, pool: number = PRACTICE_POOL, rand: () => number = Math.random,
+): Promise<PracticeWord[]> {
+  const { count, error: countError } = await supabase
+    .from('user_words').select('*', { count: 'exact', head: true })
+  if (countError) throw countError
+  const total = count ?? 0
+  if (total === 0) return []
+
+  const offset = total > pool ? Math.floor(rand() * (total - pool + 1)) : 0
+  const { data, error } = await supabase
+    .from('user_words')
+    .select('id, lang, headword, ipa, meaning_vi, audio_url')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + pool - 1)
+  if (error) throw error
+
+  return practiceWordRow.array().parse(data ?? []).map((r) => ({
+    id: r.id, lang: r.lang, headword: r.headword, ipa: r.ipa,
+    meaningVi: r.meaning_vi, audioUrl: r.audio_url,
+  }))
+}
+
 /** Entry ids already saved for a language (RLS scopes this to the current user).
  * Used to dedupe a bulk "add whole level" import against the existing wordlist. */
 const savedEntryIdRow = z.object({ entry_id: z.string() })

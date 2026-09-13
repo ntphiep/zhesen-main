@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { listWords } from '@/lib/wordlist/store'
+import { listPracticeWords } from '@/lib/wordlist/store'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { checkTypedAnswer, type TypedResult } from '@/lib/practice/typing'
 import { logActivityDay } from '@/lib/wordlist/activity'
@@ -52,7 +52,7 @@ export function SpeakSession() {
 
   useEffect(() => {
     let active = true
-    listWords(supabase)
+    listPracticeWords(supabase)
       .then((words) => {
         if (!active) return
         const usable = words

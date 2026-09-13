@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { parseUserWordRow, draftFromDictEntry, addWord, addWords, updateWordsStatus, listWords, listSavedEntryIds, WordAlreadyExistsError } from '@/lib/wordlist/store'
+import { parseUserWordRow, draftFromDictEntry, addWord, addWords, updateWordsStatus, listWords, listPracticeWords, listSavedEntryIds, WordAlreadyExistsError, PRACTICE_POOL } from '@/lib/wordlist/store'
 import { authStub } from './helpers/supabase'
 import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 import type { WordDraft } from '@/lib/wordlist/types'
@@ -341,5 +341,61 @@ describe('draftFromDictEntry with the full entry', () => {
   it('still works from a preview, which has neither to offer', () => {
     const d = draftFromDictEntry(dogEntry)
     expect(d).toMatchObject({ headword: 'dog', example: null, exampleTranslation: null, reading: null })
+  })
+})
+
+describe('listPracticeWords', () => {
+  /** Records the projection and the range asked for; answers with `rows`. */
+  function mockClient(total: number, rows: unknown[]) {
+    const seen: { columns?: string; from?: number; to?: number } = {}
+    const from = vi.fn(() => {
+      const chain = {
+        select: (columns: string, opts?: { head?: boolean }) => {
+          if (opts?.head) return Promise.resolve({ count: total, error: null })
+          seen.columns = columns
+          return chain
+        },
+        order: () => chain,
+        range: (a: number, b: number) => {
+          seen.from = a; seen.to = b
+          return Promise.resolve({ data: rows, error: null })
+        },
+      }
+      return chain
+    })
+    return { client: { from } as unknown as import('@supabase/supabase-js').SupabaseClient, seen }
+  }
+
+  const practiceRow = {
+    id: 'w1', lang: 'en', headword: 'dog', ipa: '/dɔːɡ/', meaning_vi: 'con chó', audio_url: null,
+  }
+
+  // A 407-word account pulled 407 full rows of a 26-column table to build a
+  // six-tile round, and paid it again on every change of mode.
+  it('asks for six columns and one pool, not the whole wordlist', async () => {
+    const { client, seen } = mockClient(407, [practiceRow])
+    const res = await listPracticeWords(client, PRACTICE_POOL, () => 0)
+    expect(seen.columns).toBe('id, lang, headword, ipa, meaning_vi, audio_url')
+    expect((seen.to ?? 0) - (seen.from ?? 0) + 1).toBe(PRACTICE_POOL)
+    expect(res[0]).toEqual({ id: 'w1', lang: 'en', headword: 'dog', ipa: '/dɔːɡ/', meaningVi: 'con chó', audioUrl: null })
+  })
+
+  // Otherwise the same sixty words come up every session.
+  it('starts the window somewhere different each round', async () => {
+    const { client, seen } = mockClient(407, [practiceRow])
+    await listPracticeWords(client, PRACTICE_POOL, () => 0.5)
+    expect(seen.from).toBe(Math.floor(0.5 * (407 - PRACTICE_POOL + 1)))
+  })
+
+  it('never leaves the end of a wordlist smaller than the pool', async () => {
+    const { client, seen } = mockClient(12, [practiceRow])
+    await listPracticeWords(client, PRACTICE_POOL, () => 0.99)
+    expect(seen.from).toBe(0)
+  })
+
+  it('asks for nothing when the wordlist is empty', async () => {
+    const { client, seen } = mockClient(0, [])
+    expect(await listPracticeWords(client)).toEqual([])
+    expect(seen.columns).toBeUndefined()
   })
 })

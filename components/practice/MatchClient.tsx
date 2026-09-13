@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { listWords } from '@/lib/wordlist/store'
+import { listPracticeWords } from '@/lib/wordlist/store'
 import { logActivityDay } from '@/lib/wordlist/activity'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
@@ -29,7 +29,7 @@ export function MatchClient() {
 
   useEffect(() => {
     let active = true
-    listWords(supabase)
+    listPracticeWords(supabase)
       .then((words) => {
         if (!active) return
         setTiles(buildMatchTiles(words.map((w) => ({ id: w.id, headword: w.headword, meaningVi: w.meaningVi })), ROUND_SIZE))

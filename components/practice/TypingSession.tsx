@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { listWords } from '@/lib/wordlist/store'
+import { listPracticeWords } from '@/lib/wordlist/store'
 import { logActivityDay } from '@/lib/wordlist/activity'
 import { shuffle } from '@/lib/practice/shuffle'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
@@ -26,7 +26,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
 
   useEffect(() => {
     let active = true
-    listWords(supabase)
+    listPracticeWords(supabase)
       .then((words) => {
         if (!active) return
         const usable = words
