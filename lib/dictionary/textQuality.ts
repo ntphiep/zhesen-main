@@ -55,6 +55,27 @@ export function fillPivotVi(senses: DictSense[], viByTerm: Map<string, string>):
   })
 }
 
+/**
+ * The Vietnamese meaning to show for an entry, wherever it came from.
+ *
+ * `detail.glossVi` is computed by `toPreview` before `withPivotVi` runs, and the
+ * pivot writes to `sense.pivotVi` rather than back into the gloss. For a Chinese
+ * or Spanish entry whose only Vietnamese meaning is pivoted through English --
+ * which is most of them, and the reason the pivot exists -- `glossVi` is null
+ * while the page is displaying a meaning. `SenseList` reads both; anything else
+ * that wants "the meaning" has to as well, or it silently gets nothing.
+ */
+export function entryMeaningVi(
+  entry: { glossVi: string | null; senses: DictSense[] },
+): string | null {
+  if (entry.glossVi) return entry.glossVi
+  for (const s of entry.senses) {
+    if (s.glossVi) return s.glossVi
+    if (s.pivotVi) return s.pivotVi
+  }
+  return null
+}
+
 /** A Chinese sense whose gloss is a CC-CEDICT classifier note (e.g.
  * "CL:隻|只[zhi1],條|条[tiao2]") rather than an actual meaning. */
 export function isClassifierGloss(gloss: string | null): boolean {

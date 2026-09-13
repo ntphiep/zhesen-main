@@ -33,6 +33,14 @@ export const enrichOutput = z.object({
 
 export type EnrichOutput = z.infer<typeof enrichOutput>
 
+const unique = (xs: string[]): string[] => [...new Set(xs)]
+
+function uniqueBy<T>(xs: T[], key: (x: T) => string): T[] {
+  const seen = new Map<string, T>()
+  for (const x of xs) if (!seen.has(key(x))) seen.set(key(x), x)
+  return [...seen.values()]
+}
+
 // ---------------------------------------------------------------- coach
 
 export const coachInput = z.object({
@@ -44,12 +52,17 @@ export const coachInput = z.object({
 export const coachOutput = z.object({
   /** A memory hook in Vietnamese: word shape, root, or a picture to hold on to. */
   mnemonic: z.string().max(400),
+  // Deduped here rather than at the render: a model repeating itself is ordinary,
+  // and the lists are keyed by their own text, so a repeat is both a duplicate
+  // React key and a duplicate on screen.
   /** Words this one habitually travels with, as the learner will meet them. */
-  collocations: z.array(z.string().max(80)).max(6),
+  collocations: z.array(z.string().max(80)).max(6).transform(unique),
   /** Two sentences in the word's own language, each with its Vietnamese. */
-  examples: z.array(z.object({ text: z.string().max(300), vi: z.string().max(300) })).max(3),
+  examples: z.array(z.object({ text: z.string().max(300), vi: z.string().max(300) })).max(3)
+    .transform((xs) => uniqueBy(xs, (e) => e.text)),
   /** Words that are easy to mistake for this one, and the difference. */
-  confusables: z.array(z.object({ word: z.string().max(80), note: z.string().max(240) })).max(3),
+  confusables: z.array(z.object({ word: z.string().max(80), note: z.string().max(240) })).max(3)
+    .transform((xs) => uniqueBy(xs, (c) => c.word)),
 })
 
 export type CoachOutput = z.infer<typeof coachOutput>

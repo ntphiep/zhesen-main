@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pickSenses, isCleanExample, isClassifierGloss, parseClassifiers, fillPivotVi, cleanMtGloss, isSentenceTranslation, hasUnknownLongWord } from '@/lib/dictionary/textQuality'
+import { pickSenses, isCleanExample, isClassifierGloss, parseClassifiers, fillPivotVi, cleanMtGloss, isSentenceTranslation, hasUnknownLongWord, entryMeaningVi } from '@/lib/dictionary/textQuality'
 import { tokenize } from '@/lib/reader/tokenize'
 import { classifyRelations } from '@/lib/dictionary/relations'
 import { groupWordForms } from '@/lib/dictionary/family'
@@ -192,5 +192,33 @@ describe('hasUnknownLongWord', () => {
   })
   it('ignores non-Latin text, where an unresolved token is an ordinary character', () => {
     expect(hasUnknownLongWord(tokenize('zh', '我有一本很好看的中文书'), new Set())).toBe(false)
+  })
+})
+
+describe('entryMeaningVi', () => {
+  const sense = (over: Partial<DictSense> = {}): DictSense =>
+    ({ pos: 'noun', glossVi: null, glossEn: null, senseOrder: 1, ...over })
+
+  it('prefers the entry gloss when there is one', () => {
+    expect(entryMeaningVi({ glossVi: 'con chó', senses: [sense({ glossVi: 'khác' })] })).toBe('con chó')
+  })
+
+  // toPreview computes glossVi before withPivotVi runs, and the pivot writes to
+  // sense.pivotVi rather than back into the gloss. For a Chinese or Spanish
+  // entry whose only Vietnamese meaning is pivoted -- most of them, which is why
+  // the pivot exists -- the entry gloss is null while the page shows a meaning.
+  it('falls back to a pivoted sense, which is what the page is displaying', () => {
+    expect(entryMeaningVi({ glossVi: null, senses: [sense({ pivotVi: 'học tập' })] })).toBe('học tập')
+  })
+
+  it('prefers a real sense gloss over a pivoted one', () => {
+    expect(entryMeaningVi({
+      glossVi: null,
+      senses: [sense({ glossVi: 'học', pivotVi: 'học tập' })],
+    })).toBe('học')
+  })
+
+  it('is null when the entry genuinely has no Vietnamese meaning', () => {
+    expect(entryMeaningVi({ glossVi: null, senses: [sense()] })).toBeNull()
   })
 })

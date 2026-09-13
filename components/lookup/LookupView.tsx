@@ -10,6 +10,7 @@ import { ConjugationTable } from './ConjugationTable'
 import { ExampleList } from './ExampleList'
 import { GrammarLinks } from './GrammarLinks'
 import { AiCoach } from '@/components/ai/AiCoach'
+import { entryMeaningVi } from '@/lib/dictionary/textQuality'
 import { groupWordForms } from '@/lib/dictionary/family'
 import { buildConjugation } from '@/lib/dictionary/conjugation'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
@@ -77,7 +78,7 @@ export function LookupView({
           />
           {/* Under the dictionary's own material, never in place of it: what the
               assistant says is generated, what is above it is sourced. */}
-          <AiCoach lang={detail.lang} headword={detail.headword} meaningVi={detail.glossVi} />
+          <AiCoach lang={detail.lang} headword={detail.headword} meaningVi={entryMeaningVi(detail)} />
         </div>
 
         {hasSideRail && (
