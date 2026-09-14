@@ -149,10 +149,14 @@ export function isCleanExample(text: string): boolean {
  * the entry's own meaning copied into the field.
  *
  * The Cambridge crawler filled `translation_vi` from the sense gloss whenever the
- * page carried no per-example translation, which is nearly always: measured over
- * the loaded data, 30.4% of Cambridge examples carry the entry's meaning instead of
- * the sentence's. On the page that reads as a translation and it is not one -- under
- * "It's time to take the dog for a walk" it said "con chó".
+ * page carried no per-example translation, which was nearly always: 30.4% of the
+ * loaded Cambridge examples carried the entry's meaning instead of the sentence's.
+ * On the page that reads as a translation and it is not one -- under "It's time to
+ * take the dog for a walk" it said "con chó".
+ *
+ * Those rows have since been cleared and the crawler no longer writes them, so the
+ * check currently fires on nothing. It stays because it is the only thing standing
+ * between a future source that does the same and the page.
  *
  * The comparison is exact rather than a similarity score: the bad rows are a copy,
  * so nothing is guessed, and a real translation that happens to equal a gloss is a
@@ -175,20 +179,24 @@ export function isSentenceTranslation(translation: string | null, glosses: (stri
  * sitting in memory and costs nothing to ask.
  *
  * Eight letters, because the corruption joins two words and the join is what makes
- * the token long. Measured over a 20,000-example sample of the loaded English data,
- * against all 21,004 headwords plus all 41,939 inflected forms:
+ * the token long. When the threshold was chosen, 77.7% of the loaded Cambridge
+ * sentences were hidden by it against 6.4% of Tatoeba's, which is what a filter
+ * aimed at one corrupted source is supposed to look like.
+ *
+ * The loaded rows have since been rewritten from the page cache
+ * (`pipeline/repair_cambridge.py`), and the gap is gone. Measured on 4,000
+ * sentences per source against all English headwords and inflected forms:
  *
  *   threshold   Cambridge sentences hidden   Tatoeba sentences hidden
- *      8                 77.7%                        6.4%
- *     11                 57.1%                        2.4%
- *     14                 35.5%                        0.5%
+ *      8                  1.9%                        2.2%
+ *     11                  0.4%                        0.8%
+ *     14                  0.1%                        0.1%
  *
- * Cambridge is the corrupted source; Tatoeba's text is clean, so its column is the
- * cost -- a good sentence hidden because the dictionary does not carry the word
- * ("breadfruit", "oceanographer", "hibernate"). Eight buys the most corruption
- * removed per good sentence lost, and an entry usually stores far more examples
- * than the six it shows, so the loss rarely reaches the page. The check costs
- * nothing once the crawler stops producing the corruption.
+ * Both columns are now the same cost -- a good sentence hidden because the
+ * dictionary does not carry the word ("breadfruit", "oceanographer",
+ * "hibernate") -- and at 1.9% it is small enough to leave alone, with an entry
+ * storing far more examples than the six it shows. Raise the threshold only if
+ * that cost starts reaching the page; lowering it buys nothing now.
  *
  * Latin scripts only -- a Chinese token that resolves to nothing is an ordinary
  * character, handled by the character lookup.
