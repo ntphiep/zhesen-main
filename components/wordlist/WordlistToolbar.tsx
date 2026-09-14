@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { LANGUAGES, type LangCode } from '@/lib/languages'
-import type { ViewMode } from '@/lib/hooks/useWordlistFilters'
+import type { ReviewFilter, ViewMode } from '@/lib/hooks/useWordlistFilters'
 import { STATUS_OPTIONS, type WordStatus } from '@/lib/wordlist/types'
 
 interface Props {
@@ -11,6 +11,8 @@ interface Props {
   onLangFilterChange: (l: LangCode | '') => void
   statusFilter: WordStatus | ''
   onStatusFilterChange: (s: WordStatus | '') => void
+  reviewFilter: ReviewFilter
+  onReviewFilterChange: (r: ReviewFilter) => void
   view: ViewMode
   onViewChange: (v: ViewMode) => void
   onAddClick: () => void
@@ -21,7 +23,7 @@ interface Props {
 
 export function WordlistToolbar({
   query, onQueryChange, langFilter, onLangFilterChange, statusFilter, onStatusFilterChange,
-  view, onViewChange, onAddClick, onExportCsv, onExportAnki, onImportClick,
+  reviewFilter, onReviewFilterChange, view, onViewChange, onAddClick, onExportCsv, onExportAnki, onImportClick,
 }: Props) {
   const [exportOpen, setExportOpen] = useState(false)
 
@@ -61,6 +63,19 @@ export function WordlistToolbar({
         {STATUS_OPTIONS.map(([value, label]) => (
           <option key={value} value={value}>{label}</option>
         ))}
+      </select>
+
+      {/* The scheduler already knows which words are overdue and which keep being
+          forgotten; until now the wordlist had no way to ask it. */}
+      <select
+        value={reviewFilter}
+        onChange={(e) => onReviewFilterChange(e.target.value as ReviewFilter)}
+        className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
+        aria-label="Lọc ôn tập"
+      >
+        <option value="">Tất cả từ</option>
+        <option value="due">Cần ôn</option>
+        <option value="leech">Hay sai</option>
       </select>
 
       <div className="flex rounded-lg border border-black/15 overflow-hidden">

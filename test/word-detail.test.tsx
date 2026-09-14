@@ -20,7 +20,7 @@ vi.mock('@/lib/dictionary/entryDetail', () => ({
 const base: UserWord = {
   id: 'id1', lang: 'en', entryId: 'en:dog', headword: 'dog', reading: null, ipa: null, pos: null,
   meaningVi: null, meaningEn: null, level: null, example: null, exampleTranslation: null,
-  audioUrl: null, notes: null, status: 'new', tags: [], createdAt: 'x', updatedAt: 'x',
+  audioUrl: null, notes: null, status: 'new', tags: [], createdAt: 'x', updatedAt: 'x', fsrsDueAt: '2026-01-01T00:00:00Z', fsrsLapses: 0,
 }
 
 describe('WordDetail', () => {

@@ -3,7 +3,7 @@ import { Fragment, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addWord, addWords, listWords, updateWord, updateWordsStatus, deleteWord, deleteWords } from '@/lib/wordlist/store'
 import { mergeTags, tagCounts } from '@/lib/wordlist/tags'
-import { formatWordDate } from '@/lib/wordlist/format'
+import { formatWordDate, formatDueDate } from '@/lib/wordlist/format'
 import { posGroup } from '@/lib/dictionary/pos'
 import { wordsToCsv, wordsToAnkiTsv } from '@/lib/wordlist/csv'
 import { downloadTextFile } from '@/lib/wordlist/download'
@@ -32,7 +32,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
 
   const {
     query, setQuery, langFilter, setLangFilter, statusFilter, setStatusFilter,
-    tagFilter, toggleTagFilter, sortKey, sortDir, toggleSort, view, toggleView, visible,
+    reviewFilter, setReviewFilter, tagFilter, toggleTagFilter,
+    sortKey, sortDir, toggleSort, view, toggleView, visible,
   } = useWordlistFilters(words)
 
   const allVisibleIds = visible.map((w) => w.id)
@@ -44,7 +45,10 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   // and export still work on the full filtered set, not on what is on screen.
   const PAGE_SIZE = 50
   const [limit, setLimit] = useState(PAGE_SIZE)
-  const filterSignature = `${query}|${langFilter}|${statusFilter}|${tagFilter}|${sortKey}|${sortDir}`
+  // The tag filter is a Set, so it has to be spelled out: interpolating it gives
+  // "[object Set]" for every combination and the page size would never reset.
+  const filterSignature =
+    `${query}|${langFilter}|${statusFilter}|${reviewFilter}|${[...tagFilter].join(',')}|${sortKey}|${sortDir}`
   const [prevSignature, setPrevSignature] = useState(filterSignature)
   if (filterSignature !== prevSignature) {
     setPrevSignature(filterSignature)
@@ -98,6 +102,9 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       tags: draft.tags,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      // What the database writes for a new row: due immediately, never missed.
+      fsrsDueAt: new Date().toISOString(),
+      fsrsLapses: 0,
     }
     setWords((prev) => [tempWord, ...prev])
     setAddOpen(false)
@@ -271,6 +278,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         onLangFilterChange={setLangFilter}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        reviewFilter={reviewFilter}
+        onReviewFilterChange={setReviewFilter}
         view={view}
         onViewChange={toggleView}
         onAddClick={() => setAddOpen(true)}
@@ -279,7 +288,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         onImportClick={() => setImportOpen(true)}
       />
 
-      <TagFilterBar words={words} activeTag={tagFilter} onToggle={toggleTagFilter} />
+      <TagFilterBar words={words} activeTags={tagFilter} onToggle={toggleTagFilter} />
 
       <BulkActionBar
         selectedWords={selectedWords}
@@ -337,6 +346,24 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     {sortKey === 'createdAt' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </th>
+                <th className="py-2 pr-3">
+                  <button
+                    className="flex items-center gap-1 font-medium hover:text-black"
+                    onClick={() => toggleSort('fsrsDueAt')}
+                  >
+                    Đến hạn
+                    {sortKey === 'fsrsDueAt' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                  </button>
+                </th>
+                <th className="py-2 pr-3">
+                  <button
+                    className="flex items-center gap-1 font-medium hover:text-black"
+                    onClick={() => toggleSort('fsrsLapses')}
+                  >
+                    Sai
+                    {sortKey === 'fsrsLapses' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                  </button>
+                </th>
                 <th className="py-2 pr-3">Audio</th>
                 <th className="py-2">Thao tác</th>
               </tr>
@@ -363,6 +390,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                       <TagChips tags={w.tags} />
                     </td>
                     <td className="py-2 pr-3 text-black/40">{formatWordDate(w.createdAt)}</td>
+                    <td className="py-2 pr-3 text-black/40">{formatDueDate(w.fsrsDueAt)}</td>
+                    <td className="py-2 pr-3 text-black/40">{w.fsrsLapses > 0 ? w.fsrsLapses : ''}</td>
                     <td className="py-2 pr-3">
                       <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
                     </td>
@@ -378,7 +407,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                   </tr>
                   {expandedId === w.id && (
                     <tr className="bg-black/2">
-                      <td colSpan={11} className="px-4 py-3">
+                      <td colSpan={13} className="px-4 py-3">
                         <WordDetail word={w} />
                       </td>
                     </tr>
@@ -423,7 +452,9 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                               <TagChips tags={w.tags} />
 
               <div className="flex items-center justify-between mt-1">
-                <span className="text-xs text-black/30">{formatWordDate(w.createdAt)}</span>
+                <span className="text-xs text-black/30">
+                  {formatDueDate(w.fsrsDueAt) === 'Cần ôn' ? 'Cần ôn' : formatWordDate(w.createdAt)}
+                </span>
                 <WordRowActions
                   word={w}
                   expanded={expandedId === w.id}

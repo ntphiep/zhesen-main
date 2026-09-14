@@ -10,6 +10,8 @@ const row = {
   reading: null, ipa: '/dɔːɡ/', pos: 'noun', meaning_vi: 'con chó', meaning_en: 'dog', level: 'A1',
   example: 'The dog barked.', example_translation: 'Con chó sủa.', audio_url: 'x.ogg', notes: null,
   status: 'new', tags: [], created_at: '2026-06-19T00:00:00Z', updated_at: '2026-06-19T00:00:00Z',
+  // Written by migration 0017 with NOT NULL defaults, so every real row carries them.
+  fsrs_due_at: '2026-06-19T00:00:00Z', fsrs_lapses: 0,
 }
 
 describe('parseUserWordRow', () => {

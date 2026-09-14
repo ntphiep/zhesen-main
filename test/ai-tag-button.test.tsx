@@ -13,7 +13,7 @@ function mk(headword: string): UserWord {
     id: headword, lang: 'en', entryId: null, headword, reading: null, ipa: null, pos: null,
     meaningVi: `nghĩa của ${headword}`, meaningEn: null, level: null, example: null,
     exampleTranslation: null, audioUrl: null, notes: null, status: 'new', tags: [],
-    createdAt: '2026-06-19T00:00:00Z', updatedAt: '2026-06-19T00:00:00Z',
+    createdAt: '2026-06-19T00:00:00Z', updatedAt: '2026-06-19T00:00:00Z', fsrsDueAt: '2026-01-01T00:00:00Z', fsrsLapses: 0,
   }
 }
 

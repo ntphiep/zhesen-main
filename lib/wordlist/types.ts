@@ -33,6 +33,12 @@ export interface UserWord {
   tags: string[]
   createdAt: string
   updatedAt: string
+  /** When the scheduler wants this word back. Read-only here: practice writes the
+   *  FSRS columns, the wordlist only sorts and filters by them. */
+  fsrsDueAt: string
+  /** How many times the word has been forgotten after being learnt. Anki calls a
+   *  card with a high count a leech; here it is what "Hay sai" filters on. */
+  fsrsLapses: number
 }
 
 /** Fields the user supplies when creating/editing a word (excludes id/timestamps/user_id). */
@@ -73,4 +79,6 @@ export const userWordRow = z.object({
   tags: z.array(z.string()),
   created_at: z.string(),
   updated_at: z.string(),
+  fsrs_due_at: z.string(),
+  fsrs_lapses: z.number(),
 })

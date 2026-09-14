@@ -16,6 +16,7 @@ export function parseUserWordRow(r: unknown): UserWord {
     ipa: x.ipa, pos: x.pos, meaningVi: x.meaning_vi, meaningEn: x.meaning_en, level: x.level,
     example: x.example, exampleTranslation: x.example_translation, audioUrl: x.audio_url,
     notes: x.notes, status: x.status, tags: x.tags, createdAt: x.created_at, updatedAt: x.updated_at,
+    fsrsDueAt: x.fsrs_due_at, fsrsLapses: x.fsrs_lapses,
   }
 }
 

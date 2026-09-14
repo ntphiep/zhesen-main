@@ -6,7 +6,7 @@ function mk(id: string, tags: string[]): UserWord {
   return {
     id, lang: 'en', entryId: null, headword: id, reading: null, ipa: null, pos: null,
     meaningVi: null, meaningEn: null, level: null, example: null, exampleTranslation: null,
-    audioUrl: null, notes: null, status: 'new', tags, createdAt: 'x', updatedAt: 'x',
+    audioUrl: null, notes: null, status: 'new', tags, createdAt: 'x', updatedAt: 'x', fsrsDueAt: '2026-01-01T00:00:00Z', fsrsLapses: 0,
   }
 }
 
