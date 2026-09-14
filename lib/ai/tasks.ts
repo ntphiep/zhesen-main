@@ -67,6 +67,49 @@ export const coachOutput = z.object({
 
 export type CoachOutput = z.infer<typeof coachOutput>
 
+// ---------------------------------------------------------------- suggest
+
+export const suggestInput = z.object({
+  /** What the learner typed and the dictionary could not match. */
+  query: z.string().trim().min(1).max(120),
+})
+
+export const suggestOutput = z.object({
+  words: z.array(z.object({
+    lang: langCode,
+    headword: z.string().max(80),
+    meaningVi: z.string().max(200),
+  })).max(6).transform((xs) => uniqueBy(xs, (w) => `${w.lang}:${w.headword}`)),
+})
+
+export type SuggestOutput = z.infer<typeof suggestOutput>
+
+// ---------------------------------------------------------------- tags
+
+/** A tag is a filter chip, so it has to be short enough to read in a row of
+ *  them and repeated across words to be worth anything. */
+const tagText = z.string().trim().min(1).max(24)
+
+export const tagsInput = z.object({
+  words: z.array(z.object({
+    headword: shortText,
+    meaningVi: z.string().trim().max(300).nullable(),
+  })).min(1).max(40),
+  /** Tags already in use, so the model reuses them instead of inventing a
+   *  synonym for a category the learner already has. */
+  existing: z.array(tagText).max(40).default([]),
+})
+
+export const tagsOutput = z.object({
+  /** One entry per word, in the order they were sent. */
+  tags: z.array(z.object({
+    headword: z.string().max(120),
+    tags: z.array(tagText).max(3).transform(unique),
+  })).max(40),
+})
+
+export type TagsOutput = z.infer<typeof tagsOutput>
+
 // ---------------------------------------------------------------- registry
 
 const JSON_ONLY = 'Bạn trả về DUY NHẤT một object JSON hợp lệ. Không markdown, không rào đón, không giải thích ngoài JSON.'
@@ -122,6 +165,62 @@ export const TASKS = {
         ' "confusables": mảng tối đa 3 phần tử {"word": từ dễ nhầm, "note": khác nhau chỗ nào}}',
       ].filter(Boolean).join('\n'),
   } satisfies TaskSpec<z.infer<typeof coachInput>, CoachOutput>,
+
+  /**
+   * The way out of an empty search.
+   *
+   * The dictionary matches text; a learner who knows the meaning but not the
+   * word ("hoãn cuộc họp lại") has nothing to match on, and the page currently
+   * ends at "Không tìm thấy kết quả". The suggestions are not dictionary data
+   * and are labelled as generated, but each one is a headword the dictionary can
+   * then be asked about properly.
+   */
+  suggest: {
+    input: suggestInput,
+    output: suggestOutput,
+    maxTokens: 700,
+    system: TEACHER,
+    prompt: ({ query }) =>
+      [
+        `Người học gõ "${query}" vào ô tra từ điển và không có kết quả nào.`,
+        'Đó có thể là tiếng Việt, một mô tả, hoặc một từ viết sai.',
+        'Đề xuất tối đa 6 từ tiếng Anh, tiếng Trung hoặc tiếng Tây Ban Nha sát nghĩa nhất.',
+        'Ưu tiên tiếng Anh và ngữ cảnh công sở vì học viên ôn TOEIC.',
+        'Trả JSON với đúng khoá sau:',
+        '{"words": mảng các phần tử {"lang": "en" hoặc "zh" hoặc "es",',
+        '   "headword": chính từ đó, viết đúng chính tả, không kèm giải thích;',
+        '   "meaningVi": nghĩa tiếng Việt ngắn gọn}}',
+        'Không có từ nào phù hợp thì trả mảng rỗng.',
+      ].join('\n'),
+  } satisfies TaskSpec<z.infer<typeof suggestInput>, SuggestOutput>,
+
+  /**
+   * Topic tags for words already saved.
+   *
+   * A wordlist of four hundred words is a wall unless it can be sliced, and the
+   * tag filter has been there all along with nothing to filter by, because
+   * tagging four hundred words by hand is not something anyone does. The tags
+   * already in use are sent along so the model reuses "văn phòng" rather than
+   * coining "công sở" beside it.
+   */
+  tags: {
+    input: tagsInput,
+    output: tagsOutput,
+    maxTokens: 1200,
+    system: TEACHER,
+    prompt: ({ words, existing }) =>
+      [
+        'Gắn thẻ chủ đề cho danh sách từ dưới đây, phục vụ ôn thi TOEIC.',
+        existing.length ? `Thẻ đang dùng, hãy ưu tiên dùng lại: ${existing.join(', ')}.` : '',
+        'Mỗi từ tối đa 2 thẻ, mỗi thẻ là một danh từ tiếng Việt ngắn, viết thường.',
+        'Thẻ phải nói về chủ đề hoặc tình huống, không phải từ loại.',
+        'Danh sách từ:',
+        ...words.map((w, i) => `${i + 1}. ${w.headword}${w.meaningVi ? ` — ${w.meaningVi}` : ''}`),
+        'Trả JSON với đúng khoá sau:',
+        '{"tags": mảng {"headword": đúng từ đã cho, "tags": mảng thẻ}}',
+        'Giữ nguyên thứ tự và chính tả của headword như trên.',
+      ].filter(Boolean).join('\n'),
+  } satisfies TaskSpec<z.infer<typeof tagsInput>, TagsOutput>,
 } as const
 
 export type TaskName = keyof typeof TASKS
@@ -168,4 +267,6 @@ function erase<I, O>(spec: TaskSpec<I, O>): ErasedTask {
 export const ERASED_TASKS: Record<TaskName, ErasedTask> = {
   enrich: erase(TASKS.enrich),
   coach: erase(TASKS.coach),
+  suggest: erase(TASKS.suggest),
+  tags: erase(TASKS.tags),
 }

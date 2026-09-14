@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { entryPath } from '@/lib/dictionary/entryId'
+import { AiSuggest } from './AiSuggest'
 import { detectOrder, orderByBestMatch } from '@/lib/dictionary/detect'
 import { pushRecent, readRecent, writeRecent } from '@/lib/dictionary/recent'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
@@ -287,7 +288,12 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
       </p>
       {loading && <p className="text-sm text-black/40">Đang tìm…</p>}
       {!loading && refused && <p className="text-sm text-black/40">{BUSY_MESSAGE}</p>}
-      {showNoResults && <p className="text-sm text-black/40">Không tìm thấy kết quả.</p>}
+      {showNoResults && (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-black/40">Không tìm thấy kết quả.</p>
+          <AiSuggest query={query.trim()} />
+        </div>
+      )}
       {showSuggestions && (
         <div className="flex flex-col gap-1">
           <span className="text-sm text-black/40">Không tìm thấy kết quả. Có phải bạn tìm:</span>

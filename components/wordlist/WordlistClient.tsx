@@ -2,7 +2,7 @@
 import { Fragment, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addWord, addWords, listWords, updateWord, updateWordsStatus, deleteWord, deleteWords } from '@/lib/wordlist/store'
-import { mergeTags } from '@/lib/wordlist/tags'
+import { mergeTags, tagCounts } from '@/lib/wordlist/tags'
 import { formatWordDate } from '@/lib/wordlist/format'
 import { posGroup } from '@/lib/dictionary/pos'
 import { wordsToCsv, wordsToAnkiTsv } from '@/lib/wordlist/csv'
@@ -179,14 +179,28 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   //
   // So each row is settled on its own result: the ones that saved keep the tag,
   // only the ones that failed go back, and the message says how many.
-  async function handleBulkTag(tagsToAdd: string[]) {
+  //
+  // `tagsFor` is per word rather than one array for all of them: the assistant
+  // returns a different set for each word, and the hand-typed box returns the
+  // same set for every word, which is the same function with a constant.
+  async function applyTags(tagsFor: (w: UserWord) => string[]) {
     const ids = [...selected]
     if (ids.length === 0) return
-    const targets = words.filter((w) => ids.includes(w.id))
-    setWords((prev) => prev.map((w) => (ids.includes(w.id) ? { ...w, tags: mergeTags(w.tags, tagsToAdd) } : w)))
+    // A word whose tags would not change is left out of the request entirely:
+    // the assistant often agrees with tags already there, and writing them back
+    // would burn a request per row to store what is already stored.
+    const merged = new Map<string, string[]>()
+    for (const w of words) {
+      if (!ids.includes(w.id)) continue
+      const next = mergeTags(w.tags, tagsFor(w))
+      if (next.length !== w.tags.length) merged.set(w.id, next)
+    }
+    const targets = words.filter((w) => merged.has(w.id))
+    if (targets.length === 0) return
+    setWords((prev) => prev.map((w) => (merged.has(w.id) ? { ...w, tags: merged.get(w.id)! } : w)))
 
     const results = await Promise.allSettled(
-      targets.map((w) => updateWord(supabase, w.id, { tags: mergeTags(w.tags, tagsToAdd) })),
+      targets.map((w) => updateWord(supabase, w.id, { tags: merged.get(w.id)! })),
     )
     const saved = new Map<string, UserWord>()
     const lost = new Map<string, UserWord>()
@@ -197,6 +211,13 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     setWords((prev) => prev.map((w) => saved.get(w.id) ?? lost.get(w.id) ?? w))
     if (lost.size > 0) alert(`Không gắn thẻ được cho ${lost.size} từ. Vui lòng thử lại.`)
   }
+
+  const handleBulkTag = (tagsToAdd: string[]) => applyTags(() => tagsToAdd)
+
+  // The assistant answers per headword, so a word it skipped keeps its own tags
+  // rather than being cleared.
+  const handleAiTag = (tagsByHeadword: Map<string, string[]>) =>
+    applyTags((w) => tagsByHeadword.get(w.headword) ?? [])
 
   async function handleBulkStatus(status: WordStatus) {
     const ids = [...selected]
@@ -238,7 +259,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     downloadTextFile('wordlist-anki.tsv', wordsToAnkiTsv(visible), 'text/tab-separated-values;charset=utf-8')
   }
 
-  const selectedCount = selected.size
+  const selectedWords = words.filter((w) => selected.has(w.id))
+  const allTags = tagCounts(words).map((t) => t.tag)
 
   return (
     <div className="flex flex-col gap-4">
@@ -260,8 +282,10 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       <TagFilterBar words={words} activeTag={tagFilter} onToggle={toggleTagFilter} />
 
       <BulkActionBar
-        selectedCount={selectedCount}
+        selectedWords={selectedWords}
+        allTags={allTags}
         onBulkTag={handleBulkTag}
+        onAiTag={handleAiTag}
         onBulkStatus={handleBulkStatus}
         onBulkDelete={handleBulkDelete}
       />

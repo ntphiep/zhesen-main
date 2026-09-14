@@ -1,21 +1,28 @@
 'use client'
 import { useState } from 'react'
 import { parseTagsInput } from '@/lib/wordlist/tags'
-import { STATUS_OPTIONS, type WordStatus } from '@/lib/wordlist/types'
+import { AiTagButton } from '@/components/wordlist/AiTagButton'
+import { STATUS_OPTIONS, type UserWord, type WordStatus } from '@/lib/wordlist/types'
 
 interface Props {
-  selectedCount: number
+  /** The selected rows themselves, not just how many: the assistant needs the
+   *  word and its meaning to decide on a tag. */
+  selectedWords: UserWord[]
+  /** Every tag already used in the wordlist, so the assistant reuses them. */
+  allTags: string[]
   onBulkTag: (tags: string[]) => void
+  onAiTag: (tagsByHeadword: Map<string, string[]>) => void
   onBulkStatus: (status: WordStatus) => void
   onBulkDelete: () => void
 }
 
 /** Toolbar shown once one or more rows are selected: tag, change status, or delete
  * every selected word at once. */
-export function BulkActionBar({ selectedCount, onBulkTag, onBulkStatus, onBulkDelete }: Props) {
+export function BulkActionBar({ selectedWords, allTags, onBulkTag, onAiTag, onBulkStatus, onBulkDelete }: Props) {
   const [tagInput, setTagInput] = useState('')
   const [bulkStatus, setBulkStatus] = useState<WordStatus>('learning')
 
+  const selectedCount = selectedWords.length
   if (selectedCount === 0) return null
 
   function applyTags() {
@@ -43,6 +50,7 @@ export function BulkActionBar({ selectedCount, onBulkTag, onBulkStatus, onBulkDe
       >
         Gắn thẻ
       </button>
+      <AiTagButton words={selectedWords} existingTags={allTags} onTagged={onAiTag} />
 
       <select
         value={bulkStatus}
