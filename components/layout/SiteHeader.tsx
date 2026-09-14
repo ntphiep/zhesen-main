@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { AccountLink } from '@/components/account/AccountLink'
 
 const NAV = [
   { href: '/dictionary', label: 'Tra cứu' },
@@ -29,6 +30,7 @@ export function SiteHeader() {
             </Link>
           )
         })}
+        <AccountLink />
       </nav>
     </header>
   )

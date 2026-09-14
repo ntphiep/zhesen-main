@@ -96,6 +96,18 @@ export async function listWords(supabase: SupabaseClient): Promise<UserWord[]> {
   return rows.map(parseUserWordRow)
 }
 
+/**
+ * How many words this session holds, without downloading them.
+ *
+ * The sign-in pages need the number and nothing else: a browser that already
+ * holds words must not sign in to a different account, because that strands
+ * them. `listWords` would pull every row over the wire to answer it.
+ */
+export async function countWords(supabase: SupabaseClient): Promise<number> {
+  const { count } = await supabase.from('user_words').select('*', { count: 'exact', head: true })
+  return count ?? 0
+}
+
 /** The six fields every practice mode reads. Nothing else is fetched. */
 export interface PracticeWord {
   id: string

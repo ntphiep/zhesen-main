@@ -1,0 +1,104 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { AuthForm } from '@/components/account/AuthForm'
+import { attachEmail, registerWithPassword, signInWithPassword, signInByEmail } from '@/lib/auth/account'
+
+const { push, refresh } = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }))
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh }) }))
+vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
+vi.mock('@/lib/auth/account', async (orig) => ({
+  ...(await orig<typeof import('@/lib/auth/account')>()),
+  attachEmail: vi.fn(async () => ({ status: 'sent' as const })),
+  registerWithPassword: vi.fn(async () => ({ status: 'active' as const })),
+  signInWithPassword: vi.fn(async () => ({ status: 'active' as const })),
+  signInByEmail: vi.fn(async () => ({ status: 'sent' as const })),
+}))
+
+beforeEach(() => vi.clearAllMocks())
+
+const type = (label: RegExp | string, value: string) =>
+  userEvent.type(screen.getByLabelText(label), value)
+
+describe('AuthForm, registering', () => {
+  // The words hang off the anonymous account. Creating a second one would leave
+  // them where nothing can reach them, which is the failure this whole module
+  // exists to prevent, so the form attaches instead of signing up.
+  it('attaches the email to the account already holding the words', async () => {
+    render(<AuthForm mode="register" localWordCount={410} hasAnonymousSession />)
+    await type('Email', 'a@b.com')
+    await userEvent.click(screen.getByRole('button', { name: /Gửi liên kết xác nhận/i }))
+
+    expect(attachEmail).toHaveBeenCalledWith(expect.anything(), 'a@b.com', '/account')
+    expect(registerWithPassword).not.toHaveBeenCalled()
+  })
+
+  // Supabase refuses a password until the address is confirmed, so a box here
+  // would take one it cannot store.
+  it('asks for no password while upgrading, and says how many words are at stake', async () => {
+    render(<AuthForm mode="register" localWordCount={410} hasAnonymousSession />)
+    expect(screen.getByText(/410 từ/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('Mật khẩu')).toBeNull()
+  })
+
+  it('creates a new account when the browser holds nothing', async () => {
+    render(<AuthForm mode="register" localWordCount={0} hasAnonymousSession={false} />)
+    await type('Email', 'a@b.com')
+    await type('Mật khẩu', 'longenough1')
+    await userEvent.click(screen.getByRole('button', { name: /Tạo tài khoản/i }))
+
+    expect(registerWithPassword).toHaveBeenCalledWith(expect.anything(), 'a@b.com', 'longenough1', '/wordlist')
+    expect(attachEmail).not.toHaveBeenCalled()
+  })
+
+  // An anonymous session with no words saved is not holding anything, so there is
+  // nothing to attach to and a real account is the right outcome.
+  it('creates a new account for an empty anonymous session too', async () => {
+    render(<AuthForm mode="register" localWordCount={0} hasAnonymousSession />)
+    await type('Email', 'a@b.com')
+    await type('Mật khẩu', 'longenough1')
+    await userEvent.click(screen.getByRole('button', { name: /Tạo tài khoản/i }))
+
+    expect(registerWithPassword).toHaveBeenCalled()
+    expect(attachEmail).not.toHaveBeenCalled()
+  })
+})
+
+describe('AuthForm, signing in', () => {
+  it('passes the word count through so the guard can refuse', async () => {
+    render(<AuthForm mode="login" localWordCount={12} hasAnonymousSession />)
+    await type('Email', 'a@b.com')
+    await type('Mật khẩu', 'longenough1')
+    await userEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }))
+
+    expect(signInWithPassword).toHaveBeenCalledWith(expect.anything(), 'a@b.com', 'longenough1', 12)
+  })
+
+  it('offers the emailed link as well, for an account that never had a password', async () => {
+    render(<AuthForm mode="login" localWordCount={0} hasAnonymousSession={false} />)
+    await type('Email', 'a@b.com')
+    await userEvent.click(screen.getByRole('button', { name: /không cần mật khẩu/i }))
+
+    expect(signInByEmail).toHaveBeenCalledWith(expect.anything(), 'a@b.com', 0, '/wordlist')
+  })
+
+  it('goes on to the wordlist once the session is live', async () => {
+    render(<AuthForm mode="login" localWordCount={0} hasAnonymousSession={false} />)
+    await type('Email', 'a@b.com')
+    await type('Mật khẩu', 'longenough1')
+    await userEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }))
+
+    expect(push).toHaveBeenCalledWith('/wordlist')
+  })
+
+  it('shows why it failed instead of pretending it worked', async () => {
+    vi.mocked(signInWithPassword).mockResolvedValue({ status: 'error', message: 'Invalid login credentials' })
+    render(<AuthForm mode="login" localWordCount={0} hasAnonymousSession={false} />)
+    await type('Email', 'a@b.com')
+    await type('Mật khẩu', 'longenough1')
+    await userEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }))
+
+    expect(await screen.findByText('Invalid login credentials')).toBeInTheDocument()
+    expect(push).not.toHaveBeenCalled()
+  })
+})
