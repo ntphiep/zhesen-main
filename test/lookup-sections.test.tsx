@@ -12,6 +12,7 @@ vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
 vi.mock('@/lib/wordlist/store', () => ({
   addWord: vi.fn(async () => ({})),
   draftFromDictEntry: (e: { headword: string }) => ({ headword: e.headword }),
+  isWordSaved: vi.fn(async () => false),
 }))
 // ExampleList renders example text through TappableText (per-word spans); stub it
 // so these tests assert ExampleList structure, not tap-to-lookup behavior.

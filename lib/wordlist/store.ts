@@ -202,6 +202,21 @@ export async function listSavedEntryIds(supabase: SupabaseClient, lang: LangCode
   return new Set(savedEntryIdRow.array().parse(rows).map((r) => r.entry_id))
 }
 
+/**
+ * Whether this dictionary entry is already saved.
+ *
+ * Deliberately does NOT call `ensureSession`: looking a word up must never mint
+ * an account, which is what once left 122 empty rows in `auth.users`. A visitor
+ * with no session simply has no rows, and RLS answers false.
+ */
+export async function isWordSaved(supabase: SupabaseClient, entryId: string): Promise<boolean> {
+  const { data, error } = await supabase.from('user_words').select('id').eq('entry_id', entryId).limit(1)
+  // An error here is not worth a message of its own: the button falls back to
+  // offering the add, and the add reports whatever actually went wrong.
+  if (error) return false
+  return (data?.length ?? 0) > 0
+}
+
 /** Raised when a dictionary entry is already saved in the user's wordlist. */
 export class WordAlreadyExistsError extends Error {
   constructor(public readonly entryId: string) {

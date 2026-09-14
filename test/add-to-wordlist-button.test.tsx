@@ -6,11 +6,14 @@ import type { DictEntryPreview } from '@/lib/dictionary/types'
 
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
 
-const { addWordMock } = vi.hoisted(() => ({ addWordMock: vi.fn() }))
+const { addWordMock, isWordSavedMock } = vi.hoisted(() => ({
+  addWordMock: vi.fn(),
+  isWordSavedMock: vi.fn(async () => false),
+}))
 
 vi.mock('@/lib/wordlist/store', async (orig) => {
   const actual = (await orig()) as typeof import('@/lib/wordlist/store')
-  return { ...actual, addWord: addWordMock }
+  return { ...actual, addWord: addWordMock, isWordSaved: isWordSavedMock }
 })
 
 const entry: DictEntryPreview = {
@@ -19,6 +22,21 @@ const entry: DictEntryPreview = {
 }
 
 describe('AddToWordlistButton', () => {
+  // Reopening a saved word used to offer the add again, and said so only after a
+  // click that could not succeed.
+  it('says the word is already saved before it is clicked', async () => {
+    isWordSavedMock.mockResolvedValueOnce(true)
+    render(<AddToWordlistButton entry={entry} />)
+    expect(await screen.findByText(/Đã có trong sổ tay/i)).toBeInTheDocument()
+    expect(screen.getByRole('button')).toBeDisabled()
+    expect(addWordMock).not.toHaveBeenCalled()
+  })
+
+  it('offers the add for a word that is not saved', async () => {
+    render(<AddToWordlistButton entry={entry} />)
+    expect(await screen.findByRole('button', { name: /Thêm vào sổ tay/i })).toBeEnabled()
+  })
+
   it('shows "Đã có trong sổ tay" when the entry is already saved', async () => {
     const { WordAlreadyExistsError } = await import('@/lib/wordlist/store')
     addWordMock.mockRejectedValueOnce(new WordAlreadyExistsError('en:dog'))

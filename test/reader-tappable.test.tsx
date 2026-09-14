@@ -9,6 +9,7 @@ vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
 vi.mock('@/lib/wordlist/store', () => ({
   addWord: vi.fn(async () => ({})),
   draftFromDictEntry: (e: { headword: string }) => ({ headword: e.headword }),
+  isWordSaved: vi.fn(async () => false),
 }))
 
 const { resolveTokens, getZhSegmentCandidates, getCharacters } = vi.hoisted(() => ({

@@ -8,6 +8,7 @@ vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
 vi.mock('@/lib/wordlist/store', () => ({
   addWord: vi.fn(async () => ({})),
   draftFromDictEntry: (e: { headword: string }) => ({ headword: e.headword }),
+  isWordSaved: vi.fn(async () => false),
 }))
 vi.mock('@/lib/ai/browser', () => ({ callAi: vi.fn(), aiEnabled: vi.fn(async () => true) }))
 
