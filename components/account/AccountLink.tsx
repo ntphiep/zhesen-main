@@ -1,12 +1,10 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import type { User } from '@supabase/supabase-js'
-import { createClient } from '@/lib/supabase/client'
-import { accountKind, type AccountKind } from '@/lib/auth/account'
+import { useAccount } from '@/lib/hooks/useAccount'
 
 /**
- * The account corner of the header: who you are, or the way to become someone.
+ * The account corner of the header: the signed-in address, or the two doors
+ * every site has, sign in and sign up.
  *
  * Read in the browser rather than in the root layout on purpose. Reading the
  * session on the server would call `cookies()` in a layout that wraps every
@@ -16,21 +14,7 @@ import { accountKind, type AccountKind } from '@/lib/auth/account'
  * changes under the reader.
  */
 export function AccountLink() {
-  const supabase = useMemo(() => createClient(), [])
-  const [kind, setKind] = useState<AccountKind | null>(null)
-  const [email, setEmail] = useState<string | null>(null)
-
-  useEffect(() => {
-    let live = true
-    const apply = (user: User | null) => {
-      if (!live) return
-      setKind(accountKind(user))
-      setEmail(user?.email ?? null)
-    }
-    supabase.auth.getUser().then(({ data }) => apply(data.user ?? null))
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => apply(session?.user ?? null))
-    return () => { live = false; sub.subscription.unsubscribe() }
-  }, [supabase])
+  const { kind, email } = useAccount()
 
   if (kind === null) return null
 
@@ -46,15 +30,20 @@ export function AccountLink() {
     )
   }
 
-  // An anonymous session holds words nobody else can reach, so it is pointed at
-  // registration, which attaches an email to that same account. "Đăng nhập" here
-  // would invite the one action that abandons them.
   return (
-    <Link
-      href={kind === 'anonymous' ? '/register' : '/login'}
-      className="ml-2 rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium hover:bg-black/5"
-    >
-      {kind === 'anonymous' ? 'Lưu sổ tay' : 'Đăng nhập'}
-    </Link>
+    <div className="ml-2 flex items-center gap-1">
+      <Link
+        href="/login"
+        className="rounded-lg px-3 py-1.5 text-sm text-black/60 hover:bg-black/5"
+      >
+        Đăng nhập
+      </Link>
+      <Link
+        href="/register"
+        className="rounded-lg bg-black px-3 py-1.5 text-sm font-medium text-white hover:bg-black/85"
+      >
+        Đăng ký
+      </Link>
+    </div>
   )
 }

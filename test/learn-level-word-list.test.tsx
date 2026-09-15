@@ -5,7 +5,12 @@ import { LevelWordList } from '@/components/learn/LevelWordList'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { Language } from '@/lib/languages'
 
-vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
+// The add-all button reads the account, so the client stub carries a signed-in
+// user; the import inside the factory settles before the stub is built.
+vi.mock('@/lib/supabase/client', async () => {
+  const { accountAuthStub } = await import('./helpers/supabase')
+  return { createClient: () => accountAuthStub({ id: 'u1', email: 'a@b.com' }) }
+})
 
 const { getEntriesByLevel, getAllEntriesByLevel, addWords, listSavedEntryIds } = vi.hoisted(() => ({
   getEntriesByLevel: vi.fn(),
@@ -45,7 +50,7 @@ describe('LevelWordList', () => {
     render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[entry('a')]} total={2} pageSize={1} />)
     expect(screen.getByText('a')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /Tải thêm/i }))
-    expect(getEntriesByLevel).toHaveBeenCalledWith({}, 'en', 'A1', 1, 1)
+    expect(getEntriesByLevel).toHaveBeenCalledWith(expect.anything(), 'en', 'A1', 1, 1)
     expect(await screen.findByText('b')).toBeInTheDocument()
   })
 
@@ -55,11 +60,11 @@ describe('LevelWordList', () => {
     addWords.mockResolvedValueOnce([{ id: '1' }, { id: '2' }])
     render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[]} total={3} pageSize={40} />)
 
-    await userEvent.click(screen.getByRole('button', { name: /Thêm cả A1/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Thêm cả A1/i }))
 
     expect(await screen.findByText(/Đã thêm 2 từ/)).toBeInTheDocument()
     expect(screen.getByText(/bỏ qua 1 từ đã có/)).toBeInTheDocument()
-    expect(addWords).toHaveBeenCalledWith({}, [
+    expect(addWords).toHaveBeenCalledWith(expect.anything(), [
       expect.objectContaining({ headword: 'a' }),
       expect.objectContaining({ headword: 'c' }),
     ])
@@ -70,7 +75,7 @@ describe('LevelWordList', () => {
     listSavedEntryIds.mockResolvedValueOnce(new Set(['en:a']))
     render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[]} total={1} pageSize={40} />)
 
-    await userEvent.click(screen.getByRole('button', { name: /Thêm cả A1/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Thêm cả A1/i }))
 
     expect(await screen.findByText(/Đã thêm 0 từ/)).toBeInTheDocument()
     expect(addWords).not.toHaveBeenCalled()
@@ -85,7 +90,7 @@ describe('LevelWordList', () => {
     addWords.mockResolvedValueOnce([{ id: '1' }])
     render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[]} total={3} pageSize={40} />)
 
-    await userEvent.click(screen.getByRole('button', { name: /Thêm cả A1/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Thêm cả A1/i }))
 
     expect(await screen.findByText(/Đã thêm 1 từ/)).toBeInTheDocument()
     expect(screen.getByText(/bỏ qua 2 từ đã có/)).toBeInTheDocument()

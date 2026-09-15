@@ -1,22 +1,45 @@
 'use client'
+import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addWord, draftFromDictEntry, isWordSaved, WordAlreadyExistsError } from '@/lib/wordlist/store'
+import { entryPath } from '@/lib/dictionary/entryId'
+import { signInHref, useAccount } from '@/lib/hooks/useAccount'
 import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 
 type State = 'idle' | 'saving' | 'added' | 'exists' | 'error'
 
+/**
+ * Save one dictionary entry to the notebook. The notebook belongs to an
+ * account, so without one this button is an invitation to sign in, pointing at
+ * the page the visitor came from: a word looked up is worth saving, and the
+ * sign-in must not cost them where they were reading it.
+ */
 export function AddToWordlistButton({ entry }: { entry: DictEntryPreview | DictEntryDetail }) {
+  const { kind } = useAccount()
+
+  if (kind === null) return null
+  if (kind !== 'permanent') {
+    return (
+      <Link
+        href={`${signInHref(kind)}?next=${encodeURIComponent(entryPath(entry.id))}`}
+        className="rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium text-black/70 hover:bg-black/5"
+      >
+        Đăng nhập để lưu
+      </Link>
+    )
+  }
+  return <SavedButton entry={entry} />
+}
+
+/** The real save, mounted only once an account is in place. */
+function SavedButton({ entry }: { entry: DictEntryPreview | DictEntryDetail }) {
   const supabase = useMemo(() => createClient(), [])
   const [state, setState] = useState<State>('idle')
 
   // Ask whether the word is already saved instead of finding out by failing.
   // Reopening a saved word used to offer "Thêm vào sổ tay" again, and the answer
   // only arrived after a click that could not succeed.
-  //
-  // Asked from the browser on purpose: the entry page is a Server Component whose
-  // whole output is cached per entry, and reading the session there would make
-  // every dictionary page dynamic for the sake of one boolean.
   useEffect(() => {
     let live = true
     isWordSaved(supabase, entry.id).catch(() => false).then((saved) => {
@@ -37,11 +60,11 @@ export function AddToWordlistButton({ entry }: { entry: DictEntryPreview | DictE
     }
   }
 
-  const label = state === 'added' ? '✓ Đã thêm'
-    : state === 'exists' ? '✓ Đã có trong sổ tay'
+  const label = state === 'added' ? 'Đã thêm'
+    : state === 'exists' ? 'Đã có trong sổ tay'
     : state === 'saving' ? 'Đang thêm…'
     : state === 'error' ? 'Lỗi, thử lại'
-    : '+ Thêm vào sổ tay'
+    : 'Thêm vào sổ tay'
 
   return (
     <button

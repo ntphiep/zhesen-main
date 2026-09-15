@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { getEntriesByLevel, getAllEntriesByLevel } from '@/lib/dictionary/levels'
 import { addWords, draftFromDictEntry, listSavedEntryIds } from '@/lib/wordlist/store'
 import { entryPath } from '@/lib/dictionary/entryId'
+import { signInHref, useAccount } from '@/lib/hooks/useAccount'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { Language } from '@/lib/languages'
 import { Ipa } from '@/components/ui/Ipa'
@@ -12,7 +13,9 @@ import { Ipa } from '@/components/ui/Ipa'
 type AddAllState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'done'; added: number; skipped: number } | { kind: 'error' }
 
 /** `/learn/[lang]/[level]`: a paginated ("load more") list of every word at one
- * level, plus a one-click "add whole level" bulk import into the wordlist. */
+ * level, plus a one-click "add whole level" bulk import into the wordlist.
+ * Browsing the list is public; the import needs an account, so the button is a
+ * sign-in prompt for a visitor without one, carrying this page back in `next`. */
 export function LevelWordList({ language, level, levelIsEstimated, initialItems, total, pageSize }: {
   language: Language
   level: string
@@ -22,6 +25,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
   pageSize: number
 }) {
   const supabase = useMemo(() => createClient(), [])
+  const { kind } = useAccount()
   const [items, setItems] = useState(initialItems)
   const [loadingMore, setLoadingMore] = useState(false)
   const [addAll, setAddAll] = useState<AddAllState>({ kind: 'idle' })
@@ -55,6 +59,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
     }
   }
 
+  const here = `/learn/${language.code}/${level}`
   const addAllLabel = addAll.kind === 'busy' ? 'Đang thêm…'
     : addAll.kind === 'done' ? `Đã thêm ${addAll.added} từ${addAll.skipped > 0 ? ` (bỏ qua ${addAll.skipped} từ đã có)` : ''}`
     : addAll.kind === 'error' ? 'Lỗi, thử lại'
@@ -75,14 +80,25 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
         </p>
       )}
 
-      <button
-        type="button"
-        onClick={handleAddAll}
-        disabled={addAll.kind === 'busy' || addAll.kind === 'done'}
-        className="mt-4 rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-      >
-        {addAllLabel}
-      </button>
+      {kind === 'permanent' ? (
+        <button
+          type="button"
+          onClick={handleAddAll}
+          disabled={addAll.kind === 'busy' || addAll.kind === 'done'}
+          className="mt-4 rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        >
+          {addAllLabel}
+        </button>
+      ) : (
+        kind !== null && (
+          <Link
+            href={`${signInHref(kind)}?next=${encodeURIComponent(here)}`}
+            className="mt-4 inline-block rounded-lg border border-black/15 px-4 py-2 text-sm font-medium text-black/70 hover:bg-black/5"
+          >
+            {`Đăng nhập để thêm cả ${level} vào sổ tay (${total} từ)`}
+          </Link>
+        )
+      )}
 
       <div className="mt-6 grid gap-2 sm:grid-cols-2">
         {items.map((e) => (

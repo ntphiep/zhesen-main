@@ -22,20 +22,21 @@ describe('AccountLink', () => {
     expect(link).toHaveAttribute('href', '/account')
   })
 
-  // An anonymous session is holding words nobody else can reach. "Đăng nhập"
-  // here would invite the one action that abandons them.
-  it('points an anonymous session at registration, not at sign-in', async () => {
-    getUser.mockResolvedValue({ data: { user: { id: 'u1' } } })
-    render(<AccountLink />)
-    const link = await screen.findByRole('link', { name: /Lưu sổ tay/i })
-    expect(link).toHaveAttribute('href', '/register')
-  })
-
-  it('offers sign-in when there is no session at all', async () => {
+  // The notebook needs an account, so a visitor without one sees the ordinary
+  // pair of doors: sign in, sign up.
+  it('offers sign-in and sign-up when there is no session', async () => {
     getUser.mockResolvedValue({ data: { user: null } })
     render(<AccountLink />)
-    const link = await screen.findByRole('link', { name: /Đăng nhập/i })
-    expect(link).toHaveAttribute('href', '/login')
+    expect(await screen.findByRole('link', { name: /Đăng nhập/i })).toHaveAttribute('href', '/login')
+    expect(screen.getByRole('link', { name: /Đăng ký/i })).toHaveAttribute('href', '/register')
+  })
+
+  // A legacy anonymous session is not signed in: it still gets the public
+  // header. Its words are protected at the notebook gate, not from here.
+  it('shows the same doors for a legacy anonymous session', async () => {
+    getUser.mockResolvedValue({ data: { user: { id: 'u1' } } })
+    render(<AccountLink />)
+    expect(await screen.findByRole('link', { name: /Đăng nhập/i })).toHaveAttribute('href', '/login')
   })
 
   // Rendering a guess and correcting it a frame later moves the header under a

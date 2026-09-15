@@ -4,7 +4,11 @@ import { render, screen } from '@testing-library/react'
 import { LookupView } from '@/components/lookup/LookupView'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 
-vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
+vi.mock('@/lib/supabase/client', async () => {
+  const { accountAuthStub } = await import('./helpers/supabase')
+  // LookupHero mounts the add-to-wordlist button, which reads the account.
+  return { createClient: () => accountAuthStub({ id: 'u1', email: 'a@b.com' }) }
+})
 vi.mock('@/lib/wordlist/store', () => ({
   addWord: vi.fn(async () => ({})),
   draftFromDictEntry: (e: { headword: string }) => ({ headword: e.headword }),

@@ -97,7 +97,7 @@ export function useWordlistFilters(words: UserWord[]) {
       for (const t of tagFilter) if (!w.tags.includes(t)) return false
       if (q && !haystack(w).includes(q)) return false
       if (levelFilter && w.level !== levelFilter) return false
-      if (posFilter && (posGroup(w.pos)?.labelVi ?? w.pos ?? '') !== posFilter) return false
+      if (posFilter && (posGroup(w.pos)?.labelEn ?? w.pos ?? '') !== posFilter) return false
       if (reviewFilter === 'due' && !isDue(w)) return false
       if (reviewFilter === 'leech' && w.fsrsLapses < LEECH_LAPSES) return false
       return true
@@ -120,7 +120,7 @@ export function useWordlistFilters(words: UserWord[]) {
     [words],
   )
   const posOptions = useMemo(
-    () => [...new Set(words.map((w) => posGroup(w.pos)?.labelVi ?? w.pos).filter((p): p is string => !!p))].sort(),
+    () => [...new Set(words.map((w) => posGroup(w.pos)?.labelEn ?? w.pos).filter((p): p is string => !!p))].sort(),
     [words],
   )
 
