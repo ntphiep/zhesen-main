@@ -16,6 +16,15 @@ import {
 type Mode = 'login' | 'register'
 type Feedback = { tone: 'ok' | 'bad'; text: string } | null
 
+/** Each line is a property of the account, not a slogan: the wordlist otherwise
+ *  lives in one browser's cookie and goes with the browsing data, the review
+ *  schedule is per account, and nothing syncs without one. */
+const REASONS = [
+  'Sổ tay không mất khi bạn xoá dữ liệu duyệt web.',
+  'Lịch ôn tập đi theo tài khoản, mở máy khác vẫn đúng hàng đợi.',
+  'Tra cứu vẫn không cần tài khoản, chỉ phần lưu từ mới cần.',
+]
+
 /**
  * The sign-in and sign-up form, one component because they differ by two fields
  * and a verb.
@@ -82,7 +91,7 @@ export function AuthForm({
   }
 
   return (
-    <div className="mx-auto w-full max-w-sm">
+    <div className="w-full max-w-sm rounded-2xl border border-black/10 bg-white p-6 shadow-sm sm:p-7">
       <h1 className="text-2xl font-bold">
         {mode === 'register' ? (upgrading ? 'Lưu sổ tay của bạn' : 'Tạo tài khoản') : 'Đăng nhập'}
       </h1>
@@ -169,6 +178,19 @@ export function AuthForm({
             Quên mật khẩu
           </button>
         </div>
+      )}
+
+      {/* Why bother, in the three facts that are actually true of this account.
+          Without them the page asks for an email and gives no reason. */}
+      {mode === 'register' && !upgrading && (
+        <ul className="mt-6 flex flex-col gap-1.5 border-t border-black/10 pt-5 text-sm text-black/60">
+          {REASONS.map((r) => (
+            <li key={r} className="flex gap-2">
+              <span aria-hidden className="text-black/25">•</span>
+              {r}
+            </li>
+          ))}
+        </ul>
       )}
 
       <p className="mt-6 text-sm text-black/60">
