@@ -4,6 +4,7 @@ import { SenseList } from './SenseList'
 import { CharacterPanel } from './CharacterPanel'
 import { WordFamily } from './WordFamily'
 import { RelatedWords } from './RelatedWords'
+import { WordKin } from './WordKin'
 import { ContainingWords } from './ContainingWords'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { ConjugationTable } from './ConjugationTable'
@@ -15,7 +16,7 @@ import { groupWordForms } from '@/lib/dictionary/family'
 import { LemmaLink } from '@/components/lookup/LemmaLink'
 import { buildConjugation } from '@/lib/dictionary/conjugation'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
-import type { ContainingWord, DictEntryDetail, CharInfo, CrossLangSibling, TermPreview, WordForm } from '@/lib/dictionary/types'
+import type { ContainingWord, DictEntryPreview, DictEntryDetail, CharInfo, CrossLangSibling, TermPreview, WordForm } from '@/lib/dictionary/types'
 import type { GrammarPoint } from '@/lib/grammar/types'
 
 /**
@@ -30,7 +31,7 @@ import type { GrammarPoint } from '@/lib/grammar/types'
  * fit a 320px column.
  */
 export function LookupView({
-  detail, lemma = null, characters, siblings, inflections = [], grammarPoints = [], containing = [], previews = {},
+  detail, lemma = null, characters, siblings, inflections = [], grammarPoints = [], containing = [], kin = [], previews = {},
   resolvedExamples = [],
 }: {
   detail: DictEntryDetail
@@ -41,6 +42,8 @@ export function LookupView({
   inflections?: WordForm[]
   grammarPoints?: GrammarPoint[]
   containing?: ContainingWord[]
+  /** Entries built on the same stem, already filtered; see lib/dictionary/kin.ts. */
+  kin?: DictEntryPreview[]
   /** What the dictionary knows about each related word and inflected form, keyed
    *  by the lowercased surface form. Missing entries render as plain text. */
   previews?: Record<string, TermPreview>
@@ -96,6 +99,7 @@ export function LookupView({
         <div className="flex flex-col gap-8 lg:col-span-2">
           {conjugation && <ConjugationTable conjugation={conjugation} />}
           <WordFamily headword={detail.headword} forms={forms} previews={previews} lang={detail.lang} />
+          <WordKin words={kin} />
           <RelatedWords relations={detail.relations} previews={previews} lang={detail.lang} />
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections, getCachedEntriesContaining, getCachedTermPreviews, getCachedTappableTexts } from '@/lib/dictionary/cached'
+import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections, getCachedEntriesContaining, getCachedTermPreviews, getCachedTappableTexts, getCachedWordKin } from '@/lib/dictionary/cached'
 import { getCachedGrammarPointsForEntry } from '@/lib/grammar/cached'
 import { buildEntryId } from '@/lib/dictionary/entryId'
 import { LookupView } from '@/components/lookup/LookupView'
@@ -30,6 +30,12 @@ export default async function Page({ params }: { params: Promise<{ lang: string;
   // The word this entry is a form of, resolved through the same preview call as
   // the related words so an inflected page is not a dead end.
   const lemma = lemmaFromSenses(detail.senses, detail.headword)
+  // The stem the derived words hang off: the lemma when this entry is a form of
+  // something else, otherwise the headword itself. Chinese is left out because a
+  // prefix of a Chinese headword is a compound, which `containing` already answers.
+  const kin = detail.lang === 'zh'
+    ? []
+    : await getCachedWordKin(detail.lang, lemma ?? detail.headword, detail.headword)
   const terms = [
     ...detail.relations.map((r) => r.relatedText ?? ''),
     ...groupWordForms(inflections).map((f) => f.text),
@@ -53,6 +59,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string;
       inflections={inflections}
       grammarPoints={grammarPoints}
       containing={containing}
+      kin={kin}
       previews={previews}
       resolvedExamples={resolvedExamples}
     />

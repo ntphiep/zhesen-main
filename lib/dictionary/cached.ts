@@ -4,6 +4,7 @@ import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getTer
 import { getCommonWords } from './search'
 import { resolveTappableTexts, type ResolvedText } from './tappable'
 import { getEntriesContaining } from './containing'
+import { getWordKin } from './kin'
 import { getWordOfDay, dayNumber, type DailyWord } from './wordOfDay'
 import { getLevelsForLanguage, getEntriesByLevel, type LevelSummary, type LevelPage } from './levels'
 import type { ContainingWord, DictEntryDetail, DictEntryPreview, CrossLangSibling, TermPreview, CharInfo, WordForm } from './types'
@@ -31,6 +32,13 @@ export const getCachedEntriesContaining = unstable_cache(
   (lang: LangCode, headword: string): Promise<ContainingWord[]> =>
     getEntriesContaining(createContentClient(), lang, headword),
   ['dict-entries-containing'],
+  { revalidate: 3600, tags: ['lex'] },
+)
+
+export const getCachedWordKin = unstable_cache(
+  (lang: LangCode, stem: string, headword: string): Promise<DictEntryPreview[]> =>
+    getWordKin(createContentClient(), lang, stem, headword),
+  ['dict-word-kin'],
   { revalidate: 3600, tags: ['lex'] },
 )
 
