@@ -239,10 +239,17 @@ function crossClient(results: { data: unknown; error: null }[]) {
 const sib = (id: string, lang: string, headword: string, gloss_vi: string | null, gloss_en: string | null) =>
   ({ id, lang, headword, reading: null, gender: null, pos: null, gloss_vi, gloss_en })
 
+/** A `lex.search_vi` row, which is the search shape rather than the sibling shape. */
+const viHit = (id: string, lang: string, headword: string, pinyin: string | null = null) => ({
+  id, lang, headword, traditional: null, level: null, frequency_rank: null,
+  attributes: pinyin ? { pinyin } : null, pos: null, gloss_vi: null, gloss_en: null,
+  ipa: null, audio_url: null, rank: 2,
+})
+
 describe('getCrossLanguage', () => {
   it('maps the matcher result for an English word, snake_case to camelCase', async () => {
     const client = crossClient([
-      { data: { lang: 'en', headword_normalized: 'dog', senses: [{ gloss_en: 'dog' }] }, error: null }, // source
+      { data: { lang: 'en', headword_normalized: 'dog', senses: [{ gloss_en: 'dog', gloss_vi: 'con chó' }] }, error: null }, // source
       { data: [sib('es:perro', 'es', 'perro', 'con chó', 'dog'), sib('zh:狗', 'zh', '狗', null, 'dog')], error: null }, // rpc
     ])
     const res = await getCrossLanguage(client, 'en:dog')
@@ -252,7 +259,7 @@ describe('getCrossLanguage', () => {
 
   it('maps the matcher result for a non-English word', async () => {
     const client = crossClient([
-      { data: { lang: 'zh', headword_normalized: '狗', senses: [{ gloss_en: 'dog' }] }, error: null }, // source
+      { data: { lang: 'zh', headword_normalized: '狗', senses: [{ gloss_en: 'dog', gloss_vi: 'con chó' }] }, error: null }, // source
       { data: [sib('en:dog', 'en', 'dog', 'con chó', 'dog'), sib('es:perro', 'es', 'perro', null, 'dog')], error: null }, // rpc
     ])
     const res = await getCrossLanguage(client, 'zh:狗')
@@ -261,9 +268,43 @@ describe('getCrossLanguage', () => {
 
   it('returns [] without calling the matcher when the gloss yields no usable pivot', async () => {
     const client = crossClient([
-      { data: { lang: 'zh', headword_normalized: '吧', senses: [{ gloss_en: '(particle); marker' }] }, error: null },
+      { data: { lang: 'zh', headword_normalized: '吧', senses: [{ gloss_en: '(particle); marker', gloss_vi: null }] }, error: null },
     ])
     expect(await getCrossLanguage(client, 'zh:吧')).toEqual([])
+  })
+
+  // The shape that left the panel empty on `adjourned` and `postponed`: the
+  // matcher wants a target gloss equal to the pivot whole, and the glosses are
+  // written as lists.
+  it('falls back to the Vietnamese meaning for a language the matcher missed', async () => {
+    const client = crossClient([
+      { data: { lang: 'en', headword_normalized: 'contract', senses: [{ gloss_en: 'contract', gloss_vi: 'hợp đồng' }] }, error: null },
+      { data: [], error: null }, // match_cross_language: nothing
+      { data: [viHit('es:contrato', 'es', 'contrato'), viHit('zh:合同', 'zh', '合同', '合同')], error: null },
+    ])
+    const res = await getCrossLanguage(client, 'en:contract')
+    expect(res.map((r) => r.id)).toEqual(['es:contrato', 'zh:合同'])
+    expect(res.find((r) => r.lang === 'zh')?.reading).toBe('合同')
+  })
+
+  it('keeps what the matcher found and fills only the language it left empty', async () => {
+    const client = crossClient([
+      { data: { lang: 'en', headword_normalized: 'dog', senses: [{ gloss_en: 'dog', gloss_vi: 'con chó' }] }, error: null },
+      { data: [sib('es:perro', 'es', 'perro', 'con chó', 'dog')], error: null },
+      { data: [viHit('es:cachorro', 'es', 'cachorro'), viHit('zh:狗', 'zh', '狗', 'gǒu')], error: null },
+    ])
+    const res = await getCrossLanguage(client, 'en:dog')
+    expect(res.map((r) => r.id)).toEqual(['es:perro', 'zh:狗'])
+  })
+
+  it('does not ask twice when the matcher covered every other language', async () => {
+    const client = crossClient([
+      { data: { lang: 'en', headword_normalized: 'dog', senses: [{ gloss_en: 'dog', gloss_vi: 'con chó' }] }, error: null },
+      { data: [sib('es:perro', 'es', 'perro', null, 'dog'), sib('zh:狗', 'zh', '狗', null, 'dog')], error: null },
+      { data: [viHit('es:nope', 'es', 'nope')], error: null }, // must not be consumed
+    ])
+    const res = await getCrossLanguage(client, 'en:dog')
+    expect(res.map((r) => r.id)).toEqual(['es:perro', 'zh:狗'])
   })
 
   it('returns [] when the entry is not found', async () => {

@@ -1,10 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { DictEntryDetail, DictSense, DictExample, DictRelation, CrossLangSibling, TermPreview, CharInfo, WordForm } from './types'
+import type { DictEntryDetail, DictEntryPreview, DictSense, DictExample, DictRelation, CrossLangSibling, TermPreview, CharInfo, WordForm } from './types'
 import { entryDetailRow, crossLanguageSourceRow, crossLangSiblingRow, termPreviewRow, pivotViRow, inflectionRow, charRow, toPreview, toSenses, toProns } from './rows'
 import { fillPivotVi, cleanMtGloss } from './textQuality'
 import { entryPivots, cleanGlossTerm } from './crosslang'
 import { PREVIEW_SELECT } from './entrySelect'
-import type { LangCode } from '@/lib/languages'
+import { searchAllLanguagesVi } from './search'
+import { LANG_CODES, type LangCode } from '@/lib/languages'
 
 /** Everything the entry detail page needs beyond the search-result preview:
  * senses/pronunciations/examples/relations for one entry, its cross-language
@@ -78,22 +79,53 @@ export async function getCrossLanguage(
   supabase: SupabaseClient, entryId: string,
 ): Promise<CrossLangSibling[]> {
   const src = await supabase.schema('lex').from('entries')
-    .select('lang, headword_normalized, senses(gloss_en)').eq('id', entryId).maybeSingle()
+    .select('lang, headword_normalized, senses(gloss_en, gloss_vi)').eq('id', entryId).maybeSingle()
   if (src.error) throw src.error
   if (!src.data) return []
   const row = crossLanguageSourceRow.parse(src.data)
+  const senses = row.senses ?? []
 
-  const pivots = entryPivots(row.lang, row.headword_normalized ?? '', (row.senses ?? []).map((s) => s.gloss_en))
-  if (pivots.length === 0) return []
+  const pivots = entryPivots(row.lang, row.headword_normalized ?? '', senses.map((s) => s.gloss_en))
+  const exact = pivots.length === 0 ? [] : await matchByPivot(supabase, pivots, row.lang, entryId)
 
+  // The exact match requires a target's English gloss to equal the pivot whole,
+  // and the glosses are written as lists, so a pivot that is one item of such a
+  // list misses. It is an inflected or less common word that pays: `adjourned`,
+  // `postponed`, `negotiating` and `brochure` all had an empty panel. Sampled on
+  // 22 English entries, 9 had no row at all and now have one.
+  //
+  // The Vietnamese meaning is the second bridge -- `lex.search_vi` reaches 合同
+  // and `contrato` from "hợp đồng" -- and it is the same indexed path the reverse
+  // lookup already uses. It only runs for a language the exact match left empty.
+  const glossVi = senses.map((s) => s.gloss_vi).find((g) => g && g.trim()) ?? null
+  const short = LANG_CODES.filter((l) => l !== row.lang && !exact.some((e) => e.lang === l))
+  if (!glossVi || short.length === 0) return exact
+
+  const byVi = await searchAllLanguagesVi(supabase, glossVi, PER_LANGUAGE)
+  const filled = short.flatMap((l) => byVi[l].filter((p) => p.id !== entryId).map(toSibling))
+  return [...exact, ...filled].sort((a, b) => a.lang.localeCompare(b.lang))
+}
+
+async function matchByPivot(
+  supabase: SupabaseClient, pivots: string[], lang: LangCode, entryId: string,
+): Promise<CrossLangSibling[]> {
   const { data, error } = await supabase.schema('lex').rpc('match_cross_language', {
-    p_terms: pivots, p_exclude_lang: row.lang, p_exclude_id: entryId, p_per_lang: PER_LANGUAGE,
+    p_terms: pivots, p_exclude_lang: lang, p_exclude_id: entryId, p_per_lang: PER_LANGUAGE,
   })
   if (error) throw error
   return crossLangSiblingRow.array().parse(data ?? []).map((r) => ({
     id: r.id, lang: r.lang, headword: r.headword, reading: r.reading, gender: r.gender,
     pos: r.pos, glossVi: r.gloss_vi, glossEn: r.gloss_en,
   }))
+}
+
+/** A search hit read as an equivalent. Gender is not on a search row; the panel
+ *  renders the label only when it is there. */
+function toSibling(p: DictEntryPreview): CrossLangSibling {
+  return {
+    id: p.id, lang: p.lang, headword: p.headword, reading: p.reading ?? null,
+    gender: null, pos: p.pos, glossVi: p.glossVi, glossEn: p.glossEn,
+  }
 }
 
 /**

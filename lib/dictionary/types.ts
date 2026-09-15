@@ -38,6 +38,8 @@ export interface DictEntryPreview {
   glossVi: string | null
   glossEn: string | null
   audioUrl: string | null
+  /** Pinyin, for a Chinese row that came from a source carrying it. */
+  reading?: string | null
   /** Corpus frequency rank (1 = most frequent); null when unknown. */
   frequencyRank?: number | null
   /** How well this entry matched the query, from `lex.search`. Present only on

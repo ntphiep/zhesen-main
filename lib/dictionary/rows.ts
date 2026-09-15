@@ -122,7 +122,10 @@ export const termPreviewRow = z.object({
 export const crossLanguageSourceRow = z.object({
   lang: langCode,
   headword_normalized: z.string().nullable(),
-  senses: z.array(z.object({ gloss_en: z.string().nullable() })).nullable(),
+  senses: z.array(z.object({
+    gloss_en: z.string().nullable(),
+    gloss_vi: z.string().nullable(),
+  })).nullable(),
 })
 
 export const pivotViRow = z.object({
@@ -192,6 +195,9 @@ export function toPreviewFromSearchRow(r: SearchRpcRow): DictEntryPreview {
     id: r.id, lang: r.lang, headword: r.headword, traditional: r.traditional, level: r.level,
     ipa: r.ipa, pos: r.pos, glossVi: r.gloss_vi, glossEn: r.gloss_en,
     audioUrl: audioMatchesHeadword(r.audio_url, r.headword) ? r.audio_url : null,
+    // `lex.entries.attributes->>'pinyin'` covers every Chinese entry including the
+    // multi-syllable ones; `lex.characters.pinyin` holds single characters only.
+    reading: typeof r.attributes?.pinyin === 'string' ? r.attributes.pinyin : null,
     frequencyRank: r.frequency_rank ?? null,
     matchScore: r.rank,
   }
