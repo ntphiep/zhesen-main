@@ -118,6 +118,33 @@ describe('useWordlistFilters', () => {
     expect(result.current.visible.map((w) => w.id)).toEqual(['soon', 'late'])
   })
 
+  it('filters by level and by part of speech, offering only what the list holds', () => {
+    const words = [
+      mk('a', { level: 'B1', pos: 'noun' }),
+      mk('b', { level: 'A1', pos: 'verb' }),
+      mk('c', { level: null, pos: null }),
+    ]
+    const { result } = renderHook(() => useWordlistFilters(words))
+    expect(result.current.levelOptions).toEqual(['A1', 'B1'])
+
+    act(() => result.current.setLevelFilter('B1'))
+    expect(result.current.visible.map((w) => w.id)).toEqual(['a'])
+
+    act(() => result.current.setLevelFilter(''))
+    act(() => result.current.setPosFilter(result.current.posOptions[0]))
+    expect(result.current.visible).toHaveLength(1)
+  })
+
+  // A word the pipeline never graded is not "before A1"; it belongs last either way.
+  it('sorts by level and keeps ungraded words at the end', () => {
+    const words = [mk('none', { level: null }), mk('b1', { level: 'B1' }), mk('a1', { level: 'A1' })]
+    const { result } = renderHook(() => useWordlistFilters(words))
+    act(() => result.current.toggleSort('level'))
+    expect(result.current.visible.map((w) => w.id)).toEqual(['a1', 'b1', 'none'])
+    act(() => result.current.toggleSort('level'))
+    expect(result.current.visible.map((w) => w.id)).toEqual(['b1', 'a1', 'none'])
+  })
+
   it('sorts by headword and toggles direction on repeated clicks', () => {
     const words = [mk('a', { headword: 'banana' }), mk('b', { headword: 'apple' })]
     const { result } = renderHook(() => useWordlistFilters(words))

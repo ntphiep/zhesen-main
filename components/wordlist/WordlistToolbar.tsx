@@ -13,6 +13,12 @@ interface Props {
   onStatusFilterChange: (s: WordStatus | '') => void
   reviewFilter: ReviewFilter
   onReviewFilterChange: (r: ReviewFilter) => void
+  levelFilter: string
+  onLevelFilterChange: (l: string) => void
+  levelOptions: string[]
+  posFilter: string
+  onPosFilterChange: (p: string) => void
+  posOptions: string[]
   view: ViewMode
   onViewChange: (v: ViewMode) => void
   onAddClick: () => void
@@ -23,7 +29,8 @@ interface Props {
 
 export function WordlistToolbar({
   query, onQueryChange, langFilter, onLangFilterChange, statusFilter, onStatusFilterChange,
-  reviewFilter, onReviewFilterChange, view, onViewChange, onAddClick, onExportCsv, onExportAnki, onImportClick,
+  reviewFilter, onReviewFilterChange,
+  levelFilter, onLevelFilterChange, levelOptions, posFilter, onPosFilterChange, posOptions, view, onViewChange, onAddClick, onExportCsv, onExportAnki, onImportClick,
 }: Props) {
   const [exportOpen, setExportOpen] = useState(false)
 
@@ -64,6 +71,30 @@ export function WordlistToolbar({
           <option key={value} value={value}>{label}</option>
         ))}
       </select>
+
+      {levelOptions.length > 1 && (
+        <select
+          value={levelFilter}
+          onChange={(e) => onLevelFilterChange(e.target.value)}
+          className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
+          aria-label="Lọc cấp độ"
+        >
+          <option value="">Tất cả cấp độ</option>
+          {levelOptions.map((l) => <option key={l} value={l}>{l}</option>)}
+        </select>
+      )}
+
+      {posOptions.length > 1 && (
+        <select
+          value={posFilter}
+          onChange={(e) => onPosFilterChange(e.target.value)}
+          className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
+          aria-label="Lọc từ loại"
+        >
+          <option value="">Tất cả từ loại</option>
+          {posOptions.map((p) => <option key={p} value={p}>{p}</option>)}
+        </select>
+      )}
 
       {/* The scheduler already knows which words are overdue and which keep being
           forgotten; until now the wordlist had no way to ask it. */}

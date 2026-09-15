@@ -39,16 +39,24 @@ export function SenseList({ senses }: { senses: DictSense[] }) {
               <li key={i}>
                 {s.glossVi
                   ? <span className="text-black/80">{s.glossVi}</span>
-                  : s.pivotVi && (
+                  : s.pivotVi ? (
                     <span className="text-black/80">
                       {s.pivotVi}
                       <span className="ml-1 align-middle text-[10px] uppercase tracking-wide text-amber-700/70" title="Nghĩa suy ra qua tiếng Anh">qua tiếng Anh</span>
                     </span>
+                  ) : (
+                    // 44.6% of English senses have no Vietnamese gloss. Leaving the
+                    // numbered line empty and putting the English underneath in grey
+                    // read as a broken row; the English is the meaning here, so it
+                    // takes the meaning's place.
+                    s.glossEn && <span className="text-black/80">{s.glossEn}</span>
                   )}
                 {/* On its own line, and visibly smaller: on a Vietnamese page the
                     English gloss is a cross-check, not a second meaning to read
                     through. Inline at the same size, the two ran together. */}
-                {s.glossEn && <span className="mt-0.5 block text-xs text-black/45">{s.glossEn}</span>}
+                {s.glossEn && (s.glossVi || s.pivotVi) && (
+                  <span className="mt-0.5 block text-xs text-black/45">{s.glossEn}</span>
+                )}
                 {!s.glossVi && !s.pivotVi && !s.glossEn && <span className="italic text-black/30">(chưa có nghĩa)</span>}
               </li>
             ))}

@@ -2,10 +2,11 @@
 import { useMemo, useState } from 'react'
 import type { LangCode } from '@/lib/languages'
 import type { UserWord, WordStatus } from '@/lib/wordlist/types'
+import { posGroup } from '@/lib/dictionary/pos'
 import { useStoredView, type ViewMode } from './useStoredView'
 
 export type { ViewMode }
-export type SortKey = 'headword' | 'createdAt' | 'fsrsDueAt' | 'fsrsLapses'
+export type SortKey = 'headword' | 'createdAt' | 'fsrsDueAt' | 'fsrsLapses' | 'level' | 'pos'
 /** Which words the review columns single out. '' is every word. */
 export type ReviewFilter = '' | 'due' | 'leech'
 
@@ -43,6 +44,16 @@ function isDue(w: UserWord, now: number = Date.now()): boolean {
   return Date.parse(w.fsrsDueAt) <= now
 }
 
+/** Rows with nothing in the sorted column, kept at the end whichever way the
+ *  column is sorted: an ungraded word is not "before A1", it is a word the
+ *  pipeline never graded. Returns 0 when both sides have a value. */
+function emptyRank(a: UserWord, b: UserWord, key: SortKey): number {
+  if (key !== 'level' && key !== 'pos') return 0
+  const x = a[key], y = b[key]
+  if (!x === !y) return 0
+  return x ? -1 : 1
+}
+
 function compare(a: UserWord, b: UserWord, key: SortKey): number {
   switch (key) {
     case 'headword': return a.headword.localeCompare(b.headword)
@@ -50,6 +61,10 @@ function compare(a: UserWord, b: UserWord, key: SortKey): number {
     // Ties on lapses are common -- most words have none -- so the due date breaks
     // them and the hardest words stay in a stable order between renders.
     case 'fsrsLapses': return a.fsrsLapses - b.fsrsLapses || a.fsrsDueAt.localeCompare(b.fsrsDueAt)
+    // Empty last in both directions: a row with no level is not "before A1", it
+    // is a row the pipeline never graded, and it belongs at the end either way.
+    case 'level': return (a.level ?? '').localeCompare(b.level ?? '')
+    case 'pos': return (a.pos ?? '').localeCompare(b.pos ?? '')
     default: return a.createdAt.localeCompare(b.createdAt)
   }
 }
@@ -65,6 +80,10 @@ export function useWordlistFilters(words: UserWord[]) {
   // single-tag filter cannot express the intersection a learner is after.
   const [tagFilter, setTagFilter] = useState<ReadonlySet<string>>(() => new Set())
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>('')
+  // CEFR or HSK band, and part of speech. Both are columns in the table, so the
+  // learner can already see them; being able to keep only one was missing.
+  const [levelFilter, setLevelFilter] = useState('')
+  const [posFilter, setPosFilter] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('createdAt')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [view, toggleView] = useStoredView()
@@ -77,18 +96,33 @@ export function useWordlistFilters(words: UserWord[]) {
       // Every selected tag has to be on the word: the chips narrow, they do not widen.
       for (const t of tagFilter) if (!w.tags.includes(t)) return false
       if (q && !haystack(w).includes(q)) return false
+      if (levelFilter && w.level !== levelFilter) return false
+      if (posFilter && (posGroup(w.pos)?.labelVi ?? w.pos ?? '') !== posFilter) return false
       if (reviewFilter === 'due' && !isDue(w)) return false
       if (reviewFilter === 'leech' && w.fsrsLapses < LEECH_LAPSES) return false
       return true
     })
 
     list = [...list].sort((a, b) => {
+      const empties = emptyRank(a, b, sortKey)
+      if (empties !== 0) return empties
       const cmp = compare(a, b, sortKey)
       return sortDir === 'asc' ? cmp : -cmp
     })
 
     return list
-  }, [words, query, langFilter, statusFilter, tagFilter, reviewFilter, sortKey, sortDir])
+  }, [words, query, langFilter, statusFilter, tagFilter, reviewFilter, levelFilter, posFilter, sortKey, sortDir])
+
+  // The options offered are the values the list actually holds: a wordlist with
+  // no Spanish verbs should not offer to filter for them.
+  const levelOptions = useMemo(
+    () => [...new Set(words.map((w) => w.level).filter((l): l is string => !!l))].sort(),
+    [words],
+  )
+  const posOptions = useMemo(
+    () => [...new Set(words.map((w) => posGroup(w.pos)?.labelVi ?? w.pos).filter((p): p is string => !!p))].sort(),
+    [words],
+  )
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -112,6 +146,8 @@ export function useWordlistFilters(words: UserWord[]) {
     langFilter, setLangFilter,
     statusFilter, setStatusFilter,
     reviewFilter, setReviewFilter,
+    levelFilter, setLevelFilter, levelOptions,
+    posFilter, setPosFilter, posOptions,
     tagFilter, toggleTagFilter,
     sortKey, sortDir, toggleSort,
     view, toggleView,

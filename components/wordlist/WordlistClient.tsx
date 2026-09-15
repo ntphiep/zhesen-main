@@ -33,6 +33,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   const {
     query, setQuery, langFilter, setLangFilter, statusFilter, setStatusFilter,
     reviewFilter, setReviewFilter, tagFilter, toggleTagFilter,
+    levelFilter, setLevelFilter, levelOptions, posFilter, setPosFilter, posOptions,
     sortKey, sortDir, toggleSort, view, toggleView, visible,
   } = useWordlistFilters(words)
 
@@ -48,7 +49,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   // The tag filter is a Set, so it has to be spelled out: interpolating it gives
   // "[object Set]" for every combination and the page size would never reset.
   const filterSignature =
-    `${query}|${langFilter}|${statusFilter}|${reviewFilter}|${[...tagFilter].join(',')}|${sortKey}|${sortDir}`
+    `${query}|${langFilter}|${statusFilter}|${reviewFilter}|${levelFilter}|${posFilter}|${[...tagFilter].join(',')}|${sortKey}|${sortDir}`
   const [prevSignature, setPrevSignature] = useState(filterSignature)
   if (filterSignature !== prevSignature) {
     setPrevSignature(filterSignature)
@@ -280,6 +281,12 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         onStatusFilterChange={setStatusFilter}
         reviewFilter={reviewFilter}
         onReviewFilterChange={setReviewFilter}
+        levelFilter={levelFilter}
+        onLevelFilterChange={setLevelFilter}
+        levelOptions={levelOptions}
+        posFilter={posFilter}
+        onPosFilterChange={setPosFilter}
+        posOptions={posOptions}
         view={view}
         onViewChange={toggleView}
         onAddClick={() => setAddOpen(true)}
@@ -322,50 +329,65 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     aria-label="Chọn tất cả"
                   />
                 </th>
-                <th className="py-2 pr-3">
+                <th className="whitespace-nowrap py-2 pr-3">
                   <button
-                    className="flex items-center gap-1 font-medium hover:text-black"
+                    className="flex items-center gap-1 whitespace-nowrap font-medium hover:text-black"
                     onClick={() => toggleSort('headword')}
                   >
                     Từ
                     {sortKey === 'headword' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </th>
-                <th className="py-2 pr-3">IPA</th>
-                <th className="py-2 pr-3">Từ loại</th>
-                <th className="py-2 pr-3">Nghĩa</th>
-                <th className="py-2 pr-3">Cấp độ</th>
-                <th className="py-2 pr-3">Ngữ cảnh</th>
-                <th className="py-2 pr-3">Thẻ</th>
-                <th className="py-2 pr-3">
+                <th className="whitespace-nowrap py-2 pr-3">IPA</th>
+                <th className="whitespace-nowrap py-2 pr-3">
                   <button
-                    className="flex items-center gap-1 font-medium hover:text-black"
+                    className="flex items-center gap-1 whitespace-nowrap font-medium hover:text-black"
+                    onClick={() => toggleSort('pos')}
+                  >
+                    Từ loại
+                    {sortKey === 'pos' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                  </button>
+                </th>
+                <th className="whitespace-nowrap py-2 pr-3">Nghĩa</th>
+                <th className="whitespace-nowrap py-2 pr-3">
+                  <button
+                    className="flex items-center gap-1 whitespace-nowrap font-medium hover:text-black"
+                    onClick={() => toggleSort('level')}
+                  >
+                    Cấp độ
+                    {sortKey === 'level' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                  </button>
+                </th>
+                <th className="whitespace-nowrap py-2 pr-3">Thẻ</th>
+                <th className="whitespace-nowrap py-2 pr-3">
+                  <button
+                    className="flex items-center gap-1 whitespace-nowrap font-medium hover:text-black"
                     onClick={() => toggleSort('createdAt')}
                   >
                     Ngày thêm
                     {sortKey === 'createdAt' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </th>
-                <th className="py-2 pr-3">
+                <th className="whitespace-nowrap py-2 pr-3">
                   <button
-                    className="flex items-center gap-1 font-medium hover:text-black"
+                    className="flex items-center gap-1 whitespace-nowrap font-medium hover:text-black"
                     onClick={() => toggleSort('fsrsDueAt')}
                   >
                     Đến hạn
                     {sortKey === 'fsrsDueAt' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </th>
-                <th className="py-2 pr-3">
+                <th className="whitespace-nowrap py-2 pr-3">
                   <button
-                    className="flex items-center gap-1 font-medium hover:text-black"
+                    className="flex items-center gap-1 whitespace-nowrap font-medium hover:text-black"
                     onClick={() => toggleSort('fsrsLapses')}
                   >
                     Sai
                     {sortKey === 'fsrsLapses' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </th>
-                <th className="py-2 pr-3">Audio</th>
-                <th className="py-2">Thao tác</th>
+                <th className="whitespace-nowrap py-2 pr-3">Audio</th>
+                <th className="whitespace-nowrap py-2">Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -385,7 +407,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     <td className="py-2 pr-3 text-black/50">{posGroup(w.pos)?.labelVi ?? w.pos ?? ''}</td>
                     <td className="py-2 pr-3">{w.meaningVi ?? ''}</td>
                     <td className="py-2 pr-3 text-black/50">{w.level ?? ''}</td>
-                    <td className="py-2 pr-3 text-black/50 max-w-xs truncate">{w.example ?? ''}</td>
                     <td className="py-2 pr-3">
                       <TagChips tags={w.tags} />
                     </td>
@@ -407,7 +428,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                   </tr>
                   {expandedId === w.id && (
                     <tr className="bg-black/2">
-                      <td colSpan={13} className="px-4 py-3">
+                      <td colSpan={12} className="px-4 py-3">
                         <WordDetail word={w} />
                       </td>
                     </tr>

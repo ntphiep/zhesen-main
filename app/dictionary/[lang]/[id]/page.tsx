@@ -5,6 +5,7 @@ import { buildEntryId } from '@/lib/dictionary/entryId'
 import { LookupView } from '@/components/lookup/LookupView'
 import { groupWordForms } from '@/lib/dictionary/family'
 import { pickExamples } from '@/lib/dictionary/textQuality'
+import { lemmaFromSenses } from '@/lib/dictionary/lemma'
 import { isLangCode } from '@/lib/languages'
 
 export default async function Page({ params }: { params: Promise<{ lang: string; id: string }> }) {
@@ -26,9 +27,13 @@ export default async function Page({ params }: { params: Promise<{ lang: string;
   // The related words and the inflected forms are stored as bare text, so one more
   // call turns them into rows a learner can read. It runs after the two lists are
   // known, and is cached on their contents.
+  // The word this entry is a form of, resolved through the same preview call as
+  // the related words so an inflected page is not a dead end.
+  const lemma = lemmaFromSenses(detail.senses, detail.headword)
   const terms = [
     ...detail.relations.map((r) => r.relatedText ?? ''),
     ...groupWordForms(inflections).map((f) => f.text),
+    ...(lemma ? [lemma] : []),
   ]
   const [previewRows, resolvedExamples] = await Promise.all([
     getCachedTermPreviews(detail.lang, terms),
@@ -42,6 +47,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string;
   return (
     <LookupView
       detail={detail}
+      lemma={lemma}
       characters={characters}
       siblings={siblings}
       inflections={inflections}
