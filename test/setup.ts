@@ -13,3 +13,9 @@ if (typeof HTMLDialogElement !== 'undefined') {
     this.dispatchEvent(new Event('close'))
   }
 }
+
+// jsdom does not implement Element.scrollIntoView at all, so a component that
+// scrolls its own output into view throws in tests while working in a browser.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = function scrollIntoView() {}
+}

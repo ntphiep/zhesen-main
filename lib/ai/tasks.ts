@@ -3,7 +3,7 @@ import { isLangCode, type LangCode } from '@/lib/languages'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 
 /**
- * The assistant's whole surface: two tasks, each a schema in and a schema out.
+ * The assistant's whole surface: one task per row, each a schema in and out.
  *
  * Kept as a table rather than a route per task so the API route stays one
  * handler, and so a new task cannot be added without declaring what it accepts
@@ -110,6 +110,30 @@ export const tagsOutput = z.object({
 
 export type TagsOutput = z.infer<typeof tagsOutput>
 
+// ---------------------------------------------------------------- chat
+
+/** One turn of the conversation. Long enough for a paragraph the learner pasted
+ *  in, short enough that a dozen of them stay inside the model's budget. */
+const chatTurn = z.object({
+  role: z.enum(['user', 'assistant']),
+  text: z.string().trim().min(1).max(1000),
+})
+
+export const chatInput = z.object({
+  /** What the learner is looking at, in one line. Without it "từ này nghĩa gì"
+   *  has no referent and the assistant has to ask which word. */
+  context: z.string().trim().max(300).default(''),
+  /** The exchange so far, oldest first; the last turn is the new question. The
+   *  cap is the reason the panel trims: an unbounded history is an unbounded bill. */
+  messages: z.array(chatTurn).min(1).max(12),
+})
+
+export const chatOutput = z.object({
+  reply: z.string().min(1).max(1500),
+})
+
+export type ChatOutput = z.infer<typeof chatOutput>
+
 // ---------------------------------------------------------------- registry
 
 const JSON_ONLY = 'Bạn trả về DUY NHẤT một object JSON hợp lệ. Không markdown, không rào đón, không giải thích ngoài JSON.'
@@ -118,6 +142,15 @@ const TEACHER = [
   'Bạn là giáo viên ngoại ngữ dạy người Việt, đang soạn thẻ từ vựng cho học viên ôn thi TOEIC.',
   'Mọi phần giải thích viết bằng tiếng Việt tự nhiên, ngắn gọn, đúng chính tả.',
   'Không bịa: không chắc thì để chuỗi rỗng hoặc mảng rỗng thay vì đoán.',
+  JSON_ONLY,
+].join(' ')
+
+const TUTOR = [
+  'Bạn là gia sư ngoại ngữ của một người Việt đang ôn TOEIC, đang trả lời ngay trong ứng dụng tra từ điển Zhesen.',
+  'Trả lời bằng tiếng Việt, ngắn gọn, đi thẳng vào câu hỏi, tối đa vài câu.',
+  'Ví dụ thì viết nguyên văn ở ngôn ngữ đích rồi kèm bản dịch tiếng Việt.',
+  'Không bịa: không chắc thì nói thẳng là không chắc.',
+  'Chỉ trả lời chuyện học ngoại ngữ và cách dùng ứng dụng; câu hỏi ngoài phạm vi thì từ chối ngắn gọn.',
   JSON_ONLY,
 ].join(' ')
 
@@ -221,6 +254,29 @@ export const TASKS = {
         'Giữ nguyên thứ tự và chính tả của headword như trên.',
       ].filter(Boolean).join('\n'),
   } satisfies TaskSpec<z.infer<typeof tagsInput>, TagsOutput>,
+
+  /**
+   * The assistant as a conversation, reachable from every page.
+   *
+   * The other four tasks answer one fixed question each; a learner who wants to
+   * know why "adjourned" takes "until" and not "to" had nowhere to ask. The page
+   * the learner is on is sent as one line of context so a pronoun in the question
+   * resolves, and history is capped because every turn is re-sent and re-charged.
+   */
+  chat: {
+    input: chatInput,
+    output: chatOutput,
+    maxTokens: 900,
+    system: TUTOR,
+    prompt: ({ context, messages }) =>
+      [
+        context ? `Người học đang xem: ${context}.` : '',
+        'Đoạn hội thoại, lượt cuối là câu hỏi cần trả lời:',
+        ...messages.map((m) => `${m.role === 'user' ? 'Người học' : 'Gia sư'}: ${m.text}`),
+        'Trả JSON với đúng khoá sau:',
+        '{"reply": câu trả lời của gia sư cho lượt cuối}',
+      ].filter(Boolean).join('\n'),
+  } satisfies TaskSpec<z.infer<typeof chatInput>, ChatOutput>,
 } as const
 
 export type TaskName = keyof typeof TASKS
@@ -269,4 +325,5 @@ export const ERASED_TASKS: Record<TaskName, ErasedTask> = {
   coach: erase(TASKS.coach),
   suggest: erase(TASKS.suggest),
   tags: erase(TASKS.tags),
+  chat: erase(TASKS.chat),
 }
