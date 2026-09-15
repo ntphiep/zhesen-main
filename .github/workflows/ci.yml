@@ -72,6 +72,45 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [verify, build, migrations]
+    # Production only, and only for a real push: a pull request must not replace
+    # what is live, and a re-run of an old commit must not roll the site back.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    # Vercel's own GitHub integration refuses these commits -- it blocks any
+    # commit whose GitHub author is not a member of the Vercel team, and the
+    # commits here are authored by a different account than the one that owns the
+    # team (readyStateReason: "the commit author doesn't have permission to
+    # create deployments for this project"). Deploying with a token is not
+    # subject to that check, and it also puts the deploy behind the tests rather
+    # than beside them.
+    env:
+      VERCEL_ORG_ID: team_rfK6c0vpzY7uNlCrXsnRt489
+      VERCEL_PROJECT_ID: prj_7uctsKu2VekNg9E1hUI67ziDnTqT
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # Skipped rather than failed when the token is missing, so the rest of the
+      # pipeline still reports on a fork or on a clone without the secret.
+      - name: Deploy
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "No VERCEL_TOKEN secret; skipping the deploy."
+            exit 0
+          fi
+          npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
+          npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
   migrations:
     name: Migration hygiene
     runs-on: ubuntu-latest
