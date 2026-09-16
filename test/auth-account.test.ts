@@ -4,7 +4,7 @@ import {
   accountKind, attachEmail, passwordProblem, registerWithPassword, setPassword,
   signInByEmail, signInWithPassword, MIN_PASSWORD,
 } from '@/lib/auth/account'
-import { safeNext } from '@/app/auth/callback/route'
+import { safeNext } from '@/lib/auth/redirect'
 
 const asUser = (over: Partial<User>) => ({ id: 'u1', ...over }) as User
 
@@ -157,9 +157,22 @@ describe('safeNext', () => {
       '/' + BACKSLASH + 'evil.test/steal',
       '/' + BACKSLASH + BACKSLASH + 'evil.test',
       BACKSLASH + BACKSLASH + 'evil.test',
+      '/..//evil.test',
+      '/..//evil.test/phish?a=1',
+      '/a/../..//evil.test',
     ]) {
       expect(lands(hostile)).toBe(here)
     }
+  })
+
+  // `lands` parses the answer a second time, which is what the callers do:
+  // NextResponse.redirect(new URL(next, origin)) and router.push(next). That is
+  // where '/..//evil.test' got through -- it resolves to the pathname
+  // '//evil.test', whose origin is still this site, and only turns
+  // protocol-relative on the second parse.
+  it('does not hand back a path that becomes another host when it is resolved again', () => {
+    expect(safeNext('/..//evil.test', here)).toBe('/wordlist')
+    expect(safeNext('/..//evil.test/phish?a=1', here)).toBe('/wordlist')
   })
 
   it('does not silently keep a hostile path either', () => {

@@ -1,7 +1,6 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { createClient } from '@/lib/supabase/client'
 import { accountKind, type AccountKind } from '@/lib/auth/account'
 
 /**
@@ -13,21 +12,31 @@ import { accountKind, type AccountKind } from '@/lib/auth/account'
  * than a guess that changes a frame later under the reader's cursor.
  */
 export function useAccount(): { kind: AccountKind | null; email: string | null } {
-  const supabase = useMemo(() => createClient(), [])
   const [kind, setKind] = useState<AccountKind | null>(null)
   const [email, setEmail] = useState<string | null>(null)
 
   useEffect(() => {
     let live = true
+    let unsubscribe = () => {}
     const apply = (user: User | null) => {
       if (!live) return
       setKind(accountKind(user))
       setEmail(user?.email ?? null)
     }
-    supabase.auth.getUser().then(({ data }) => apply(data.user ?? null))
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => apply(session?.user ?? null))
-    return () => { live = false; sub.subscription.unsubscribe() }
-  }, [supabase])
+    // This hook runs in the header of every route, and a static import put the
+    // whole of supabase-js -- 62.2 kB gzipped, auth plus realtime plus storage --
+    // on the blocking path of pages that never query anything. Loading it here
+    // costs nothing extra on screen: the caller already renders nothing until
+    // getUser() returns, and that is a network round trip.
+    void import('@/lib/supabase/client').then(({ createClient }) => {
+      if (!live) return
+      const supabase = createClient()
+      supabase.auth.getUser().then(({ data }) => apply(data.user ?? null))
+      const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => apply(session?.user ?? null))
+      unsubscribe = () => sub.subscription.unsubscribe()
+    })
+    return () => { live = false; unsubscribe() }
+  }, [])
 
   return { kind, email }
 }

@@ -3,14 +3,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 /**
  * Create the anonymous session on first write instead of on first request.
  *
- * The middleware used to call `signInAnonymously` for every request that arrived
- * without a session cookie. Browsing the dictionary needs no session at all --
- * `lex.*` is readable by the anon API key -- so that minted a row in `auth.users`
- * for every crawler, prefetch and health check. A short burst of them exhausted
- * Supabase's own sign-in limit, and the server log filled with
- * "signInAnonymously failed: Request rate limit reached": at that point a real
- * visitor arriving next got no session either, and their first saved word failed
- * against RLS.
+ * Browsing the dictionary needs no session at all -- `lex.*` is readable by
+ * the anon API key. Minting a session on every request would mint a row in
+ * `auth.users` for every crawler, prefetch and health check, and a burst of
+ * them can exhaust Supabase's own sign-in limit, leaving a real visitor with
+ * no session and their first saved word failing against RLS.
  *
  * Every write to `public.user_words` and `public.activity` goes through here, so
  * an account exists exactly when someone has data to put in it.

@@ -9,14 +9,16 @@ import { useAccount } from '@/lib/hooks/useAccount'
  * Read in the browser rather than in the root layout on purpose. Reading the
  * session on the server would call `cookies()` in a layout that wraps every
  * route, which opts the whole site into dynamic rendering -- the grammar pages
- * are prerendered today and would stop being. The cost is one frame with nothing
- * in this corner, which is why it renders nothing rather than a guess that then
- * changes under the reader.
+ * are prerendered today and would stop being.
+ *
+ * The cost is one frame before the answer arrives. The brand holds `mr-auto`, so
+ * a corner that appears only then drags every nav item left; the signed-out pair
+ * is therefore laid out from the first paint and merely hidden, which reserves
+ * the right width without a hardcoded one. `visibility: hidden` also keeps it
+ * out of the tab order.
  */
 export function AccountLink() {
   const { kind, email } = useAccount()
-
-  if (kind === null) return null
 
   if (kind === 'permanent') {
     return (
@@ -31,7 +33,7 @@ export function AccountLink() {
   }
 
   return (
-    <div className="ml-2 flex items-center gap-1">
+    <div className={`ml-2 flex items-center gap-1${kind === null ? ' invisible' : ''}`} aria-hidden={kind === null || undefined}>
       <Link
         href="/login"
         className="rounded-lg px-3 py-1.5 text-sm text-black/60 hover:bg-black/5"

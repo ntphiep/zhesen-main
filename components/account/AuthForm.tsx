@@ -36,6 +36,7 @@ export function AuthForm({
   localWordCount = 0,
   hasAnonymousSession = false,
   next = '/wordlist',
+  notice,
 }: {
   mode: Mode
   /** Words saved against this browser's anonymous account. */
@@ -44,6 +45,10 @@ export function AuthForm({
   hasAnonymousSession?: boolean
   /** Where the browser goes once the session is live. */
   next?: string
+  /** Why the visitor was sent here, when something already went wrong -- an
+   *  emailed link that had expired, for instance. Rendered above the form,
+   *  separately from `feedback`, which belongs to this form's own submissions. */
+  notice?: string
 }) {
   const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
@@ -96,6 +101,12 @@ export function AuthForm({
             ? 'Miễn phí, và chỉ mất một phút.'
             : 'Chào mừng bạn quay lại.'}
       </p>
+
+      {notice && (
+        <p role="alert" className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {notice}
+        </p>
+      )}
 
       <form onSubmit={submit} className="mt-5 flex flex-col gap-3">
         <label className="flex flex-col gap-1 text-sm">

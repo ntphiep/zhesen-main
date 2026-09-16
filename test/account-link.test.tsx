@@ -39,11 +39,16 @@ describe('AccountLink', () => {
     expect(await screen.findByRole('link', { name: /Đăng nhập/i })).toHaveAttribute('href', '/login')
   })
 
-  // Rendering a guess and correcting it a frame later moves the header under a
-  // reader who may already be aiming at it.
-  it('renders nothing until it knows which account this is', () => {
+  // The corner used to render nothing until the session answered. The brand holds
+  // mr-auto, so the whole nav row slid left the moment it appeared. It now lays the
+  // signed-out pair out from the first paint and hides it: same width, no motion.
+  // jsdom applies no stylesheet, so the class is what can be checked here.
+  it('reserves its width, hidden, until it knows which account this is', () => {
     getUser.mockReturnValue(new Promise(() => {}))
     const { container } = render(<AccountLink />)
-    expect(container).toBeEmptyDOMElement()
+    const corner = container.firstElementChild
+    expect(corner).toHaveClass('invisible')
+    expect(corner).toHaveAttribute('aria-hidden', 'true')
+    expect(corner?.querySelectorAll('a')).toHaveLength(2)
   })
 })
