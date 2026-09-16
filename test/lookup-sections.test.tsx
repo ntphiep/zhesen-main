@@ -8,7 +8,11 @@ import { AddToWordlistButton } from '@/components/lookup/AddToWordlistButton'
 import { addWord } from '@/lib/wordlist/store'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 
-vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
+vi.mock('@/lib/supabase/client', async () => {
+  const { accountAuthStub } = await import('./helpers/supabase')
+  // The add button reads the account, so the client stub carries a signed-in user.
+  return { createClient: () => accountAuthStub({ id: 'u1', email: 'a@b.com' }) }
+})
 vi.mock('@/lib/wordlist/store', () => ({
   addWord: vi.fn(async () => ({})),
   draftFromDictEntry: (e: { headword: string }) => ({ headword: e.headword }),
@@ -162,8 +166,8 @@ describe('ExampleList', () => {
 describe('AddToWordlistButton', () => {
   it('adds the entry and shows confirmation', async () => {
     render(<AddToWordlistButton entry={detail} />)
-    await userEvent.click(screen.getByRole('button', { name: /Thêm vào sổ tay/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Thêm vào sổ tay/i }))
     expect(addWord).toHaveBeenCalled()
-    expect(await screen.findByText(/Đã thêm/i)).toBeInTheDocument()
+    expect(await screen.findByText('Đã thêm')).toBeInTheDocument()
   })
 })

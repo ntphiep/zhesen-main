@@ -16,25 +16,16 @@ import {
 type Mode = 'login' | 'register'
 type Feedback = { tone: 'ok' | 'bad'; text: string } | null
 
-/** Each line is a property of the account, not a slogan: the wordlist otherwise
- *  lives in one browser's cookie and goes with the browsing data, the review
- *  schedule is per account, and nothing syncs without one. */
-const REASONS = [
-  'Sổ tay không mất khi bạn xoá dữ liệu duyệt web.',
-  'Lịch ôn tập đi theo tài khoản, mở máy khác vẫn đúng hàng đợi.',
-  'Tra cứu vẫn không cần tài khoản, chỉ phần lưu từ mới cần.',
-]
-
 /**
  * The sign-in and sign-up form, one component because they differ by two fields
  * and a verb.
  *
- * The interesting case is neither: a browser holding an anonymous session with
- * words saved in it. Registering there must NOT create a second account -- the
- * words hang off the anonymous one and nothing would move them -- so the form
- * attaches the email to the account already present and says so. Supabase will
- * not accept a password until that address is confirmed, so the password step
- * waits for `/account` after the emailed link.
+ * The one unusual door is a browser still holding a legacy anonymous session
+ * with words saved before the notebook required an account. Registering there
+ * must NOT create a second account -- the words hang off the anonymous one and
+ * nothing would move them -- so the form attaches the email to the account
+ * already present. Supabase will not accept a password until that address is
+ * confirmed, so the password step waits for `/account` after the emailed link.
  * https://supabase.com/docs/guides/auth/auth-anonymous
  *
  * `localWordCount` is read on the server by the page, because the guard has to
@@ -42,14 +33,16 @@ const REASONS = [
  */
 export function AuthForm({
   mode,
-  localWordCount,
-  hasAnonymousSession,
+  localWordCount = 0,
+  hasAnonymousSession = false,
   next = '/wordlist',
 }: {
   mode: Mode
-  localWordCount: number
+  /** Words saved against this browser's anonymous account. */
+  localWordCount?: number
   /** True when this browser already carries an anonymous account. */
-  hasAnonymousSession: boolean
+  hasAnonymousSession?: boolean
+  /** Where the browser goes once the session is live. */
   next?: string
 }) {
   const supabase = useMemo(() => createClient(), [])
@@ -93,15 +86,15 @@ export function AuthForm({
   return (
     <div className="w-full max-w-sm rounded-2xl border border-black/10 bg-white p-6 shadow-sm sm:p-7">
       <h1 className="text-2xl font-bold">
-        {mode === 'register' ? (upgrading ? 'Lưu sổ tay của bạn' : 'Tạo tài khoản') : 'Đăng nhập'}
+        {mode === 'register' ? (upgrading ? 'Hoàn tất tài khoản' : 'Tạo tài khoản') : 'Đăng nhập'}
       </h1>
 
       <p className="mt-2 text-sm text-black/60">
         {upgrading
-          ? `${localWordCount} từ trong sổ tay đang chỉ nằm trong trình duyệt này. Gắn email vào để giữ lại, không có từ nào bị chuyển đi đâu cả.`
+          ? `${localWordCount} từ đã lưu trên trình duyệt này sẽ được gắn vào tài khoản của bạn, không có từ nào bị chuyển đi.`
           : mode === 'register'
-            ? 'Tài khoản giữ sổ tay của bạn lại khi đổi máy hoặc xoá dữ liệu duyệt web.'
-            : 'Tra cứu thì không cần tài khoản. Đăng nhập để lấy lại sổ tay đã lưu.'}
+            ? 'Miễn phí, và chỉ mất một phút.'
+            : 'Chào mừng bạn quay lại.'}
       </p>
 
       <form onSubmit={submit} className="mt-5 flex flex-col gap-3">
@@ -178,19 +171,6 @@ export function AuthForm({
             Quên mật khẩu
           </button>
         </div>
-      )}
-
-      {/* Why bother, in the three facts that are actually true of this account.
-          Without them the page asks for an email and gives no reason. */}
-      {mode === 'register' && !upgrading && (
-        <ul className="mt-6 flex flex-col gap-1.5 border-t border-black/10 pt-5 text-sm text-black/60">
-          {REASONS.map((r) => (
-            <li key={r} className="flex gap-2">
-              <span aria-hidden className="text-black/25">•</span>
-              {r}
-            </li>
-          ))}
-        </ul>
       )}
 
       <p className="mt-6 text-sm text-black/60">

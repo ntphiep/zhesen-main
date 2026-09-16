@@ -4,7 +4,18 @@ import userEvent from '@testing-library/user-event'
 import { AddToWordlistButton } from '@/components/lookup/AddToWordlistButton'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 
-vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
+// A signed-in account by default; the anonymous door has its own test. Built in
+// vi.hoisted because the mock factory runs before module imports settle.
+const client = vi.hoisted(() => {
+  const user = { id: 'u1', email: 'a@b.com' }
+  return {
+    auth: {
+      getUser: vi.fn(async (): Promise<{ data: { user: { id: string; email?: string } | null } }> => ({ data: { user } })),
+      onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: () => {} } } })),
+    },
+  }
+})
+vi.mock('@/lib/supabase/client', () => ({ createClient: () => client }))
 
 const { addWordMock, isWordSavedMock } = vi.hoisted(() => ({
   addWordMock: vi.fn(),
@@ -41,14 +52,26 @@ describe('AddToWordlistButton', () => {
     const { WordAlreadyExistsError } = await import('@/lib/wordlist/store')
     addWordMock.mockRejectedValueOnce(new WordAlreadyExistsError('en:dog'))
     render(<AddToWordlistButton entry={entry} />)
-    await userEvent.click(screen.getByRole('button', { name: /Thêm vào sổ tay/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Thêm vào sổ tay/i }))
     expect(await screen.findByText(/Đã có trong sổ tay/i)).toBeInTheDocument()
   })
 
   it('shows a retry error for any other failure', async () => {
     addWordMock.mockRejectedValueOnce(new Error('network'))
     render(<AddToWordlistButton entry={entry} />)
-    await userEvent.click(screen.getByRole('button', { name: /Thêm vào sổ tay/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Thêm vào sổ tay/i }))
     expect(await screen.findByText(/thử lại/i)).toBeInTheDocument()
+  })
+
+  // The notebook belongs to an account. A visitor without one is not silently
+  // saved into an anonymous cookie -- they are pointed at the door, carrying the
+  // word's own page back so the save is one step away after signing in.
+  it('asks a signed-out visitor to sign in instead of saving', async () => {
+    addWordMock.mockClear()
+    client.auth.getUser.mockResolvedValueOnce({ data: { user: null } })
+    render(<AddToWordlistButton entry={entry} />)
+    const link = await screen.findByRole('link', { name: /Đăng nhập để lưu/i })
+    expect(link).toHaveAttribute('href', '/login?next=%2Fdictionary%2Fen%2Fdog')
+    expect(addWordMock).not.toHaveBeenCalled()
   })
 })

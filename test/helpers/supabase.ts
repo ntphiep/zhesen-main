@@ -70,3 +70,17 @@ export function authStub(
     signInAnonymously,
   }
 }
+
+/**
+ * The auth half `useAccount` reads: getUser resolves to `user` (with an email
+ * for a signed-in account, without for the legacy anonymous one, or null for a
+ * visitor) and the state subscription never fires, so the kind settles once.
+ */
+export function accountAuthStub(user: { id: string; email?: string } | null) {
+  return {
+    auth: {
+      getUser: vi.fn(async () => ({ data: { user } })),
+      onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: () => {} } } })),
+    },
+  }
+}

@@ -5,7 +5,13 @@ import { WordPopover } from '@/components/reader/WordPopover'
 import { TappableText } from '@/components/reader/TappableText'
 import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
 
-vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
+// The add button reads the account, so the client stub carries a signed-in user.
+// The stub is imported inside the factory because the factory runs before the
+// module imports of this file settle.
+vi.mock('@/lib/supabase/client', async () => {
+  const { accountAuthStub } = await import('./helpers/supabase')
+  return { createClient: () => accountAuthStub({ id: 'u1', email: 'a@b.com' }) }
+})
 vi.mock('@/lib/wordlist/store', () => ({
   addWord: vi.fn(async () => ({})),
   draftFromDictEntry: (e: { headword: string }) => ({ headword: e.headword }),
@@ -26,11 +32,12 @@ const dog: DictEntryPreview = {
 }
 
 describe('WordPopover', () => {
-  it('renders an entry with meaning, detail link and add button', () => {
+  it('renders an entry with meaning, detail link and add button', async () => {
     render(<WordPopover entry={dog} />)
     expect(screen.getByText('con chó')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /chi tiết/i })).toHaveAttribute('href', '/dictionary/en/dog')
-    expect(screen.getByRole('button', { name: /Thêm vào sổ tay/i })).toBeInTheDocument()
+    // The button mounts only once the session read resolves.
+    expect(await screen.findByRole('button', { name: /Thêm vào sổ tay/i })).toBeInTheDocument()
   })
 
   it('renders character info for the zh fallback', () => {

@@ -1,14 +1,23 @@
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getWordlistStats } from '@/lib/wordlist/stats'
+import { accountKind } from '@/lib/auth/account'
 import { WordlistStats } from '@/components/wordlist/WordlistStats'
 import { WordlistDistribution } from '@/components/wordlist/WordlistDistribution'
 import { PracticeModes } from '@/components/practice/PracticeModes'
 
-// Practice hub: progress stats + every study mode, working over the saved wordlist.
+// Practice hub: progress stats + every study mode, working over the saved
+// wordlist. Every mode grades into the account's FSRS schedule, so -- like the
+// notebook itself -- it needs an account.
 export default async function PracticePage() {
   const supabase = await createClient()
-  const stats = await getWordlistStats(supabase)
+  const [{ data }, stats] = await Promise.all([supabase.auth.getUser(), getWordlistStats(supabase)])
+  const kind = accountKind(data.user)
+  if (kind !== 'permanent') {
+    const door = kind === 'anonymous' ? '/register' : '/login'
+    redirect(`${door}?next=%2Fpractice`)
+  }
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>

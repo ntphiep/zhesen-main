@@ -318,10 +318,10 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       {/* Table view */}
       {view === 'table' && shown.length > 0 && (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full border-separate border-spacing-0 text-sm">
             <thead>
-              <tr className="border-b border-black/10 text-left text-black/50">
-                <th className="py-2 pr-3 w-8">
+              <tr className="text-left text-xs font-medium uppercase tracking-wide text-black/45 [&_th]:border-b [&_th]:border-black/10">
+                <th className="w-10 px-3 py-2.5">
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -329,72 +329,54 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     aria-label="Chọn tất cả"
                   />
                 </th>
-                <th className="whitespace-nowrap py-2 pr-3">
+                <th className="whitespace-nowrap px-3 py-2.5">
                   <button
-                    className="flex items-center gap-1 whitespace-nowrap font-medium hover:text-black"
+                    className="flex items-center gap-1 whitespace-nowrap uppercase tracking-wide hover:text-black"
                     onClick={() => toggleSort('headword')}
                   >
                     Từ
                     {sortKey === 'headword' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </th>
-                <th className="whitespace-nowrap py-2 pr-3">IPA</th>
-                <th className="whitespace-nowrap py-2 pr-3">
+                <th className="whitespace-nowrap px-3 py-2.5">IPA</th>
+                <th className="whitespace-nowrap px-3 py-2.5">
                   <button
-                    className="flex items-center gap-1 whitespace-nowrap font-medium hover:text-black"
+                    className="flex items-center gap-1 whitespace-nowrap uppercase tracking-wide hover:text-black"
                     onClick={() => toggleSort('pos')}
                   >
                     Từ loại
                     {sortKey === 'pos' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </th>
-                <th className="whitespace-nowrap py-2 pr-3">Nghĩa</th>
-                <th className="whitespace-nowrap py-2 pr-3">
+                <th className="whitespace-nowrap px-3 py-2.5">Nghĩa</th>
+                <th className="whitespace-nowrap px-3 py-2.5">
                   <button
-                    className="flex items-center gap-1 whitespace-nowrap font-medium hover:text-black"
+                    className="flex items-center gap-1 whitespace-nowrap uppercase tracking-wide hover:text-black"
                     onClick={() => toggleSort('level')}
                   >
                     Cấp độ
                     {sortKey === 'level' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </th>
-                <th className="whitespace-nowrap py-2 pr-3">Thẻ</th>
-                <th className="whitespace-nowrap py-2 pr-3">
+                <th className="whitespace-nowrap px-3 py-2.5">Thẻ</th>
+                <th className="whitespace-nowrap px-3 py-2.5">
                   <button
-                    className="flex items-center gap-1 whitespace-nowrap font-medium hover:text-black"
+                    className="flex items-center gap-1 whitespace-nowrap uppercase tracking-wide hover:text-black"
                     onClick={() => toggleSort('createdAt')}
                   >
                     Ngày thêm
                     {sortKey === 'createdAt' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </th>
-                <th className="whitespace-nowrap py-2 pr-3">
-                  <button
-                    className="flex items-center gap-1 whitespace-nowrap font-medium hover:text-black"
-                    onClick={() => toggleSort('fsrsDueAt')}
-                  >
-                    Đến hạn
-                    {sortKey === 'fsrsDueAt' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
-                  </button>
-                </th>
-                <th className="whitespace-nowrap py-2 pr-3">
-                  <button
-                    className="flex items-center gap-1 whitespace-nowrap font-medium hover:text-black"
-                    onClick={() => toggleSort('fsrsLapses')}
-                  >
-                    Sai
-                    {sortKey === 'fsrsLapses' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
-                  </button>
-                </th>
-                <th className="whitespace-nowrap py-2 pr-3">Audio</th>
-                <th className="whitespace-nowrap py-2">Thao tác</th>
+                <th className="whitespace-nowrap px-3 py-2.5">Audio</th>
+                <th className="whitespace-nowrap px-3 py-2.5 text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {shown.map((w) => (
                 <Fragment key={w.id}>
-                  <tr className="border-b border-black/5 hover:bg-black/2">
-                    <td className="py-2 pr-3">
+                  <tr className="hover:bg-black/2 [&_td]:border-b [&_td]:border-black/5">
+                    <td className="px-3 py-2.5 align-top">
                       <input
                         type="checkbox"
                         checked={selected.has(w.id)}
@@ -402,33 +384,32 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                         aria-label={`Chọn từ ${w.headword}`}
                       />
                     </td>
-                    <td className="py-2 pr-3 font-medium">{w.headword}</td>
-                    <td className="py-2 pr-3 text-black/50"><Ipa value={w.ipa} lang={w.lang} /></td>
-                    <td className="py-2 pr-3 text-black/50">{posGroup(w.pos)?.labelVi ?? w.pos ?? ''}</td>
-                    <td className="py-2 pr-3">{w.meaningVi ?? ''}</td>
-                    <td className="py-2 pr-3 text-black/50">{w.level ?? ''}</td>
-                    <td className="py-2 pr-3">
+                    <td className="px-3 py-2.5 align-top font-medium">{w.headword}</td>
+                    <td className="px-3 py-2.5 align-top text-black/50"><Ipa value={w.ipa} lang={w.lang} /></td>
+                    <td className="px-3 py-2.5 align-top text-black/50">{posGroup(w.pos)?.labelEn ?? w.pos ?? ''}</td>
+                    <td className="px-3 py-2.5 align-top">{w.meaningVi ?? ''}</td>
+                    <td className="px-3 py-2.5 align-top text-black/50">{w.level ?? ''}</td>
+                    <td className="px-3 py-2.5 align-top">
                       <TagChips tags={w.tags} />
                     </td>
-                    <td className="py-2 pr-3 text-black/40">{formatWordDate(w.createdAt)}</td>
-                    <td className="py-2 pr-3 text-black/40">{formatDueDate(w.fsrsDueAt)}</td>
-                    <td className="py-2 pr-3 text-black/40">{w.fsrsLapses > 0 ? w.fsrsLapses : ''}</td>
-                    <td className="py-2 pr-3">
+                    <td className="px-3 py-2.5 align-top whitespace-nowrap text-black/40">{formatWordDate(w.createdAt)}</td>
+                    <td className="px-3 py-2.5 align-top">
                       <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
                     </td>
-                    <td className="py-2">
+                    <td className="px-3 py-2.5 align-top text-right">
                       <WordRowActions
                         word={w}
                         expanded={expandedId === w.id}
                         onToggleDetail={() => setExpandedId(expandedId === w.id ? null : w.id)}
                         onEdit={() => setEditWord(w)}
                         onDelete={() => handleDelete(w.id, w.headword)}
+                        className="justify-end"
                       />
                     </td>
                   </tr>
                   {expandedId === w.id && (
                     <tr className="bg-black/2">
-                      <td colSpan={12} className="px-4 py-3">
+                      <td colSpan={10} className="px-4 py-3">
                         <WordDetail word={w} />
                       </td>
                     </tr>
@@ -462,7 +443,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                 <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
               </div>
 
-              {w.pos && <span className="text-xs text-black/55">{posGroup(w.pos)?.labelVi ?? w.pos}</span>}
+              {w.pos && <span className="text-xs text-black/55">{posGroup(w.pos)?.labelEn ?? w.pos}</span>}
               {w.meaningVi && <p className="text-sm text-black/80">{w.meaningVi}</p>}
               {w.level && (
                 <span className="self-start rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/50">
