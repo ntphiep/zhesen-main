@@ -1,4 +1,3 @@
-// test/dictionary-detail-page.test.tsx
 import { describe, it, expect, vi } from 'vitest'
 
 vi.mock('next/navigation', () => ({ notFound: () => { throw new Error('NEXT_NOT_FOUND') } }))
@@ -29,7 +28,10 @@ describe('dictionary detail page', () => {
     vi.mocked(getCachedEntryDetail).mockResolvedValueOnce(null)
     await expect(Page({ params: Promise.resolve({ lang: 'en', id: 'nope' }) })).rejects.toThrow('NEXT_NOT_FOUND')
   })
-  it('reconstructs the entry id from decoded params', async () => {
+  // Measured against `next start`: an ASCII segment arrives decoded, a
+  // percent-encoded one does not, so the page has to decode and must survive a
+  // segment that is not valid encoding.
+  it('decodes a percent-encoded segment', async () => {
     vi.mocked(getCachedEntryDetail).mockResolvedValueOnce({
       id: 'zh:狗', lang: 'zh', headword: '狗', traditional: null, level: null, ipa: null, pos: null,
       glossVi: null, glossEn: null, audioUrl: null, senses: [], pronunciations: [], examples: [],
@@ -37,5 +39,10 @@ describe('dictionary detail page', () => {
     })
     await Page({ params: Promise.resolve({ lang: 'zh', id: '%E7%8B%97' }) })
     expect(getCachedEntryDetail).toHaveBeenCalledWith('zh:狗')
+  })
+  it('does not throw on a param that is not valid percent-encoding', async () => {
+    vi.mocked(getCachedEntryDetail).mockResolvedValueOnce(null)
+    await expect(Page({ params: Promise.resolve({ lang: 'en', id: '%' }) })).rejects.toThrow('NEXT_NOT_FOUND')
+    expect(getCachedEntryDetail).toHaveBeenCalledWith('en:%')
   })
 })

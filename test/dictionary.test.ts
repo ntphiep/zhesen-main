@@ -338,8 +338,14 @@ function thenableClient(results: { data: unknown; error: null }[]) {
       resolve(results[i++] ?? { data: [], error: null }),
   }
   for (const m of ['select', 'eq', 'in', 'order', 'limit']) builder[m] = () => builder
+  // `rpc` draws from the same queue as the table reads, so a case still lists its
+  // results in the order the code asks for them. resolveTokens reads entries
+  // through the table builder and inflections through lex.resolve_inflections.
   return {
-    schema: () => ({ from: () => builder }),
+    schema: () => ({
+      from: () => builder,
+      rpc: () => Promise.resolve(results[i++] ?? { data: [], error: null }),
+    }),
   } as unknown as import('@supabase/supabase-js').SupabaseClient
 }
 
@@ -356,10 +362,10 @@ describe('resolveTokens', () => {
     expect(map.get('dog')).toMatchObject({ id: 'en:dog', glossVi: 'con chó' })
   })
 
-  it('resolves an inflected form via the inflections table', async () => {
+  it('resolves an inflected form through lex.resolve_inflections', async () => {
     const client = thenableClient([
       { data: [], error: null },                                    // direct headword: none
-      { data: [{ form_text: 'dogs', entry_id: 'en:dog' }], error: null }, // inflections
+      { data: [{ form_text: 'dogs', entry_id: 'en:dog' }], error: null }, // lex.resolve_inflections
       { data: [dogRow], error: null },                              // entries by id
     ])
     const map = await resolveTokens(client, 'en', ['dogs'])

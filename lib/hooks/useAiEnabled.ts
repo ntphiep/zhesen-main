@@ -23,10 +23,17 @@ export function resetAiEnabledCache(): void {
   inFlight = null
 }
 
-export function useAiEnabled(): boolean {
-  const [enabled, setEnabled] = useState(cached ?? false)
+/**
+ * `known` is the answer the server already has: `aiConfig()` reads environment
+ * variables only, so the root layout can pass it down and spare every page load a
+ * request for one boolean. Passing it also seeds the shared cache, so the three
+ * components that call this hook without an argument stop asking too.
+ */
+export function useAiEnabled(known?: boolean): boolean {
+  const [enabled, setEnabled] = useState(known ?? cached ?? false)
 
   useEffect(() => {
+    if (known !== undefined) { cached = known; return }
     if (cached !== null) return
     inFlight ??= aiEnabled().then((v) => {
       cached = v
@@ -36,7 +43,7 @@ export function useAiEnabled(): boolean {
     let live = true
     inFlight.then((v) => { if (live) setEnabled(v) }).catch(() => {})
     return () => { live = false }
-  }, [])
+  }, [known])
 
-  return enabled
+  return known ?? enabled
 }

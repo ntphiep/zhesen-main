@@ -1,6 +1,6 @@
-import { z } from 'zod'
+import { z } from '@/lib/zod'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { LangCode } from '@/lib/languages'
+import { LANG_CODES, type LangCode } from '@/lib/languages'
 import { grammarPointRow, grammarPointDetailRow, toGrammarPoint, toGrammarPointDetail, type GrammarPoint, type GrammarPointDetail } from './types'
 
 const grammarPointEntryRow = z.object({ grammar_points: grammarPointRow })
@@ -18,13 +18,26 @@ export async function listGrammarPointsByLang(supabase: SupabaseClient, lang: La
   return grammarPointRow.array().parse(data ?? []).map(toGrammarPoint)
 }
 
-/** Number of grammar points per language, for the `/grammar` landing page. */
+/**
+ * Number of grammar points per language, for the `/grammar` landing page.
+ *
+ * One `head` request per language rather than one request for every row's `lang`
+ * column. PostgREST caps a response at 1,000 rows without saying so, so counting
+ * rows client-side would have quietly stopped at 1,000 once the table grew;
+ * `count: 'exact'` is answered by Postgres and carries no rows at all.
+ */
 export async function countGrammarPointsByLang(supabase: SupabaseClient): Promise<Record<LangCode, number>> {
-  const { data, error } = await supabase.schema('lex').from('grammar_points').select('lang')
-  if (error) throw error
-  const counts: Record<LangCode, number> = { en: 0, es: 0, zh: 0 }
-  for (const row of grammarPointRow.pick({ lang: true }).array().parse(data ?? [])) counts[row.lang] += 1
-  return counts
+  const entries = await Promise.all(
+    LANG_CODES.map(async (lang) => {
+      const { count, error } = await supabase
+        .schema('lex').from('grammar_points')
+        .select('id', { count: 'exact', head: true })
+        .eq('lang', lang)
+      if (error) throw error
+      return [lang, count ?? 0] as const
+    }),
+  )
+  return Object.fromEntries(entries) as Record<LangCode, number>
 }
 
 export async function getGrammarPointDetail(supabase: SupabaseClient, id: string): Promise<GrammarPointDetail | null> {

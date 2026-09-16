@@ -2,11 +2,18 @@ import Link from 'next/link'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { TappableText } from '@/components/reader/TappableText'
 import { grammarLangPath } from '@/lib/grammar/path'
+import type { ResolvedText } from '@/lib/dictionary/tappable'
 import type { GrammarPointDetail } from '@/lib/grammar/types'
 
 /** `/grammar/[lang]/[id]`: one grammar point, its formula, explanation, common
  * mistake, and worked examples with reading (pinyin, for zh) and translation. */
-export function GrammarPointDetailView({ point }: { point: GrammarPointDetail }) {
+export function GrammarPointDetailView({ point, resolved = [] }: {
+  point: GrammarPointDetail
+  /** Pre-resolved on the server, so the sentences are in the HTML. Without it
+   * each TappableText resolves itself in the browser. */
+  resolved?: ResolvedText[]
+}) {
+  const byText = new Map(resolved.map((r) => [r.text, r]))
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
       <Link href={grammarLangPath(point.lang)} className="text-sm text-black/50 hover:underline">← Ngữ pháp {point.level}</Link>
@@ -41,7 +48,7 @@ export function GrammarPointDetailView({ point }: { point: GrammarPointDetail })
               <li key={i} className="flex flex-col gap-0.5 border-l-2 border-black/10 pl-3">
                 {e.reading && <p className="ipa text-sm text-black/40">{e.reading}</p>}
                 <div className="flex items-center gap-2">
-                  <span className="text-black/80"><TappableText text={e.text} lang={point.lang} /></span>
+                  <span className="text-black/80"><TappableText text={e.text} lang={point.lang} resolved={byText.get(e.text)} /></span>
                   <AudioButton text={e.text} lang={point.lang} />
                 </div>
                 <p className="text-sm text-black/50">{e.translationVi}</p>

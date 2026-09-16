@@ -26,15 +26,24 @@ export async function resolveTokens(
   const remaining = lowered.filter((t) => !out.has(t))
   if (remaining.length === 0) return out
 
-  const infl = await supabase.schema('lex').from('inflections')
-    .select('form_text, entry_id').in('form_text', remaining)
+  // Through the function, not through `.in('form_text', ...)`. `lex.inflections`
+  // has no index on the raw column, so the filtered form read all 352,332 rows:
+  // `explain (analyze)` gives a Parallel Seq Scan at 1709 ms, and Postgres has
+  // already cancelled it once with SQLSTATE 57014 while a build warmed this
+  // cache. `lex.resolve_inflections` asks the same question in the shape
+  // `idx_lex_infl_form_norm` was built in and measures 65 ms on the same input.
+  // It also filters by language itself, and picks the most frequent entry when a
+  // form belongs to several -- Spanish `fue` is an inflection of both `ser` and
+  // `ir`, and the old code kept whichever row came back first.
+  const infl = await supabase.schema('lex')
+    .rpc('resolve_inflections', { p_lang: lang, p_forms: remaining })
   if (infl.error) throw infl.error
   const inflRows = inflectionEntryLookupRow.array().parse(infl.data ?? [])
   if (inflRows.length === 0) return out
 
   const ids = [...new Set(inflRows.map((r) => r.entry_id))]
   const ent = await supabase.schema('lex').from('entries')
-    .select(PREVIEW_SELECT).in('id', ids).eq('lang', lang)
+    .select(PREVIEW_SELECT).in('id', ids)
   if (ent.error) throw ent.error
   const byId = new Map<string, DictEntryPreview>()
   for (const row of entryPreviewRow.array().parse(ent.data ?? [])) byId.set(row.id, toPreview(row))

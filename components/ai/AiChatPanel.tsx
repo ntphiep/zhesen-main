@@ -27,8 +27,8 @@ function pageContext(path: string, title: string): string {
  * silent when the deployment has no model, so the button never appears where it
  * could only fail.
  */
-export function AiChatPanel() {
-  const enabled = useAiEnabled()
+export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
+  const enabled = useAiEnabled(known)
   const path = usePathname() || '/'
   const [open, setOpen] = useState(false)
   const [turns, setTurns] = useState<Turn[]>([])

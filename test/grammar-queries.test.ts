@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { listGrammarPointsByLang, countGrammarPointsByLang, getGrammarPointDetail, getGrammarPointsForEntry } from '@/lib/grammar/queries'
 import { clientReturning } from './helpers/supabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 const mockClient = (returnData: unknown) => clientReturning(returnData).client
 
@@ -22,9 +23,19 @@ describe('listGrammarPointsByLang', () => {
 })
 
 describe('countGrammarPointsByLang', () => {
-  it('tallies rows per language', async () => {
-    const client = mockClient([{ lang: 'en' }, { lang: 'en' }, { lang: 'zh' }])
+  // One `head` count per language rather than one row per point. Counting rows
+  // client-side would have stopped at PostgREST's silent 1,000-row cap.
+  it('asks Postgres for an exact count per language', async () => {
+    const counts: Record<string, number> = { en: 2, es: 0, zh: 1 }
+    const eq = vi.fn((_col: string, lang: string) =>
+      Promise.resolve({ count: counts[lang], error: null }))
+    const select = vi.fn(() => ({ eq }))
+    const from = vi.fn(() => ({ select }))
+    const client = { schema: vi.fn(() => ({ from })) } as unknown as SupabaseClient
+
     expect(await countGrammarPointsByLang(client)).toEqual({ en: 2, es: 0, zh: 1 })
+    expect(select).toHaveBeenCalledWith('id', { count: 'exact', head: true })
+    expect(eq.mock.calls.map((c) => c[1]).sort()).toEqual(['en', 'es', 'zh'])
   })
 })
 

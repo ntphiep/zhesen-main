@@ -31,6 +31,21 @@ describe('AiChatPanel', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
+  // The layout already knows the answer, so a page load should not spend a request
+  // asking again. Passing it also has to settle the question for the three other
+  // components that call useAiEnabled() with no argument.
+  it('asks nothing when the server has already answered', async () => {
+    render(<AiChatPanel enabled />)
+    expect(await screen.findByRole('button', { name: 'Hỏi gia sư' })).toBeInTheDocument()
+    expect(aiEnabled).not.toHaveBeenCalled()
+  })
+
+  it('renders nothing when the server says the deployment has no model', () => {
+    const { container } = render(<AiChatPanel enabled={false} />)
+    expect(container).toBeEmptyDOMElement()
+    expect(aiEnabled).not.toHaveBeenCalled()
+  })
+
   it('stays closed until the button is pressed', async () => {
     render(<AiChatPanel />)
     expect(await screen.findByRole('button', { name: 'Hỏi gia sư' })).toBeInTheDocument()

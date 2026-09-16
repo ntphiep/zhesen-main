@@ -42,18 +42,28 @@ export const getCachedWordKin = unstable_cache(
   { revalidate: 3600, tags: ['lex'] },
 )
 
-/** Cached per (language, set of terms). The entry page asks once for every
- *  related word and inflected form it is about to render, so the key is stable
- *  for as long as the entry's relations are -- but only once the list is sorted:
- *  the same words arriving in a different order were two cache entries and two
- *  round trips for one answer. The caller keys the result by term, so order
- *  never mattered to it. */
-export const getCachedTermPreviews = unstable_cache(
+const cachedTermPreviews = unstable_cache(
   (lang: LangCode, texts: string[]): Promise<TermPreview[]> =>
-    getTermPreviews(createContentClient(), lang, [...texts].sort()),
+    getTermPreviews(createContentClient(), lang, texts),
   ['dict-term-previews'],
   { revalidate: 3600, tags: ['lex'] },
 )
+
+/**
+ * Cached per (language, set of terms). The entry page asks once for every
+ * related word and inflected form it is about to render, so the key is stable
+ * for as long as the entry's relations are.
+ *
+ * The normalisation happens HERE rather than inside the cached function.
+ * `unstable_cache` builds its key from the arguments it is handed, so sorting on
+ * the inside left the key exactly as unordered as the caller's array: the same
+ * words in a different order were two cache entries and two round trips for one
+ * answer. The caller keys the result by term, so neither order nor duplicates
+ * ever mattered to it.
+ */
+export function getCachedTermPreviews(lang: LangCode, texts: string[]): Promise<TermPreview[]> {
+  return cachedTermPreviews(lang, [...new Set(texts)].sort())
+}
 
 export const getCachedInflections = unstable_cache(
   (entryId: string): Promise<WordForm[]> => getInflections(createContentClient(), entryId),
