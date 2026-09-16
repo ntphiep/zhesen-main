@@ -1,23 +1,25 @@
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getWordlistStats } from '@/lib/wordlist/stats'
-import { accountKind } from '@/lib/auth/account'
+import { requirePermanentAccount } from '@/lib/auth/guard'
 import { WordlistStats } from '@/components/wordlist/WordlistStats'
 import { WordlistDistribution } from '@/components/wordlist/WordlistDistribution'
 import { PracticeModes } from '@/components/practice/PracticeModes'
+import { pageMetadata } from '@/lib/site'
+
+export const metadata = pageMetadata({
+  title: 'Luyện tập',
+  description: 'Ôn tập theo lịch FSRS, kiểm tra, viết từ, nghe chép, ghép cặp và luyện nói.',
+})
 
 // Practice hub: progress stats + every study mode, working over the saved
-// wordlist. Every mode grades into the account's FSRS schedule, so -- like the
-// notebook itself -- it needs an account.
+// wordlist. The guard is also in this segment's layout, which is what covers the
+// six mode pages; it is repeated here so the stats query below is reached only by
+// an account that is allowed to see it.
 export default async function PracticePage() {
   const supabase = await createClient()
-  const [{ data }, stats] = await Promise.all([supabase.auth.getUser(), getWordlistStats(supabase)])
-  const kind = accountKind(data.user)
-  if (kind !== 'permanent') {
-    const door = kind === 'anonymous' ? '/register' : '/login'
-    redirect(`${door}?next=%2Fpractice`)
-  }
+  await requirePermanentAccount(supabase, '/practice')
+  const stats = await getWordlistStats(supabase)
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>
