@@ -123,6 +123,14 @@ thời gian trong `.claude/.verify-gate-last-run`.
 - **PGroonga giữ dữ liệu index trong tệp riêng mà Postgres không thấy.** `pg_relation_size`
   của cả hai index PGroonga đều trả 0, nên phần chênh giữa `pg_database_size` và tổng
   `pg_total_relation_size` chính là PGroonga chứ không phải chỗ trống trong bảng.
+- **Dung lượng index PGroonga KHÔNG tỷ lệ với số hàng, nên index bộ phận không tiết
+  kiệm được gì.** `lex.entries.traditional` chỉ có giá trị ở 2.358 hàng trên 36.361, nên
+  một index bộ phận `where traditional is not null` nghe như sẽ nhỏ hơn mười lần. Đã dựng
+  thử và đo bằng `pgroonga_command('object_inspect', array['name', 'Sources<relfilenode>'])`:
+  bản bộ phận có `n_records` 2.358 thay vì 36.361 nhưng `disk_usage` y hệt, tổng cả bốn
+  đối tượng đều là 39.227.392 byte, và `pg_database_size` tăng đúng 38 MB rồi trở lại
+  383 MB sau khi xoá. Mỗi index PGroonga tốn một khoản cố định khoảng 37 tới 42 MB bất kể
+  dữ liệu. Muốn giảm thì phải bỏ hẳn index, không có đường đi vòng.
 - **`idx_scan` KHÔNG dùng được để đánh giá index PGroonga.** Cả hai index PGroonga đều
   báo `idx_scan` = 0 trong `pg_stat_user_indexes` trong khi `idx_tup_read` vẫn tăng, và
   `explain (analyze) select * from lex.search('習', array['zh'], 8)` cho `Index Scan using
