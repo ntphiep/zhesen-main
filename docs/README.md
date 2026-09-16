@@ -12,7 +12,8 @@ mâu thuẫn, mã là đúng.
 
 | Tệp | Nội dung |
 | --- | --- |
-| [`specs/2026-09-16-zhesen-overhaul-status.md`](superpowers/specs/2026-09-16-zhesen-overhaul-status.md) | **Đọc trước tiên.** Báo cáo tổng thể đợt rà soát 16/09: lỗi đã sửa, sáu migration đã chạy, kết luận lưu trữ, việc còn nợ |
+| [`specs/2026-09-17-db-cleanup-and-deploy.md`](superpowers/specs/2026-09-17-db-cleanup-and-deploy.md) | **Đọc trước tiên.** Mười hai schema trên Supabase là của ai, đã dọn được gì, và hai lỗi tìm được trong lúc dọn |
+| [`specs/2026-09-16-zhesen-overhaul-status.md`](superpowers/specs/2026-09-16-zhesen-overhaul-status.md) | Báo cáo tổng thể đợt rà soát 16/09: lỗi đã sửa, sáu migration đã chạy, kết luận lưu trữ, việc còn nợ |
 | [`research/2026-09-16-storage-architecture.md`](superpowers/research/2026-09-16-storage-architecture.md) | Kiến trúc lưu trữ: đo độ trễ và dung lượng, vì sao database ở lại Supabase, việc cần làm theo thứ tự |
 | [`research/2026-09-17-audio-hosting.md`](superpowers/research/2026-09-17-audio-hosting.md) | 699 file phát âm: kích thước thật, độ trễ đo từ Việt Nam, chi phí bốn phương án, và vì sao phần ghi công tác giả phải làm trước |
 | [`specs/2026-09-13-zhesen-growth-plan.md`](superpowers/specs/2026-09-13-zhesen-growth-plan.md) | Tình trạng dữ liệu đo ngày 13/09, deploy, nguồn dữ liệu mở kèm giấy phép, tích hợp AI, thứ tự việc |
@@ -22,7 +23,7 @@ mâu thuẫn, mã là đúng.
 | [`research/2026-07-01-claude-recurring-mistakes.md`](superpowers/research/2026-07-01-claude-recurring-mistakes.md) | Sổ lỗi lặp lại của agent. Lỗi nào lặp nhiều thì được nâng thành rule trong `AGENTS.md` |
 | [`specs/2026-06-21-zhesen-pipeline-data-fixes-handoff.md`](superpowers/specs/2026-06-21-zhesen-pipeline-data-fixes-handoff.md) | Việc còn nợ bên repo pipeline, vì dữ liệu chưa đủ thì mã không sửa được |
 
-Chín tệp trên là tất cả những gì còn hiệu lực. Đây là danh sách đầy đủ, không phải danh
+Mười tệp trên là tất cả những gì còn hiệu lực. Đây là danh sách đầy đủ, không phải danh
 sách chọn lọc.
 
 ## Đã xoá, và vì sao
