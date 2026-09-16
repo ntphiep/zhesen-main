@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
-import { looksVietnamese } from './detect'
+import { looksHan, looksVietnamese } from './detect'
 import type { DictEntryPreview, SuggestionPreview } from './types'
 import { entryPreviewRow, searchRpcRow, suggestRow, toPreview, toPreviewFromSearchRow, toSuggestion } from './rows'
 
@@ -124,7 +124,14 @@ export async function searchBothDirections(
   if (!q) return { forward: EMPTY_BY_LANG, reverse: EMPTY_BY_LANG, suggestions: [] }
 
   const forward = await searchAllLanguages(supabase, q, perLang)
-  const shouldTryReverse = looksVietnamese(q) || bestScore(forward) < STRUCTURAL_MATCH
+  // A Han query is never Vietnamese, so the reverse lookup has nothing to find.
+  // Skipping it is not an optimisation but a fix: `lex.search` scores a PGroonga
+  // match at 1.5, under STRUCTURAL_MATCH, so every Chinese query that is not an
+  // exact headword used to fall through to `lex.search_vi`. Measured on 習 (which
+  // finds 学习 through the traditional form): 780 to 1,195 ms for zero rows, and
+  // production answered the search route with 500 when it crossed the statement
+  // timeout (SQLSTATE 57014).
+  const shouldTryReverse = !looksHan(q) && (looksVietnamese(q) || bestScore(forward) < STRUCTURAL_MATCH)
   const reverse = shouldTryReverse ? await searchAllLanguagesVi(supabase, q, perLang) : EMPTY_BY_LANG
 
   const suggestions = countAll(forward) === 0 && countAll(reverse) === 0

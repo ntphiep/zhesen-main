@@ -61,6 +61,24 @@ describe('searchBothDirections', () => {
     expect(called('search_vi')).toBe(true)
   })
 
+  it('skips the reverse lookup for a Han query the forward search only matched loosely', async () => {
+    // lex.search scores a PGroonga match at 1.5, under STRUCTURAL_MATCH, so every
+    // Chinese query that is not an exact headword used to fall through to
+    // lex.search_vi. Measured on 習: 780 to 1,195 ms for zero rows, and the search
+    // route answered 500 on production when it crossed the statement timeout.
+    // Vietnamese is written in Latin script, so the call can never answer.
+    const { client, called } = mockClient({ en: [], es: [], zh: [1.5] })
+    const out = await searchBothDirections(client, '習')
+    expect(out.forward.zh).toHaveLength(1)
+    expect(called('search_vi')).toBe(false)
+  })
+
+  it('still runs the reverse lookup for a Latin query that only guessed', async () => {
+    const { client, called } = mockClient({ en: [1.5], es: [], zh: [] }, ['家'])
+    await searchBothDirections(client, 'nha')
+    expect(called('search_vi')).toBe(true)
+  })
+
   it('asks for suggestions only when neither direction found anything', async () => {
     const { client, called } = mockClient({ en: [], es: [], zh: [] }, [])
     await searchBothDirections(client, 'qwertyuiop')

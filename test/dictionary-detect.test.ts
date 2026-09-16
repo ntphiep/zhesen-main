@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { detectOrder, looksVietnamese } from '@/lib/dictionary/detect'
+import { detectOrder, looksHan, looksVietnamese } from '@/lib/dictionary/detect'
 
 describe('detectOrder', () => {
   it('puts Chinese first when Han script is present', () => {
@@ -36,5 +36,21 @@ describe('looksVietnamese', () => {
     // no Vietnamese-exclusive mark -- relies on searchBothDirections' forward-miss
     // fallback instead, see lib/dictionary/search.ts.
     expect(looksVietnamese('xin chào')).toBe(false)
+  })
+})
+
+describe('looksHan', () => {
+  it('recognises simplified, traditional and mixed queries', () => {
+    expect(looksHan('狗')).toBe(true)
+    expect(looksHan('習')).toBe(true)
+    expect(looksHan('学习')).toBe(true)
+    expect(looksHan('HSK 汉字')).toBe(true)
+  })
+
+  it('leaves every Latin-script query alone, including Vietnamese', () => {
+    expect(looksHan('dog')).toBe(false)
+    expect(looksHan('nhận được')).toBe(false)
+    expect(looksHan('canción')).toBe(false)
+    expect(looksHan('xue xi')).toBe(false)
   })
 })

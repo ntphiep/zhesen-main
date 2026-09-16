@@ -40,6 +40,21 @@ export function looksVietnamese(query: string): boolean {
 }
 
 /**
+ * Whether the query contains Han script. Vietnamese is written in Latin script,
+ * so such a query cannot be Vietnamese and the reverse lookup cannot answer it
+ * -- see lib/dictionary/search.ts `searchBothDirections`, which uses this to
+ * skip a call that costs 800 ms and returns nothing.
+ *
+ * 22 of 183,526 Vietnamese glosses do quote a Han character, all of them on
+ * Chinese entries ("biến thể của 從"). Forward search reaches every one of those
+ * entries by headword, so skipping the reverse call loses no result a reader can
+ * only get that way.
+ */
+export function looksHan(query: string): boolean {
+  return HAN.test(query.trim())
+}
+
+/**
  * Reorder the language groups by how well each actually matched, keeping
  * `fallback` as the tie-break.
  *
