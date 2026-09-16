@@ -29,12 +29,10 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
   // an effect, per react.dev/learn/you-might-not-need-an-effect: track the
   // (word, open) combination last synced from and re-sync when it changes.
   //
-  // The comparison has to run on the way OUT as well, which is what the first
-  // version got wrong. Closing sets `word` to null (WordlistClient passes
-  // `editWord`), so a guard of `word && open && ...` skipped the whole block and
-  // left the key on the old id; reopening that same word then matched, no sync
-  // happened, and the cancelled draft was still in the fields -- one click from
-  // overwriting the real meaning.
+  // `resetKey` must change on close too: closing sets `word` to null
+  // (WordlistClient passes `editWord`), so a guard of `word && open && ...`
+  // would skip the sync on close, reopening the same word would then match the
+  // stale key, and the cancelled draft would stay in the fields.
   const resetKey = open && word ? word.id : null
   const [prevResetKey, setPrevResetKey] = useState<string | null>(null)
   if (resetKey !== prevResetKey) {
@@ -87,10 +85,10 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
 
     // Nothing changed. This dialog is the only place a note or an example
     // translation can be read, so opening a word to look at it and then pressing
-    // Lưu out of habit is ordinary -- and it used to send a PATCH with an empty
-    // body, which either fails and reports "Không lưu được thay đổi" for a save
-    // with nothing to save, or succeeds and lets the updated_at trigger record
-    // when the word was last LOOKED AT rather than last edited.
+    // Lưu out of habit is ordinary. An empty PATCH either fails and reports
+    // "Không lưu được thay đổi" for a save with nothing to save, or succeeds and
+    // lets the updated_at trigger record when the word was last LOOKED AT rather
+    // than last edited.
     if (Object.keys(patch).length === 0) { onClose(); return }
 
     await onSave(word.id, patch)

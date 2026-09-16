@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '@/lib/zod'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/languages'
 import type { Grade, SrsState } from '@/lib/progress/types'
@@ -126,12 +126,10 @@ export async function listDueCards(
  * How many cards the next session will actually hand over. RLS scopes to the user.
  *
  * Counted with the queue's own formula, not a flat COUNT of due rows. A new card
- * is due the moment it is saved, so a flat count is dominated by the backlog:
- * measured on this project's own account, the button said 406 while the session
- * served 22 -- two cards genuinely due for review plus the twenty-new allowance.
- * The learner finished, was told "Hết thẻ cần ôn", went back, and the button
- * still claimed several hundred. A number nobody can drive to zero is not a
- * workload, it is discouragement.
+ * is due the moment it is saved, so a flat count reports the whole backlog while
+ * the session serves the cards genuinely for review plus the new-card allowance.
+ * The two numbers have to agree, or the button keeps claiming work the session
+ * will not hand over.
  *
  * Two head-only COUNTs, so it costs about what the single flat one did.
  */

@@ -1,6 +1,7 @@
 'use client'
 import { useMemo, useState } from 'react'
 import type { LangCode } from '@/lib/languages'
+import { isDueAt } from '@/lib/wordlist/format'
 import type { UserWord, WordStatus } from '@/lib/wordlist/types'
 import { posGroup } from '@/lib/dictionary/pos'
 import { useStoredView, type ViewMode } from './useStoredView'
@@ -35,13 +36,6 @@ function fold(s: string): string {
 function haystack(w: UserWord): string {
   return fold([w.headword, w.reading, w.meaningVi, w.meaningEn, w.example, w.notes, ...w.tags]
     .filter(Boolean).join(' '))
-}
-
-/** Whether the scheduler wants this word back already. `now` is a parameter with a
- *  default so the clock is read here and not in the hook body, which React 19's
- *  purity rule forbids. */
-function isDue(w: UserWord, now: number = Date.now()): boolean {
-  return Date.parse(w.fsrsDueAt) <= now
 }
 
 /** Rows with nothing in the sorted column, kept at the end whichever way the
@@ -98,7 +92,7 @@ export function useWordlistFilters(words: UserWord[]) {
       if (q && !haystack(w).includes(q)) return false
       if (levelFilter && w.level !== levelFilter) return false
       if (posFilter && (posGroup(w.pos)?.labelEn ?? w.pos ?? '') !== posFilter) return false
-      if (reviewFilter === 'due' && !isDue(w)) return false
+      if (reviewFilter === 'due' && !isDueAt(w.fsrsDueAt)) return false
       if (reviewFilter === 'leech' && w.fsrsLapses < LEECH_LAPSES) return false
       return true
     })

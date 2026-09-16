@@ -3,7 +3,7 @@ import { Fragment, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addWord, addWords, listWords, updateWord, updateWordsStatus, deleteWord, deleteWords } from '@/lib/wordlist/store'
 import { mergeTags, tagCounts } from '@/lib/wordlist/tags'
-import { formatWordDate, formatDueDate } from '@/lib/wordlist/format'
+import { formatWordDate, isDueAt, DUE_LABEL } from '@/lib/wordlist/format'
 import { posGroup } from '@/lib/dictionary/pos'
 import { wordsToCsv, wordsToAnkiTsv } from '@/lib/wordlist/csv'
 import { downloadTextFile } from '@/lib/wordlist/download'
@@ -19,6 +19,8 @@ import { TagChips, WordRowActions } from '@/components/wordlist/WordRowActions'
 import { AudioButton } from '@/components/ui/AudioButton'
 import type { UserWord, WordDraft, WordStatus } from '@/lib/wordlist/types'
 import { Ipa } from '@/components/ui/Ipa'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { NoticeBar, useNotice } from '@/components/ui/Notice'
 
 export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   const supabase = useMemo(() => createClient(), [])
@@ -29,6 +31,12 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   const [addOpen, setAddOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [editWord, setEditWord] = useState<UserWord | null>(null)
+  const { notice, notify, dismiss } = useNotice()
+  // One slot, not one flag per action: the dialog carries its own wording and
+  // the work to run, so adding a third destructive action needs no new state.
+  const [confirming, setConfirming] = useState<
+    { title: string; message: string; confirmLabel: string; run: () => void } | null
+  >(null)
 
   const {
     query, setQuery, langFilter, setLangFilter, statusFilter, setStatusFilter,
@@ -114,7 +122,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       setWords((prev) => prev.map((w) => (w.id === tempId ? real : w)))
     } catch {
       setWords((prev) => prev.filter((w) => w.id !== tempId))
-      alert('Không thêm được từ. Vui lòng thử lại.')
+      notify('Không thêm được từ. Vui lòng thử lại.')
     }
   }
 
@@ -126,7 +134,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     try {
       const added = await addWords(supabase, drafts)
       const skipped = drafts.length - added.length
-      if (skipped > 0) alert(`Đã bỏ qua ${skipped} từ vì đã có trong sổ tay.`)
+      if (skipped > 0) notify(`Đã bỏ qua ${skipped} từ vì đã có trong sổ tay.`, 'info')
     } finally {
       // Whatever happened, show what the database now holds. An import is
       // chunked, so a failure part way through leaves the earlier chunks
@@ -138,8 +146,16 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     }
   }
 
-  async function handleDelete(id: string, headword: string) {
-    if (!window.confirm(`Xóa từ "${headword}"?`)) return
+  function handleDelete(id: string, headword: string) {
+    setConfirming({
+      title: 'Xóa từ',
+      message: `Xóa "${headword}" khỏi sổ tay? Tiến độ ôn tập của từ này mất theo.`,
+      confirmLabel: 'Xóa',
+      run: () => void deleteOne(id),
+    })
+  }
+
+  async function deleteOne(id: string) {
     // Snapshot from the rendered list, not from inside the updater: React is free to
     // call an updater more than once, and the assignment would not have landed yet
     // when the catch block below reads it.
@@ -154,14 +170,22 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       await deleteWord(supabase, id)
     } catch {
       setWords(snapshot)
-      alert('Không xóa được từ. Vui lòng thử lại.')
+      notify('Không xóa được từ. Vui lòng thử lại.')
     }
   }
 
-  async function handleBulkDelete() {
+  function handleBulkDelete() {
     const ids = [...selected]
     if (ids.length === 0) return
-    if (!window.confirm(`Xóa ${ids.length} từ đã chọn?`)) return
+    setConfirming({
+      title: 'Xóa nhiều từ',
+      message: `Xóa ${ids.length} từ đã chọn khỏi sổ tay? Tiến độ ôn tập của những từ này mất theo.`,
+      confirmLabel: `Xóa ${ids.length} từ`,
+      run: () => void deleteMany(ids),
+    })
+  }
+
+  async function deleteMany(ids: string[]) {
     const snapshot = words
     setWords((prev) => prev.filter((w) => !ids.includes(w.id)))
     setSelected(new Set())
@@ -170,7 +194,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     } catch {
       setWords(snapshot)
       setSelected(new Set(ids))
-      alert('Không xóa được từ. Vui lòng thử lại.')
+      notify('Không xóa được từ. Vui lòng thử lại.')
     }
   }
 
@@ -179,14 +203,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   // array over every row and an upsert cannot carry a partial row past the
   // table's NOT NULL columns.
   //
-  // `allSettled`, not `all`. `all` rejects on the first failure while the other
-  // requests are already in flight and land anyway: tagging 200 words with one
-  // network blip left 199 rows tagged in the database, the whole list rolled
-  // back on screen, and an alert saying it had failed. The learner then filtered
-  // by that tag and found words the app had just told them were not tagged.
-  //
-  // So each row is settled on its own result: the ones that saved keep the tag,
-  // only the ones that failed go back, and the message says how many.
+  // `allSettled`, not `all`: a row that saved keeps its tag, only a row that
+  // failed reverts, and the message reports how many failed.
   //
   // `tagsFor` is per word rather than one array for all of them: the assistant
   // returns a different set for each word, and the hand-typed box returns the
@@ -217,7 +235,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       else lost.set(targets[i].id, targets[i])
     })
     setWords((prev) => prev.map((w) => saved.get(w.id) ?? lost.get(w.id) ?? w))
-    if (lost.size > 0) alert(`Không gắn thẻ được cho ${lost.size} từ. Vui lòng thử lại.`)
+    if (lost.size > 0) notify(`Không gắn thẻ được cho ${lost.size} từ. Vui lòng thử lại.`)
   }
 
   const handleBulkTag = (tagsToAdd: string[]) => applyTags(() => tagsToAdd)
@@ -236,7 +254,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       await updateWordsStatus(supabase, ids, status)
     } catch {
       setWords(snapshot)
-      alert('Không đổi được trạng thái. Vui lòng thử lại.')
+      notify('Không đổi được trạng thái. Vui lòng thử lại.')
     }
   }
 
@@ -255,7 +273,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       setWords((prev) => prev.map((w) => (w.id === id ? updated : w)))
     } catch {
       setWords((prev) => prev.map((w) => (w.id === id ? original : w)))
-      alert('Không lưu được thay đổi. Vui lòng thử lại.')
+      notify('Không lưu được thay đổi. Vui lòng thử lại.')
     }
   }
 
@@ -306,7 +324,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         onBulkDelete={handleBulkDelete}
       />
 
-      {/* Empty state */}
       {visible.length === 0 && (
         <p className="text-center text-sm text-black/40 py-12">
           {words.length === 0
@@ -315,7 +332,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         </p>
       )}
 
-      {/* Table view */}
       {view === 'table' && shown.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full border-separate border-spacing-0 text-sm">
@@ -421,7 +437,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         </div>
       )}
 
-      {/* Card view */}
       {view === 'card' && shown.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {shown.map((w) => (
@@ -451,11 +466,11 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                 </span>
               )}
               {w.example && <p className="text-xs italic text-black/50">{w.example}</p>}
-                              <TagChips tags={w.tags} />
+              <TagChips tags={w.tags} />
 
               <div className="flex items-center justify-between mt-1">
                 <span className="text-xs text-black/30">
-                  {formatDueDate(w.fsrsDueAt) === 'Cần ôn' ? 'Cần ôn' : formatWordDate(w.createdAt)}
+                  {isDueAt(w.fsrsDueAt) ? DUE_LABEL : formatWordDate(w.createdAt)}
                 </span>
                 <WordRowActions
                   word={w}
@@ -488,7 +503,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         </div>
       )}
 
-      {/* Dialogs */}
       <AddWordDialog
         open={addOpen}
         onClose={() => setAddOpen(false)}
@@ -509,6 +523,20 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         existing={words}
         onImport={handleImport}
       />
+
+      <ConfirmDialog
+        open={confirming !== null}
+        title={confirming?.title ?? ''}
+        message={confirming?.message ?? ''}
+        confirmLabel={confirming?.confirmLabel ?? ''}
+        onConfirm={() => {
+          confirming?.run()
+          setConfirming(null)
+        }}
+        onCancel={() => setConfirming(null)}
+      />
+
+      <NoticeBar notice={notice} onDismiss={dismiss} />
     </div>
   )
 }

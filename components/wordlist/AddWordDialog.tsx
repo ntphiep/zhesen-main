@@ -81,9 +81,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
         // though the route had already answered with it under `reverse`.
         if (outcome.status !== 'ok') { setResults([]); return }
         // A Map keyed by id keeps the first of each and the order they came in,
-        // forward before reverse. The earlier version deduped inside a filter
-        // predicate that relied on Set.add returning the Set -- correct, and one
-        // more thing to decode at three in the morning.
+        // forward before reverse.
         const byId = new Map<string, DictEntryPreview>()
         for (const e of [...outcome.data.forward[lang], ...outcome.data.reverse[lang]]) {
           if (!byId.has(e.id)) byId.set(e.id, e)

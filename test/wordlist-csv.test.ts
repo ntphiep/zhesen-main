@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { wordsToCsv, wordsToAnkiTsv, parseCsvTable, parseImportCsv } from '@/lib/wordlist/csv'
+import { wordsToCsv, wordsToAnkiTsv, parseCsvRows, parseImportCsv } from '@/lib/wordlist/csv'
 import type { UserWord } from '@/lib/wordlist/types'
 
 function mk(over: Partial<UserWord> = {}): UserWord {
@@ -25,11 +25,11 @@ describe('wordsToCsv', () => {
     expect(csv).toContain('"Hello, world."')
   })
 
-  it('round-trips through parseCsvTable', () => {
+  it('round-trips through parseCsvRows', () => {
     const csv = wordsToCsv([mk({ headword: 'a"b', example: 'x, y' })])
-    const table = parseCsvTable(csv)
-    expect(table[1][0]).toBe('a"b')
-    expect(table[1][9]).toBe('x, y')
+    const table = parseCsvRows(csv)
+    expect(table[1].cells[0]).toBe('a"b')
+    expect(table[1].cells[9]).toBe('x, y')
   })
 })
 
@@ -127,5 +127,20 @@ describe('parseImportCsv', () => {
     const notes = rows[0].kind === 'ok' ? rows[0].draft.notes : null
     expect(notes).toBe('dòng một\ndòng hai')
     expect(notes).not.toContain('\r')
+  })
+})
+
+describe('parseCsvRows', () => {
+  it('reads a quote in the middle of a field as an ordinary character', () => {
+    expect(parseCsvRows('headword,note\ndog,ab"cd\n')[1].cells).toEqual(['dog', 'ab"cd'])
+  })
+
+  it('keeps a lone carriage return rather than dropping it from the value', () => {
+    expect(parseCsvRows('headword\nd\rog\n')[1].cells).toEqual(['d\rog'])
+  })
+
+  it('numbers each row by its physical line, across quoted newlines and blank lines', () => {
+    const rows = parseCsvRows('headword,example\na,"one\ntwo\nthree"\n\nb,x\n')
+    expect(rows.map((r) => r.line)).toEqual([1, 2, 6])
   })
 })

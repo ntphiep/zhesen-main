@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { ensureSession } from '@/lib/supabase/session'
 import { fetchAllRows } from '@/lib/supabase/paginate'
-import { z } from 'zod'
+import { z } from '@/lib/zod'
 
 const DAY = 86_400_000
 
@@ -66,6 +66,6 @@ const activityRow = z.object({ day: z.string() })
 /** Distinct activity days for the current user. RLS scopes the read. */
 export async function getActivityDays(supabase: SupabaseClient): Promise<string[]> {
   const rows = await fetchAllRows((from, to) =>
-    supabase.from('review_log').select('day').range(from, to))
+    supabase.from('review_log').select('day').order('day').range(from, to))
   return activityRow.array().parse(rows).map((r) => r.day)
 }

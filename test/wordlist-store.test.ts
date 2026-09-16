@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { parseUserWordRow, draftFromDictEntry, addWord, addWords, updateWordsStatus, listWords, listPracticeWords, listSavedEntryIds, WordAlreadyExistsError, PRACTICE_POOL } from '@/lib/wordlist/store'
-import { authStub } from './helpers/supabase'
+import { parseUserWordRow, draftFromDictEntry, addWord, addWords, updateWordsStatus, listWords, listPracticeWords, listSavedEntryIds, countWords, WordAlreadyExistsError, PRACTICE_POOL } from '@/lib/wordlist/store'
+import { authStub, clientReturning } from './helpers/supabase'
 import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 import type { WordDraft } from '@/lib/wordlist/types'
 import { resetSessionState } from '@/lib/supabase/session'
@@ -45,10 +45,15 @@ function mockClient({ existing = [] as unknown[], inserted = row, session = { us
     vi.fn((from: number) => Promise.resolve({ data: from === 0 ? rows : [], error: null }))
   const listRange = pageOf([inserted])
   const savedRange = pageOf(existing)
-  const order = vi.fn(() => ({ range: listRange }))
-  const notNull = vi.fn(() => ({ range: savedRange }))
+  // `.order()` chains, and the paginated reads call it twice: a sort column plus
+  // a unique tiebreaker, without which two pages can return the same row.
+  const listOrder = vi.fn(() => listChain)
+  const listChain: Record<string, unknown> = { range: listRange, order: listOrder }
+  const savedOrder = vi.fn(() => savedChain)
+  const savedChain: Record<string, unknown> = { range: savedRange, order: savedOrder }
+  const notNull = vi.fn(() => savedChain)
   const eq = vi.fn(() => ({ limit, not: notNull }))
-  const select = vi.fn(() => ({ eq, order, limit, range: listRange, not: notNull }))
+  const select = vi.fn(() => ({ eq, order: listOrder, limit, range: listRange, not: notNull }))
   const from = vi.fn(() => ({ insert, select }))
   // A real client always carries `auth`; the write paths use it to create the
   // anonymous account on the first saved word (lib/supabase/session.ts).
@@ -56,7 +61,7 @@ function mockClient({ existing = [] as unknown[], inserted = row, session = { us
   const { auth } = authStub(session, signInAnonymously)
   return {
     client: { from, auth } as unknown as import('@supabase/supabase-js').SupabaseClient,
-    insert, select, signInAnonymously,
+    insert, select, signInAnonymously, listOrder, savedOrder,
   }
 }
 
@@ -125,6 +130,16 @@ describe('listWords', () => {
     const res = await listWords(client)
     expect(res[0].headword).toBe('dog')
   })
+
+  // A CSV import writes its rows in one statement, so they share a created_at.
+  // Paging on that alone lets Postgres return a row on two pages and skip
+  // another, with no error to show for it.
+  it('pages on a unique tiebreaker, not on created_at alone', async () => {
+    const { client, listOrder } = mockClient()
+    await listWords(client)
+    expect(listOrder).toHaveBeenCalledWith('created_at', { ascending: false })
+    expect(listOrder).toHaveBeenCalledWith('id')
+  })
 })
 
 describe('listSavedEntryIds', () => {
@@ -132,13 +147,16 @@ describe('listSavedEntryIds', () => {
     // The read pages through .range(); answer the first page and nothing after it.
     const range = vi.fn((from: number) =>
       Promise.resolve({ data: from === 0 ? [{ entry_id: 'en:dog' }, { entry_id: 'en:cat' }] : [], error: null }))
-    const not = vi.fn(() => ({ range }))
+    const order = vi.fn(() => ({ range }))
+    const not = vi.fn(() => ({ order }))
     const eq = vi.fn(() => ({ not }))
     const select = vi.fn(() => ({ eq }))
     const client = { from: vi.fn(() => ({ select })) } as unknown as import('@supabase/supabase-js').SupabaseClient
     const ids = await listSavedEntryIds(client, 'en')
     expect(eq).toHaveBeenCalledWith('lang', 'en')
     expect(not).toHaveBeenCalledWith('entry_id', 'is', null)
+    // Paging without an order is what lets one id go missing from the dedupe set.
+    expect(order).toHaveBeenCalledWith('id')
     expect(ids).toEqual(new Set(['en:dog', 'en:cat']))
   })
 })
@@ -476,5 +494,22 @@ describe('listPracticeWords', () => {
     const { client, seen } = mockClient(407, [practiceRow])
     await listPracticeWords(client, { rand: () => 0 })
     expect(seen.filters).toEqual([])
+  })
+})
+
+describe('countWords', () => {
+  it('returns the count the database reported', async () => {
+    const { client } = clientReturning(null)
+    Object.assign(client, { from: () => ({ select: () => Promise.resolve({ count: 407, error: null }) }) })
+    await expect(countWords(client)).resolves.toBe(407)
+  })
+
+  // The sign-in pages refuse to swap accounts while this browser still holds
+  // words. Reading a failed count as zero opened that gate on the one occasion it
+  // exists to stay shut.
+  it('throws instead of reporting an empty notebook when the query fails', async () => {
+    const { client } = clientReturning(null)
+    Object.assign(client, { from: () => ({ select: () => Promise.resolve({ count: null, error: { message: 'boom' } }) }) })
+    await expect(countWords(client)).rejects.toMatchObject({ message: 'boom' })
   })
 })

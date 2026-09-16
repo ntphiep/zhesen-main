@@ -1,4 +1,3 @@
-// test/wordlist-client.test.tsx
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -36,7 +35,6 @@ function mk(id: string, over: Partial<UserWord> = {}): UserWord {
 }
 
 beforeEach(() => {
-  vi.stubGlobal('confirm', () => true)
   vi.clearAllMocks()
   // Re-set default implementations after clearAllMocks
   addWord.mockImplementation(async (_c: unknown, d: { headword: string; meaningVi: string | null; entryId: string | null; lang: string }) =>
@@ -60,11 +58,23 @@ describe('WordlistClient', () => {
     expect(screen.queryByText('recipient')).not.toBeInTheDocument()
   })
 
-  it('deletes a word optimistically', async () => {
+  it('deletes a word optimistically once the deletion is confirmed', async () => {
     render(<WordlistClient initialWords={[mk('a', { headword: 'forward' })]} />)
     await userEvent.click(screen.getByRole('button', { name: /Xóa từ forward/i }))
+    // The row is still there until the dialog is answered.
+    expect(screen.getByText('forward')).toBeInTheDocument()
+    expect(deleteWord).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: 'Xóa' }))
     expect(screen.queryByText('forward')).not.toBeInTheDocument()
     expect(deleteWord).toHaveBeenCalledWith(expect.anything(), 'a')
+  })
+
+  it('keeps the word when the deletion is cancelled', async () => {
+    render(<WordlistClient initialWords={[mk('a', { headword: 'forward' })]} />)
+    await userEvent.click(screen.getByRole('button', { name: /Xóa từ forward/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Hủy' }))
+    expect(screen.getByText('forward')).toBeInTheDocument()
+    expect(deleteWord).not.toHaveBeenCalled()
   })
 
   it('shows empty state', () => {
@@ -91,6 +101,7 @@ describe('WordlistClient', () => {
     await userEvent.click(screen.getByLabelText(/Chọn tất cả/i))
     // Bulk delete button should be visible now
     await userEvent.click(screen.getByRole('button', { name: /Xóa đã chọn/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Xóa 2 từ' }))
     expect(screen.queryByText('alpha')).not.toBeInTheDocument()
     expect(screen.queryByText('beta')).not.toBeInTheDocument()
     expect(deleteWords).toHaveBeenCalledWith(expect.anything(), expect.arrayContaining(['x', 'y']))
@@ -138,11 +149,9 @@ describe('WordlistClient', () => {
 
   // Promise.all rejected on the first failure while the rest were already in
   // flight and landed anyway: 199 of 200 rows tagged in the database, the whole
-  // list rolled back on screen, and an alert saying it had failed. The learner
+  // list rolled back on screen, and a notice saying it had failed. The learner
   // then filtered by that tag and found words the app said were not tagged.
   it('keeps the tags that saved when one row fails', async () => {
-    const alerts: string[] = []
-    vi.stubGlobal('alert', (m: string) => alerts.push(m))
     const words = [
       mk('w1', { headword: 'alpha', entryId: 'en:alpha' }),
       mk('w2', { headword: 'beta', entryId: 'en:beta' }),
@@ -160,7 +169,7 @@ describe('WordlistClient', () => {
 
     // The two that saved keep the tag; only the one that failed goes back.
     expect(await screen.findAllByText('toeic')).toHaveLength(2)
-    expect(alerts.join(' ')).toMatch(/1 từ/)
+    expect(await screen.findByRole('status')).toHaveTextContent(/1 từ/)
   })
 
   it('keeps every tag when nothing fails', async () => {

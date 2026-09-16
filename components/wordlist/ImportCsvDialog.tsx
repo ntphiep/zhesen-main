@@ -27,12 +27,13 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
   const [rows, setRows] = useState<ImportPreviewRow[]>([])
   const [fileName, setFileName] = useState('')
   const [importing, setImporting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Reset preview whenever the dialog is (re)opened.
   const [prevOpen, setPrevOpen] = useState(open)
   if (open !== prevOpen) {
     setPrevOpen(open)
-    if (open) { setRows([]); setFileName(''); setImporting(false) }
+    if (open) { setRows([]); setFileName(''); setImporting(false); setError(null) }
   }
 
   async function handleFile(file: File) {
@@ -48,11 +49,14 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
   async function handleImport() {
     if (okRows.length === 0) return
     setImporting(true)
+    setError(null)
     try {
       await onImport(okRows.map((r) => r.draft))
       onClose()
     } catch {
-      alert('Không nhập được. Vui lòng thử lại.')
+      // Shown in the dialog rather than over it: the file name and the preview
+      // are the context for the failure, and both are on this screen.
+      setError('Không nhập được. Vui lòng thử lại.')
     } finally {
       setImporting(false)
     }
@@ -111,6 +115,10 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
 
         {fileName && rows.length === 0 && (
           <p className="text-sm text-black/40">File không có dữ liệu.</p>
+        )}
+
+        {error && (
+          <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
         )}
 
         <div className="flex justify-end gap-2 mt-1">

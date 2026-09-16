@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatWordDate } from '@/lib/wordlist/format'
+import { formatWordDate, isDueAt } from '@/lib/wordlist/format'
 
 describe('formatWordDate', () => {
   // The same code runs on the server and again in the browser. Reading the
@@ -21,5 +21,25 @@ describe('formatWordDate', () => {
 
   it('hands back an unparseable value rather than throwing', () => {
     expect(formatWordDate('không phải ngày')).toBe('không phải ngày')
+  })
+})
+
+describe('isDueAt', () => {
+  const now = Date.parse('2026-09-16T10:00:00Z')
+
+  // The wordlist renders DUE_LABEL from this answer. Callers used to compare the
+  // rendered label against 'Cần ôn' instead, so renaming the label would have
+  // silently changed the branch they took.
+  it('is true at or before the due moment and false after it', () => {
+    expect(isDueAt('2026-09-16T09:59:00Z', now)).toBe(true)
+    expect(isDueAt('2026-09-16T10:01:00Z', now)).toBe(false)
+    expect(isDueAt('2000-01-01T00:00:00Z', now)).toBe(true)
+  })
+
+  // Date.parse gives NaN here and every comparison with NaN is false, so an
+  // unreadable value leaves the word alone rather than dragging it into the
+  // review queue on every render.
+  it('does not call an unparseable value due', () => {
+    expect(isDueAt('không phải ngày', now)).toBe(false)
   })
 })

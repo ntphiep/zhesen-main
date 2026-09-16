@@ -22,16 +22,13 @@ export function formatWordDate(iso: string): string {
   return d.toLocaleDateString('vi-VN', { timeZone: STUDY_TIMEZONE })
 }
 
-/**
- * The due date shown in the review column.
- *
- * A word the scheduler wants back reads "Cần ôn" rather than a date in the past:
- * the date itself tells a learner nothing, and an overdue list is the one thing
- * this column exists to make obvious. `now` is a parameter with a default so the
- * clock is read here and not in a component body, which React 19 forbids.
- */
-export function formatDueDate(iso: string, now: number = Date.now()): string {
-  const t = Date.parse(iso)
-  if (Number.isNaN(t)) return iso
-  return t <= now ? 'Cần ôn' : formatWordDate(iso)
+/** The label a word carries when the scheduler wants it back. Exported so no
+ *  caller has to compare against the rendered string to find out. */
+export const DUE_LABEL = 'Cần ôn'
+
+/** Whether the scheduler wants this word back already. `now` is a parameter with
+ *  a default so the clock is read here and not in a component body, which React
+ *  19's purity rule forbids. */
+export function isDueAt(iso: string, now: number = Date.now()): boolean {
+  return Date.parse(iso) <= now
 }

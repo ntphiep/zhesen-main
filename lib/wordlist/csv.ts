@@ -73,15 +73,29 @@ export class UnterminatedQuoteError extends Error {
   }
 }
 
-/** Minimal RFC4180-ish CSV parser: handles quoted fields with commas, quotes, newlines. */
-export function parseCsvTable(text: string): string[][] {
-  const rows: string[][] = []
-  let row: string[] = []
+/** One parsed row plus the physical line it starts on, so an error can name it. */
+export interface CsvRow {
+  line: number
+  cells: string[]
+}
+
+/**
+ * Minimal RFC4180-ish CSV parser: handles quoted fields with commas, quotes and
+ * newlines, and carries each row's physical line number out with it.
+ */
+export function parseCsvRows(text: string): CsvRow[] {
+  const rows: CsvRow[] = []
+  let cells: string[] = []
   let field = ''
   let inQuotes = false
   // Where the currently open quote started, so an unclosed one can name its line.
   let quoteOpenedAt = 0
+  // A quote only opens a quoted field at the start of one. Elsewhere it is an
+  // ordinary character: `ab"cd` used to swallow everything up to the next quote,
+  // and an even number of stray quotes parsed silently into nonsense.
+  let atFieldStart = true
   let line = 1
+  let rowLine = 1
   let i = 0
   const n = text.length
   while (i < n) {
@@ -98,19 +112,24 @@ export function parseCsvTable(text: string): string[][] {
       if (c === '\n') line++
       field += c; i++; continue
     }
-    if (c === '"') { inQuotes = true; quoteOpenedAt = line; i++; continue }
-    if (c === ',') { row.push(field); field = ''; i++; continue }
-    if (c === '\r') { i++; continue }
-    if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; line++; i++; continue }
-    field += c; i++
+    if (c === '"' && atFieldStart) { inQuotes = true; quoteOpenedAt = line; atFieldStart = false; i++; continue }
+    if (c === ',') { cells.push(field); field = ''; atFieldStart = true; i++; continue }
+    // Only a CR that belongs to a CRLF pair is a line ending. A lone CR is kept:
+    // dropping it turned `d\rog` into `dog` and called the import clean.
+    if (c === '\r' && text[i + 1] === '\n') { i++; continue }
+    if (c === '\n') {
+      cells.push(field); rows.push({ line: rowLine, cells })
+      cells = []; field = ''; atFieldStart = true; line++; rowLine = line; i++; continue
+    }
+    field += c; atFieldStart = false; i++
   }
   // Falling out of the loop still inside a quote means every line after the stray
   // quote was absorbed into one field. Left unreported, a 500-row file with one
   // unbalanced quote on line 12 imported eleven words and dropped the other 489
   // without a word of warning.
   if (inQuotes) throw new UnterminatedQuoteError(quoteOpenedAt)
-  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row) }
-  return rows.filter((r) => !(r.length === 1 && r[0] === ''))
+  if (field.length > 0 || cells.length > 0) { cells.push(field); rows.push({ line: rowLine, cells }) }
+  return rows.filter((r) => !(r.cells.length === 1 && r.cells[0] === ''))
 }
 
 export type ImportPreviewRow =
@@ -132,9 +151,9 @@ function existingKey(lang: LangCode, headword: string): string {
  * are matched by name against `CSV_COLUMNS` and are optional.
  */
 export function parseImportCsv(text: string, existing: UserWord[]): ImportPreviewRow[] {
-  let table: string[][]
+  let table: CsvRow[]
   try {
-    table = parseCsvTable(text.trim())
+    table = parseCsvRows(text.trim())
   } catch (e) {
     if (e instanceof UnterminatedQuoteError) {
       return [{ kind: 'error', line: e.line, message: `${e.message} Sửa dòng này rồi nhập lại.` }]
@@ -142,10 +161,10 @@ export function parseImportCsv(text: string, existing: UserWord[]): ImportPrevie
     throw e
   }
   if (table.length === 0) return []
-  const header = table[0].map((h) => h.trim())
+  const header = table[0].cells.map((h) => h.trim())
   const headwordIdx = header.indexOf('headword')
   if (headwordIdx === -1) {
-    return [{ kind: 'error', line: 1, message: 'Thiếu cột "headword" trong file CSV.' }]
+    return [{ kind: 'error', line: table[0].line, message: 'Thiếu cột "headword" trong file CSV.' }]
   }
   const idx = (name: string) => header.indexOf(name)
 
@@ -153,8 +172,7 @@ export function parseImportCsv(text: string, existing: UserWord[]): ImportPrevie
   const out: ImportPreviewRow[] = []
 
   for (let r = 1; r < table.length; r++) {
-    const cols = table[r]
-    const line = r + 1
+    const { cells: cols, line } = table[r]
     const headword = (cols[headwordIdx] ?? '').trim()
     if (!headword) { out.push({ kind: 'error', line, message: 'Thiếu từ (headword).' }); continue }
 

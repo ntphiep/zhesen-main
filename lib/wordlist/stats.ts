@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '@/lib/zod'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/languages'
 import { computeStreak, getActivityDays } from './activity'
@@ -89,6 +89,7 @@ export async function getWordlistStats(supabase: SupabaseClient, now: number = D
     fetchAllRows((from, to) =>
       supabase.from('user_words')
         .select('lang, status, fsrs_scheduled_days, fsrs_due_at, fsrs_last_review_at, fsrs_reps')
+        .order('id')
         .range(from, to)),
     getActivityDays(supabase),
   ])

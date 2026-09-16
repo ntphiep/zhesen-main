@@ -3,7 +3,7 @@ import type { DictEntryDetail, DictEntryPreview, DictExample } from '@/lib/dicti
 import { isCleanExample } from '@/lib/dictionary/textQuality'
 import type { LangCode } from '@/lib/languages'
 import { userWordRow, type UserWord, type WordDraft, type WordStatus } from './types'
-import { z } from 'zod'
+import { z } from '@/lib/zod'
 import { fetchAllRows } from '@/lib/supabase/paginate'
 import { ensureSession } from '@/lib/supabase/session'
 
@@ -93,7 +93,9 @@ function patchToRow(p: Partial<WordDraft>): Record<string, unknown> {
 
 export async function listWords(supabase: SupabaseClient): Promise<UserWord[]> {
   const rows = await fetchAllRows((from, to) =>
-    supabase.from('user_words').select('*').order('created_at', { ascending: false }).range(from, to))
+    supabase.from('user_words').select('*')
+      .order('created_at', { ascending: false }).order('id')
+      .range(from, to))
   return rows.map(parseUserWordRow)
 }
 
@@ -105,7 +107,8 @@ export async function listWords(supabase: SupabaseClient): Promise<UserWord[]> {
  * them. `listWords` would pull every row over the wire to answer it.
  */
 export async function countWords(supabase: SupabaseClient): Promise<number> {
-  const { count } = await supabase.from('user_words').select('*', { count: 'exact', head: true })
+  const { count, error } = await supabase.from('user_words').select('*', { count: 'exact', head: true })
+  if (error) throw error
   return count ?? 0
 }
 
@@ -142,25 +145,17 @@ export interface PracticePoolOptions {
 /**
  * A pool of words for one practice round.
  *
- * The four modes used `listWords`, which is `select('*')` over a 26-column table
- * paginated a thousand rows at a time. A 407-word account therefore pulled 407
- * full rows -- examples, notes, all ten FSRS columns -- to build a six-tile
- * matching round, and paid it again on every change of mode. Six columns and a
- * server-side cap instead.
+ * Selects six columns with a server-side cap, not the full row set a listing
+ * view needs, so a large wordlist does not pay for examples, notes and every
+ * FSRS column on each round.
  *
  * The window starts at a random offset so the same sixty words do not come up
  * every session; `rand` is injectable for the same reason `buildQuiz` takes one.
  *
- * `needsMeaning` matters because the window is sixty ADJACENT rows by
- * created_at, not sixty scattered ones. Modes that need a Vietnamese meaning
- * used to filter what came back, which was safe while the caller received the
- * whole wordlist and stopped being safe the moment it received a fixed window:
- * a run of words saved together without meanings could empty the window and
- * tell someone with hundreds of words that they had too few. Measured on this
- * project's own account the risk is currently remote -- 2 of 410 rows lack a
- * meaning, and every sixty-row window holds at least 59 usable -- but the
- * filter belongs on the same side as the cap either way, and the wordlist is
- * about to be rebuilt from different data.
+ * `needsMeaning` filters on the SAME side as the cap, because the window is
+ * sixty ADJACENT rows by created_at, not sixty scattered ones: filtering
+ * client-side after the window is taken could empty the round even when the
+ * account holds plenty of words with a meaning.
  */
 export async function listPracticeWords(
   supabase: SupabaseClient, options: PracticePoolOptions = {},
@@ -182,7 +177,7 @@ export async function listPracticeWords(
   const { data, error } = await (needsMeaning
     ? rowQuery.not('meaning_vi', 'is', null).neq('meaning_vi', '')
     : rowQuery)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: false }).order('id')
     .range(offset, offset + pool - 1)
   if (error) throw error
 
@@ -198,7 +193,8 @@ const savedEntryIdRow = z.object({ entry_id: z.string() })
 
 export async function listSavedEntryIds(supabase: SupabaseClient, lang: LangCode): Promise<Set<string>> {
   const rows = await fetchAllRows((from, to) =>
-    supabase.from('user_words').select('entry_id').eq('lang', lang).not('entry_id', 'is', null).range(from, to))
+    supabase.from('user_words').select('entry_id').eq('lang', lang).not('entry_id', 'is', null)
+      .order('id').range(from, to))
   return new Set(savedEntryIdRow.array().parse(rows).map((r) => r.entry_id))
 }
 
@@ -299,11 +295,7 @@ async function insertOne(supabase: SupabaseClient, draft: WordDraft): Promise<Us
  * Bulk-insert drafts (e.g. from a CSV import).
  *
  * The fast path is one request per chunk. A chunk the database refuses is
- * retried row by row, because a single bad row must not lose the other 499 --
- * which is what the previous shape did in two ways: it retried the whole import
- * with every `entry_id` stripped the moment one link was stale, throwing away
- * the dictionary links of words that were perfectly fine, and it had no answer
- * at all for a duplicate, so one word already in the wordlist failed the lot.
+ * retried row by row, so a single bad row does not lose the rest of the chunk.
  *
  * Returns the rows that went in. Fewer than were asked for means some were
  * already saved; the caller reports that.
