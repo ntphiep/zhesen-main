@@ -19,3 +19,16 @@ if (typeof HTMLDialogElement !== 'undefined') {
 if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = function scrollIntoView() {}
 }
+
+// jsdom has no window.matchMedia either. StrokeOrder reads the colour scheme
+// through it; the stub reports light and never fires change events, which is
+// the case a test under jsdom is in anyway.
+if (typeof window !== 'undefined' && !window.matchMedia) {
+  window.matchMedia = function matchMedia(query: string): MediaQueryList {
+    return {
+      matches: false, media: query, onchange: null,
+      addListener() {}, removeListener() {},
+      addEventListener() {}, removeEventListener() {}, dispatchEvent: () => false,
+    } as MediaQueryList
+  }
+}

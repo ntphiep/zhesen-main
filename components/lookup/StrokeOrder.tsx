@@ -18,24 +18,35 @@ export function StrokeOrder({ char }: { char: string }) {
     const el = ref.current
     if (!el) return
     el.innerHTML = ''
-    import('hanzi-writer').then(({ default: HanziWriter }) => {
-      if (cancelled || !ref.current) return
-      const writer = HanziWriter.create(ref.current, char, {
-        width: 88,
-        height: 88,
-        padding: 5,
-        showCharacter: false,
-        showOutline: true,
-        strokeColor: '#111',
-        outlineColor: '#d4d4d4',
-        strokeAnimationSpeed: 1,
-        delayBetweenStrokes: 280,
-        onLoadCharDataError: () => { if (!cancelled) setFailed(true) },
-      })
-      writerRef.current = writer
-      writer.animateCharacter()
-    }).catch(() => { if (!cancelled) setFailed(true) })
-    return () => { cancelled = true }
+    // hanzi-writer parses its colours from strings and cannot take a CSS
+    // variable, so the palette is read from the scheme and the widget is
+    // rebuilt when the scheme flips: #111 strokes would vanish on the dark
+    // ground the swapped --paper gives this box.
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    function build(dark: boolean) {
+      import('hanzi-writer').then(({ default: HanziWriter }) => {
+        if (cancelled || !ref.current) return
+        ref.current.innerHTML = ''
+        const writer = HanziWriter.create(ref.current, char, {
+          width: 88,
+          height: 88,
+          padding: 5,
+          showCharacter: false,
+          showOutline: true,
+          strokeColor: dark ? '#ededed' : '#111',
+          outlineColor: dark ? '#404040' : '#d4d4d4',
+          strokeAnimationSpeed: 1,
+          delayBetweenStrokes: 280,
+          onLoadCharDataError: () => { if (!cancelled) setFailed(true) },
+        })
+        writerRef.current = writer
+        writer.animateCharacter()
+      }).catch(() => { if (!cancelled) setFailed(true) })
+    }
+    build(media.matches)
+    const onScheme = (e: MediaQueryListEvent) => build(e.matches)
+    media.addEventListener('change', onScheme)
+    return () => { cancelled = true; media.removeEventListener('change', onScheme) }
   }, [char])
 
   if (failed) return null

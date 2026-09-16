@@ -1,8 +1,100 @@
 @import "tailwindcss";
 
+/* The components were written light-only and use black/white with their plain
+   meaning: a card is bg-white and its rules are border-black/10. In dark mode
+   that same text is ink and that surface is paper, so the utilities have to
+   swap rather than stay fixed -- remapping the two theme colours to variables
+   does every one of those usages at once. The status colours are remapped the
+   same way: the -50 chips are surfaces and invert to their -950 deep, and
+   -700 text, -600 borders and solid buttons become the -300/-400 end so they
+   stay legible on the dark ground. */
+@theme {
+  --color-black: var(--ink);
+  --color-white: var(--paper);
+
+  --color-amber-50: var(--amber-50);
+  --color-amber-200: var(--amber-200);
+  --color-amber-700: var(--amber-700);
+  --color-amber-800: var(--amber-800);
+  --color-amber-900: var(--amber-900);
+
+  --color-blue-50: var(--blue-50);
+  --color-blue-600: var(--blue-600);
+  --color-blue-700: var(--blue-700);
+  --color-blue-800: var(--blue-800);
+
+  --color-emerald-50: var(--emerald-50);
+  --color-emerald-200: var(--emerald-200);
+  --color-emerald-300: var(--emerald-300);
+  --color-emerald-700: var(--emerald-700);
+  --color-emerald-800: var(--emerald-800);
+
+  --color-green-50: var(--green-50);
+  --color-green-700: var(--green-700);
+
+  --color-red-50: var(--red-50);
+  --color-red-500: var(--red-500);
+  --color-red-600: var(--red-600);
+  --color-red-700: var(--red-700);
+
+  --color-rose-50: var(--rose-50);
+  --color-rose-200: var(--rose-200);
+  --color-rose-300: var(--rose-300);
+  --color-rose-500: var(--rose-500);
+  --color-rose-700: var(--rose-700);
+  --color-rose-800: var(--rose-800);
+
+  --color-sky-50: var(--sky-50);
+  --color-sky-200: var(--sky-200);
+  --color-sky-700: var(--sky-700);
+}
+
 :root {
+  /* Native controls -- scrollbars, form widgets, the date picker -- follow the
+     scheme too instead of staying light on a dark page. */
+  color-scheme: light dark;
+
   --background: #ffffff;
   --foreground: #171717;
+
+  --ink: #000;
+  --paper: #fff;
+
+  --amber-50: oklch(98.7% 0.022 95.277);
+  --amber-200: oklch(92.4% 0.12 95.746);
+  --amber-700: oklch(55.5% 0.163 48.998);
+  --amber-800: oklch(47.3% 0.137 46.201);
+  --amber-900: oklch(41.4% 0.112 45.904);
+
+  --blue-50: oklch(97% 0.014 254.604);
+  --blue-600: oklch(54.6% 0.245 262.881);
+  --blue-700: oklch(48.8% 0.243 264.376);
+  --blue-800: oklch(42.4% 0.199 265.638);
+
+  --emerald-50: oklch(97.9% 0.021 166.113);
+  --emerald-200: oklch(90.5% 0.093 164.15);
+  --emerald-300: oklch(84.5% 0.143 164.978);
+  --emerald-700: oklch(50.8% 0.118 165.612);
+  --emerald-800: oklch(43.2% 0.095 166.913);
+
+  --green-50: oklch(98.2% 0.018 155.826);
+  --green-700: oklch(52.7% 0.154 150.069);
+
+  --red-50: oklch(97.1% 0.013 17.38);
+  --red-500: oklch(63.7% 0.237 25.331);
+  --red-600: oklch(57.7% 0.245 27.325);
+  --red-700: oklch(50.5% 0.213 27.518);
+
+  --rose-50: oklch(96.9% 0.015 12.422);
+  --rose-200: oklch(89.2% 0.058 10.001);
+  --rose-300: oklch(81% 0.117 11.638);
+  --rose-500: oklch(64.5% 0.246 16.439);
+  --rose-700: oklch(51.4% 0.222 16.935);
+  --rose-800: oklch(45.5% 0.188 13.697);
+
+  --sky-50: oklch(97.7% 0.013 236.62);
+  --sky-200: oklch(90.1% 0.058 230.902);
+  --sky-700: oklch(50% 0.134 242.749);
 }
 
 @theme inline {
@@ -16,6 +108,49 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    --ink: #fff;
+    --paper: #171717;
+
+    /* Each value is the next shade DOWN in Tailwind's own palette: the -50
+       chips take the -950 deep, the -700 text takes the -400 light. The
+       families stay distinguishable, only their step on the lightness scale
+       flips. */
+    --amber-50: oklch(27.9% 0.077 45.635);
+    --amber-200: oklch(47.3% 0.137 46.201);
+    --amber-700: oklch(82.8% 0.189 84.429);
+    --amber-800: oklch(87.9% 0.169 91.605);
+    --amber-900: oklch(92.4% 0.12 95.746);
+
+    --blue-50: oklch(28.2% 0.091 267.935);
+    --blue-600: oklch(70.7% 0.165 254.624);
+    --blue-700: oklch(70.7% 0.165 254.624);
+    --blue-800: oklch(80.9% 0.105 251.813);
+
+    --emerald-50: oklch(26.2% 0.051 172.552);
+    --emerald-200: oklch(43.2% 0.095 166.913);
+    --emerald-300: oklch(50.8% 0.118 165.612);
+    --emerald-700: oklch(76.5% 0.177 163.223);
+    --emerald-800: oklch(84.5% 0.143 164.978);
+
+    --green-50: oklch(26.6% 0.065 152.934);
+    --green-700: oklch(79.2% 0.209 151.711);
+
+    --red-50: oklch(25.8% 0.092 26.042);
+    --red-500: oklch(70.4% 0.191 22.216);
+    --red-600: oklch(70.4% 0.191 22.216);
+    --red-700: oklch(70.4% 0.191 22.216);
+
+    --rose-50: oklch(27.1% 0.105 12.094);
+    --rose-200: oklch(45.5% 0.188 13.697);
+    --rose-300: oklch(51.4% 0.222 16.935);
+    --rose-500: oklch(71.2% 0.194 13.428);
+    --rose-700: oklch(71.2% 0.194 13.428);
+    --rose-800: oklch(81% 0.117 11.638);
+
+    --sky-50: oklch(29.3% 0.066 243.157);
+    --sky-200: oklch(44.3% 0.11 240.79);
+    --sky-700: oklch(74.6% 0.16 232.661);
   }
 }
 
@@ -23,6 +158,19 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* The overlay behind a modal dialog. It cannot be a `backdrop:bg-black/30`
+   utility any more: black is the ink token and swaps to white in dark mode,
+   which would wash the page out instead of dimming it. A scrim stays dark in
+   both schemes, only deeper against the dark ground. */
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.4);
+}
+@media (prefers-color-scheme: dark) {
+  dialog::backdrop {
+    background: rgb(0 0 0 / 0.6);
+  }
 }
 
 /* IPA: monospace coding fonts misplace combining diacritics. Use IPA-capable fonts

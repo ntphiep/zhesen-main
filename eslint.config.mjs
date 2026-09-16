@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // `vercel build` writes its output here; it is generated code, and the
+    // launcher files use require() by design.
+    ".vercel/**",
   ]),
 ]);
 
