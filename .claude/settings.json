@@ -1,9 +1,4 @@
 {
-  "permissions": {
-    "additionalDirectories": [
-      "C:\\Users\\Hiep\\Documents\\zhesen-brain"
-    ]
-  },
   "hooks": {
     "Stop": [
       {

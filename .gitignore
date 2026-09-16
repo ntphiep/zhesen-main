@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# supabase CLI scratch state
+supabase/.temp
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -48,6 +51,4 @@ next-env.d.ts
 *.log
 /*.png
 .claude/.verify-gate-last-run
-
-.vercel
-.env*
+.claude/settings.local.json
