@@ -48,3 +48,6 @@ next-env.d.ts
 *.log
 /*.png
 .claude/.verify-gate-last-run
+
+.vercel
+.env*
