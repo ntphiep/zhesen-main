@@ -74,8 +74,12 @@ thời gian trong `.claude/.verify-gate-last-run`.
   `lib/supabase/server`; client dùng `useMemo(() => createClient(), [])` từ
   `lib/supabase/client`, đừng tạo client mới mỗi lần render.
 - **Tailwind 4** cấu hình trong `app/globals.css`, không còn `tailwind.config.js`.
-- Route tìm kiếm dùng `unstable_cache` với tag `['lex']`. Dữ liệu đổi thì cache không
-  tự làm mới, đó là việc của pipeline. Đừng tưởng kết quả tìm kiếm luôn tươi.
+- Route tìm kiếm và `lib/dictionary/cached.ts` dùng `unstable_cache` với tag `['lex']`.
+  **Không có gì tự gọi `POST /api/revalidate`.** Repo pipeline không nhắc tới nó ở bất
+  kỳ đâu (`grep -rni revalidate` trong `zhesen-pipeline`, bỏ `.venv`, ra 0 dòng), nên
+  cửa sổ `revalidate: 3600` là bảo đảm tươi duy nhất: dữ liệu mới nạp xong có thể mất
+  tới một giờ mới hiện. Muốn thấy ngay thì gọi tay `/api/revalidate` kèm
+  `REVALIDATE_SECRET`. Đừng đổi `revalidate` thành `false` khi chưa có ai gọi hàm đó.
 - **Vitest:** phải import tường minh lifecycle hook (`beforeEach`...) dù đã bật
   `globals: true`, nếu không `tsc` báo TS2304. Mock constructor như `Audio` bằng
   `vi.fn(function(){...})`, KHÔNG dùng arrow function vì arrow không phải constructor.
@@ -119,6 +123,16 @@ thời gian trong `.claude/.verify-gate-last-run`.
 - **PGroonga giữ dữ liệu index trong tệp riêng mà Postgres không thấy.** `pg_relation_size`
   của cả hai index PGroonga đều trả 0, nên phần chênh giữa `pg_database_size` và tổng
   `pg_total_relation_size` chính là PGroonga chứ không phải chỗ trống trong bảng.
+- **`idx_scan` KHÔNG dùng được để đánh giá index PGroonga.** Cả hai index PGroonga đều
+  báo `idx_scan` = 0 trong `pg_stat_user_indexes` trong khi `idx_tup_read` vẫn tăng, và
+  `explain (analyze) select * from lex.search('習', array['zh'], 8)` cho `Index Scan using
+  idx_lex_entries_headword_pgroonga`. Đã có một lần suýt xoá hai index này vì đọc
+  `idx_scan` = 0 là "không ai dùng". Muốn biết index có được dùng không thì đọc execution
+  plan, đừng đọc bộ đếm.
+- **`vercel.json` ghim function ở `icn1` vì database ở `ap-northeast-2`.** Mặc định của
+  Vercel là `iad1` Washington, tức mỗi truy vấn trượt cache đi vòng qua Mỹ rồi sang Seoul.
+  Chuyển database sang region khác thì phải đổi `regions` theo, nếu không mất đúng khoản
+  vừa tiết kiệm. Mã region: https://vercel.com/docs/regions
 - **`VACUUM` thường không trả dung lượng về đĩa**, chỉ đánh dấu chỗ trống để tái dùng.
 - **Mọi `update` trong migration phải idempotent theo trạng thái ĐÍCH, không phải theo
   trạng thái NGUỒN.** Migration `0017` từng chỉ lọc theo cột `srs_*` cũ; các cột đó đóng
@@ -178,7 +192,7 @@ thời gian trong `.claude/.verify-gate-last-run`.
 
 Tất cả đều đã xác minh không còn nơi gọi trước khi xoá, ngày 2026-09-12:
 `lib/content/` (lớp trừu tượng ContentSource, thay bằng hằng số ở `lib/languages.ts`),
-`lib/quiz/` (trùng `lib/wordlist/quiz.ts`), `lib/progress/ProgressStore.ts` cùng
+`lib/quiz/` (trùng `lib/practice/quiz.ts`), `lib/progress/ProgressStore.ts` cùng
 `SupabaseProgressStore.ts` (tầng lưu trữ SRS cũ), `components/Flashcard.tsx`,
 `components/Quiz.tsx`, `lib/sanity.ts`. Trang `/reader` đã cắt khỏi phạm vi, nhưng
 `components/reader/` vẫn dùng trong `lookup` và `grammar`, đừng xoá nhầm.
