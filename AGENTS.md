@@ -123,6 +123,16 @@ thời gian trong `.claude/.verify-gate-last-run`.
 - **PGroonga giữ dữ liệu index trong tệp riêng mà Postgres không thấy.** `pg_relation_size`
   của cả hai index PGroonga đều trả 0, nên phần chênh giữa `pg_database_size` và tổng
   `pg_total_relation_size` chính là PGroonga chứ không phải chỗ trống trong bảng.
+- **Mọi function trong `lex` phải ghim `search_path`, đừng đi qualify từng toán tử.**
+  `%`, `&@`, `&@~` đều nằm trong schema `extensions`, nên function trả lời hay ném lỗi
+  là tuỳ `search_path` của người gọi. `anon` và `authenticated` có `extensions` nên ứng
+  dụng không thấy; role khác thì `SQLSTATE 42883`. Đã thử cách qualify từng toán tử ba
+  lần (`0034`, `0039`, `0042`) và mỗi lần lệnh tiếp theo lại hỏng ở toán tử kế: sau khi
+  `0042` sửa `%` trong `lex.search` thì `lex.search('習', array['zh'], 8)` hỏng tiếp ở
+  `&@`. `0043` ghim `search_path = lex, extensions, public` cho cả tám function, phủ mọi
+  toán tử kể cả nhánh chưa ai viết. Năm function trong `public` đã làm vậy từ `0032`.
+  Thêm function mới vào `lex` thì ghim luôn. Nguồn:
+  https://supabase.com/docs/guides/database/database-linter?lint=0011_function_search_path_mutable
 - **Dung lượng index PGroonga KHÔNG tỷ lệ với số hàng, nên index bộ phận không tiết
   kiệm được gì.** `lex.entries.traditional` chỉ có giá trị ở 2.358 hàng trên 36.361, nên
   một index bộ phận `where traditional is not null` nghe như sẽ nhỏ hơn mười lần. Đã dựng

@@ -110,6 +110,45 @@ MB; chênh 101,6 MB là tệp riêng của PGroonga mà `pg_relation_size` khôn
 Toàn bộ dữ liệu người dùng là 0,5 MB: `public.user_words` 413 dòng, `public.review_log` và
 `public.profiles` dưới 0,1 MB. Tỷ lệ từ điển trên dữ liệu người dùng là khoảng 766 trên 1.
 
+#### Bổ sung 2026-09-17: PGroonga tốn bao nhiêu, và có ép xuống được không
+
+Đo từng đối tượng Groonga bằng
+`extensions.pgroonga_command('object_inspect', array['name', <tên>])`:
+
+| Đối tượng | Byte |
+| --- | --- |
+| `idx_lex_entries_headword_pgroonga`, cả bốn đối tượng | 43.683.840 |
+| `idx_lex_entries_traditional_pgroonga`, cả bốn đối tượng | 39.227.392 |
+| `IndexStatuses` | 12.636.160 |
+| Tổng | 95.547.392, tức 91,1 MB |
+
+Đã thử ép xuống và thất bại. `lex.entries.traditional` chỉ có giá trị ở 2.358 dòng trên
+36.361, nên một index bộ phận `where traditional is not null` đáng lẽ nhỏ hơn mười lần.
+Dựng thật rồi đo: bản bộ phận có `n_records` 2.358 thay vì 36.361 nhưng `disk_usage` y
+hệt 39.227.392 byte, và `pg_database_size` tăng đúng 38 MB rồi trở lại 401.964.179 byte
+sau khi xoá. Kết luận: dung lượng một index PGroonga là khoản cố định khoảng 37 tới 42 MB,
+không tỷ lệ với số dòng. Muốn giảm thì chỉ còn cách bỏ hẳn một index, và bỏ
+`idx_lex_entries_traditional_pgroonga` là bỏ tính năng tìm chuỗi con trong chữ phồn thể.
+
+Con số này định lượng đúng cái ràng buộc khiến RDS và Aurora không thay được Supabase:
+91,1 MB trong 383 MB hiện tại là thứ duy nhất không có bản tương đương trên hai dịch vụ
+đó, và nó không nén xuống được.
+
+#### Bổ sung 2026-09-17: đã rà rác, database sạch
+
+Rà toàn bộ trước khi tính chuyện dọn. Không có dòng mồ côi ở bất kỳ quan hệ nào
+(`senses`, `pronunciations`, `inflections`, `lex_relations`, `user_words`, `review_log`
+đều trả 0). Bloat cao nhất là 102 dòng chết trên `lex.characters`. PGroonga không có tệp
+thừa: `object_list` chỉ có `Sources26726` và `Sources26731`, khớp đúng `relfilenode` của
+hai index đang sống. `storage.buckets` và `storage.objects` đều rỗng. Publication
+`supabase_realtime` không có bảng nào. `auth.users` có 3 tài khoản, cả ba đều có lý do tồn
+tại.
+
+Ba thứ thật sự thừa: sáu cột `srs_*` trên `public.user_words` (đã
+xoá, migration `0040`), cột `lex.examples.sense_id` (null ở cả 144.997 dòng), và bảng
+`lex.entry_characters` (9.077 dòng, không nơi nào đọc). Hai thứ sau cần sửa
+`zhesen-pipeline` trước nên chưa đụng.
+
 ## 1. Dữ liệu từ điển chỉ đọc nên nằm ở đâu
 
 ### PGroonga có đang được dùng không: đã kiểm, có
@@ -767,7 +806,7 @@ Supabase Pro 25 đô là **45 đô một tháng cho toàn bộ hạ tầng**.
 | Rủi ro | Mức | Cách giảm |
 | --- | --- | --- |
 | **Vercel Function chạy ở `iad1` Washington trong khi database ở Seoul.** Mỗi lượt trượt cache đi vòng qua nửa vòng trái đất, ước khoảng 380 ms lãng phí | Cao, đang xảy ra | Thêm `vercel.json` với `"regions": ["icn1"]`. Gói Hobby cho một region. Sau đó đo lại bằng `curl -w` trên deployment thật để xác nhận, vì con số 520 ms hiện là suy luận, chưa đo trên production |
-| **`revalidate: 3600` ở 17 chỗ buộc mọi truy vấn quay về Seoul mỗi giờ**, trong khi pipeline đã có đường gọi `revalidateTag('lex', 'max')` | Cao, đang xảy ra | Đổi thành `revalidate: false` ở `app/dictionary/search/route.ts`, `lib/dictionary/cached.ts`, `lib/grammar/cached.ts`. Kiểm bằng cách gọi `POST /api/revalidate` rồi xác nhận kết quả mới hiện ngay |
+| **`revalidate: 3600` ở 17 chỗ buộc mọi truy vấn quay về Seoul mỗi giờ** | Trung bình, đang xảy ra | **Khuyến nghị ban đầu của mục này, đổi sang `revalidate: false`, đã bị bác ngày 2026-09-16.** Nó dựa trên giả định pipeline gọi `POST /api/revalidate`; `grep -rni revalidate` trong `zhesen-pipeline`, bỏ `.venv`, ra 0 dòng. Không ai gọi hàm đó, nên cửa sổ một giờ là bảo đảm tươi duy nhất và tắt nó sẽ đóng băng cache vĩnh viễn. Muốn bỏ cửa sổ thì phải thêm lời gọi vào pipeline TRƯỚC |
 | **`lex.suggest` quét toàn bộ 219.887 dòng vì `similarity() > 0.15` không dùng được GIN trigram.** Đo thật 833 tới 1.420 ms | Cao, đang xảy ra | Viết lại dùng toán tử `%` trong `where`. Chạy `explain (analyze, buffers)` trước để xác nhận hai `Seq Scan`. Cùng cách kiểm cho `lex.inflections where form_text = any(...)`, 1.691 ms |
 | **Trang chi tiết mục từ không nằm trong CDN**, mỗi lượt mở chạy function ở `iad1` và tốn trung bình 471 ms truy vấn | Cao, đang xảy ra | `generateStaticParams` cho các mục từ thông dụng, hoặc bật `cacheComponents` trong `next.config.ts` và dùng `"use cache"` |
 | **Vỡ trần 500 MB gói Free sau lần nạp tới.** Hiện 383,2 MB, dư 116,8 MB, mà growth plan có sáu nguồn chờ nạp | Cao | Nâng Pro trước khi nạp, không phải sau khi vỡ. Lối thứ hai: đổi PGroonga sang `pg_bigm` để lấy lại phần lớn 101,6 MB, nhưng **chưa xác minh** Supabase cho cài `pg_bigm` |
