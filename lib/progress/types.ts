@@ -1,5 +1,3 @@
-import type { LangCode } from '@/lib/languages'
-
 export type Grade = 'again' | 'hard' | 'good' | 'easy'
 
 /** FSRS-6 card states (mirrors ts-fsrs's `State` enum, kept as a string union at
@@ -22,17 +20,4 @@ export interface SrsState {
   cardState: CardState
   dueAt: number
   lastReviewedAt: number | null
-}
-
-export type LessonStatus = 'not_started' | 'in_progress' | 'completed'
-
-export interface LessonProgress {
-  lessonId: string
-  status: LessonStatus
-  completedAt: number | null
-}
-
-// stored card couples scheduling state with the language for due filtering
-export interface CardRecord extends SrsState {
-  lang: LangCode
 }

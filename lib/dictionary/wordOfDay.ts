@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { z } from 'zod'
+import { z } from '@/lib/zod'
 import { localDay } from '@/lib/wordlist/activity'
 import type { LangCode } from '@/lib/languages'
 

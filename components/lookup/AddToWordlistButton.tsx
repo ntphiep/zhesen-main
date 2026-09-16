@@ -38,8 +38,6 @@ function SavedButton({ entry }: { entry: DictEntryPreview | DictEntryDetail }) {
   const [state, setState] = useState<State>('idle')
 
   // Ask whether the word is already saved instead of finding out by failing.
-  // Reopening a saved word used to offer "Thêm vào sổ tay" again, and the answer
-  // only arrived after a click that could not succeed.
   useEffect(() => {
     let live = true
     isWordSaved(supabase, entry.id).catch(() => false).then((saved) => {

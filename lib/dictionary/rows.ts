@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '@/lib/zod'
 import type { LangCode } from '@/lib/languages'
 import type { ContainingWord, DictEntryPreview, DictSense, DictPron, SuggestionPreview } from './types'
 import { cleanMtGloss } from './textQuality'

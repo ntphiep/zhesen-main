@@ -7,6 +7,7 @@ import type { Grade, SrsState } from '@/lib/progress/types'
 import { WordReviewCard } from '@/components/practice/WordReviewCard'
 import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
+import { NoticeBar, useNotice } from '@/components/ui/Notice'
 
 export function WordlistReview() {
   const supabase = useMemo(() => createClient(), [])
@@ -14,8 +15,8 @@ export function WordlistReview() {
   const [revealed, setRevealed] = useState(false)
   const [reviewed, setReviewed] = useState(0)
   // Only for the streak here: this session grades through `gradeCard`, which
-  // carries the schedule it already holds, and reports a failed grade with its
-  // own alert. `gradeCard` used to record the day itself, which meant a streak
+  // carries the schedule it already holds, and reports a failed grade through
+  // its own notice. `gradeCard` used to record the day itself, which meant a streak
   // failure surfaced as a grade failure and every practice mode wrote the day
   // twice. Recording it is the session's job, and this was the one session
   // without a way to say the write did not land.
@@ -27,6 +28,7 @@ export function WordlistReview() {
   // was never shown and the session claimed to have reviewed it. One double-tap
   // on a phone, or one impatient tap on a slow connection, was enough.
   const [grading, setGrading] = useState(false)
+  const { notice, notify, dismiss } = useNotice()
 
   useEffect(() => {
     listDueCards(supabase, Date.now()).then(setQueue).catch(() => setQueue([]))
@@ -56,7 +58,7 @@ export function WordlistReview() {
     try {
       next = await gradeCard(supabase, current, g, Date.now())
     } catch {
-      alert('Không lưu được kết quả ôn tập. Vui lòng thử lại.')
+      notify('Không lưu được kết quả ôn tập. Vui lòng thử lại.')
       return
     } finally {
       setGrading(false)
@@ -88,6 +90,7 @@ export function WordlistReview() {
         onGrade={grade}
         grading={grading}
       />
+      <NoticeBar notice={notice} onDismiss={dismiss} />
     </main>
   )
 }

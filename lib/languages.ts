@@ -1,12 +1,9 @@
 /**
  * The three languages zhesen targets, and the single source of truth for them.
  *
- * This list used to be read from `public.languages` through a ContentSource
- * abstraction. It never changed at runtime and every read cost a round trip, so
- * it lives here instead. Anything that needs one value per language should
- * derive it from LANGUAGES via `byLang` rather than writing the codes out again.
- *
- * The values match the rows in `public.languages` as of 2026-09-12.
+ * This list is fixed and does not change at runtime. Anything that needs one
+ * value per language should derive it from LANGUAGES via `byLang` rather than
+ * writing the codes out again.
  */
 
 export type LangCode = 'zh' | 'es' | 'en'

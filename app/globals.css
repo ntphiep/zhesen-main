@@ -1,13 +1,11 @@
 @import "tailwindcss";
 
-/* The components were written light-only and use black/white with their plain
-   meaning: a card is bg-white and its rules are border-black/10. In dark mode
-   that same text is ink and that surface is paper, so the utilities have to
-   swap rather than stay fixed -- remapping the two theme colours to variables
-   does every one of those usages at once. The status colours are remapped the
-   same way: the -50 chips are surfaces and invert to their -950 deep, and
-   -700 text, -600 borders and solid buttons become the -300/-400 end so they
-   stay legible on the dark ground. */
+/* Components use black and white with their plain meaning: a card is bg-white,
+   its rules are border-black/10. Both are remapped to theme variables here, so
+   the whole app follows the scheme and nothing may hardcode a colour for ink or
+   paper. The status colours below are remapped on the same principle: a -50 chip
+   is a surface, and -700 text, -600 borders and solid buttons move to the
+   -300/-400 end to stay legible on the dark ground. */
 @theme {
   --color-black: var(--ink);
   --color-white: var(--paper);
@@ -154,10 +152,13 @@
   }
 }
 
+/* No font-family here. The rule that used to be on this line set Arial, which
+   beats Tailwind's preflight on html and is inherited by everything, so the two
+   Geist files loaded by app/layout.tsx were downloaded and never drawn with. The
+   --font-sans token above already points at Geist. */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
 
 /* The overlay behind a modal dialog. It cannot be a `backdrop:bg-black/30`

@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '@/lib/zod'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/languages'
 import type { DictEntryPreview } from './types'
@@ -47,7 +47,7 @@ export async function getEntriesByLevel(
   const { data, error, count } = await supabase
     .schema('lex').from('entries').select(PREVIEW_SELECT, { count: 'exact' })
     .eq('lang', lang).eq('level', level)
-    .order('headword_normalized', { ascending: true })
+    .order('headword_normalized', { ascending: true }).order('id')
     .range(offset, offset + pageSize - 1)
   if (error) throw error
   return { items: entryPreviewRow.array().parse(data ?? []).map(toPreview), total: count ?? 0 }

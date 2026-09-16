@@ -27,16 +27,8 @@ const BUSY_MESSAGE = 'Đang có quá nhiều lượt tra cứu. Vui lòng thử 
 const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 
 /**
- * Auto-detecting, bidirectional search box. Queries all three languages via the
- * cached /dictionary/search route -- both the forward direction (query typed in
- * en/es/zh) and, when the query looks Vietnamese or the forward search found
- * nothing, the reverse direction (Vietnamese -> en/es/zh, labeled separately so
- * it's clear which kind of match is shown). Falls back to "did you mean...?"
- * trigram suggestions when neither direction finds anything. Results can be
- * narrowed with level/part-of-speech filters, computed from (and only shown
- * when present in) the current result set. Debounced, with request abort and a
- * small in-memory prefix cache so repeats are instant. Supports keyboard
- * navigation (up/down/enter), prefetch on hover, and a recent-searches list.
+ * Auto-detecting, bidirectional search box via the cached /dictionary/search route.
+ * Searches forward (en/es/zh) and, when the query looks Vietnamese or forward finds nothing, reverse (vi -> en/es/zh) too.
  */
 export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { initialQuery?: string; autoFocus?: boolean; lang?: LangCode }) {
   const [query, setQuery] = useState(initialQuery)

@@ -30,7 +30,6 @@ export function CrossLanguagePanel({ siblings }: { siblings: CrossLangSibling[] 
       {byLang.map(({ lang, rows }) => (
         <div key={lang} className="flex flex-col gap-1">
           <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-black/55">
-            
             {LANG_LABELS[lang]}
           </span>
           <ul className="flex flex-col">

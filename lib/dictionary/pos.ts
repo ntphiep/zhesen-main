@@ -57,5 +57,9 @@ export function posGroup(pos: string | null | undefined): PosGroup | null {
   if (!pos) return null
   const key = pos.trim().toLowerCase()
   if (!key) return null
-  return POS_GROUPS[key] ?? { key, labelVi: pos, labelEn: titleCase(key) }
+  // Object.hasOwn rather than a bare lookup: `pos` comes from the database, and
+  // POS_GROUPS['constructor'] answers with Object.prototype.constructor, which is
+  // truthy enough to defeat `??` and leaves every label on the row undefined.
+  if (Object.hasOwn(POS_GROUPS, key)) return POS_GROUPS[key]
+  return { key, labelVi: pos, labelEn: titleCase(key) }
 }

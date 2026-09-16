@@ -7,10 +7,15 @@ import { clientKey, createColdQueryLimiter, createRateLimiter } from '@/lib/http
 // Cache search results server-side, keyed by the normalized query. This removes the
 // per-keystroke cross-region round-trip to Supabase for any prefix anyone has typed
 // before; the CDN/edge can also serve repeats via the Cache-Control header.
+// One number for both the cache and the cold-query limiter below: the limiter
+// treats a query as free because the cache holds the answer, so the two have to
+// forget it at the same moment.
+const SEARCH_CACHE_SECONDS = 3600
+
 const cachedSearch = unstable_cache(
   (q: string) => searchBothDirections(createContentClient(), q),
   ['dict-search-all'],
-  { revalidate: 3600, tags: ['lex'] },
+  { revalidate: SEARCH_CACHE_SECONDS, tags: ['lex'] },
 )
 
 // Only a query the cache has never seen reaches Supabase, so a caller feeding the
@@ -30,7 +35,11 @@ const cachedSearch = unstable_cache(
 // and because a low value is the only way to exercise this path end to end: a
 // flood cannot reach 180 on a laptop, since every new query waits on Supabase.
 const COLD_QUERIES_PER_MINUTE = Number(process.env.COLD_QUERIES_PER_MINUTE) || 180
-const admitColdQuery = createColdQueryLimiter({ limit: COLD_QUERIES_PER_MINUTE, windowMs: 60_000 })
+const admitColdQuery = createColdQueryLimiter({
+  limit: COLD_QUERIES_PER_MINUTE,
+  windowMs: 60_000,
+  rememberMs: SEARCH_CACHE_SECONDS * 1000,
+})
 
 // A second, per-address cap, active only where `clientKey` can actually identify
 // a caller — that is, behind a proxy the deployment vouches for. Without one it
@@ -44,14 +53,17 @@ const rateLimit = createRateLimiter({ limit: SEARCHES_PER_MINUTE, windowMs: 60_0
 // leaves half a character behind.
 const MAX_QUERY_CHARS = 64
 
-
-// The two caches are told different things on purpose. The previous header gave
-// only `s-maxage`, which says nothing to a browser, so browsers applied heuristic
-// freshness and kept answering from their own copy: after the pipeline loaded new
-// data and /api/revalidate cleared the server cache, a returning visitor still saw
-// the old results, and nothing here could reach that copy. `max-age=0,
+// The two caches are told different things on purpose. `s-maxage` says nothing to
+// a browser, which then applies heuristic freshness and answers from its own copy
+// even after /api/revalidate has cleared the server's. `max-age=0,
 // must-revalidate` makes the browser ask every time, which is cheap because the
 // server answer comes from `cachedSearch`. The shared cache keeps the long window.
+//
+// Set-Cookie and this header can meet on one response, when the proxy rotates a
+// session token on a search request. Vercel's CDN does not cache a response
+// carrying Set-Cookie at all, so that request misses the shared cache instead of
+// storing one visitor's cookie in it.
+// https://vercel.com/docs/caching/cdn-cache#cacheable-response-criteria
 const CACHE_HEADERS = {
   'Cache-Control': 'public, max-age=0, must-revalidate',
   'CDN-Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',

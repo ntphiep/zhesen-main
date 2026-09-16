@@ -4,10 +4,8 @@ import type { LangCode } from '@/lib/languages'
 /**
  * A pronunciation, delimited the way its source meant it, or nothing at all.
  *
- * Eleven places used to render this, each deciding for itself whether to add
- * slashes. Half of them were wrong for one language or another -- see
- * formatPronunciation for what the sources actually store. Rendering goes
- * through here so there is one answer instead of eleven.
+ * One place decides whether to add slashes, from what the source actually
+ * stores; see `formatPronunciation`.
  *
  * The `ipa` class picks a font with the phonetic glyphs; see app/globals.css.
  */

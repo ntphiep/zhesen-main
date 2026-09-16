@@ -53,8 +53,9 @@ const PRONOUNS: Record<string, { person: ConjPerson; rank: number }> = {
 
 function pronounOf(tokens: string[]): { person: ConjPerson; rank: number } | null {
   for (const t of tokens) {
-    const p = PRONOUNS[t]
-    if (p) return p
+    // The tokens come from a database label, so a bare lookup could answer with
+    // something off Object.prototype instead of a pronoun.
+    if (Object.hasOwn(PRONOUNS, t)) return PRONOUNS[t]
   }
   return null
 }

@@ -1,4 +1,5 @@
 import { speechLang, type LangCode } from '@/lib/languages'
+import { percentDecode } from '@/lib/http/percentDecode'
 import type { DictPron } from './types'
 
 export interface AccentRow {
@@ -44,7 +45,9 @@ export function audioAccent(url: string | null): Accent | null {
  */
 export function audioMatchesHeadword(url: string | null, headword: string): boolean {
   if (!url) return false
-  const file = decodeURIComponent(url.split('?')[0]).split('/').pop() ?? ''
+  // Guarded: a stray `%` in a stored URL made decodeURIComponent throw, and the
+  // throw escaped through toPreview and lost the whole result list, not one row.
+  const file = percentDecode(url.split('?')[0]).split('/').pop() ?? ''
   const base = file.replace(/\.[a-z0-9]+$/i, '').toLowerCase()
   const segments = base.split('-')
   const want = headword.trim().toLowerCase()

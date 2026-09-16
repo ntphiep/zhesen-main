@@ -1,4 +1,3 @@
-// test/dictionary-search-page.test.tsx
 import { describe, it, expect, vi } from 'vitest'
 
 // SearchBox does the real searching; here only the props the page hands it matter.

@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '@/lib/zod'
 import { isLangCode, type LangCode } from '@/lib/languages'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 

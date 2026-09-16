@@ -22,14 +22,10 @@ export interface ResolvedText {
 }
 
 /**
- * Resolve every tappable text on a page in one pass.
- *
- * Each TappableText used to do this for itself in an effect: a Chinese entry
- * with five examples issued eighteen requests from the browser, in a chain four
- * deep, and rendered empty until the last one landed -- measured at 3.8s and
- * 8.8s. Done here, the whole page costs at most one candidate query, the three
- * inside resolveTokens, and one character query, on the server, behind
- * `unstable_cache`.
+ * Resolve every tappable text on a page in one pass, on the server, behind
+ * `unstable_cache`, instead of each `TappableText` resolving itself from the
+ * browser. The whole page costs at most one candidate query, the three inside
+ * resolveTokens, and one character query.
  */
 export async function resolveTappableTexts(
   supabase: SupabaseClient, lang: LangCode, texts: string[],

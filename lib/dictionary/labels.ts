@@ -9,5 +9,7 @@ const RELATION_LABELS_VI: Record<string, string> = {
   related: 'Liên quan',
 }
 export function relationLabel(type: string): string {
-  return RELATION_LABELS_VI[type] ?? type
+  // `type` is a database value. Without the guard, a row typed "toString" would
+  // return a function and React refuses to render one.
+  return Object.hasOwn(RELATION_LABELS_VI, type) ? RELATION_LABELS_VI[type] : type
 }

@@ -23,6 +23,12 @@ interface PageResult<T> {
  *
  * `page` receives an inclusive row range to pass to `.range(from, to)`, and is
  * called again until a short page proves the end has been reached.
+ *
+ * The query MUST carry an `.order()` on a column unique within the result. A
+ * range without one leaves the row order up to the planner, which is free to
+ * return it differently per page: the same row then arrives twice and another
+ * never arrives at all, with no error anywhere. The counts on the wordlist and
+ * the streak both read through here.
  */
 export async function fetchAllRows<T>(
   page: (from: number, to: number) => PromiseLike<PageResult<T>>,

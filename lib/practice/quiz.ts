@@ -44,10 +44,10 @@ export function buildQuiz(words: QuizWord[], count: number, rand: Rand = Math.ra
   const targets = shuffle(usable, rand).slice(0, count)
   return targets.map((t) => {
     const distractors = shuffle(
-      usable.filter((x) => x.id !== t.id && x.meaningVi !== t.meaningVi),
+      usable.filter((x) => x.id !== t.id && x.meaningVi.trim() !== t.meaningVi.trim()),
       rand,
     )
-      .map((x) => x.meaningVi)
+      .map((x) => x.meaningVi.trim())
       .filter((m, i, arr) => arr.indexOf(m) === i) // distinct distractor texts
       .slice(0, 3)
     return {

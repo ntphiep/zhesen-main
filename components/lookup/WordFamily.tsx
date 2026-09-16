@@ -9,12 +9,9 @@ import type { LangCode } from '@/lib/languages'
 /**
  * "Từ liên quan": the forms of the headword itself, named and explained.
  *
- * This used to be a row of identical chips -- smooth, smoother, smoothest, smeeth,
- * smoothe, smooths, smoothing, smoothed -- which told a learner nothing about
- * which form does what, and quietly put two spellings nobody writes any more in
- * the middle of the list. Every column here comes from data the page already had
- * and was throwing away: the label from `lex.inflections.form_label`, the
- * pronunciation and meaning from `lex.term_previews`.
+ * Each column comes from data the page already has: the label from
+ * `lex.inflections.form_label`, the pronunciation and meaning from
+ * `lex.term_previews`.
  */
 export function WordFamily({ headword, forms, previews, lang }: {
   headword: string

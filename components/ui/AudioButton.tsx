@@ -38,10 +38,9 @@ function pickVoice(voices: SpeechSynthesisVoice[], bcp47: string): SpeechSynthes
  * Speak `text`, returning false when the machine has no voice for the language.
  *
  * Speaking with the wrong voice is worse than not speaking: a Chinese word read
- * by an English voice teaches a pronunciation that does not exist. The old code
- * handed the utterance to the synthesiser anyway, which on a Windows machine with
- * no Chinese voice installed produced nothing at all, with no way for the reader
- * to tell whether the button was broken or their speakers were.
+ * by an English voice teaches a pronunciation that does not exist. Playing the
+ * utterance on a voiceless machine produces silence, indistinguishable to the
+ * reader from a broken speaker, so this checks for a voice first.
  */
 async function speakTts(text: string, bcp47: string, onEnd: () => void): Promise<boolean> {
   if (typeof speechSynthesis === 'undefined') {

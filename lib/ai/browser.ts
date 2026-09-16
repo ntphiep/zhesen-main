@@ -1,6 +1,13 @@
 'use client'
 import type { z } from 'zod'
-import { TASKS, type TaskName } from './tasks'
+import type { TaskName } from './tasks'
+
+// Type-only handle on the task table. The value import that used to be here put
+// the whole of zod in the chunk every route loads, because AiChatPanel sits in
+// the root layout: measured at 63.1 kB gzipped on pages that have no assistant
+// button at all. The table is needed once, after the network call has already
+// returned, so it is fetched there instead.
+type Tasks = typeof import('./tasks')['TASKS']
 
 /**
  * Calling the assistant from a component.
@@ -14,11 +21,11 @@ export type AiOutcome<T> =
   | { status: 'ok'; data: T }
   | { status: 'error'; message: string }
 
-type Output<K extends TaskName> = z.infer<(typeof TASKS)[K]['output']>
+type Output<K extends TaskName> = z.infer<Tasks[K]['output']>
 
 export async function callAi<K extends TaskName>(
   task: K,
-  input: z.input<(typeof TASKS)[K]['input']>,
+  input: z.input<Tasks[K]['input']>,
   signal?: AbortSignal,
 ): Promise<AiOutcome<Output<K>>> {
   let res: Response
@@ -40,6 +47,9 @@ export async function callAi<K extends TaskName>(
     return { status: 'error', message: message ?? 'Trợ lý gặp lỗi.' }
   }
 
+  // Loaded here rather than at module scope: by now the request has been made
+  // and the chunk downloads alongside it.
+  const { TASKS } = await import('./tasks')
   const parsed = TASKS[task].output.safeParse((body as { data?: unknown } | null)?.data)
   if (!parsed.success) return { status: 'error', message: 'Trợ lý trả về dữ liệu lạ.' }
   return { status: 'ok', data: parsed.data as Output<K> }

@@ -1,14 +1,13 @@
-import { z } from 'zod'
+import { z } from '@/lib/zod'
 import type { DictEntryPreview, SuggestionPreview } from './types'
 
 /**
  * The wire format of `GET /dictionary/search`.
  *
- * The browser used to cast the parsed JSON straight to the response type. Any
- * reply that was not a result set -- an error body, a 429, an HTML page from a
- * proxy -- therefore became a `SearchResponse` with no `forward` field, and the
- * first render after it threw on `forward[lang]`. Parsing here turns that class
- * of failure into an empty result instead of a blank page.
+ * The browser must parse this, not cast it: a reply that is not a result set
+ * -- an error body, a 429, an HTML page from a proxy -- has to become an
+ * empty result, not a `SearchResponse` missing `forward` that throws on
+ * `forward[lang]` at first render.
  */
 
 const langCode = z.enum(['zh', 'es', 'en'])

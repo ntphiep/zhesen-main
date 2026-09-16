@@ -5,13 +5,11 @@ import type { DictSense } from './types'
  *
  * Wiktionary files every inflected form as its own entry whose only gloss is a
  * pointer: "simple past and past participle of adjourn", "plural of person".
- * The page printed that sentence and stopped there, so a learner who looked up
- * "adjourned" got two lines of English and no way to reach the verb itself.
+ * Extracting the lemma from that gloss lets a learner who looked up "adjourned"
+ * reach the verb itself instead of a dead end.
  *
- * Measured on the English entries: 5,322 carry a gloss of this shape, and 4,761
- * of the words they point at are already entries of their own. The remaining 561
- * (adjourn among them) are simply not in the dictionary yet; those render as
- * plain text rather than a link that would 404.
+ * The word the gloss points at is not always in the dictionary yet; those
+ * render as plain text rather than a link that would 404.
  */
 const LEMMA_RE =
   /\b(?:plural|singular|past|participle|gerund|comparative|superlative|present|third-person|second-person|inflection|form|alternative (?:form|spelling)|misspelling)\b[^.;:]*?\bof\s+([\p{L}][\p{L}''’-]*)/iu

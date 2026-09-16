@@ -63,16 +63,15 @@ async function withPivotVi(supabase: SupabaseClient, senses: DictSense[]): Promi
   return fillPivotVi(senses, viByTerm)
 }
 
-/** Per language, not overall: a word with a dozen Spanish equivalents used to
- *  fill the panel and push Chinese out of it entirely. */
+/** Per language, not overall, so a word with many Spanish equivalents cannot
+ *  push Chinese out of the panel entirely. */
 const PER_LANGUAGE = 3
 
 /**
  * Equivalents of an entry in the other languages, bridged through an English
  * pivot (see crosslang.ts). Pivot terms are computed here; the actual match runs
  * in the `lex.match_cross_language` SQL function so it is not subject to the
- * PostgREST row cap (the old "fetch all zh/es and filter in JS" approach silently
- * dropped most entries). Same-language matches are excluded -- this is the
+ * PostgREST row cap. Same-language matches are excluded -- this is the
  * "other languages" panel, not a synonyms list.
  */
 export async function getCrossLanguage(

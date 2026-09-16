@@ -1,15 +1,12 @@
 import { fsrs, createEmptyCard, Rating, State, type CardInput, type Grade as FsrsGrade } from 'ts-fsrs'
 import type { CardState, Grade, SrsState } from './types'
 
-export const DAY_MS = 86_400_000
-
 /**
  * FSRS scheduler (ts-fsrs@5.4.2, whose default weights already implement FSRS-6 --
  * confirmed at runtime via its own `FSRSVersion` string, "v5.4.2 using FSRS-6.0").
  * `enable_short_term: false` turns off Anki-style minute-scale learning steps: the
  * wordlist reviews once per session, not several times an hour, so every card goes
- * straight to day-scale intervals (matching the granularity the old SM-2
- * implementation used).
+ * straight to day-scale intervals.
  */
 const scheduler = fsrs({ enable_short_term: false })
 
@@ -100,13 +97,10 @@ export function initialSrsState(vocabId: string, now: number): SrsState {
  * ts-fsrs rejects that with `Invalid delta_t "-5"`, which surfaced as a dead
  * grading button, so the scheduler is handed the later of the two.
  *
- * The result is then pulled back onto the real timeline. Feeding ts-fsrs the
- * later timestamp and storing what it returned was worse than the crash it
- * replaced: the future timestamp became the card's last review, so every later
- * review read it, clamped to it again, and computed zero elapsed days forever. A
- * card graded once while the clock ran a year fast froze at stability 64.69 with
- * a due date in 2027, and `listDueCards` filters on `fsrs_due_at <= now`, so it
- * never came up again and nothing said so.
+ * The result is then pulled back onto the real timeline. Storing the later
+ * timestamp as-is would make it the card's last review, so every later review
+ * would clamp to it again and compute zero elapsed days forever, freezing the
+ * card's due date in the future where `listDueCards` never selects it again.
  *
  * Shifting the due date back by the same skew and recording the review at the
  * moment it actually happened leaves an ordinary review untouched -- the skew is

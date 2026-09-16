@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '@/lib/zod'
 import type { AiConfig } from './config'
 
 /**
@@ -77,7 +77,12 @@ export async function askJson<T>(cfg: AiConfig, opts: AskOptions<T>): Promise<T>
     }),
     signal: opts.signal,
   })
-  if (!res.ok) throw new AiUnavailableError(`Model trả về HTTP ${res.status}`)
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new AiUnavailableError(
+      `Model trả về HTTP ${res.status}${detail ? `: ${detail.slice(0, 200)}` : ''}`,
+    )
+  }
 
   const text = extractJson(messageText(await res.json()))
   let value: unknown

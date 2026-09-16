@@ -109,14 +109,10 @@ const STRUCTURAL_MATCH = 3.0
  * see `looksVietnamese`) or the forward search turned up nothing better than a
  * guess.
  *
- * The second test used to be "found nothing at all", which missed the common
- * case: "nhà" and "con mèo" carry only à and è, which Spanish uses too, so
- * `looksVietnamese` rightly declines to claim them — and the forward search
- * returned a handful of trigram guesses scoring under 1.0, which counted as
- * "found something" and suppressed the reverse lookup entirely. Both words then
- * came back with nothing useful even though the reverse lookup answers them.
- * Measuring the best score instead spends the extra round trip exactly on the
- * queries that have nothing else to show.
+ * The second test measures the best score, not the result count: a forward
+ * search can return trigram guesses scoring under `STRUCTURAL_MATCH` for a
+ * query `looksVietnamese` rightly declines to claim, and a handful of weak
+ * guesses must not count as "found something" and suppress the reverse lookup.
  *
  * Falls back to trigram "did you mean" suggestions only when neither direction
  * found anything, so that extra RPC round-trip stays rare.

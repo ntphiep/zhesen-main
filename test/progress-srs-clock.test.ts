@@ -46,6 +46,7 @@ describe('a clock that jumps forward and comes back', () => {
     let s = initialSrsState('v1', T0)
     s = review(s, 'good', T0 + 10 * DAY)
     expect(() => review(s, 'good', T0 + 5 * DAY)).not.toThrow()
+    expect(review(s, 'good', T0 + 5 * DAY).lastReviewedAt).toBe(T0 + 5 * DAY)
   })
 
   it('leaves an ordinary review exactly as ts-fsrs scheduled it', () => {
