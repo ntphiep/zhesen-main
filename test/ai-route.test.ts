@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { GET, POST, resetAiBudgets } from '@/app/api/ai/route'
 
-const ENV = ['AI_BASE_URL', 'AI_API_KEY', 'AI_MODEL'] as const
+const ENV = ['AI_BASE_URL', 'AI_API_KEY', 'AI_MODEL', 'TRUST_PROXY_HEADER', 'VERCEL'] as const
 const saved: Record<string, string | undefined> = {}
 
-function post(body: unknown) {
+function post(body: unknown, headers: Record<string, string> = {}) {
   return POST(new Request('http://localhost/api/ai', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...headers },
     body: typeof body === 'string' ? body : JSON.stringify(body),
   }))
 }
@@ -26,6 +26,11 @@ describe('/api/ai', () => {
     process.env.AI_BASE_URL = 'http://router.test/v1'
     process.env.AI_API_KEY = 'sk-secret-must-not-leak'
     process.env.AI_MODEL = 'test-model'
+    // Both decide whether `clientKey` may believe x-forwarded-for, so a case
+    // that means to test one path must not inherit the other from the machine
+    // it happens to run on.
+    delete process.env.TRUST_PROXY_HEADER
+    delete process.env.VERCEL
   })
   afterEach(() => {
     for (const k of ENV) {
@@ -113,11 +118,11 @@ describe('/api/ai', () => {
     }
   })
 
-  // clientKey returns null unless TRUST_PROXY_HEADER is set, so on a bare
-  // `next start` the per-address limit never runs -- measured at 25 of 25 POSTs
-  // admitted. The search route survives that because its cold-query limiter
-  // does not need to know who is asking; this route spends money per call and
-  // had no second line at all.
+  // `clientKey` names nobody where x-forwarded-for is not the platform's word,
+  // so on a bare `next start` the per-address limit never runs -- measured at 25
+  // of 25 POSTs admitted. The search route survives that because its cold-query
+  // limiter does not need to know who is asking; this route spends money per
+  // call and had no second line at all.
   it('caps total calls even when the caller cannot be identified', async () => {
     modelReplies(JSON.stringify({
       meaningVi: 'x', ipa: 'x', pos: 'noun', level: 'A1', example: 'x', exampleVi: 'x',
@@ -128,6 +133,27 @@ describe('/api/ai', () => {
     }
     expect(statuses).toContain(429)
     expect(statuses.filter((s) => s === 200).length).toBeLessThanOrEqual(60)
+  })
+
+  // The per-address limit is what keeps one caller from spending everyone's
+  // budget, and on Vercel it needs no flag: the platform overwrites
+  // x-forwarded-for at its edge, so the address in it is the platform's word.
+  // Before this, every visitor shared the one global bucket and a single script
+  // could take all sixty calls a minute away from real users.
+  it('caps one address without shutting out the next on a deployment', async () => {
+    process.env.VERCEL = '1'
+    modelReplies(JSON.stringify({
+      meaningVi: 'x', ipa: 'x', pos: 'noun', level: 'A1', example: 'x', exampleVi: 'x',
+    }))
+    const flood = (ip: string) => post(
+      { task: 'enrich', input: { lang: 'en', headword: 'dog' } },
+      { 'x-forwarded-for': ip },
+    )
+    const first: number[] = []
+    for (let i = 0; i < 25; i++) first.push((await flood('203.0.113.7')).status)
+    expect(first.filter((s) => s === 200).length).toBe(20)
+    expect(first).toContain(429)
+    expect((await flood('203.0.113.8')).status).toBe(200)
   })
 
   // The global bucket is one bucket for everyone, so charging a request that

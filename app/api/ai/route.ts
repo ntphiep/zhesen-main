@@ -1,7 +1,7 @@
 import { aiConfig } from '@/lib/ai/config'
 import { askJson, AiUnavailableError } from '@/lib/ai/client'
 import { ERASED_TASKS, isTaskName } from '@/lib/ai/tasks'
-import { z } from 'zod'
+import { z } from '@/lib/zod'
 import { clientKey, createRateLimiter } from '@/lib/http/rateLimit'
 
 /**
@@ -18,22 +18,18 @@ import { clientKey, createRateLimiter } from '@/lib/http/rateLimit'
  * state, not a broken one.
  */
 
-// Two budgets, because the per-address one is conditional and this endpoint
-// spends money.
+// Two budgets: per-address, and a global one as a backstop.
 //
-// `clientKey` returns null unless TRUST_PROXY_HEADER is set, since a caller can
-// write whatever it likes into x-forwarded-for. That is correct, and it means
-// the per-address limit does not run at all on a bare `next start` or on any
-// deployment that has not set the flag -- measured: 25 consecutive POSTs, none
-// refused. The search route survives that because `createColdQueryLimiter`
-// backs it up without needing to know who is asking; this route had no such
-// second line, so a curl loop against a public POST ran up a model bill until
-// somebody looked at a dashboard.
+// `clientKey` can only name a caller where the `x-forwarded-for` header is set
+// by the platform rather than by the caller. That covers the deployment -- see
+// `forwardedForIsTrusted` in lib/http/rateLimit.ts -- but not a bare
+// `next start`, where the header is whatever the sender typed. So the route
+// needs a second line that does not depend on knowing who is asking.
 //
 // The global budget is that second line. It is deliberately blunt -- one bucket
 // for everyone -- because a cap that occasionally inconveniences a real user is
 // better than no cap on spending. It sits above the per-address limit so a
-// deployment behind a proxy still gets fair sharing underneath it.
+// deployment that can name its callers still gets fair sharing underneath it.
 const CALLS_PER_MINUTE = 20
 let rateLimit = createRateLimiter({ limit: CALLS_PER_MINUTE, windowMs: 60_000 })
 

@@ -75,9 +75,16 @@ describe('createRateLimiter', () => {
 describe('clientKey', () => {
   const req = (headers: Record<string, string> = {}) => new Request('https://x.test/', { headers })
   const original = process.env.TRUST_PROXY_HEADER
+  const originalVercel = process.env.VERCEL
+  beforeEach(() => {
+    delete process.env.TRUST_PROXY_HEADER
+    delete process.env.VERCEL
+  })
   afterEach(() => {
     if (original === undefined) delete process.env.TRUST_PROXY_HEADER
     else process.env.TRUST_PROXY_HEADER = original
+    if (originalVercel === undefined) delete process.env.VERCEL
+    else process.env.VERCEL = originalVercel
   })
 
   describe('behind a proxy the deployment vouches for', () => {
@@ -101,9 +108,20 @@ describe('clientKey', () => {
     })
   })
 
-  describe('with no proxy in front', () => {
-    beforeEach(() => { delete process.env.TRUST_PROXY_HEADER })
+  describe('on a Vercel deployment', () => {
+    // Vercel overwrites x-forwarded-for at its edge and does not forward an
+    // external value, so the header needs no extra flag to be believed there:
+    // https://vercel.com/docs/headers/request-headers. Without this, every
+    // visitor fell into the one global bucket and a single script could spend
+    // the whole site's assistant budget.
+    beforeEach(() => { process.env.VERCEL = '1' })
 
+    it('names the caller with no extra configuration', () => {
+      expect(clientKey(req({ 'x-forwarded-for': '203.0.113.7' }))).toBe('203.0.113.7')
+    })
+  })
+
+  describe('with no proxy in front', () => {
     it('ignores a header the client could have written itself', () => {
       // Trusting it unconditionally made the per-address limit free to bypass:
       // rotating the header let 5,000 of 5,000 requests through.
@@ -119,9 +137,9 @@ describe('clientKey', () => {
 })
 
 describe('createColdQueryLimiter', () => {
-  function limiterAt(limit: number, windowMs: number, remember?: number) {
+  function limiterAt(limit: number, windowMs: number, remember?: number, rememberMs?: number) {
     let clock = 1_000
-    const admit = createColdQueryLimiter({ limit, windowMs, remember, now: () => clock })
+    const admit = createColdQueryLimiter({ limit, windowMs, remember, rememberMs, now: () => clock })
     return { admit, advance: (ms: number) => { clock += ms } }
   }
 
@@ -172,9 +190,37 @@ describe('createColdQueryLimiter', () => {
     expect(spent).toBe(5)
   })
 
+  // A query is free only because the cache still holds the answer. Once the cache
+  // has let it go, answering it costs a round trip again and so must cost budget:
+  // otherwise a caller loads the memory at the permitted rate, waits for the
+  // cache to expire underneath it, and then replays every one of them for free.
+  it('stops counting a query as seen once the cache would have dropped it', () => {
+    // The window is longer than the memory on purpose: a window reset would
+    // refill the budget and hide whether the query itself cost anything.
+    const { admit, advance } = limiterAt(10, 7_200_000, 1_000, 3_600_000)
+    expect(admit('dog').allowed).toBe(true)
+    advance(3_599_000)
+    const warm = admit('dog')
+    expect(warm.remaining).toBe(9)
+    advance(2_000)
+    expect(admit('dog').remaining).toBe(8)
+  })
+
+  // Reading a cache entry does not extend its life, so neither does asking again.
+  it('ages a query from when it was first admitted, not from the last request', () => {
+    const { admit, advance } = limiterAt(10, 3_600_000 * 2, 1_000, 3_600_000)
+    admit('dog')
+    for (let i = 0; i < 6; i++) { advance(500_000); admit('dog') }
+    // 3,000,000 ms of repeats; the entry is still inside its hour.
+    expect(admit('dog').remaining).toBe(9)
+    advance(700_000)
+    expect(admit('dog').remaining).toBe(8)
+  })
+
   it('refuses a configuration that would allow nothing or remember nothing', () => {
     expect(() => createColdQueryLimiter({ limit: 0, windowMs: 1_000 })).toThrow(RangeError)
     expect(() => createColdQueryLimiter({ limit: 1, windowMs: 0 })).toThrow(RangeError)
     expect(() => createColdQueryLimiter({ limit: 1, windowMs: 1_000, remember: 0 })).toThrow(RangeError)
+    expect(() => createColdQueryLimiter({ limit: 1, windowMs: 1_000, rememberMs: 0 })).toThrow(RangeError)
   })
 })

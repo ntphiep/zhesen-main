@@ -89,25 +89,41 @@ export function createRateLimiter(options: RateLimitOptions): RateLimiter {
 }
 
 /**
+ * Whether the `x-forwarded-for` this request carries is the platform's word or
+ * the caller's.
+ *
+ * Vercel rewrites the header at its edge and does not forward an external value:
+ * "Vercel overwrites this header and does not forward external IPs to prevent
+ * spoofing, unless a trusted proxy is enabled for Enterprise customers"
+ * (https://vercel.com/docs/headers/request-headers). This project is not on
+ * Enterprise, so on a Vercel deployment the header is trustworthy with no
+ * configuration, and `VERCEL=1` is set on every such deployment
+ * (https://vercel.com/docs/environment-variables/system-environment-variables).
+ *
+ * Detecting that matters because the alternative was one shared bucket: with no
+ * per-address key, every visitor spends the same global budget, so a single
+ * script could exhaust the assistant for the whole site at no cost to itself.
+ *
+ * `TRUST_PROXY_HEADER` stays for any other deployment behind a proxy that sets
+ * the header. Anywhere else -- a bare `next start`, a container with the port
+ * published straight out -- the header is whatever the caller typed, so it is
+ * ignored.
+ */
+function forwardedForIsTrusted(): boolean {
+  return process.env.TRUST_PROXY_HEADER === '1' || process.env.VERCEL === '1'
+}
+
+/**
  * Identify the caller, or nothing when the caller cannot be identified.
  *
- * `x-forwarded-for` is worth exactly as much as the proxy in front of the app: a
- * hosting platform overwrites whatever the client sent, a bare Node server passes
- * it straight through. So this reads the header only when `TRUST_PROXY_HEADER` says
- * a proxy is setting it, and returns null otherwise.
- *
- * Both halves of that were wrong before, in opposite directions. The header was
- * trusted unconditionally, so rotating it defeated the limit completely: measured
- * at 5,000 of 5,000 requests allowed. And a caller with no header at all was
- * bucketed under "unknown", so on a bare `next start` every visitor shared one
- * budget and 120 searches a minute capped the whole site: measured at 120 of 200.
- *
- * A caller that cannot be identified is not rate-limited by address at all. The
- * database is protected by `createColdQueryLimiter` below, which does not depend
- * on knowing who is asking.
+ * A caller with no usable header must not be bucketed under one shared "unknown"
+ * key, or every visitor on a bare `next start` caps the whole site's budget
+ * together. Such a caller is not rate-limited by address at all; the database is
+ * protected by `createColdQueryLimiter` below, which does not depend on knowing
+ * who is asking.
  */
 export function clientKey(request: Request): string | null {
-  if (process.env.TRUST_PROXY_HEADER !== '1') return null
+  if (!forwardedForIsTrusted()) return null
   const forwarded = request.headers.get('x-forwarded-for')
   const first = forwarded?.split(',')[0]?.trim()
   if (first) return first
@@ -124,9 +140,18 @@ export function clientKey(request: Request): string | null {
  * escape it by forging a header, and a hundred people searching the same word
  * never spend more than the first one did.
  *
- * `remember` bounds the set of queries treated as already seen. It is a separate,
- * smaller memory than the server's own cache and only decides whether a query
- * costs budget; being wrong about one costs one round trip, not correctness.
+ * `remember` bounds the set of queries treated as already seen, and `rememberMs`
+ * bounds how long one stays in it. Both matter. Without the second, a caller
+ * could load the set with 5,000 distinct queries at the permitted rate, wait for
+ * the server cache to expire underneath them, and then have all 5,000 counted as
+ * warm while every one of them costs a round trip to Supabase. So `rememberMs`
+ * has to be the caller's own cache lifetime, and the clock starts when the query
+ * was first admitted rather than when it was last asked for -- that is when the
+ * cache entry was written, and reading it does not make it younger.
+ *
+ * This memory is separate from, and smaller than, the server's own cache, and it
+ * only decides whether a query costs budget; being wrong about one costs one
+ * round trip, not correctness.
  */
 export interface ColdQueryLimiterOptions {
   /** Queries not seen recently that may get through per window. */
@@ -134,27 +159,35 @@ export interface ColdQueryLimiterOptions {
   windowMs: number
   /** How many recent queries count as already seen. */
   remember?: number
+  /** How long one stays counted as seen. Set it to the cache's own lifetime. */
+  rememberMs?: number
   now?: () => number
 }
 
 export function createColdQueryLimiter(options: ColdQueryLimiterOptions): (query: string) => RateLimitResult {
-  const { limit, windowMs, remember = 5_000, now = Date.now } = options
+  const { limit, windowMs, remember = 5_000, rememberMs = 3_600_000, now = Date.now } = options
   if (limit < 1) throw new RangeError('limit phải từ 1 trở lên')
   if (windowMs < 1) throw new RangeError('windowMs phải lớn hơn 0')
   if (remember < 1) throw new RangeError('remember phải từ 1 trở lên')
+  if (rememberMs < 1) throw new RangeError('rememberMs phải lớn hơn 0')
 
-  const seen = new Set<string>()
+  /** Query to the moment it was first admitted. Insertion order is the LRU order. */
+  const seen = new Map<string, number>()
   let count = 0
   let resetAt = 0
 
   return function admit(query: string): RateLimitResult {
     const at = now()
-    if (seen.has(query)) {
-      // Move to the end so the eviction below drops genuinely idle queries.
+    const firstSeenAt = seen.get(query)
+    if (firstSeenAt !== undefined && at - firstSeenAt < rememberMs) {
+      // Move to the end so the eviction below drops genuinely idle queries. The
+      // timestamp rides along unchanged: it marks when the cache entry was
+      // written, and asking for it again does not make that entry younger.
       seen.delete(query)
-      seen.add(query)
+      seen.set(query, firstSeenAt)
       return { allowed: true, remaining: Math.max(0, limit - count), retryAfterSeconds: 0 }
     }
+    if (firstSeenAt !== undefined) seen.delete(query)
     if (at >= resetAt) {
       count = 0
       resetAt = at + windowMs
@@ -164,11 +197,11 @@ export function createColdQueryLimiter(options: ColdQueryLimiterOptions): (query
     }
     count += 1
     while (seen.size >= remember) {
-      const oldest = seen.values().next()
+      const oldest = seen.keys().next()
       if (oldest.done) break
       seen.delete(oldest.value)
     }
-    seen.add(query)
+    seen.set(query, at)
     return { allowed: true, remaining: limit - count, retryAfterSeconds: 0 }
   }
 }
