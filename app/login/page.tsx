@@ -5,7 +5,14 @@ import { accountKind } from '@/lib/auth/account'
 import { safeNext } from '@/lib/auth/redirect'
 import { AuthForm } from '@/components/account/AuthForm'
 
-export const metadata = { title: 'Đăng nhập · Zhesen' }
+export const metadata = { title: 'Đăng nhập' }
+
+/** Why `app/auth/callback/route.ts` sent the reader here instead of on to the
+ *  page they asked for. Without these the redirect landed on a blank form. */
+const AUTH_NOTICE: Record<string, string> = {
+  missing: 'Liên kết không hợp lệ. Xin đăng nhập lại để nhận liên kết mới.',
+  failed: 'Liên kết xác nhận đã hết hạn hoặc đã được dùng rồi. Xin đăng nhập lại để nhận liên kết mới.',
+}
 
 export default async function LoginPage({
   searchParams,
@@ -33,7 +40,13 @@ export default async function LoginPage({
     // top it read as a form dropped on a blank page, with the whole lower half
     // empty.
     <main className="flex min-h-[calc(100dvh-8rem)] items-center justify-center bg-black/[0.02] px-6 py-12">
-      <AuthForm mode="login" localWordCount={localWordCount} hasAnonymousSession={kind === 'anonymous'} next={next} />
+      <AuthForm
+        mode="login"
+        localWordCount={localWordCount}
+        hasAnonymousSession={kind === 'anonymous'}
+        next={next}
+        notice={typeof sp.auth === 'string' && Object.hasOwn(AUTH_NOTICE, sp.auth) ? AUTH_NOTICE[sp.auth] : undefined}
+      />
     </main>
   )
 }

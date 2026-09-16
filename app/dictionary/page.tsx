@@ -1,5 +1,11 @@
 import { SearchBox } from '@/components/search/SearchBox'
 import { LANGUAGES, isLangCode } from '@/lib/languages'
+import { pageMetadata } from '@/lib/site'
+
+export const metadata = pageMetadata({
+  title: 'Tra từ',
+  description: 'Tra từ tiếng Trung, Tây Ban Nha và Anh, hoặc gõ thẳng tiếng Việt để tra ngược.',
+})
 
 /** What the box accepts, shown because none of it is guessable from an empty
  * field: that Vietnamese works as a query, that accents and tone marks are

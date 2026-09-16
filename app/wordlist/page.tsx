@@ -1,11 +1,15 @@
-// app/wordlist/page.tsx
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { accountKind } from '@/lib/auth/account'
+import { requirePermanentAccount } from '@/lib/auth/guard'
 import { listWords } from '@/lib/wordlist/store'
 import { countDueCards } from '@/lib/wordlist/review'
 import { WordlistClient } from '@/components/wordlist/WordlistClient'
+import { pageMetadata } from '@/lib/site'
+
+export const metadata = pageMetadata({
+  title: 'Sổ tay',
+  description: 'Những từ đã lưu, kèm thẻ và tiến độ ôn tập.',
+})
 
 export default async function WordlistPage({
   searchParams,
@@ -17,15 +21,11 @@ export default async function WordlistPage({
   // survive the trip; a browser with nothing goes to /login. The page asked for
   // rides back in `next` so the sign-in lands them here.
   const supabase = await createClient()
-  const [{ data }, sp] = await Promise.all([supabase.auth.getUser(), searchParams])
-  const kind = accountKind(data.user)
-  if (kind !== 'permanent') {
-    const door = kind === 'anonymous' ? '/register' : '/login'
-    const params = new URLSearchParams()
-    for (const [key, value] of Object.entries(sp)) if (typeof value === 'string') params.set(key, value)
-    params.set('next', '/wordlist')
-    redirect(`${door}?${params}`)
-  }
+  const sp = await searchParams
+  const carry = Object.fromEntries(
+    Object.entries(sp).filter((e): e is [string, string] => typeof e[1] === 'string'),
+  )
+  await requirePermanentAccount(supabase, '/wordlist', carry)
 
   const [words, due] = await Promise.all([listWords(supabase), countDueCards(supabase)])
   return (

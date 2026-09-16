@@ -6,7 +6,7 @@ import { getProfile } from '@/lib/auth/profile'
 import { countWords } from '@/lib/wordlist/store'
 import { AccountSettings } from '@/components/account/AccountSettings'
 
-export const metadata = { title: 'Tài khoản · Zhesen' }
+export const metadata = { title: 'Tài khoản' }
 
 export default async function AccountPage() {
   const supabase = await createClient()
@@ -18,7 +18,7 @@ export default async function AccountPage() {
   // browser holds and abandoning them.
   if (kind !== 'permanent') redirect(kind === 'anonymous' ? '/register' : '/login')
 
-  const [profile, wordCount] = await Promise.all([getProfile(supabase), countWords(supabase)])
+  const [profile, wordCount] = await Promise.all([getProfile(supabase, data.user!.id), countWords(supabase)])
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">

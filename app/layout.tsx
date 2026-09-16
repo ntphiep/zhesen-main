@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { AiChatPanel } from '@/components/ai/AiChatPanel'
+import { aiConfig } from '@/lib/ai/config'
+import { SITE_URL } from '@/lib/site'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -14,9 +16,31 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
+const DESCRIPTION =
+  'Từ điển và sổ tay từ vựng cho người Việt học tiếng Trung, Tây Ban Nha và Anh. ' +
+  'Tra xuôi hoặc tra ngược từ tiếng Việt, lưu từ vào sổ tay và ôn lại theo lịch FSRS.'
+
 export const metadata: Metadata = {
-  title: 'Zhesen',
-  description: 'Học ngoại ngữ',
+  // Without it every relative URL in a metadata field is a build error, and the
+  // Open Graph tags would have to repeat the host in each route.
+  metadataBase: new URL(SITE_URL),
+  // `default` is what the home page and any route without its own title get;
+  // `template` is what the others are wrapped in, so a page declares only its own
+  // name and the suffix stays consistent.
+  title: { default: 'Zhesen · Từ điển Trung, Tây Ban Nha, Anh', template: '%s · Zhesen' },
+  description: DESCRIPTION,
+  applicationName: 'Zhesen',
+  openGraph: {
+    type: 'website',
+    siteName: 'Zhesen',
+    locale: 'vi_VN',
+    url: '/',
+    title: 'Zhesen · Từ điển Trung, Tây Ban Nha, Anh',
+    description: DESCRIPTION,
+  },
+  // No image is declared on purpose: a card pointing at a missing file renders
+  // worse than a card with no image at all.
+  twitter: { card: 'summary' },
 }
 
 export default function RootLayout({
@@ -32,7 +56,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <SiteHeader />
         <div className="flex-1">{children}</div>
-        <AiChatPanel />
+        {/* Answered here rather than by a request after hydration: aiConfig() only
+            reads environment variables, so it costs nothing and does not opt the
+            layout into dynamic rendering. */}
+        <AiChatPanel enabled={aiConfig() !== null} />
       </body>
     </html>
   )

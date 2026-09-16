@@ -5,7 +5,7 @@ import { accountKind } from '@/lib/auth/account'
 import { safeNext } from '@/lib/auth/redirect'
 import { AuthForm } from '@/components/account/AuthForm'
 
-export const metadata = { title: 'Tạo tài khoản · Zhesen' }
+export const metadata = { title: 'Tạo tài khoản' }
 
 export default async function RegisterPage({
   searchParams,
