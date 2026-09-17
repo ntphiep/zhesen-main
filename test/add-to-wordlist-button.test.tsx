@@ -10,7 +10,7 @@ const client = vi.hoisted(() => {
   const user = { id: 'u1', email: 'a@b.com' }
   return {
     auth: {
-      getUser: vi.fn(async (): Promise<{ data: { user: { id: string; email?: string } | null } }> => ({ data: { user } })),
+      getSession: vi.fn(async (): Promise<{ data: { session: { user: { id: string; email?: string } } | null } }> => ({ data: { session: { user } } })),
       onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: () => {} } } })),
     },
   }
@@ -68,7 +68,7 @@ describe('AddToWordlistButton', () => {
   // word's own page back so the save is one step away after signing in.
   it('asks a signed-out visitor to sign in instead of saving', async () => {
     addWordMock.mockClear()
-    client.auth.getUser.mockResolvedValueOnce({ data: { user: null } })
+    client.auth.getSession.mockResolvedValueOnce({ data: { session: null } })
     render(<AddToWordlistButton entry={entry} />)
     const link = await screen.findByRole('link', { name: /Đăng nhập để lưu/i })
     expect(link).toHaveAttribute('href', '/login?next=%2Fdictionary%2Fen%2Fdog')

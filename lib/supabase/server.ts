@@ -1,8 +1,15 @@
+import { cache } from 'react'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { supabaseEnv } from './env'
 
-export async function createClient() {
+/**
+ * Memoised for the length of one request, so a layout and the page inside it get
+ * the same client rather than two. On its own that only saves an object; what it
+ * buys is a stable argument for `currentUser` in lib/auth/guard.ts, which is how
+ * the two session reads on /practice become one call to the auth server.
+ */
+export const createClient = cache(async function createClient() {
   const cookieStore = await cookies()
   const { url, anonKey } = supabaseEnv()
   return createServerClient(
@@ -25,4 +32,4 @@ export async function createClient() {
       },
     },
   )
-}
+})

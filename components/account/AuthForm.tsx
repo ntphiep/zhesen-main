@@ -187,11 +187,11 @@ export function AuthForm({
       <p className="mt-6 text-sm text-black/60">
         {mode === 'register' ? (
           <>
-            Đã có tài khoản? <Link href="/login" className="font-medium text-black hover:underline">Đăng nhập</Link>
+            Đã có tài khoản? <Link href="/login" prefetch={false} className="font-medium text-black hover:underline">Đăng nhập</Link>
           </>
         ) : (
           <>
-            Chưa có tài khoản? <Link href="/register" className="font-medium text-black hover:underline">Tạo tài khoản</Link>
+            Chưa có tài khoản? <Link href="/register" prefetch={false} className="font-medium text-black hover:underline">Tạo tài khoản</Link>
           </>
         )}
       </p>

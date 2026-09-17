@@ -23,6 +23,7 @@ export function AddToWordlistButton({ entry }: { entry: DictEntryPreview | DictE
     return (
       <Link
         href={`${signInHref(kind)}?next=${encodeURIComponent(entryPath(entry.id))}`}
+        prefetch={false}
         className="rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium text-black/70 hover:bg-black/5"
       >
         Đăng nhập để lưu

@@ -31,7 +31,17 @@ export function useAccount(): { kind: AccountKind | null; email: string | null }
     void import('@/lib/supabase/client').then(({ createClient }) => {
       if (!live) return
       const supabase = createClient()
-      supabase.auth.getUser().then(({ data }) => apply(data.user ?? null))
+      // `getSession` and not `getUser`: this hook only decides which links the
+      // header and the save button show, and `getUser` is a round trip to the
+      // auth server for every one of them. Two components use this hook on a
+      // dictionary entry page, so one page load made two such calls before
+      // anything could be drawn. The installed auth-js says so itself: "Should
+      // always be used when checking for user authorization on the server. On the
+      // client, you can instead use getSession().session.user for faster results"
+      // (node_modules/@supabase/auth-js/dist/module/GoTrueClient.d.ts, getUser).
+      // Nothing here grants access; every page and table that does still verifies
+      // on the server, through requirePermanentAccount and RLS.
+      supabase.auth.getSession().then(({ data }) => apply(data.session?.user ?? null))
       const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => apply(session?.user ?? null))
       unsubscribe = () => sub.subscription.unsubscribe()
     })

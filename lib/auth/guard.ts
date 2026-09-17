@@ -1,6 +1,18 @@
+import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { accountKind } from '@/lib/auth/account'
+
+/**
+ * `auth.getUser()` asks the auth server every time it is called, and /practice
+ * asks twice: once in the segment's layout, which guards the six mode pages, and
+ * once in the page itself, which guards the statistics query. Memoised per
+ * request against the client from lib/supabase/server.ts, which is memoised too,
+ * the second ask costs nothing.
+ */
+const currentUser = cache(
+  async (supabase: SupabaseClient): Promise<User | null> => (await supabase.auth.getUser()).data.user,
+)
 
 /**
  * The door every account-only page goes through.
@@ -20,9 +32,9 @@ export async function requirePermanentAccount(
   next: string,
   carry: Record<string, string> = {},
 ): Promise<User> {
-  const { data } = await supabase.auth.getUser()
-  const kind = accountKind(data.user)
-  if (kind === 'permanent' && data.user) return data.user
+  const user = await currentUser(supabase)
+  const kind = accountKind(user)
+  if (kind === 'permanent' && user) return user
   const params = new URLSearchParams(carry)
   params.set('next', next)
   redirect(`${kind === 'anonymous' ? '/register' : '/login'}?${params}`)

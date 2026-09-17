@@ -93,6 +93,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
         kind !== null && (
           <Link
             href={`${signInHref(kind)}?next=${encodeURIComponent(here)}`}
+            prefetch={false}
             className="mt-4 inline-block rounded-lg border border-black/15 px-4 py-2 text-sm font-medium text-black/70 hover:bg-black/5"
           >
             {`Đăng nhập để thêm cả ${level} vào sổ tay (${total} từ)`}

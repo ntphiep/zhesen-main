@@ -72,14 +72,15 @@ export function authStub(
 }
 
 /**
- * The auth half `useAccount` reads: getUser resolves to `user` (with an email
- * for a signed-in account, without for the legacy anonymous one, or null for a
- * visitor) and the state subscription never fires, so the kind settles once.
+ * The auth half `useAccount` reads: getSession resolves to a session carrying
+ * `user` (with an email for a signed-in account, without for the legacy
+ * anonymous one, or no session at all for a visitor) and the state subscription
+ * never fires, so the kind settles once.
  */
 export function accountAuthStub(user: { id: string; email?: string } | null) {
   return {
     auth: {
-      getUser: vi.fn(async () => ({ data: { user } })),
+      getSession: vi.fn(async () => ({ data: { session: user ? { user } : null } })),
       onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: () => {} } } })),
     },
   }
