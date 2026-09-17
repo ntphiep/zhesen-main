@@ -24,6 +24,7 @@ export function AccountLink() {
     return (
       <Link
         href="/account"
+        prefetch={false}
         className="ml-2 max-w-40 truncate rounded-lg px-3 py-1.5 text-sm text-black/60 hover:bg-black/5"
         title={email ?? undefined}
       >
@@ -36,12 +37,14 @@ export function AccountLink() {
     <div className={`ml-2 flex items-center gap-1${kind === null ? ' invisible' : ''}`} aria-hidden={kind === null || undefined}>
       <Link
         href="/login"
+        prefetch={false}
         className="rounded-lg px-3 py-1.5 text-sm text-black/60 hover:bg-black/5"
       >
         Đăng nhập
       </Link>
       <Link
         href="/register"
+        prefetch={false}
         className="rounded-lg bg-black px-3 py-1.5 text-sm font-medium text-white hover:bg-black/85"
       >
         Đăng ký

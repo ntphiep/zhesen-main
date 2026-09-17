@@ -3,11 +3,19 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AccountLink } from '@/components/account/AccountLink'
 
+/**
+ * `prefetch` is off for the two routes that read the session. A Link prefetches
+ * as soon as it enters the viewport, and this header is in the viewport of every
+ * page, so each page load was fetching /practice and /wordlist as well -- two
+ * renders that each query Supabase, for a visitor who is reading a dictionary
+ * entry and may never open either. The dictionary and grammar routes stay on,
+ * because they are answered from the edge cache and cost the server nothing.
+ */
 const NAV = [
-  { href: '/dictionary', label: 'Tra cứu' },
-  { href: '/grammar', label: 'Ngữ pháp' },
-  { href: '/practice', label: 'Luyện tập' },
-  { href: '/wordlist', label: 'Sổ tay' },
+  { href: '/dictionary', label: 'Tra cứu', prefetch: true },
+  { href: '/grammar', label: 'Ngữ pháp', prefetch: true },
+  { href: '/practice', label: 'Luyện tập', prefetch: false },
+  { href: '/wordlist', label: 'Sổ tay', prefetch: false },
 ]
 
 export function SiteHeader() {
@@ -24,6 +32,7 @@ export function SiteHeader() {
             <Link
               key={n.href}
               href={n.href}
+              prefetch={n.prefetch}
               className={`rounded-lg px-3 py-1.5 text-sm ${active ? 'bg-black/10 font-medium text-black' : 'text-black/60 hover:bg-black/5'}`}
             >
               {n.label}

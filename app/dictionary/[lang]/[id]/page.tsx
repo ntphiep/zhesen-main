@@ -11,6 +11,32 @@ import { percentDecode } from '@/lib/http/percentDecode'
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
 
+/**
+ * Empty on purpose. A dynamic segment is only eligible for the full route cache
+ * once it declares this function; without it Next.js renders the page for every
+ * request and marks the response `private, no-cache, no-store`, which is why
+ * repeat visits to the same word never hit the CDN. Returning no params prerenders
+ * nothing at build -- the dictionary has 36,361 entries and the vast majority are
+ * never opened -- and `dynamicParams` stays at its default, so a word is rendered
+ * the first time somebody asks for it and served from the edge afterwards.
+ */
+export function generateStaticParams(): { lang: string; id: string }[] {
+  return []
+}
+
+
+/**
+ * Everything this page reads comes from `unstable_cache`, and none of it depends
+ * on the request: no cookie, no header, no search parameter. Without this export
+ * Next.js still renders it on demand for every visitor and sends
+ * `Cache-Control: private, no-cache, no-store`, so the CDN holds nothing and each
+ * visit pays the full round trip to the function. With it the rendered page is
+ * stored and served from the edge, on the same one-hour window the data caches
+ * already use.
+ */
+export const revalidate = 3600
+
+
 type Params = Promise<{ lang: string; id: string }>
 
 /**

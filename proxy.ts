@@ -42,6 +42,19 @@ export async function proxy(request: NextRequest) {
   return response
 }
 
+// Only the routes whose server code reads the session. Everything else -- the
+// dictionary, the grammar notes, the level lists, the search route -- is answered
+// from cached data that never looks at a cookie, and running this proxy on them
+// bought nothing while costing every one of those requests a hop: measured against
+// production, `/robots.txt` (matched) answered in 178 ms and `/icon.svg` (excluded
+// by the old matcher's file-extension rule) in 115 ms, both static CDN hits.
+//
+// It also kept those routes out of the shared cache whenever the session happened
+// to rotate on them, because a response carrying Set-Cookie is not cacheable at all.
+// https://vercel.com/docs/caching/cdn-cache#cacheable-response-criteria
+//
+// The browser client refreshes its own token (lib/supabase/client.ts), so a reader
+// who never leaves the dictionary loses nothing by not being refreshed here.
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: ['/account/:path*', '/wordlist/:path*', '/practice/:path*', '/login', '/register', '/auth/:path*'],
 }

@@ -159,6 +159,16 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   const indexById = useMemo(() => new Map(flat.map((e, i) => [e.id, i])), [flat])
   const total = flat.length
 
+  // Warm the row the keyboard is on, which is the first result until an arrow key
+  // moves it. Hovering a row already does this, and a touch screen never hovers:
+  // the reader taps the first suggestion and then waits for the whole entry page.
+  // One prefetch per result set, not one per row, so a list of twenty-four
+  // suggestions still costs a single request.
+  const activeHref = flat[active] ? entryPath(flat[active].id) : null
+  useEffect(() => {
+    if (activeHref) router.prefetch(activeHref)
+  }, [activeHref, router])
+
   function remember(q: string) {
     const next = pushRecent(recent, q)
     setRecent(next)

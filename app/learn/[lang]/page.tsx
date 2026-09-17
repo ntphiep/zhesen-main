@@ -1,10 +1,28 @@
 import { notFound } from 'next/navigation'
-import { getLanguage, isLangCode } from '@/lib/languages'
+import { LANG_CODES, getLanguage, isLangCode } from '@/lib/languages'
 import { getCachedCommonWords, getCachedLevelsForLanguage } from '@/lib/dictionary/cached'
 import { LanguageHub } from '@/components/learn/LanguageHub'
 
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
+
+/** The three languages are a fixed list, so their hubs are prerendered at build. */
+export function generateStaticParams(): { lang: string }[] {
+  return LANG_CODES.map((lang) => ({ lang }))
+}
+
+
+/**
+ * Everything this page reads comes from `unstable_cache`, and none of it depends
+ * on the request: no cookie, no header, no search parameter. Without this export
+ * Next.js still renders it on demand for every visitor and sends
+ * `Cache-Control: private, no-cache, no-store`, so the CDN holds nothing and each
+ * visit pays the full round trip to the function. With it the rendered page is
+ * stored and served from the edge, on the same one-hour window the data caches
+ * already use.
+ */
+export const revalidate = 3600
+
 
 export async function generateMetadata(
   { params }: { params: Promise<{ lang: string }> },
