@@ -66,8 +66,22 @@ jobs:
 
       - run: npm ci
 
+      # Skipped rather than failed when the secrets are missing, the same way the
+      # deploy below treats a missing token. Dependabot pull requests are the case
+      # that matters: they run in this repository, so the `if` above lets them in,
+      # but GitHub hands them the Dependabot secret store rather than the Actions
+      # one, so both variables arrive empty and the prerender dies with
+      # "@supabase/ssr: Your project's URL and API key are required to create a
+      # Supabase client!" while exporting /_not-found. Every Dependabot pull
+      # request was therefore permanently red on a job it could never pass, which
+      # is worse than no signal: it trains the reviewer to merge over a failure.
       - name: Next build
-        run: npm run build
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+            echo "No Supabase secrets on this run; skipping the prerender."
+            exit 0
+          fi
+          npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
