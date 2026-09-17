@@ -99,7 +99,11 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* The stack the machine already has, not a download. Geist Mono was loaded in
+     the root layout, so every page fetched it, and `font-mono` is used in exactly
+     one place: the pattern line on a grammar point
+     (components/grammar/GrammarPointDetailView.tsx). */
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
 @media (prefers-color-scheme: dark) {
