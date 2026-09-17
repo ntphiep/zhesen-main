@@ -74,6 +74,27 @@ thời gian trong `.claude/.verify-gate-last-run`.
   `lib/supabase/server`; client dùng `useMemo(() => createClient(), [])` từ
   `lib/supabase/client`, đừng tạo client mới mỗi lần render.
 - **Tailwind 4** cấu hình trong `app/globals.css`, không còn `tailwind.config.js`.
+- **Route segment động KHÔNG vào được route cache nếu thiếu `generateStaticParams`.**
+  Trang chỉ đọc `unstable_cache` vẫn bị render lại cho từng request và trả
+  `Cache-Control: private, no-cache, no-store`, nên CDN không giữ gì: đo trên
+  production, mỗi lần vào lại `/dictionary/en/hello` đều `X-Vercel-Cache: MISS` và
+  tốn 258 tới 314 ms, tới 4.513 ms khi function nguội. Khai `generateStaticParams`
+  trả mảng rỗng là đủ, `dynamicParams` mặc định `true` lo phần còn lại; kèm
+  `revalidate` thì trang xuống còn 128 tới 144 ms và `HIT`. Thêm route đọc dữ liệu
+  cached mà không đụng request thì khai luôn.
+- **`proxy.ts` chỉ được khớp route thật sự đọc session.** Matcher rộng bắt cả tệp
+  trong `public/`: đo trên production, `/robots.txt` bị khớp mất 178 ms còn
+  `/icon.svg` được loại trừ mất 115 ms, cùng là tệp tĩnh CDN trả về. Nó còn có thể
+  gắn `Set-Cookie` lên một response đáng ra cache được, và Vercel không cache
+  response có `Set-Cookie`.
+- **`Link` nạp trước ngay khi vào khung nhìn.** Header nằm trên mọi trang, nên mọi
+  lần mở trang từng nạp trước `/practice`, `/wordlist`, `/login`, `/register`, bốn
+  lần render đều hỏi Supabase. Link tới route dynamic đọc session phải
+  `prefetch={false}`.
+- **Trong trình duyệt dùng `auth.getSession()`, trên server dùng `auth.getUser()`.**
+  `getUser` là một vòng tới máy chủ auth mỗi lần gọi, và `useAccount` chỉ quyết định
+  vẽ link nào. Chính auth-js đã cài viết vậy trong JSDoc của `getUser`. Quyền vẫn do
+  `requirePermanentAccount` trên server và RLS quyết định.
 - Route tìm kiếm và `lib/dictionary/cached.ts` dùng `unstable_cache` với tag `['lex']`.
   **Không có gì tự gọi `POST /api/revalidate`.** Repo pipeline không nhắc tới nó ở bất
   kỳ đâu (`grep -rni revalidate` trong `zhesen-pipeline`, bỏ `.venv`, ra 0 dòng), nên
