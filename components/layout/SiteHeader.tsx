@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AccountLink } from '@/components/account/AccountLink'
+import { LinkPending } from '@/components/ui/LinkPending'
 
 /**
  * `prefetch` is off for the two routes that read the session. A Link prefetches
@@ -36,6 +37,9 @@ export function SiteHeader() {
               className={`rounded-lg px-3 py-1.5 text-sm ${active ? 'bg-black/10 font-medium text-black' : 'text-black/60 hover:bg-black/5'}`}
             >
               {n.label}
+              {/* Only the two that are not prefetched: the other two arrive from
+                  the edge cache in well under the dot's own delay. */}
+              {!n.prefetch && <LinkPending />}
             </Link>
           )
         })}

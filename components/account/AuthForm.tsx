@@ -1,6 +1,7 @@
 'use client'
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import { LinkPending } from '@/components/ui/LinkPending'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -187,11 +188,11 @@ export function AuthForm({
       <p className="mt-6 text-sm text-black/60">
         {mode === 'register' ? (
           <>
-            Đã có tài khoản? <Link href="/login" prefetch={false} className="font-medium text-black hover:underline">Đăng nhập</Link>
+            Đã có tài khoản? <Link href="/login" prefetch={false} className="font-medium text-black hover:underline">Đăng nhập<LinkPending /></Link>
           </>
         ) : (
           <>
-            Chưa có tài khoản? <Link href="/register" prefetch={false} className="font-medium text-black hover:underline">Tạo tài khoản</Link>
+            Chưa có tài khoản? <Link href="/register" prefetch={false} className="font-medium text-black hover:underline">Tạo tài khoản<LinkPending /></Link>
           </>
         )}
       </p>

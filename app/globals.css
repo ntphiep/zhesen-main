@@ -188,3 +188,32 @@ dialog::backdrop {
   letter-spacing: 0;
   white-space: nowrap;
 }
+
+/* The dot components/ui/LinkPending.tsx draws while a link's page is still being
+   fetched. It is always in the layout and only fades in, so a navigation that
+   finishes quickly shows nothing and the line it sits on never moves. The delay
+   is what keeps it off screen for the fast case: a prefetched route arrives in
+   15 to 53 ms, well inside it. */
+.link-pending {
+  display: inline-block;
+  width: 0.4em;
+  height: 0.4em;
+  margin-left: 0.4em;
+  vertical-align: middle;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0;
+}
+.link-pending.is-pending {
+  animation: link-pending-pulse 1s ease-in-out 120ms infinite;
+}
+@keyframes link-pending-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.15; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .link-pending.is-pending {
+    animation: none;
+    opacity: 0.6;
+  }
+}

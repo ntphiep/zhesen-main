@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useAccount } from '@/lib/hooks/useAccount'
+import { LinkPending } from '@/components/ui/LinkPending'
 
 /**
  * The account corner of the header: the signed-in address, or the two doors
@@ -29,6 +30,7 @@ export function AccountLink() {
         title={email ?? undefined}
       >
         {email}
+        <LinkPending />
       </Link>
     )
   }
@@ -41,6 +43,7 @@ export function AccountLink() {
         className="rounded-lg px-3 py-1.5 text-sm text-black/60 hover:bg-black/5"
       >
         Đăng nhập
+        <LinkPending />
       </Link>
       <Link
         href="/register"
@@ -48,6 +51,7 @@ export function AccountLink() {
         className="rounded-lg bg-black px-3 py-1.5 text-sm font-medium text-white hover:bg-black/85"
       >
         Đăng ký
+        <LinkPending />
       </Link>
     </div>
   )

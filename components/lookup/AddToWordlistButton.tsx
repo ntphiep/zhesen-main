@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addWord, draftFromDictEntry, isWordSaved, WordAlreadyExistsError } from '@/lib/wordlist/store'
 import { entryPath } from '@/lib/dictionary/entryId'
+import { LinkPending } from '@/components/ui/LinkPending'
 import { signInHref, useAccount } from '@/lib/hooks/useAccount'
 import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 
@@ -27,6 +28,7 @@ export function AddToWordlistButton({ entry }: { entry: DictEntryPreview | DictE
         className="rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium text-black/70 hover:bg-black/5"
       >
         Đăng nhập để lưu
+        <LinkPending />
       </Link>
     )
   }

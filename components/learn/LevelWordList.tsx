@@ -1,6 +1,7 @@
 'use client'
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import { LinkPending } from '@/components/ui/LinkPending'
 import { createClient } from '@/lib/supabase/client'
 import { getEntriesByLevel, getAllEntriesByLevel } from '@/lib/dictionary/levels'
 import { addWords, draftFromDictEntry, listSavedEntryIds } from '@/lib/wordlist/store'
@@ -97,6 +98,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
             className="mt-4 inline-block rounded-lg border border-black/15 px-4 py-2 text-sm font-medium text-black/70 hover:bg-black/5"
           >
             {`Đăng nhập để thêm cả ${level} vào sổ tay (${total} từ)`}
+            <LinkPending />
           </Link>
         )
       )}
