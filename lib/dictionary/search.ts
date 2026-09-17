@@ -123,7 +123,6 @@ export async function searchBothDirections(
   const q = query.trim()
   if (!q) return { forward: EMPTY_BY_LANG, reverse: EMPTY_BY_LANG, suggestions: [] }
 
-  const forward = await searchAllLanguages(supabase, q, perLang)
   // A Han query is never Vietnamese, so the reverse lookup has nothing to find.
   // Skipping it is not an optimisation but a fix: `lex.search` scores a PGroonga
   // match at 1.5, under STRUCTURAL_MATCH, so every Chinese query that is not an
@@ -131,8 +130,23 @@ export async function searchBothDirections(
   // finds 学习 through the traditional form): 780 to 1,195 ms for zero rows, and
   // production answered the search route with 500 when it crossed the statement
   // timeout (SQLSTATE 57014).
-  const shouldTryReverse = !looksHan(q) && (looksVietnamese(q) || bestScore(forward) < STRUCTURAL_MATCH)
-  const reverse = shouldTryReverse ? await searchAllLanguagesVi(supabase, q, perLang) : EMPTY_BY_LANG
+  //
+  // A query carrying a Vietnamese diacritic decides that on its own, without
+  // seeing a single forward result, so the two run together instead of one after
+  // the other. Only the second test needs the forward scores, and it is the one
+  // that fires for a query in no particular language. Measured through production:
+  // a Vietnamese query cost 334 to 4,078 ms against 176 to 513 ms for an English,
+  // Spanish or Chinese one, and the forward search it was queued behind is the
+  // part it never uses.
+  const reverseIsCertain = !looksHan(q) && looksVietnamese(q)
+  const [forward, eagerReverse] = await Promise.all([
+    searchAllLanguages(supabase, q, perLang),
+    reverseIsCertain ? searchAllLanguagesVi(supabase, q, perLang) : null,
+  ])
+  const reverse = eagerReverse
+    ?? (!looksHan(q) && bestScore(forward) < STRUCTURAL_MATCH
+      ? await searchAllLanguagesVi(supabase, q, perLang)
+      : EMPTY_BY_LANG)
 
   const suggestions = countAll(forward) === 0 && countAll(reverse) === 0
     ? await suggestNearby(supabase, q)

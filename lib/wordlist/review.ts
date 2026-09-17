@@ -149,10 +149,15 @@ export async function countDueCards(
     return count ?? 0
   }
 
-  const learned = Math.min(await countBy(false), limit)
+  // Both at once. The second count is only skipped when the first already filled
+  // the session, which is the rarer case, and running them one after the other
+  // put a second round trip to Seoul on the critical path of /wordlist and
+  // /practice -- two of the pages that cannot be cached at all.
+  const [reviewDue, freshDue] = await Promise.all([countBy(false), countBy(true)])
+  const learned = Math.min(reviewDue, limit)
   const room = Math.min(newLimit, limit - learned)
   if (room <= 0) return learned
-  return learned + Math.min(room, await countBy(true))
+  return learned + Math.min(room, freshDue)
 }
 
 /** Grade a card with FSRS and persist the new schedule. */

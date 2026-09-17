@@ -78,7 +78,7 @@ export default async function Page({ params }: { params: Params }) {
   // `detail`, so it does not have to wait for the queries below.
   const lemma = lemmaFromSenses(detail.senses, detail.headword)
 
-  const [characters, siblings, inflections, grammarPoints, containing, kin] = await Promise.all([
+  const [characters, siblings, inflections, grammarPoints, containing, kin, resolvedExamples] = await Promise.all([
     detail.lang === 'zh' ? getCachedCharacters(detail.headword) : Promise.resolve([]),
     getCachedCrossLanguage(entryId),
     getCachedInflections(entryId),
@@ -90,6 +90,16 @@ export default async function Page({ params }: { params: Params }) {
     detail.lang === 'zh'
       ? Promise.resolve([])
       : getCachedWordKin(detail.lang, lemma ?? detail.headword, detail.headword),
+    // Resolve the example sentences here rather than letting each one do it from
+    // the browser. Done there, a Chinese entry issued eighteen requests and showed
+    // nothing until the last returned; done here the sentences are in the HTML.
+    //
+    // In this wave rather than the next one: it reads `detail.examples` and
+    // nothing the queries above return, so waiting for them bought nothing while
+    // adding its own round trip to the page's critical path. Measured against
+    // production on a first visit, the sentences of `en:quickly` took 680 ms and
+    // `zh:朋友` 716 ms, all of it after the wave above had already finished.
+    getCachedTappableTexts(detail.lang, pickExamples(detail.examples).map((e) => e.text)),
   ])
 
   // The related words and the inflected forms are stored as bare text, so one more
@@ -100,13 +110,7 @@ export default async function Page({ params }: { params: Params }) {
     ...groupWordForms(inflections).map((f) => f.text),
     ...(lemma ? [lemma] : []),
   ]
-  const [previewRows, resolvedExamples] = await Promise.all([
-    getCachedTermPreviews(detail.lang, terms),
-    // Resolve the example sentences here rather than letting each one do it from
-    // the browser. Done there, a Chinese entry issued eighteen requests and showed
-    // nothing until the last returned; done here the sentences are in the HTML.
-    getCachedTappableTexts(detail.lang, pickExamples(detail.examples).map((e) => e.text)),
-  ])
+  const previewRows = await getCachedTermPreviews(detail.lang, terms)
   const previews = Object.fromEntries(previewRows.map((p) => [p.matchText.toLowerCase(), p]))
 
   return (
