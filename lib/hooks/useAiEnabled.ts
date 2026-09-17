@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import { aiEnabled } from '@/lib/ai/browser'
 
 /**
@@ -16,6 +16,39 @@ import { aiEnabled } from '@/lib/ai/browser'
  */
 let cached: boolean | null = null
 let inFlight: Promise<boolean> | null = null
+const listeners = new Set<() => void>()
+
+function publish(value: boolean): void {
+  cached = value
+  for (const notify of [...listeners]) notify()
+}
+
+function subscribe(notify: () => void): () => void {
+  listeners.add(notify)
+  return () => { listeners.delete(notify) }
+}
+
+function snapshot(): boolean {
+  return cached ?? false
+}
+
+/**
+ * What hydration renders, and the reason this hook reads through
+ * `useSyncExternalStore` rather than holding the answer in `useState`.
+ *
+ * `cached` is module state, so by the time a component hydrates, another one
+ * mounted earlier has usually already filled it in. Reading it as the initial
+ * state agreed with the server only while the whole page hydrated in one pass.
+ * Put a Suspense boundary on a route -- which is what a `loading.tsx` does --
+ * and the page below it hydrates after the layout's effects have run: `AiCoach`
+ * then rendered its button on the client against a server render of nothing, and
+ * React threw #418 on every dictionary entry. React hydrates this with the
+ * server's snapshot and re-renders with the real one immediately afterwards,
+ * which is the whole purpose of the third argument.
+ */
+function serverSnapshot(): boolean {
+  return false
+}
 
 /** Forget the cached answer. For tests, which reuse the module. */
 export function resetAiEnabledCache(): void {
@@ -30,20 +63,21 @@ export function resetAiEnabledCache(): void {
  * components that call this hook without an argument stop asking too.
  */
 export function useAiEnabled(known?: boolean): boolean {
-  const [enabled, setEnabled] = useState(known ?? cached ?? false)
+  const shared = useSyncExternalStore(subscribe, snapshot, serverSnapshot)
 
   useEffect(() => {
-    if (known !== undefined) { cached = known; return }
+    if (known !== undefined) {
+      if (cached !== known) publish(known)
+      return
+    }
     if (cached !== null) return
     inFlight ??= aiEnabled().then((v) => {
-      cached = v
       inFlight = null
+      publish(v)
       return v
     })
-    let live = true
-    inFlight.then((v) => { if (live) setEnabled(v) }).catch(() => {})
-    return () => { live = false }
+    void inFlight.catch(() => {})
   }, [known])
 
-  return known ?? enabled
+  return known ?? shared
 }
