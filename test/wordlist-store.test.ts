@@ -223,8 +223,8 @@ describe('addWords', () => {
     expect(res).toHaveLength(2)
   })
 
-  // The unique index from migration 0031 makes a duplicate an error, so a CSV
-  // holding one word already saved used to fail the entire import.
+  // The unique index from migration 0031 makes a duplicate an error; a CSV
+  // holding one word already saved must not fail the entire import.
   it('skips a word already saved instead of failing the import', async () => {
     const cat = { ...dogEntry, id: 'en:cat', headword: 'cat' }
     const { client } = chunkFailsClient('23505', [

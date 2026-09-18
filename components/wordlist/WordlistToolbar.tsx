@@ -96,8 +96,8 @@ export function WordlistToolbar({
         </select>
       )}
 
-      {/* The scheduler already knows which words are overdue and which keep being
-          forgotten; until now the wordlist had no way to ask it. */}
+      {/* The scheduler knows which words are overdue and which keep being forgotten;
+          this is where the wordlist asks it. */}
       <select
         value={reviewFilter}
         onChange={(e) => onReviewFilterChange(e.target.value as ReviewFilter)}

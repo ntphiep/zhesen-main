@@ -33,8 +33,8 @@ const entry: DictEntryPreview = {
 }
 
 describe('AddToWordlistButton', () => {
-  // Reopening a saved word used to offer the add again, and said so only after a
-  // click that could not succeed.
+  // A saved word must show as already-saved before any click; offering the add
+  // again invites a click that cannot succeed.
   it('says the word is already saved before it is clicked', async () => {
     isWordSavedMock.mockResolvedValueOnce(true)
     render(<AddToWordlistButton entry={entry} />)

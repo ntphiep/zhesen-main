@@ -156,10 +156,10 @@
   }
 }
 
-/* No font-family here. The rule that used to be on this line set Arial, which
-   beats Tailwind's preflight on html and is inherited by everything, so the two
-   Geist files loaded by app/layout.tsx were downloaded and never drawn with. The
-   --font-sans token above already points at Geist. */
+/* No font-family here: a value on body would beat Tailwind's preflight cascade
+   from html and override every inherited element, silently dropping the Geist
+   fonts loaded by app/layout.tsx. The --font-sans token above already points at
+   Geist. */
 body {
   background: var(--background);
   color: var(--foreground);

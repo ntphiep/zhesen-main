@@ -7,11 +7,8 @@ import type { TermPreview } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 
 /**
- * "Từ liên quan": the forms of the headword itself, named and explained.
- *
- * Each column comes from data the page already has: the label from
- * `lex.inflections.form_label`, the pronunciation and meaning from
- * `lex.term_previews`.
+ * "Từ liên quan": the forms of the headword itself. The label comes from
+ * `lex.inflections.form_label`, the pronunciation and meaning from `lex.term_previews`.
  */
 export function WordFamily({ headword, forms, previews, lang }: {
   headword: string
@@ -22,11 +19,8 @@ export function WordFamily({ headword, forms, previews, lang }: {
   const others = forms.filter((f) => f.text.toLowerCase() !== headword.toLowerCase())
   if (others.length === 0) return null
 
-  // Most inflected forms are not entries of their own -- "smoothed" has no row in
-  // `lex.entries`, only in `lex.inflections` -- so these two columns are usually
-  // empty. Showing a column of dashes reads as broken data rather than as a word
-  // that simply has no separate page, so each column appears only if some row
-  // fills it.
+  // Most inflected forms have no row in `lex.entries`, only in `lex.inflections`, so
+  // each column appears only when some row fills it; a column of dashes reads as broken.
   const rows = others.map((f) => {
     const p = previews[f.text.toLowerCase()]
     return {
@@ -40,10 +34,8 @@ export function WordFamily({ headword, forms, previews, lang }: {
   const hasSound = rows.some((r) => r.sound)
   const hasGloss = rows.some((r) => r.gloss)
 
-  // With none of those three columns filled, the table is a grid for one word per
-  // row: on "holy" the label cell was 405px wide to hold eleven characters, and on
-  // "hola" an entire section existed to say "Dạng gốc | ¡hola!". A running line
-  // carries the same words in one line instead of five.
+  // With none of the three filled, the table is a grid for one word per row: on "holy"
+  // the label cell was 405px wide for eleven characters. A running line does the same.
   if (!hasPos && !hasSound && !hasGloss) {
     return (
       <section className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">

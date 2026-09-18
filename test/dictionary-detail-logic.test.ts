@@ -132,9 +132,9 @@ describe('classifyRelations', () => {
 })
 
 describe('groupWordForms', () => {
-  // The contract changed on 2026-09-12: it used to return bare strings and the page
-  // rendered them as identical chips, which is what made a dialect spelling
-  // indistinguishable from a past participle. It now names each form.
+  // Each form must carry a label (e.g. "past participle"), not a bare string --
+  // a bare string renders as an identical chip, indistinguishable from a
+  // dialect spelling of the same word.
   it('dedupes forms, keeping the first label seen for a repeated spelling', () => {
     const forms = groupWordForms([
       { formText: 'drinks', formLabel: 'plural' },

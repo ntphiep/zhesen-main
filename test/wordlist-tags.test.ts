@@ -19,8 +19,8 @@ describe('parseTagsInput', () => {
     expect(parseTagsInput('   ')).toEqual([])
   })
 
-  // The CSV export joins tags with ";" (lib/wordlist/csv.ts), so a tag list copied
-  // out of a backup and pasted into the tag box used to arrive as one long tag.
+  // The CSV export joins tags with ";" (lib/wordlist/csv.ts), so the tag box
+  // must split on semicolons too, or a pasted tag list arrives as one long tag.
   it('accepts semicolons as separators, the way the CSV export writes them', () => {
     expect(parseTagsInput('animal;pet')).toEqual(['animal', 'pet'])
   })

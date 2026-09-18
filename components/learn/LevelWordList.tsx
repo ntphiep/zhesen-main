@@ -13,10 +13,9 @@ import { Ipa } from '@/components/ui/Ipa'
 
 type AddAllState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'done'; added: number; skipped: number } | { kind: 'error' }
 
-/** `/learn/[lang]/[level]`: a paginated ("load more") list of every word at one
- * level, plus a one-click "add whole level" bulk import into the wordlist.
- * Browsing the list is public; the import needs an account, so the button is a
- * sign-in prompt for a visitor without one, carrying this page back in `next`. */
+/** `/learn/[lang]/[level]`: a paginated list of every word at one level, plus a
+ * one-click bulk import into the wordlist. Browsing is public; the import needs an
+ * account, so without one the button is a sign-in prompt carrying this page in `next`. */
 export function LevelWordList({ language, level, levelIsEstimated, initialItems, total, pageSize }: {
   language: Language
   level: string
@@ -49,10 +48,8 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
         listSavedEntryIds(supabase, language.code),
       ])
       const missing = all.filter((e) => !saved.has(e.id))
-      // Count what `addWords` actually inserted, not what we asked it to. The
-      // read above cannot see a save still in flight from another tab, or from
-      // an impatient second click on this button, so some of `missing` can come
-      // back already present -- and the count would have claimed them anyway.
+      // Count what `addWords` inserted, not what it was asked to: the read above cannot
+      // see a save in flight from another tab or a second click, so some come back present.
       const added = missing.length > 0 ? await addWords(supabase, missing.map(draftFromDictEntry)) : []
       setAddAll({ kind: 'done', added: added.length, skipped: all.length - added.length })
     } catch {

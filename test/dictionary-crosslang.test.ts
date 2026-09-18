@@ -9,10 +9,10 @@ describe('cleanGlossTerm', () => {
     expect(cleanGlossTerm('The Sun')).toBe('sun')
     expect(cleanGlossTerm('very')).toBe('very')
   })
-  // The contract changed on 2026-09-12. It used to reject any gloss containing a
-  // bracket or a semicolon, which is how most Spanish and Chinese senses are
-  // written -- "dog (the species Canis familiaris ...)" for perro. The panel found
-  // nothing for those words. The head of the gloss is now taken instead.
+  // Most Spanish and Chinese senses are written with a bracket or a semicolon --
+  // "dog (the species Canis familiaris ...)" for perro -- so rejecting any gloss
+  // that contains one finds nothing for those words. The head of the gloss is
+  // taken instead.
   it('takes the equivalent that leads a gloss and drops the definition after it', () => {
     expect(cleanGlossTerm('now (at the present time)')).toBe('now')
     expect(cleanGlossTerm('dog (the species Canis familiaris)')).toBe('dog')

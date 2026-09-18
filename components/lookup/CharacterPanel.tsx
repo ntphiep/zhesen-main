@@ -5,10 +5,8 @@ import { StrokeOrder } from './StrokeOrder'
 export function CharacterPanel({ characters }: { characters: CharInfo[] }) {
   if (characters.length === 0) return null
 
-  // getCharacters keeps one entry per glyph in the headword so the order matches
-  // the writing, which means 有没有 arrives as 有, 没, 有 and drew the same card
-  // twice. One card per distinct character, first appearance wins, and a repeat
-  // is stated rather than duplicated.
+  // getCharacters keeps one entry per glyph so the order matches the writing, so 有没有
+  // arrives as 有, 没, 有. One card per distinct character, first appearance wins.
   const seen = new Map<string, { info: CharInfo; times: number }>()
   for (const info of characters) {
     const hit = seen.get(info.char)

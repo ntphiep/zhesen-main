@@ -4,16 +4,9 @@ import type { TermPreview } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 
 /**
- * "Dạng gốc": the way out of an inflected entry.
- *
- * A page for "adjourned" is a dead end without it -- the meaning lives on
- * "adjourn", and the only hint was an English sentence in the gloss. Shown right
- * under the headword because it is the first thing to do with such a page, not
- * an appendix.
- *
- * A lemma the dictionary does not hold yet is still named, in plain text: saying
- * "this is a form of adjourn" is worth more than silence, and a link to a page
- * that does not exist is worse than no link.
+ * "Dạng gốc": the way out of an inflected entry, under the headword because it is
+ * the first thing to do with such a page. A lemma the dictionary does not hold yet
+ * is still named, in plain text: a link to a page that does not exist is worse.
  */
 export function LemmaLink({ lemma, preview, lang }: {
   lemma: string

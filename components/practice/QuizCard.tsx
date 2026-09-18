@@ -23,8 +23,8 @@ export function QuizCard({
       <Ipa value={question.ipa} lang={question.lang} className="mt-1 block text-center text-black/40" />
       <p className="mt-2 text-center text-sm text-black/50">Chọn nghĩa đúng</p>
 
-      {/* Feedback is otherwise color-only (green/red option borders), which a screen
-          reader can't perceive -- announce the outcome as text here. */}
+      {/* Feedback is otherwise colour-only, in the green and red option borders, which
+          a screen reader cannot perceive. */}
       {answered && (
         <p role="status" aria-live="polite" className="sr-only">
           {selected === question.answer ? 'Chính xác' : `Sai. Đáp án đúng là ${question.answer}`}

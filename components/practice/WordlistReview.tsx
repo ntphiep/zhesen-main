@@ -14,19 +14,12 @@ export function WordlistReview() {
   const [queue, setQueue] = useState<ReviewCard[] | null>(null)
   const [revealed, setRevealed] = useState(false)
   const [reviewed, setReviewed] = useState(0)
-  // Only for the streak here: this session grades through `gradeCard`, which
-  // carries the schedule it already holds, and reports a failed grade through
-  // its own notice. `gradeCard` used to record the day itself, which meant a streak
-  // failure surfaced as a grade failure and every practice mode wrote the day
-  // twice. Recording it is the session's job, and this was the one session
-  // without a way to say the write did not land.
+  // Recording the day is the session's job, not `gradeCard`'s: doing it there makes a
+  // streak failure surface as a grade failure and every practice mode write it twice.
   const { logDay, failed: syncFailed } = useGradeSync(supabase)
   const logged = useRef(false)
-  // A grade is a network round trip, and `current` does not change until it
-  // returns. Without this, a second tap graded the same card again from its old
-  // state and dropped one off the front of the queue for each tap: the next card
-  // was never shown and the session claimed to have reviewed it. One double-tap
-  // on a phone, or one impatient tap on a slow connection, was enough.
+  // A grade is a round trip and `current` does not change until it returns, so without
+  // this a second tap regrades the same card and drops one off the front of the queue.
   const [grading, setGrading] = useState(false)
   const { notice, notify, dismiss } = useNotice()
 
@@ -68,11 +61,8 @@ export function WordlistReview() {
     setReviewed((n) => n + 1)
     setQueue((q) => {
       const rest = (q as ReviewCard[]).slice(1)
-      // A card graded "again" comes back later in the session, carrying the
-      // schedule it just earned. Re-queueing `current` untouched sent its old
-      // state into the next grade, so answering "good" on the second showing
-      // wrote a schedule computed from before the lapse: the interval jumped
-      // back out to weeks and the lapse count reset to zero.
+      // A card graded "again" must come back carrying the schedule it just earned;
+      // re-queueing `current` untouched grades the next answer from before the lapse.
       return g === 'again' ? [...rest, { ...current, state: next }] : rest
     })
   }

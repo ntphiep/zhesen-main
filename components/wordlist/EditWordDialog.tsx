@@ -24,15 +24,10 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
   const [status, setStatus] = useState<WordStatus>('new')
   const [tags, setTags] = useState<string[]>([])
 
-  // Sync form state when the word changes or the dialog reopens, so a draft the
-  // user cancelled does not come back. Adjust state during render instead of in
-  // an effect, per react.dev/learn/you-might-not-need-an-effect: track the
-  // (word, open) combination last synced from and re-sync when it changes.
-  //
-  // `resetKey` must change on close too: closing sets `word` to null
-  // (WordlistClient passes `editWord`), so a guard of `word && open && ...`
-  // would skip the sync on close, reopening the same word would then match the
-  // stale key, and the cancelled draft would stay in the fields.
+  // Re-sync on every change of (word, open), adjusting state during render:
+  // react.dev/learn/you-might-not-need-an-effect. `resetKey` must change on close too,
+  // where `word` becomes null; a `word && open` guard would skip that sync, so
+  // reopening the same word would match the stale key and keep a cancelled draft.
   const resetKey = open && word ? word.id : null
   const [prevResetKey, setPrevResetKey] = useState<string | null>(null)
   if (resetKey !== prevResetKey) {
@@ -83,12 +78,9 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
 
     if (JSON.stringify(tags) !== JSON.stringify(word.tags)) patch.tags = tags
 
-    // Nothing changed. This dialog is the only place a note or an example
-    // translation can be read, so opening a word to look at it and then pressing
-    // Lưu out of habit is ordinary. An empty PATCH either fails and reports
-    // "Không lưu được thay đổi" for a save with nothing to save, or succeeds and
-    // lets the updated_at trigger record when the word was last LOOKED AT rather
-    // than last edited.
+    // An empty PATCH either fails with "Không lưu được thay đổi" for a save with
+    // nothing to save, or succeeds and lets the updated_at trigger record when the
+    // word was last read rather than last edited.
     if (Object.keys(patch).length === 0) { onClose(); return }
 
     await onSave(word.id, patch)

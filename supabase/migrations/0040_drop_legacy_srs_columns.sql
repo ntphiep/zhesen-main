@@ -12,7 +12,8 @@
 -- Leaving them is not free. 0017's own header calls the values stale, and its
 -- backfill reads them; a future migration that filters on srs_* would see frozen
 -- data and could overwrite real review progress. That has already happened once
--- in this repo's history, which is why AGENTS.md carries a rule about it.
+-- in this repo's history, which is why .claude/rules/database.md carries a rule
+-- about idempotence against the target state.
 --
 -- Verified before writing this file, against production:
 --   - No function, view or trigger references srs_ (pg_get_functiondef and

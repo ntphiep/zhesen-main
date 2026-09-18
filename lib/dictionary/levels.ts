@@ -6,18 +6,16 @@ import { entryPreviewRow, toPreview } from './rows'
 import { PREVIEW_SELECT } from './entrySelect'
 
 /**
- * "Browse by level" data for `/learn/[lang]`: which levels exist for a language
- * and how many words are in each, plus paginated + bulk entry listing for one
- * level. Grouped counts go through the `lex.count_entries_by_level` RPC (see
- * supabase/migrations/0021_level_counts.sql) because supabase-js has no GROUP BY,
- * and PostgREST's max-rows cap (confirmed at 1000) rules out counting client-side.
+ * "Browse by level" data for `/learn/[lang]`. Grouped counts must go through the
+ * `lex.count_entries_by_level` RPC (supabase/migrations/0021_level_counts.sql): supabase-js
+ * has no GROUP BY, and PostgREST's 1000-row cap rules out counting client-side.
  */
 
 export interface LevelSummary {
   level: string
   count: number
-  /** True for every Spanish level: those levels are pipeline-estimated, not an
-   * official CEFR classification (see AGENTS.md). Always false for zh/en today. */
+  /** True for every Spanish level: the pipeline estimates those, they are not an
+   * official CEFR classification. Always false for zh and en today. */
   levelIsEstimated: boolean
 }
 

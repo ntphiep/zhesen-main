@@ -11,10 +11,9 @@ export interface Notice {
 /**
  * A transient message, in place of `window.alert`.
  *
- * alert() freezes the whole tab until it is dismissed, cannot be styled, and is
- * exactly what the browser's "prevent this page from creating more dialogs"
- * checkbox silences -- after which the reader stops being told that a save
- * failed at all. This renders inside the page and clears itself.
+ * alert() freezes the whole tab, cannot be styled, and is what the browser's
+ * "prevent this page from creating more dialogs" checkbox silences. This renders
+ * inside the page and clears itself.
  */
 export function useNotice(timeoutMs = 5000) {
   const [notice, setNotice] = useState<Notice | null>(null)
@@ -39,9 +38,8 @@ export function useNotice(timeoutMs = 5000) {
 }
 
 /**
- * The live region is always mounted, empty or not: a screen reader only
- * announces changes inside a region it was already watching, so one that
- * appears together with its own text is announced by nothing.
+ * The live region stays mounted, empty or not: a screen reader announces changes
+ * only inside a region it was already watching.
  */
 export function NoticeBar({ notice, onDismiss }: { notice: Notice | null; onDismiss: () => void }) {
   return (

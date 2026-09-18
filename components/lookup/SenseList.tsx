@@ -8,8 +8,7 @@ export function SenseList({ senses }: { senses: DictSense[] }) {
   const [expanded, setExpanded] = useState(false)
 
   // Chinese entries carry CC-CEDICT "CL:" rows that are classifier notes, not
-  // meanings — surface them as a separate "Lượng từ" line and keep them out of
-  // the numbered meaning list.
+  // meanings, so they belong on a "Lượng từ" line and not in the numbered list.
   const classifiers = [...new Set(senses.flatMap((s) => parseClassifiers(s.glossEn)))]
   const meaningful = senses.filter((s) => !isClassifierGloss(s.glossEn))
   if (meaningful.length === 0 && classifiers.length === 0) return null
@@ -45,15 +44,12 @@ export function SenseList({ senses }: { senses: DictSense[] }) {
                       <span className="ml-1 align-middle text-[10px] uppercase tracking-wide text-amber-700/70" title="Nghĩa suy ra qua tiếng Anh">qua tiếng Anh</span>
                     </span>
                   ) : (
-                    // 44.6% of English senses have no Vietnamese gloss. Leaving the
-                    // numbered line empty and putting the English underneath in grey
-                    // read as a broken row; the English is the meaning here, so it
-                    // takes the meaning's place.
+                    // 44.6% of English senses have no Vietnamese gloss. There the English
+                    // is the meaning, so it takes the meaning's place.
                     s.glossEn && <span className="text-black/80">{s.glossEn}</span>
                   )}
-                {/* On its own line, and visibly smaller: on a Vietnamese page the
-                    English gloss is a cross-check, not a second meaning to read
-                    through. Inline at the same size, the two ran together. */}
+                {/* On its own line and smaller: on a Vietnamese page the English gloss is
+                    a cross-check, not a second meaning; inline the two ran together. */}
                 {s.glossEn && (s.glossVi || s.pivotVi) && (
                   <span className="mt-0.5 block text-xs text-black/45">{s.glossEn}</span>
                 )}

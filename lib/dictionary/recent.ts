@@ -2,10 +2,8 @@ import { z } from '@/lib/zod'
 
 const KEY = 'zhesen:recent-searches'
 
-/** The key holds whatever a previous version of the app, another tab, or the user
- * put there. A bare `as string[]` would have satisfied the compiler and then thrown
- * from `recent.map(...)` during render, blanking the page; `.catch` turns anything
- * unexpected into an empty list instead. */
+/** The key holds whatever a previous version, another tab or the user put there, so it
+ *  must be parsed, not cast: a bad value throws from `recent.map(...)` during render. */
 const storedList = z.string().array().catch([])
 
 /** Prepend a query to the recent-searches list: trimmed, deduped case-insensitively

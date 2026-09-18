@@ -1,13 +1,8 @@
 /**
- * Where the assistant features get their model, and whether they exist at all.
- *
- * Server-only on purpose: no `NEXT_PUBLIC_` here, so the key never reaches a
- * bundle. Everything the browser wants goes through `app/api/ai/route.ts`.
- *
- * `aiConfig()` returning null is a supported state, not an error. The router this
- * project points at lives on a private network, so a deployment that cannot reach
- * it should serve the dictionary exactly as before with the assistant buttons
- * absent -- see `isAiEnabled` in the route and the `enabled` flag the client reads.
+ * Where the assistant gets its model. Server-only: no `NEXT_PUBLIC_` here, so the key never
+ * reaches a bundle, and the browser goes through `app/api/ai/route.ts`. `aiConfig()`
+ * returning null is a supported state -- the router is on a private network, so a
+ * deployment that cannot reach it serves the dictionary with the assistant buttons absent.
  */
 export interface AiConfig {
   /** Base URL including the version segment, e.g. http://host:20128/v1 */

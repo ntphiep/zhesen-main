@@ -16,8 +16,8 @@ async function renderPage(searchParams: Record<string, string>) {
 
 describe('dictionary search page', () => {
   // `searchPath` appends the language because a chip for a related word already
-  // knows which language it came from. The page used to read only `q`, so clicking
-  // "halibut" from an English entry searched Chinese and Spanish as well.
+  // knows which language it came from; reading only `q` would search all three
+  // languages for a link that named just one.
   it('narrows the search to the language the link carried', async () => {
     const box = await renderPage({ q: 'halibut', lang: 'en' })
     expect(box.dataset.query).toBe('halibut')

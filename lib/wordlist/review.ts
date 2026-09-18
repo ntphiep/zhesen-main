@@ -80,21 +80,10 @@ export interface DueOptions {
  *  `listDueCards` will hand over, and two copies of these numbers drift. */
 export const SESSION_LIMITS = { limit: 50, newLimit: 20 } as const
 
-/**
- * The session queue: cards already being learned that are due, then a bounded
- * number of cards never seen before.
- *
- * A new card is due the moment it is saved, so importing a wordlist made every
- * word due at once -- 404 of one account's 407 cards have never been reviewed and
- * all 404 are due. One flat query answered with fifty of them in whatever order
- * their due timestamps happened to fall, which is a wall, not a session, and buried
- * the handful of cards that were genuinely due for review underneath.
- *
- * Splitting the two is what every spaced-repetition scheduler does: reviews are
- * obligations the schedule made and all of them belong in the session, while new
- * cards are a choice about pace. Twenty is Anki's default daily allowance and a
- * reasonable amount of new vocabulary for one sitting.
- */
+/** The session queue: due cards already being learned, then a bounded number never seen.
+ *  The two must stay split -- a new card is due the moment it is saved, so 404 of one
+ *  account's 407 cards were due at once and one flat query buried the real reviews.
+ *  Twenty new cards is Anki's default daily allowance. */
 export async function listDueCards(
   supabase: SupabaseClient, now: number, options: DueOptions = {},
 ): Promise<ReviewCard[]> {
@@ -122,17 +111,9 @@ export async function listDueCards(
   return [...learned, ...z.array(cardRowSchema).parse(fresh ?? []).map(rowToCard)]
 }
 
-/**
- * How many cards the next session will actually hand over. RLS scopes to the user.
- *
- * Counted with the queue's own formula, not a flat COUNT of due rows. A new card
- * is due the moment it is saved, so a flat count reports the whole backlog while
- * the session serves the cards genuinely for review plus the new-card allowance.
- * The two numbers have to agree, or the button keeps claiming work the session
- * will not hand over.
- *
- * Two head-only COUNTs, so it costs about what the single flat one did.
- */
+/** How many cards the next session will hand over (RLS scopes to the user). Must use the
+ *  queue's own formula, not a flat COUNT of due rows, or the button claims work the session
+ *  will not hand over. Two head-only COUNTs, so it costs about what one flat COUNT did. */
 export async function countDueCards(
   supabase: SupabaseClient, now: number = Date.now(), options: DueOptions = {},
 ): Promise<number> {
@@ -149,10 +130,8 @@ export async function countDueCards(
     return count ?? 0
   }
 
-  // Both at once. The second count is only skipped when the first already filled
-  // the session, which is the rarer case, and running them one after the other
-  // put a second round trip to Seoul on the critical path of /wordlist and
-  // /practice -- two of the pages that cannot be cached at all.
+  // Both at once: in sequence this puts a second round trip to Seoul on the critical path
+  // of /wordlist and /practice, neither of which can be cached at all.
   const [reviewDue, freshDue] = await Promise.all([countBy(false), countBy(true)])
   const learned = Math.min(reviewDue, limit)
   const room = Math.min(newLimit, limit - learned)
@@ -179,19 +158,9 @@ export async function gradeCard(supabase: SupabaseClient, card: ReviewCard, grad
   return next
 }
 
-/**
- * Grade a saved word by id, reading its current schedule first.
- *
- * The practice modes work from `listWords`, which carries no scheduling state, so
- * they cannot call `gradeCard`. Fetching the one row costs a round trip per
- * answered question -- a few a minute, against a `select` on the primary key --
- * and keeps the modes from having to carry a full `ReviewCard` through their own
- * question shapes.
- *
- * Returns null when the row is gone: a word deleted from the wordlist in another
- * tab while a practice session is open is not an error worth interrupting the
- * session for.
- */
+/** Grade a saved word by id, reading its schedule first. The practice modes work from
+ *  `listWords`, which carries no scheduling state, so they cannot call `gradeCard`.
+ *  Returns null when the row is gone -- deleted in another tab is not an error. */
 export async function gradeWordById(
   supabase: SupabaseClient, id: string, grade: Grade, now: number = Date.now(),
 ): Promise<SrsState | null> {

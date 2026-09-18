@@ -5,10 +5,8 @@ export interface DictSense {
   glossVi: string | null
   glossEn: string | null
   senseOrder: number
-  /** Vietnamese gloss derived via the English pivot (zh/es entry whose gloss_en
-   * points at an English headword that has a Vietnamese gloss). Set only when
-   * glossVi is absent; shown with a "qua tiếng Anh" marker so it is not mistaken
-   * for a curated direct translation. */
+  /** Vietnamese gloss derived via the English pivot, set only when glossVi is absent.
+   *  Must be shown with a "qua tiếng Anh" marker, not as a direct translation. */
   pivotVi?: string | null
 }
 export interface DictPron {
@@ -42,8 +40,8 @@ export interface DictEntryPreview {
   reading?: string | null
   /** Corpus frequency rank (1 = most frequent); null when unknown. */
   frequencyRank?: number | null
-  /** How well this entry matched the query, from `lex.search`. Present only on
-   * search results, so a caller can compare matches across languages. */
+  /** How well this entry matched the query, from `lex.search`. Present only on search
+   *  results, so a caller can compare matches across languages. */
   matchScore?: number | null
 }
 export interface DictEntryDetail extends DictEntryPreview {
@@ -53,9 +51,8 @@ export interface DictEntryDetail extends DictEntryPreview {
   relations: DictRelation[]
   attributes: Record<string, unknown>
 }
-/** A "did you mean...?" candidate from `lex.suggest` (see
- * supabase/migrations/0018_reverse_lookup.sql): the trigram-nearest headword or
- * Vietnamese gloss to a query that had zero direct hits in either direction. */
+/** A "did you mean...?" candidate from `lex.suggest`
+ *  (supabase/migrations/0018_reverse_lookup.sql), for a query with zero direct hits. */
 export interface SuggestionPreview {
   id: string
   lang: LangCode
@@ -90,9 +87,9 @@ export interface WordForm {
   formText: string
   formLabel: string | null
 }
-/** What the dictionary knows about a word that is only stored as text elsewhere:
- *  a synonym in `lex.lex_relations`, an inflected form in `lex.inflections`.
- *  See `lex.term_previews` (supabase/migrations/0027). */
+/** What the dictionary knows about a word stored only as text elsewhere: a synonym in
+ *  `lex.lex_relations`, an inflected form in `lex.inflections`. See
+ *  `lex.term_previews` (supabase/migrations/0027). */
 export interface TermPreview {
   /** The surface form asked about, so the caller can match it back. */
   matchText: string

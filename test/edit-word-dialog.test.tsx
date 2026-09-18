@@ -22,10 +22,9 @@ describe('EditWordDialog', () => {
     expect(onSave).toHaveBeenCalledWith('id1', expect.objectContaining({ meaningVi: 'chó nhà', status: 'learning' }))
   })
 
-  // This asserted the opposite until 2026-09-14: that pressing Lưu with nothing
-  // changed must call onSave with an empty patch. It went green for a year while
-  // the app sent an empty PATCH to PostgREST. A passing test means the behaviour
-  // has not changed, not that it is right.
+  // Saving with nothing changed must close without calling onSave, not send an
+  // empty PATCH to PostgREST. A pass here confirms the behavior is unchanged,
+  // not that it is correct.
   it('saves nothing and just closes when nothing changed', async () => {
     const onSave = vi.fn()
     const onClose = vi.fn()

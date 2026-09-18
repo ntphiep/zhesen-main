@@ -2,18 +2,10 @@ import { z } from '@/lib/zod'
 import type { AiConfig } from './config'
 
 /**
- * One request to the model, answered as validated JSON.
- *
- * Two shapes come back from the same endpoint and both are handled, because the
- * router in front of the model is not consistent about it: `POST /messages` with
- * `stream: false` answered with an OpenAI `chat.completion` body, while the same
- * path answers Anthropic-shaped events when streaming. Measured against the
- * project owner's router on 2026-09-14. Reading whichever field is present costs
- * four lines and survives the router changing its mind.
- *
- * The model is told to answer with JSON and nothing else, but a model that
- * wraps it in a ```json fence is answering correctly enough -- `extractJson`
- * unwraps that rather than failing the whole request over punctuation.
+ * One request to the model, answered as validated JSON. Both response shapes must stay
+ * handled: `POST /messages` with `stream: false` answers an OpenAI `chat.completion` body
+ * while the same path answers Anthropic-shaped events when streaming (measured against the
+ * router on 2026-09-14). `extractJson` also unwraps a ```json fence.
  */
 
 const openAiShape = z.object({
@@ -34,7 +26,7 @@ function messageText(body: unknown): string {
     const text = anthropic.data.content.find((c) => c.type === 'text')?.text
     if (text) return text
   }
-  throw new AiUnavailableError('Model trả về thân phản hồi không đọc được')
+  throw new AiUnavailableError('unreadable response body')
 }
 
 /** Unwrap a ```json fence and drop anything outside the outermost object. */
@@ -43,7 +35,7 @@ export function extractJson(text: string): string {
   const body = (fenced ? fenced[1] : text).trim()
   const start = body.indexOf('{')
   const end = body.lastIndexOf('}')
-  if (start === -1 || end <= start) throw new AiUnavailableError('Model không trả về JSON')
+  if (start === -1 || end <= start) throw new AiUnavailableError('no JSON in the response')
   return body.slice(start, end + 1)
 }
 
@@ -80,7 +72,7 @@ export async function askJson<T>(cfg: AiConfig, opts: AskOptions<T>): Promise<T>
   if (!res.ok) {
     const detail = await res.text().catch(() => '')
     throw new AiUnavailableError(
-      `Model trả về HTTP ${res.status}${detail ? `: ${detail.slice(0, 200)}` : ''}`,
+      `model returned HTTP ${res.status}${detail ? `: ${detail.slice(0, 200)}` : ''}`,
     )
   }
 
@@ -89,9 +81,9 @@ export async function askJson<T>(cfg: AiConfig, opts: AskOptions<T>): Promise<T>
   try {
     value = JSON.parse(text)
   } catch {
-    throw new AiUnavailableError('Model trả về JSON hỏng')
+    throw new AiUnavailableError('malformed JSON in the response')
   }
   const parsed = opts.parse(value)
-  if (parsed === null) throw new AiUnavailableError('Model trả về JSON sai cấu trúc')
+  if (parsed === null) throw new AiUnavailableError('JSON did not match the task schema')
   return parsed
 }

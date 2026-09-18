@@ -2,21 +2,13 @@
 import type { z } from 'zod'
 import type { TaskName } from './tasks'
 
-// Type-only handle on the task table. The value import that used to be here put
-// the whole of zod in the chunk every route loads, because AiChatPanel sits in
-// the root layout: measured at 63.1 kB gzipped on pages that have no assistant
-// button at all. The table is needed once, after the network call has already
-// returned, so it is fetched there instead.
+// Type-only: a value import pulls all of zod into the chunk every route loads, because
+// AiChatPanel sits in the root layout -- 63.1 kB gzipped on pages with no assistant.
 type Tasks = typeof import('./tasks')['TASKS']
 
-/**
- * Calling the assistant from a component.
- *
- * Mirrors `lib/dictionary/searchClient.ts`: a refusal is an outcome the caller
- * renders, not an exception it has to catch. The distinction matters here --
- * "trợ lý chưa bật" and "trợ lý trả lời sai" want different words on screen, and
- * neither is the same as the answer being empty.
- */
+/** Calling the assistant from a component. As in `lib/dictionary/searchClient.ts`, a
+ *  refusal is an outcome the caller renders, not an exception: "not enabled", "wrong
+ *  answer" and "empty answer" each need different words on screen. */
 export type AiOutcome<T> =
   | { status: 'ok'; data: T }
   | { status: 'error'; message: string }

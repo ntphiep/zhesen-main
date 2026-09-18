@@ -10,13 +10,9 @@ export interface GrammarLevelGroup {
   categories: GrammarCategoryGroup[]
 }
 
-/**
- * Groups an already level-ordered list of grammar points into level -> category
- * buckets for the `/grammar/[lang]` overview. Input order within a level/category
- * is preserved (the query orders by `sort_order`), so this is a pure regroup, not
- * a sort. A missing category_vi/level falls back to a single "Khác" bucket rather
- * than being dropped.
- */
+/** Group an already level-ordered list of grammar points into level and category buckets.
+ *  A pure regroup, not a sort: input order within a bucket is preserved because the query
+ *  ordered by `sort_order`. A missing category or level falls into "Khác", never dropped. */
 export function groupByLevelAndCategory(points: GrammarPoint[]): GrammarLevelGroup[] {
   const levels: GrammarLevelGroup[] = []
   for (const p of points) {

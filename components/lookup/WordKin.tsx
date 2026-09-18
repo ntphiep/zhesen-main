@@ -5,12 +5,9 @@ import { posGroup } from '@/lib/dictionary/pos'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 
 /**
- * "Từ cùng gốc", grouped by part of speech.
- *
- * Two of the things missing from an inflected entry's page at once: the words
- * derived from the same stem, and which word class each of them belongs to. A
- * learner on "adjourned" could not reach "adjournment" from it, and nothing said
- * that one is a noun and the other a verb.
+ * "Từ cùng gốc", grouped by part of speech: the words derived from the same stem and
+ * the word class each belongs to, neither of which an inflected entry's page carries
+ * on its own.
  */
 export function WordKin({ words }: { words: DictEntryPreview[] }) {
   if (words.length === 0) return null

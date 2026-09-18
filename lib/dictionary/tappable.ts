@@ -5,13 +5,9 @@ import { getZhSegmentCandidatesForTexts, resolveTokens } from './resolveTokens'
 import { getCharacters } from './entryDetail'
 import type { CharInfo, DictEntryPreview } from './types'
 
-/**
- * Everything TappableText needs to render one text, already resolved.
- *
- * Entries and characters travel as pairs rather than Maps: this crosses the
- * server/client boundary, and a plain array is the shape that survives it
- * unambiguously. The component rebuilds the Maps once on the other side.
- */
+/** Everything TappableText needs to render one text, already resolved. Entries and
+ *  characters travel as pairs, not Maps: this crosses the server/client boundary, and the
+ *  component rebuilds the Maps on the other side. */
 export interface ResolvedText {
   text: string
   segments: Segment[]
@@ -21,12 +17,9 @@ export interface ResolvedText {
   chars: [string, CharInfo][]
 }
 
-/**
- * Resolve every tappable text on a page in one pass, on the server, behind
- * `unstable_cache`, instead of each `TappableText` resolving itself from the
- * browser. The whole page costs at most one candidate query, the three inside
- * resolveTokens, and one character query.
- */
+/** Resolve every tappable text on a page in one server-side pass behind `unstable_cache`,
+ *  not once per `TappableText` from the browser: the whole page then costs at most one
+ *  candidate query, the three inside resolveTokens, and one character query. */
 export async function resolveTappableTexts(
   supabase: SupabaseClient, lang: LangCode, texts: string[],
 ): Promise<ResolvedText[]> {

@@ -73,9 +73,8 @@ export function QuizClient() {
     setSelected(option)
     const correct = option === current.answer
     if (correct) setScore((s) => s + 1)
-    // The answer counts towards the word's schedule. Deliberately not awaited: a
-    // slow or failed write must not hold up the next question, and the flashcard
-    // review remains the authority on a card either way.
+    // The answer counts towards the word's schedule, but is not awaited: a slow write
+    // must not hold up the next question, and the flashcard review stays the authority.
     recordGrade(current.id, gradeForMode('quiz', { correct }))
     if (!logged.current) { logged.current = true; logDay() }
   }

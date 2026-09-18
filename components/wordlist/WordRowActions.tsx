@@ -13,9 +13,8 @@ export function TagChips({ tags }: { tags: string[] }) {
 }
 
 /**
- * View / edit / delete for one saved word. The table and the card grid show the
- * same three buttons; they were written out twice, which is two places to keep
- * the labels, the styling and the accessible names in step.
+ * View, edit and delete for one saved word, shared by the table and the card grid so
+ * the labels, the styling and the accessible names stay in step.
  */
 export function WordRowActions({
   word, expanded, onToggleDetail, onEdit, onDelete, className = '',

@@ -10,18 +10,16 @@ export function ExampleList({
 }: {
   examples: DictExample[]
   lang: LangCode
-  /** The entry's own meanings. An example whose "translation" is one of these is
-   * carrying the entry gloss, not a translation of the sentence -- see
-   * isSentenceTranslation. */
+  /** The entry's own meanings. An example whose "translation" is one of these carries
+   * the entry gloss, not a translation of the sentence; see isSentenceTranslation. */
   glosses?: (string | null)[]
   /** Pre-resolved on the server, so the sentences are in the HTML. Without it
    * each TappableText resolves itself in the browser. */
   resolved?: ResolvedText[]
 }) {
   const byText = new Map(resolved.map((r) => [r.text, r]))
-  // Drop a sentence whose words the dictionary cannot account for; see
-  // hasUnknownLongWord. Only possible where the server resolved the text -- the
-  // grammar pages resolve in the browser and keep the older heuristic alone.
+  // Drop a sentence whose words the dictionary cannot account for; see hasUnknownLongWord.
+  // Only possible where the server resolved the text, so grammar pages keep the old check.
   const clean = pickExamples(examples).filter((e) => {
     const r = byText.get(e.text)
     if (!r || lang === 'zh') return true

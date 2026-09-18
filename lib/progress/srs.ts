@@ -2,11 +2,9 @@ import { fsrs, createEmptyCard, Rating, State, type CardInput, type Grade as Fsr
 import type { CardState, Grade, SrsState } from './types'
 
 /**
- * FSRS scheduler (ts-fsrs@5.4.2, whose default weights already implement FSRS-6 --
- * confirmed at runtime via its own `FSRSVersion` string, "v5.4.2 using FSRS-6.0").
- * `enable_short_term: false` turns off Anki-style minute-scale learning steps: the
- * wordlist reviews once per session, not several times an hour, so every card goes
- * straight to day-scale intervals.
+ * FSRS scheduler (ts-fsrs@5.4.2, whose default weights implement FSRS-6 -- its own
+ * `FSRSVersion` reads "v5.4.2 using FSRS-6.0"). `enable_short_term: false` drops
+ * Anki-style minute-scale steps: the wordlist reviews once per session, not hourly.
  */
 const scheduler = fsrs({ enable_short_term: false })
 
@@ -89,22 +87,10 @@ export function initialSrsState(vocabId: string, now: number): SrsState {
 }
 
 /**
- * Grade a card with FSRS and return its next schedule.
- *
- * `now` and the stored last-review timestamp both come from a browser clock and
- * need not agree: a manual clock change or an NTP correction pulling the clock
- * backwards produces a review that appears to happen before the previous one.
- * ts-fsrs rejects that with `Invalid delta_t "-5"`, which surfaced as a dead
- * grading button, so the scheduler is handed the later of the two.
- *
- * The result is then pulled back onto the real timeline. Storing the later
- * timestamp as-is would make it the card's last review, so every later review
- * would clamp to it again and compute zero elapsed days forever, freezing the
- * card's due date in the future where `listDueCards` never selects it again.
- *
- * Shifting the due date back by the same skew and recording the review at the
- * moment it actually happened leaves an ordinary review untouched -- the skew is
- * zero -- and lets a card recover on its next review.
+ * Grade a card with FSRS and return its next schedule. `now` and the stored last-review
+ * timestamp both come from a browser clock and may disagree; ts-fsrs rejects a backwards
+ * delta with `Invalid delta_t "-5"`, so it gets the later of the two. The result must then
+ * be shifted back by the skew, or the due date freezes where `listDueCards` never sees it.
  */
 export function review(state: SrsState, grade: Grade, now: number): SrsState {
   const at = Math.max(now, state.lastReviewedAt ?? now)

@@ -10,18 +10,17 @@ import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 
 /**
- * Renders text with dictionary-known words made tappable. Tapping a word opens an
- * inline popover with its meaning. Unknown words render as plain text. Resolution
- * happens once per text via the public (anon) client; failures degrade to plain text.
+ * Text with dictionary-known words made tappable, each opening an inline popover;
+ * unknown words render as plain text. Resolution happens once per text through the
+ * public (anon) client, and a failure degrades to plain text.
  */
 export function TappableText({
   text, lang, resolved,
 }: {
   text: string
   lang: LangCode
-  /** Resolved on the server. When present the text renders on the first paint
-   * and no request is made; without it the effect below does the work in the
-   * browser, which is what the grammar pages still rely on. */
+  /** Resolved on the server: with it the text renders on the first paint and no
+   * request is made, without it the effect below resolves in the browser. */
   resolved?: ResolvedText
 }) {
   const supabase = useMemo(() => createClient(), [])
@@ -30,9 +29,8 @@ export function TappableText({
   const [chars, setChars] = useState<Map<string, CharInfo>>(() => new Map(resolved?.chars))
   const [active, setActive] = useState<number | null>(null)
 
-  // Close any open popover whenever the underlying text changes, without waiting for
-  // the async resolution below (adjust state during render, per React's guidance for
-  // resetting state when inputs change: react.dev/learn/you-might-not-need-an-effect).
+  // Close any open popover as soon as the text changes, without waiting for the async
+  // resolution below. Adjust state during render: react.dev/learn/you-might-not-need-an-effect.
   const resetKey = `${lang}:${text}`
   const [prevResetKey, setPrevResetKey] = useState(resetKey)
   if (prevResetKey !== resetKey) {
@@ -40,10 +38,8 @@ export function TappableText({
     setActive(null)
   }
 
-  // Dismiss the popover the way every other popover on the web does: Escape, or a
-  // click anywhere outside it. Tapping the word again still closes it, but that was
-  // the only way out, so reading on past an open popover left it hanging over the
-  // text. Listeners exist only while one is open.
+  // Escape or a click outside dismisses, beside tapping the word again. The listeners
+  // exist only while a popover is open.
   const root = useRef<HTMLSpanElement>(null)
   useEffect(() => {
     if (active === null) return

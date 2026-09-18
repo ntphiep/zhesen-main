@@ -7,10 +7,8 @@ import { PREVIEW_SELECT } from './entrySelect'
 import { searchAllLanguagesVi } from './search'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
 
-/** Everything the entry detail page needs beyond the search-result preview:
- * senses/pronunciations/examples/relations for one entry, its cross-language
- * siblings, its inflected forms, and the character info for any Han glyphs in
- * its headword. */
+/** Everything the entry detail page needs beyond the preview: senses, pronunciations,
+ *  examples, relations, cross-language siblings, inflections and Han character info. */
 
 export async function getEntryDetail(supabase: SupabaseClient, entryId: string): Promise<DictEntryDetail | null> {
   const { data, error } = await supabase
@@ -67,13 +65,9 @@ async function withPivotVi(supabase: SupabaseClient, senses: DictSense[]): Promi
  *  push Chinese out of the panel entirely. */
 const PER_LANGUAGE = 3
 
-/**
- * Equivalents of an entry in the other languages, bridged through an English
- * pivot (see crosslang.ts). Pivot terms are computed here; the actual match runs
- * in the `lex.match_cross_language` SQL function so it is not subject to the
- * PostgREST row cap. Same-language matches are excluded -- this is the
- * "other languages" panel, not a synonyms list.
- */
+/** Equivalents of an entry in the other languages, bridged through an English pivot. The
+ *  match runs in `lex.match_cross_language` so it escapes the PostgREST row cap.
+ *  Same-language matches are excluded: this is the other-languages panel, not synonyms. */
 export async function getCrossLanguage(
   supabase: SupabaseClient, entryId: string,
 ): Promise<CrossLangSibling[]> {
@@ -87,15 +81,10 @@ export async function getCrossLanguage(
   const pivots = entryPivots(row.lang, row.headword_normalized ?? '', senses.map((s) => s.gloss_en))
   const exact = pivots.length === 0 ? [] : await matchByPivot(supabase, pivots, row.lang, entryId)
 
-  // The exact match requires a target's English gloss to equal the pivot whole,
-  // and the glosses are written as lists, so a pivot that is one item of such a
-  // list misses. It is an inflected or less common word that pays: `adjourned`,
-  // `postponed`, `negotiating` and `brochure` all had an empty panel. Sampled on
-  // 22 English entries, 9 had no row at all and now have one.
-  //
-  // The Vietnamese meaning is the second bridge -- `lex.search_vi` reaches 合同
-  // and `contrato` from "hợp đồng" -- and it is the same indexed path the reverse
-  // lookup already uses. It only runs for a language the exact match left empty.
+  // The exact match needs a target's English gloss to equal the pivot whole, and glosses
+  // are written as lists, so a pivot that is one list item misses: sampled on 22 English
+  // entries, 9 had no row at all. The Vietnamese meaning is the second bridge, over the
+  // same indexed path as the reverse lookup, and runs only where the exact match was empty.
   const glossVi = senses.map((s) => s.gloss_vi).find((g) => g && g.trim()) ?? null
   const short = LANG_CODES.filter((l) => l !== row.lang && !exact.some((e) => e.lang === l))
   if (!glossVi || short.length === 0) return exact
@@ -127,13 +116,9 @@ function toSibling(p: DictEntryPreview): CrossLangSibling {
   }
 }
 
-/**
- * What the dictionary knows about a list of surface forms. Synonyms, derived
- * terms and inflections are stored as plain text, so without this the page can
- * only print the word itself; with it each one carries its part of speech and
- * first meaning. Forms that are not entries of their own come back missing and
- * the caller falls back to plain text.
- */
+/** What the dictionary knows about a list of surface forms. Synonyms, derived terms and
+ *  inflections are stored as plain text; a form that is not an entry of its own comes back
+ *  missing and the caller falls back to plain text. */
 export async function getTermPreviews(
   supabase: SupabaseClient, lang: LangCode, texts: string[],
 ): Promise<TermPreview[]> {

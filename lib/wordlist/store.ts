@@ -20,27 +20,16 @@ export function parseUserWordRow(r: unknown): UserWord {
   }
 }
 
-/**
- * Pick an example sentence worth putting on a flashcard.
- *
- * `isCleanExample` rejects the run-together strings the Wiktionary dump carries in
- * places, and a sentence with no Vietnamese translation teaches nothing to a
- * learner who cannot read it yet. Shortest first: a flashcard has room for one
- * line, and a short sentence is the one a learner can hold in their head.
- */
+/** Pick an example for a flashcard: clean text, a Vietnamese translation present,
+ *  shortest first because a card has room for one line. */
 function pickExample(examples: DictExample[]): DictExample | null {
   const usable = examples.filter((x) => isCleanExample(x.text) && x.translationVi?.trim())
   if (usable.length === 0) return null
   return usable.reduce((best, x) => (x.text.length < best.text.length ? x : best))
 }
 
-/**
- * The whole-word pinyin `lex.entries.attributes` carries for Chinese entries.
- *
- * Skipped when the entry's IPA field already holds the same text: for Chinese the
- * pipeline puts the pinyin there, so filling both printed "xué xí" twice on the
- * review card, once as the reading and once as the pronunciation.
- */
+/** Whole-word pinyin from `lex.entries.attributes`. Null when it equals the IPA field:
+ *  the pipeline puts pinyin there for Chinese, so both would print "xué xí" twice. */
 function readingFrom(attributes: Record<string, unknown> | undefined, ipa: string | null): string | null {
   const pinyin = attributes?.pinyin
   if (typeof pinyin !== 'string' || !pinyin.trim()) return null
@@ -48,16 +37,8 @@ function readingFrom(attributes: Record<string, unknown> | undefined, ipa: strin
   return reading === ipa?.trim() ? null : reading
 }
 
-/**
- * Build a wordlist draft from a dictionary entry.
- *
- * Given the full entry rather than a preview, the draft also carries an example
- * sentence and, for Chinese, the reading. Those fields were hardcoded to null,
- * and `WordReviewCard` has rendered `card.example` all along -- so every card
- * added from the lookup page was a bare word with no context, on a page built to
- * show one. A preview (the reader's tap-to-lookup popover) has neither to offer
- * and still produces the draft it always did.
- */
+/** Build a wordlist draft from a dictionary entry. A full entry also yields an example
+ *  sentence and, for Chinese, the reading; a preview carries neither. */
 export function draftFromDictEntry(e: DictEntryPreview | DictEntryDetail): WordDraft {
   const detail = 'examples' in e ? e : null
   const example = detail ? pickExample(detail.examples) : null
@@ -99,13 +80,8 @@ export async function listWords(supabase: SupabaseClient): Promise<UserWord[]> {
   return rows.map(parseUserWordRow)
 }
 
-/**
- * How many words this session holds, without downloading them.
- *
- * The sign-in pages need the number and nothing else: a browser that already
- * holds words must not sign in to a different account, because that strands
- * them. `listWords` would pull every row over the wire to answer it.
- */
+/** Row count without downloading the rows. The sign-in pages need only the number: a
+ *  browser that already holds words must not sign in to a different account. */
 export async function countWords(supabase: SupabaseClient): Promise<number> {
   const { count, error } = await supabase.from('user_words').select('*', { count: 'exact', head: true })
   if (error) throw error
@@ -142,28 +118,15 @@ export interface PracticePoolOptions {
   rand?: () => number
 }
 
-/**
- * A pool of words for one practice round.
- *
- * Selects six columns with a server-side cap, not the full row set a listing
- * view needs, so a large wordlist does not pay for examples, notes and every
- * FSRS column on each round.
- *
- * The window starts at a random offset so the same sixty words do not come up
- * every session; `rand` is injectable for the same reason `buildQuiz` takes one.
- *
- * `needsMeaning` filters on the SAME side as the cap, because the window is
- * sixty ADJACENT rows by created_at, not sixty scattered ones: filtering
- * client-side after the window is taken could empty the round even when the
- * account holds plenty of words with a meaning.
- */
+/** A pool of words for one practice round: six columns, server-side cap, random offset.
+ *  `needsMeaning` must filter server-side too -- the window is adjacent rows by
+ *  created_at, so filtering after it is taken can empty the round. */
 export async function listPracticeWords(
   supabase: SupabaseClient, options: PracticePoolOptions = {},
 ): Promise<PracticeWord[]> {
   const { pool = PRACTICE_POOL, needsMeaning = false, rand = Math.random } = options
-  // PostgREST filters attach after select(), so the two queries each apply them
-  // rather than sharing a pre-built scope. Both must apply the same ones: the
-  // count decides the offset the window is taken from.
+  // Both queries must apply the same filters: the count decides the offset the
+  // window is taken from.
   const countQuery = supabase.from('user_words').select('*', { count: 'exact', head: true })
   const { count, error: countError } = await (needsMeaning
     ? countQuery.not('meaning_vi', 'is', null).neq('meaning_vi', '')
@@ -198,17 +161,11 @@ export async function listSavedEntryIds(supabase: SupabaseClient, lang: LangCode
   return new Set(savedEntryIdRow.array().parse(rows).map((r) => r.entry_id))
 }
 
-/**
- * Whether this dictionary entry is already saved.
- *
- * Deliberately does NOT call `ensureSession`: looking a word up must never mint
- * an account, which is what once left 122 empty rows in `auth.users`. A visitor
- * with no session simply has no rows, and RLS answers false.
- */
+/** Whether this dictionary entry is already saved. Must NOT call `ensureSession`: a
+ *  lookup minting an account is what left 122 empty rows in `auth.users`. */
 export async function isWordSaved(supabase: SupabaseClient, entryId: string): Promise<boolean> {
   const { data, error } = await supabase.from('user_words').select('id').eq('entry_id', entryId).limit(1)
-  // An error here is not worth a message of its own: the button falls back to
-  // offering the add, and the add reports whatever actually went wrong.
+  // The button falls back to offering the add, and the add reports the real error.
   if (error) return false
   return (data?.length ?? 0) > 0
 }
@@ -222,11 +179,10 @@ export class WordAlreadyExistsError extends Error {
 }
 
 export async function addWord(supabase: SupabaseClient, draft: WordDraft): Promise<UserWord> {
-  // Saving the first word is what creates the account: browsing needs no session,
-  // so one is not minted until there is something to own. See lib/supabase/session.
+  // Browsing needs no session; saving the first word is what creates the account.
   await ensureSession(supabase)
-  // Dictionary-sourced words are deduped by entry_id. RLS scopes the lookup to the
-  // current user's rows. Custom words (entryId null) are never treated as duplicates.
+  // Dictionary-sourced words dedupe by entry_id, scoped to this user by RLS. Custom
+  // words (entryId null) are never duplicates.
   if (draft.entryId) {
     const { data: existing, error: checkError } = await supabase
       .from('user_words').select('id').eq('entry_id', draft.entryId).limit(1)
@@ -234,9 +190,8 @@ export async function addWord(supabase: SupabaseClient, draft: WordDraft): Promi
     if (existing && existing.length > 0) throw new WordAlreadyExistsError(draft.entryId)
   }
   const { data, error } = await supabase.from('user_words').insert(draftToRow(draft)).select().single()
-  // The read above cannot see a request that is still in flight, so two overlapping
-  // adds both pass it. `user_words_user_entry_key` (migration 0031) is what actually
-  // stops the second one; 23505 is Postgres' unique_violation.
+  // The read above cannot see an in-flight request, so two overlapping adds both pass it.
+  // `user_words_user_entry_key` (migration 0031) stops the second; 23505 is unique_violation.
   if (error?.code === '23505' && draft.entryId) throw new WordAlreadyExistsError(draft.entryId)
   if (error) throw error
   return parseUserWordRow(data)
@@ -259,12 +214,8 @@ export async function deleteWords(supabase: SupabaseClient, ids: string[]): Prom
   if (error) throw error
 }
 
-/**
- * PostgREST returns at most 1000 rows in one response whatever was asked for, so
- * a bulk insert of more than that inserted everything and reported back a
- * thousand: the list on screen was short by the difference until a reload. Also
- * the unit a failed chunk is retried in, which is why it is not larger.
- */
+/** PostgREST returns at most 1000 rows per response whatever was asked for, so a larger
+ *  bulk insert reports back short. Also the unit a failed chunk is retried in. */
 const INSERT_CHUNK = 500
 
 /** Insert one draft, recovering from the two constraint failures an import can
@@ -273,14 +224,12 @@ async function insertOne(supabase: SupabaseClient, draft: WordDraft): Promise<Us
   const { data, error } = await supabase.from('user_words').insert(draftToRow(draft)).select().single()
   if (!error) return parseUserWordRow(data)
 
-  // 23505 unique_violation: `user_words_user_entry_key` (migration 0031). The
-  // word is already saved, which for an import is a row to skip, not a failure.
+  // 23505 unique_violation on `user_words_user_entry_key` (migration 0031): already
+  // saved, which for an import is a row to skip rather than a failure.
   if (error.code === '23505') return null
 
   // 23503 foreign_key_violation: the imported entry_id no longer names a row in
-  // lex.entries, because the dictionary changed since the backup was written.
-  // Keep the word and drop the link -- a restored word without its dictionary
-  // link is still the user's word.
+  // lex.entries. Keep the word, drop the link.
   if (error.code === '23503' && draft.entryId !== null) {
     const retry = await supabase.from('user_words')
       .insert(draftToRow({ ...draft, entryId: null })).select().single()
@@ -291,15 +240,8 @@ async function insertOne(supabase: SupabaseClient, draft: WordDraft): Promise<Us
   throw error
 }
 
-/**
- * Bulk-insert drafts (e.g. from a CSV import).
- *
- * The fast path is one request per chunk. A chunk the database refuses is
- * retried row by row, so a single bad row does not lose the rest of the chunk.
- *
- * Returns the rows that went in. Fewer than were asked for means some were
- * already saved; the caller reports that.
- */
+/** Bulk-insert drafts. One request per chunk; a refused chunk is split down to single
+ *  rows. Returns the rows inserted -- fewer than asked for means some were already saved. */
 export async function addWords(supabase: SupabaseClient, drafts: WordDraft[]): Promise<UserWord[]> {
   if (drafts.length === 0) return []
   await ensureSession(supabase)
@@ -314,16 +256,8 @@ export async function addWords(supabase: SupabaseClient, drafts: WordDraft[]): P
 /** Below this, split no further and insert one row at a time. */
 const SPLIT_FLOOR = 16
 
-/**
- * Insert a batch, halving it when the database refuses.
- *
- * The first shape of this dropped straight from a refused 500 to 500 sequential
- * inserts. That is correct and slow: at a tenth of a second each it is fifty
- * seconds for one chunk, with "Đang thêm…" motionless the whole time, and a
- * learner who reloads in the middle lands back in the half-written state the
- * chunking was meant to avoid. Halving finds one bad row in a 500-row chunk in
- * about forty requests instead.
- */
+/** Insert a batch, halving it when the database refuses. Halving finds one bad row in a
+ *  500-row chunk in about forty requests; 500 sequential inserts cost about fifty seconds. */
 async function insertBatch(supabase: SupabaseClient, batch: WordDraft[]): Promise<UserWord[]> {
   if (batch.length === 0) return []
   const { data, error } = await supabase.from('user_words').insert(batch.map(draftToRow)).select()
@@ -345,8 +279,8 @@ async function insertBatch(supabase: SupabaseClient, batch: WordDraft[]): Promis
   return [...head, ...tail]
 }
 
-/** Bulk status change (e.g. "mark selected as known"). Same status for every id, so a
- * single query suffices; unlike tags this needs no per-row merge. */
+/** Bulk status change. Same status for every id, so one query suffices; unlike tags
+ *  this needs no per-row merge. */
 export async function updateWordsStatus(supabase: SupabaseClient, ids: string[], status: WordStatus): Promise<void> {
   if (ids.length === 0) return
   const { error } = await supabase.from('user_words').update({ status }).in('id', ids)

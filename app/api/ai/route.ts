@@ -5,12 +5,8 @@ import { z } from '@/lib/zod'
 import { clientKey, createRateLimiter } from '@/lib/http/rateLimit'
 
 /**
- * The single entry point for the assistant features.
- *
- * It exists so the model key stays on the server. It is also where the cost is
- * bounded: a model call is the most expensive thing this app can do per click,
- * far more than a Supabase read, so the budget here is deliberately much smaller
- * than the search route's.
+ * The single entry point for the assistant features, so the model key stays on
+ * the server.
  *
  * GET reports whether the feature is configured at all, so the browser can leave
  * the buttons out rather than offer something that will fail. A deployment that
@@ -18,18 +14,16 @@ import { clientKey, createRateLimiter } from '@/lib/http/rateLimit'
  * state, not a broken one.
  */
 
-// Two budgets: per-address, and a global one as a backstop.
+// Two budgets: per-address, and a global one as a backstop for deployments where
+// `clientKey` cannot name the caller (see `forwardedForIsTrusted` in
+// lib/http/rateLimit.ts).
 //
-// `clientKey` can only name a caller where the `x-forwarded-for` header is set
-// by the platform rather than by the caller. That covers the deployment -- see
-// `forwardedForIsTrusted` in lib/http/rateLimit.ts -- but not a bare
-// `next start`, where the header is whatever the sender typed. So the route
-// needs a second line that does not depend on knowing who is asking.
-//
-// The global budget is that second line. It is deliberately blunt -- one bucket
-// for everyone -- because a cap that occasionally inconveniences a real user is
-// better than no cap on spending. It sits above the per-address limit so a
-// deployment that can name its callers still gets fair sharing underneath it.
+// KNOWN CEILING: both counters live in this process's memory, so on a platform
+// that runs several instances the real limit is the number below times the
+// number of instances. That is enough while the assistant is unreachable in
+// production (`GET /api/ai` answers {"enabled": false}); before pointing a
+// deployment at a reachable router, move the global counter to a shared store or
+// put the route behind a session.
 const CALLS_PER_MINUTE = 20
 let rateLimit = createRateLimiter({ limit: CALLS_PER_MINUTE, windowMs: 60_000 })
 

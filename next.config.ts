@@ -29,9 +29,9 @@ import type { NextConfig } from 'next'
  * prerendering and the CDN cache the search route is built around.
  */
 
-// A missing variable is already fatal at runtime (lib/supabase/client.ts asserts
-// it), so falling back to the empty string here only keeps `next build` from
-// dying with a less useful message.
+// A missing variable is already fatal at runtime (lib/supabase/env.ts asserts it),
+// so falling back to the empty string here only keeps `next build` from dying with
+// a less useful message.
 const supabaseOrigin = (() => {
   try {
     return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').origin

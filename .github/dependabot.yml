@@ -1,6 +1,5 @@
-# package.json pins next, react and ts-fsrs to exact versions, so a security
-# patch never arrives on its own. Dependabot is what turns those pins from a
-# reproducibility win into something that still gets fixed.
+# package.json pins next, react and ts-fsrs to exact versions, so a security patch never
+# arrives on its own. Dependabot is what keeps those pins from going stale.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -9,8 +8,8 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      # One pull request per ecosystem rather than one per package. A solo
-      # project does not have the review budget for fifteen separate bumps.
+      # One pull request per ecosystem. A solo project has no review budget for fifteen
+      # separate bumps.
       production:
         dependency-type: production
       development:

@@ -20,15 +20,13 @@ import type { ContainingWord, DictEntryPreview, DictEntryDetail, CharInfo, Cross
 import type { GrammarPoint } from '@/lib/grammar/types'
 
 /**
- * Two-column lookup layout (hanzii-style): the hero spans the top, then a wide
- * main column holds the dense content (meanings, character breakdown, conjugation,
- * examples, the related-word and word-form tables) and a narrower side rail holds
- * the link lists (other languages, compounds, grammar). Collapses to a single
- * column below `lg`.
+ * Two-column lookup layout: the hero spans the top, a wide main column holds the
+ * dense content (meanings, characters, conjugation, examples, the related-word and
+ * word-form tables) and a narrower side rail holds the link lists (other languages,
+ * compounds, grammar). Collapses to a single column below `lg`.
  *
- * The related words and the word family moved out of the rail when they stopped
- * being chips: each row now carries a part of speech and a meaning, which does not
- * fit a 320px column.
+ * Related words and the word family belong in the main column: each row carries a
+ * part of speech and a meaning, which does not fit a 320px rail.
  */
 export function LookupView({
   detail, lemma = null, characters, siblings, inflections = [], grammarPoints = [], containing = [], kin = [], previews = {},
@@ -51,8 +49,8 @@ export function LookupView({
   resolvedExamples?: ResolvedText[]
 }) {
   const hanViet = characters.map((c) => c.hanViet[0]).filter(Boolean).join(' ') || null
-  // Spanish verbs get a conjugation table; for them the flat "word family" chip list
-  // would be hundreds of inflected forms, so we suppress it in favour of the table.
+  // Spanish verbs get the table instead of the flat word-family list, which for them
+  // would run to hundreds of inflected forms.
   const conjugation = detail.lang === 'es' ? buildConjugation(inflections) : null
   const forms = conjugation ? [] : groupWordForms(inflections)
 
@@ -65,17 +63,14 @@ export function LookupView({
       <LookupHero detail={detail} hanViet={detail.lang === 'zh' ? hanViet : null} />
       {lemma && <LemmaLink lemma={lemma} preview={previews[lemma.toLowerCase()]} lang={detail.lang} />}
 
-      {/* Three blocks, in the order they matter on a phone: what the word means,
-          then the links across languages, then the reference material. On a wide
-          screen the grid puts the first two side by side and drops the third
-          underneath, which also stops the rail from stranding content in a column
-          that ends two thirds of the way up the page. */}
+      {/* Phone order: what the word means, the links across languages, then the
+          reference material. Wide screens pair the first two and drop the third under
+          them, which also stops the rail stranding content in a short column. */}
       <div className={hasSideRail ? 'grid gap-x-10 gap-y-8 lg:grid-cols-3' : 'flex flex-col gap-8'}>
         <div className="flex flex-col gap-8 lg:col-span-2">
           <SenseList senses={detail.senses} />
-          {/* Characters are the substance of a Chinese entry, not an appendix:
-              radicals, stroke counts and the writing practice belong in the wide
-              column, where they were squeezed into a 299px rail before. */}
+          {/* Characters are the substance of a Chinese entry, not an appendix: radicals,
+              stroke counts and writing practice do not fit a 299px rail. */}
           {showChars && <CharacterPanel characters={characters} />}
           <ExampleList
             examples={detail.examples}
@@ -83,8 +78,8 @@ export function LookupView({
             resolved={resolvedExamples}
             glosses={[detail.glossVi, ...detail.senses.map((s) => s.glossVi)]}
           />
-          {/* Under the dictionary's own material, never in place of it: what the
-              assistant says is generated, what is above it is sourced. */}
+          {/* Under the dictionary's own material, never in place of it: what the assistant
+              says is generated, what is above it is sourced. */}
           <AiCoach lang={detail.lang} headword={detail.headword} meaningVi={entryMeaningVi(detail)} />
         </div>
 

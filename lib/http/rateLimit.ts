@@ -1,14 +1,6 @@
-// Fixed-window rate limiting for route handlers.
-//
-// The dictionary search route reaches Supabase on every query it has not cached,
-// so a script issuing random queries bypasses the cache entirely and spends the
-// project's database budget one request at a time. This caps how fast any single
-// caller can do that.
-//
-// The counters live in this process's memory. That is deliberate: it needs no
-// extra service, and the point is to blunt a flood, not to enforce an exact quota
-// across a fleet. Several instances each allow the limit, so treat the configured
-// number as a per-instance ceiling.
+// Fixed-window rate limiting for route handlers, counting in this process's memory.
+// KNOWN CEILING: several instances each allow the full limit, so the configured number
+// is a per-instance ceiling, not a fleet-wide quota. Upgrade path is a shared store.
 
 export interface RateLimitResult {
   allowed: boolean
@@ -22,10 +14,8 @@ export interface RateLimitOptions {
   /** Requests allowed per window, per key. */
   limit: number
   windowMs: number
-  /**
-   * Most distinct keys held at once. A flood from many spoofed addresses would
-   * otherwise grow the map without bound, turning the defence into the leak.
-   */
+  /** Most distinct keys held at once. Unbounded, a flood from spoofed addresses grows
+   *  the map without limit, turning the defence into the leak. */
   maxKeys?: number
   /** Injectable clock, so tests do not have to wait out a real window. */
   now?: () => number
@@ -40,13 +30,12 @@ export type RateLimiter = (key: string) => RateLimitResult
 
 export function createRateLimiter(options: RateLimitOptions): RateLimiter {
   const { limit, windowMs, maxKeys = 10_000, now = Date.now } = options
-  if (limit < 1) throw new RangeError('limit phải từ 1 trở lên')
-  if (windowMs < 1) throw new RangeError('windowMs phải lớn hơn 0')
-  if (maxKeys < 1) throw new RangeError('maxKeys phải từ 1 trở lên')
+  if (limit < 1) throw new RangeError('limit must be at least 1')
+  if (windowMs < 1) throw new RangeError('windowMs must be greater than 0')
+  if (maxKeys < 1) throw new RangeError('maxKeys must be at least 1')
 
-  // Every window is the same length and each key is re-inserted when its window
-  // renews, so the Map's insertion order is also its expiry order: the sweep can
-  // stop at the first entry still alive.
+  // Windows are all one length and a key is re-inserted when its window renews, so
+  // insertion order is expiry order: the sweep stops at the first entry still alive.
   const windows = new Map<string, Window>()
 
   function dropExpired(at: number): void {
@@ -89,39 +78,19 @@ export function createRateLimiter(options: RateLimitOptions): RateLimiter {
 }
 
 /**
- * Whether the `x-forwarded-for` this request carries is the platform's word or
- * the caller's.
- *
- * Vercel rewrites the header at its edge and does not forward an external value:
- * "Vercel overwrites this header and does not forward external IPs to prevent
- * spoofing, unless a trusted proxy is enabled for Enterprise customers"
- * (https://vercel.com/docs/headers/request-headers). This project is not on
- * Enterprise, so on a Vercel deployment the header is trustworthy with no
- * configuration, and `VERCEL=1` is set on every such deployment
- * (https://vercel.com/docs/environment-variables/system-environment-variables).
- *
- * Detecting that matters because the alternative was one shared bucket: with no
- * per-address key, every visitor spends the same global budget, so a single
- * script could exhaust the assistant for the whole site at no cost to itself.
- *
- * `TRUST_PROXY_HEADER` stays for any other deployment behind a proxy that sets
- * the header. Anywhere else -- a bare `next start`, a container with the port
- * published straight out -- the header is whatever the caller typed, so it is
- * ignored.
+ * Whether `x-forwarded-for` is the platform's word or the caller's. Vercel overwrites it
+ * at the edge (except for Enterprise trusted proxies, which this project is not) and sets
+ * `VERCEL=1`; on any other host only `TRUST_PROXY_HEADER=1` makes it trustworthy.
+ * https://vercel.com/docs/headers/request-headers
+ * https://vercel.com/docs/environment-variables/system-environment-variables
  */
 function forwardedForIsTrusted(): boolean {
   return process.env.TRUST_PROXY_HEADER === '1' || process.env.VERCEL === '1'
 }
 
-/**
- * Identify the caller, or nothing when the caller cannot be identified.
- *
- * A caller with no usable header must not be bucketed under one shared "unknown"
- * key, or every visitor on a bare `next start` caps the whole site's budget
- * together. Such a caller is not rate-limited by address at all; the database is
- * protected by `createColdQueryLimiter` below, which does not depend on knowing
- * who is asking.
- */
+/** Identify the caller, or null when it cannot be identified. An unidentified caller must
+ *  never be bucketed under a shared "unknown" key, or every visitor caps the site's budget
+ *  together; `createColdQueryLimiter` protects the database without knowing who is asking. */
 export function clientKey(request: Request): string | null {
   if (!forwardedForIsTrusted()) return null
   const forwarded = request.headers.get('x-forwarded-for')
@@ -131,27 +100,10 @@ export function clientKey(request: Request): string | null {
 }
 
 /**
- * Cap how many queries the cache has never seen get through per window.
- *
- * Per-address limiting can only work behind a trusted proxy, and the thing worth
- * protecting is not request count but database work: a query the server cache
- * already holds costs nothing to answer, and a query it has never seen costs a
- * round trip to Supabase. So the budget goes on the second kind. A caller cannot
- * escape it by forging a header, and a hundred people searching the same word
- * never spend more than the first one did.
- *
- * `remember` bounds the set of queries treated as already seen, and `rememberMs`
- * bounds how long one stays in it. Both matter. Without the second, a caller
- * could load the set with 5,000 distinct queries at the permitted rate, wait for
- * the server cache to expire underneath them, and then have all 5,000 counted as
- * warm while every one of them costs a round trip to Supabase. So `rememberMs`
- * has to be the caller's own cache lifetime, and the clock starts when the query
- * was first admitted rather than when it was last asked for -- that is when the
- * cache entry was written, and reading it does not make it younger.
- *
- * This memory is separate from, and smaller than, the server's own cache, and it
- * only decides whether a query costs budget; being wrong about one costs one
- * round trip, not correctness.
+ * Cap how many queries the server cache has never seen get through per window: the budget
+ * goes on database work rather than request count, so forging a header does not escape it.
+ * `rememberMs` must be that cache's own lifetime, or a caller loads `remember` distinct
+ * queries, waits for the cache to expire underneath them, and has them all counted warm.
  */
 export interface ColdQueryLimiterOptions {
   /** Queries not seen recently that may get through per window. */
@@ -166,10 +118,10 @@ export interface ColdQueryLimiterOptions {
 
 export function createColdQueryLimiter(options: ColdQueryLimiterOptions): (query: string) => RateLimitResult {
   const { limit, windowMs, remember = 5_000, rememberMs = 3_600_000, now = Date.now } = options
-  if (limit < 1) throw new RangeError('limit phải từ 1 trở lên')
-  if (windowMs < 1) throw new RangeError('windowMs phải lớn hơn 0')
-  if (remember < 1) throw new RangeError('remember phải từ 1 trở lên')
-  if (rememberMs < 1) throw new RangeError('rememberMs phải lớn hơn 0')
+  if (limit < 1) throw new RangeError('limit must be at least 1')
+  if (windowMs < 1) throw new RangeError('windowMs must be greater than 0')
+  if (remember < 1) throw new RangeError('remember must be at least 1')
+  if (rememberMs < 1) throw new RangeError('rememberMs must be greater than 0')
 
   /** Query to the moment it was first admitted. Insertion order is the LRU order. */
   const seen = new Map<string, number>()
@@ -180,9 +132,8 @@ export function createColdQueryLimiter(options: ColdQueryLimiterOptions): (query
     const at = now()
     const firstSeenAt = seen.get(query)
     if (firstSeenAt !== undefined && at - firstSeenAt < rememberMs) {
-      // Move to the end so the eviction below drops genuinely idle queries. The
-      // timestamp rides along unchanged: it marks when the cache entry was
-      // written, and asking for it again does not make that entry younger.
+      // Move to the end so eviction drops genuinely idle queries. The timestamp rides
+      // along unchanged: it marks when the cache entry was written, not when it was read.
       seen.delete(query)
       seen.set(query, firstSeenAt)
       return { allowed: true, remaining: Math.max(0, limit - count), retryAfterSeconds: 0 }

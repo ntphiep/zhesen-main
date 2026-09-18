@@ -132,10 +132,9 @@ describe('SearchBox', () => {
     expect(linkHrefs()).toEqual(['/dictionary/en/cat'])
   })
   /**
-   * The component used to cast whatever came back to the result type. A reply
-   * that was not a result set -- the route's 429 body, a server error, an HTML
-   * page from a proxy -- therefore had no `forward` field and the next render
-   * threw reading `forward[lang]`, blanking the page.
+   * A reply that is not a result set -- the route's 429 body, a server error,
+   * an HTML page from a proxy -- has no `forward` field; casting it to the
+   * result type anyway throws reading `forward[lang]` and blanks the page.
    */
   it('shows nothing instead of crashing when the route refuses the request', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({

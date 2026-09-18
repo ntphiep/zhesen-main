@@ -11,10 +11,9 @@ const HEADING: Record<LangCode, string> = {
 }
 
 /**
- * Longer entries the word takes part in: 学 leads to 学生 and 大学, "give" to
- * "give up" and "give in". The compounds are most of how Chinese vocabulary grows
- * and the phrasal verbs are what an English learner actually meets, and neither
- * was reachable from the word's own page.
+ * Longer entries the word takes part in: 学 leads to 学生 and 大学, "give" to "give up"
+ * and "give in". Neither the compounds nor the phrasal verbs are reachable from the
+ * word's own page otherwise.
  */
 export function ContainingWords({ words, lang }: { words: ContainingWord[]; lang: LangCode }) {
   if (words.length === 0) return null

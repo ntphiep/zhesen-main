@@ -2,11 +2,9 @@
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * Animated stroke-order for a single Han character (hanzii-style "Tập viết").
- * Uses hanzi-writer, loaded dynamically so it is code-split out of the main
- * bundle and never runs during SSR. Stroke data is fetched from the hanzi-writer
- * CDN at runtime; if a character has no data the widget hides itself rather than
- * erroring.
+ * Animated stroke order for a single Han character. hanzi-writer is loaded
+ * dynamically, so it is code-split out of the main bundle and never runs during SSR.
+ * Stroke data comes from the hanzi-writer CDN; a character with none hides itself.
  */
 export function StrokeOrder({ char }: { char: string }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -18,10 +16,8 @@ export function StrokeOrder({ char }: { char: string }) {
     const el = ref.current
     if (!el) return
     el.innerHTML = ''
-    // hanzi-writer parses its colours from strings and cannot take a CSS
-    // variable, so the palette is read from the scheme and the widget is
-    // rebuilt when the scheme flips: #111 strokes would vanish on the dark
-    // ground the swapped --paper gives this box.
+    // hanzi-writer parses colours from strings and cannot take a CSS variable, so the
+    // palette is read from the scheme and rebuilt on a flip: #111 vanishes on dark.
     const media = window.matchMedia('(prefers-color-scheme: dark)')
     function build(dark: boolean) {
       import('hanzi-writer').then(({ default: HanziWriter }) => {

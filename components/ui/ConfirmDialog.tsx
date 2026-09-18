@@ -2,12 +2,10 @@
 import { Modal } from '@/components/ui/Modal'
 
 /**
- * A confirmation step in place of `window.confirm`.
- *
- * Same reasons as `useNotice`, plus one of its own: confirm() returns a boolean
- * synchronously, so the caller cannot show which rows are about to go or label
- * the button with the action. Built on Modal so it inherits the `m-auto`
- * centring and the Strict Mode guard rather than repeating them.
+ * A confirmation step in place of `window.confirm`, which returns a boolean
+ * synchronously, so the caller cannot show which rows are about to go or label the
+ * button with the action. Built on Modal, inheriting its `m-auto` centring and its
+ * Strict Mode guard rather than repeating them.
  */
 export function ConfirmDialog({
   open, title, message, confirmLabel, onConfirm, onCancel,

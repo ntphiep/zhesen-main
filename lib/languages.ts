@@ -1,8 +1,6 @@
 /**
- * The three languages zhesen targets, and the single source of truth for them.
- *
- * This list is fixed and does not change at runtime. Anything that needs one
- * value per language should derive it from LANGUAGES via `byLang` rather than
+ * The three languages zhesen targets, and the single source of truth for them. Anything
+ * needing one value per language derives it from LANGUAGES via `byLang` rather than
  * writing the codes out again.
  */
 
@@ -34,22 +32,19 @@ export function isLangCode(code: string): code is LangCode {
   return LANGUAGES.some((l) => l.code === code)
 }
 
-/** BCP47 tag for the speech-synthesis voice of each language. Used both by the
- * audio button's TTS fallback and by speech recognition in the speaking drill. */
+/** BCP47 tag for each language's speech-synthesis voice, used by the audio button's TTS
+ *  fallback and by speech recognition in the speaking drill. */
 const SPEECH_LANG: Record<LangCode, string> = { en: 'en-US', es: 'es-ES', zh: 'zh-CN' }
 
 export function speechLang(lang: LangCode): string {
   return SPEECH_LANG[lang]
 }
 
-/**
- * A record keyed by every language code, derived from LANGUAGES. Anything that
- * needs one value per language builds it through here, so adding a language is a
- * single edit rather than a hunt for the places that spelled the list out again.
- */
+/** A record keyed by every language code, derived from LANGUAGES, so adding a language is
+ *  one edit rather than a hunt for the places that spelled the list out again. */
 export function byLang<T>(pick: (language: Language) => T): Record<LangCode, T> {
-  // The seed is empty by construction and filled for every code in the same
-  // statement; the Record type is what the loop makes true.
+  // The seed is empty by construction and filled for every code below; the Record type is
+  // what the loop makes true.
   const out = {} as Record<LangCode, T>
   for (const language of LANGUAGES) out[language.code] = pick(language)
   return out

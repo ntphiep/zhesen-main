@@ -5,12 +5,9 @@ import { cleanMtGloss } from './textQuality'
 import { audioMatchesHeadword } from './pronunciation'
 
 /**
- * Zod schemas for every row shape read from Supabase/PostgREST in this feature,
- * plus the pure mapping from those (snake_case, possibly nested) rows to the
- * camelCase domain types in `./types`. Per AGENTS.md rule 3, nothing in
- * `lib/dictionary/` casts a Supabase response with `as` -- every row is
- * `.parse()`d here first, mirroring the pattern in `lib/wordlist/types.ts`
- * (`userWordRow`).
+ * Zod schemas for every row shape read from PostgREST here, plus the mapping from those
+ * snake_case rows to the camelCase types in `./types`. Nothing in `lib/dictionary/` may
+ * cast a Supabase response with `as`: every row is `.parse()`d here first.
  */
 
 const langCode = z.enum(['zh', 'es', 'en'])
@@ -30,8 +27,8 @@ export const pronRow = z.object({
 })
 export type PronRow = z.infer<typeof pronRow>
 
-/** The row shape behind `entries(...senses(...), pronunciations(...))` PostgREST
- * embeds, i.e. everything `toPreview` needs before it picks a primary sense/pron. */
+/** The row behind `entries(...senses(...), pronunciations(...))` embeds: everything
+ *  `toPreview` needs before it picks a primary sense and pronunciation. */
 export const entryPreviewRow = z.object({
   id: z.string(),
   lang: langCode,
@@ -64,9 +61,8 @@ export const entryDetailRow = entryPreviewRow.extend({
 })
 export type EntryDetailRow = z.infer<typeof entryDetailRow>
 
-/** Flat row returned by the `lex.search` RPC (see supabase/migrations/0016_search.sql):
- * unlike `entryPreviewRow`, the primary sense and preferred pronunciation are
- * already picked in SQL, so there is no nested senses()/pronunciations() to reduce. */
+/** Flat row from the `lex.search` RPC (supabase/migrations/0016_search.sql): the primary
+ *  sense and preferred pronunciation are already picked in SQL, so nothing is nested. */
 export const searchRpcRow = z.object({
   id: z.string(),
   lang: langCode,
@@ -84,8 +80,8 @@ export const searchRpcRow = z.object({
 })
 export type SearchRpcRow = z.infer<typeof searchRpcRow>
 
-/** Row returned by the `lex.suggest` RPC (see supabase/migrations/0018_reverse_lookup.sql):
- * a trigram-nearest headword or Vietnamese gloss for a query with zero direct hits. */
+/** Row from the `lex.suggest` RPC (supabase/migrations/0018_reverse_lookup.sql): a
+ *  trigram-nearest headword or Vietnamese gloss for a query with zero direct hits. */
 export const suggestRow = z.object({
   id: z.string(),
   lang: langCode,
@@ -188,15 +184,15 @@ export function toPreview(r: EntryPreviewRow): DictEntryPreview {
   }
 }
 
-/** Same mapping as `toPreview`, for the already-flattened `lex.search`/`lex.search_vi`
- * RPC row (both share the same shape, see 0016_search.sql and 0018_reverse_lookup.sql). */
+/** Same mapping as `toPreview`, for the flattened `lex.search` and `lex.search_vi` rows,
+ *  which share one shape (0016_search.sql, 0018_reverse_lookup.sql). */
 export function toPreviewFromSearchRow(r: SearchRpcRow): DictEntryPreview {
   return {
     id: r.id, lang: r.lang, headword: r.headword, traditional: r.traditional, level: r.level,
     ipa: r.ipa, pos: r.pos, glossVi: r.gloss_vi, glossEn: r.gloss_en,
     audioUrl: audioMatchesHeadword(r.audio_url, r.headword) ? r.audio_url : null,
-    // `lex.entries.attributes->>'pinyin'` covers every Chinese entry including the
-    // multi-syllable ones; `lex.characters.pinyin` holds single characters only.
+    // `lex.entries.attributes->>'pinyin'` covers every Chinese entry including multi-syllable
+    // ones; `lex.characters.pinyin` holds single characters only.
     reading: typeof r.attributes?.pinyin === 'string' ? r.attributes.pinyin : null,
     frequencyRank: r.frequency_rank ?? null,
     matchScore: r.rank,
@@ -207,8 +203,8 @@ export function toSuggestion(r: SuggestRow): SuggestionPreview {
   return { id: r.id, lang: r.lang, headword: r.headword, glossVi: r.gloss_vi }
 }
 
-/** Row returned by the `lex.entries_containing` RPC (see
- * supabase/migrations/0025_entries_containing.sql). */
+/** Row from the `lex.entries_containing` RPC
+ *  (supabase/migrations/0025_entries_containing.sql). */
 export const containingRow = z.object({
   id: z.string(),
   lang: langCode,

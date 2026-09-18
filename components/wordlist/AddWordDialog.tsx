@@ -46,17 +46,15 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
   const [filling, setFilling] = useState(false)
   const [fillError, setFillError] = useState<string | null>(null)
 
-  // Clear stale results synchronously as soon as the query is emptied, instead of in an
-  // effect (adjust state during render, per react.dev/learn/you-might-not-need-an-effect).
+  // Adjust state during render, not in an effect: react.dev/learn/you-might-not-need-an-effect.
   const [prevQuery, setPrevQuery] = useState(query)
   if (query !== prevQuery) {
     setPrevQuery(query)
     if (!query.trim()) setResults([])
   }
 
-  // Clear the previous search whenever the dialog is (re)opened, the same way
-  // ImportCsvDialog clears its preview. Modal keeps its children mounted while
-  // closed, so without this the box still shows the last word looked up.
+  // Modal keeps its children mounted while closed, so without clearing on reopen the
+  // box still shows the last word looked up.
   const [prevOpen, setPrevOpen] = useState(open)
   if (open !== prevOpen) {
     setPrevOpen(open)
@@ -65,22 +63,18 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
 
   useEffect(() => {
     if (!query.trim()) return
-    // Abort the in-flight request when the query changes, the same way SearchBox
-    // does. Without it a slow request for "cat" could land after a fast one for
-    // "cats" and overwrite the list with results for a query no longer typed.
+    // Abort on query change: a slow request for "cat" could otherwise land after a
+    // fast one for "cats" and overwrite the list.
     const ctrl = new AbortController()
     const id = setTimeout(async () => {
       try {
-        // Through the cached route, like the main search box. Going straight to
-        // Supabase from here spent a cross-region round trip per keystroke and
-        // skipped both the shared cache and the per-address budget.
+        // Through the cached route: straight to Supabase costs a cross-region round trip
+        // per keystroke and skips both the shared cache and the per-address budget.
         const outcome = await fetchSearch(query, ctrl.signal)
-        // Both directions, deduped. The box only read `forward`, so typing the
-        // Vietnamese meaning of a word -- the natural thing to do when you know
-        // what you want to save but not how it is spelled -- found nothing, even
-        // though the route had already answered with it under `reverse`.
+        // Both directions: reading only `forward` means typing a word's Vietnamese
+        // meaning finds nothing, though the route already answered under `reverse`.
         if (outcome.status !== 'ok') { setResults([]); return }
-        // A Map keyed by id keeps the first of each and the order they came in,
+        // Keyed by id, so this keeps the first of each and the arrival order,
         // forward before reverse.
         const byId = new Map<string, DictEntryPreview>()
         for (const e of [...outcome.data.forward[lang], ...outcome.data.reverse[lang]]) {
@@ -124,8 +118,8 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
     setFillError(null)
   }
 
-  // Fill the empty fields of the manual form from the model. Only the empty ones:
-  // anything already typed is the learner's own wording and outranks a guess.
+  // Empty fields only: anything already typed is the learner's own wording and
+  // outranks a guess.
   async function handleAiFill() {
     const word = headword.trim()
     if (!word || filling) return
@@ -144,8 +138,8 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
         setFillError(outcome.message)
       }
     } finally {
-      // Without this the button sticks on "Đang điền…" for the life of the
-      // dialog if anything throws, and only closing and reopening frees it.
+      // Without this the button sticks on "Đang điền…" for the life of the dialog
+      // whenever anything throws.
       setFilling(false)
     }
   }
@@ -195,8 +189,8 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
               />
             </div>
 
-            {/* Debounced search results update with no other status text -- announce the
-                count for screen readers, same pattern as SearchBox. */}
+            {/* Debounced results arrive with no other status text, so announce the count
+                for screen readers. */}
             <p role="status" aria-live="polite" className="sr-only">
               {query.trim() ? `${results.length} kết quả cho "${query.trim()}"` : ''}
             </p>

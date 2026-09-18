@@ -11,10 +11,9 @@ import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 type State = 'idle' | 'saving' | 'added' | 'exists' | 'error'
 
 /**
- * Save one dictionary entry to the notebook. The notebook belongs to an
- * account, so without one this button is an invitation to sign in, pointing at
- * the page the visitor came from: a word looked up is worth saving, and the
- * sign-in must not cost them where they were reading it.
+ * Save one dictionary entry to the notebook. The notebook belongs to an account, so
+ * without one this is an invitation to sign in, pointing back at the page the visitor
+ * came from, since signing in must not cost them where they were reading.
  */
 export function AddToWordlistButton({ entry }: { entry: DictEntryPreview | DictEntryDetail }) {
   const { kind } = useAccount()

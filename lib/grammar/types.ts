@@ -1,11 +1,9 @@
 import { z } from '@/lib/zod'
 import type { LangCode } from '@/lib/languages'
 
-/**
- * Zod schemas for rows read from `lex.grammar_points` / `lex.grammar_examples`
- * (see supabase/migrations/0020_grammar_points.sql), plus the camelCase domain
- * types. Per AGENTS.md rule 3, nothing here casts a Supabase response with `as`.
- */
+/** Zod schemas for `lex.grammar_points` and `lex.grammar_examples` rows
+ *  (supabase/migrations/0020_grammar_points.sql), plus the camelCase types. Nothing here
+ *  may cast a Supabase response with `as`. */
 
 const langCode = z.enum(['zh', 'es', 'en'])
 const levelScheme = z.enum(['HSK', 'CEFR'])

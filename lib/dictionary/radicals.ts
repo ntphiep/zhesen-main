@@ -1,13 +1,8 @@
 /**
- * The 214 Kangxi radicals (bộ thủ Khang Hy) with their Sino-Vietnamese (Hán-Việt)
- * reading and a short Vietnamese meaning. Compiled from Vietnamese Wikipedia
- * ("Bộ thủ Khang Hi"), Vietnamese Wiktionary, and the Hán-Nôm dictionary
- * (hvdic.thivien.net); the latter was preferred where sources disagreed.
- *
- * `char` is the canonical Kangxi (traditional) glyph. Modern simplified texts use
- * variant forms for some radicals (氵 for 水, 辶 for 辵, …); `VARIANTS` maps those
- * back so a lookup by either glyph resolves. Used to enrich the character card
- * ("Bộ: 子 · tử — con").
+ * The 214 Kangxi radicals with their Hán-Việt reading and a short Vietnamese meaning,
+ * compiled from Vietnamese Wikipedia, Vietnamese Wiktionary and hvdic.thivien.net, the last
+ * preferred where they disagreed. `char` is the canonical traditional glyph; `VARIANTS`
+ * maps the simplified forms (氵 for 水, 辶 for 辵) back so either glyph resolves.
  */
 export interface RadicalInfo {
   number: number

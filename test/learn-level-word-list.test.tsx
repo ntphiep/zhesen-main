@@ -82,8 +82,8 @@ describe('LevelWordList', () => {
   })
 
   // The read of what is already saved cannot see a write still in flight -- from
-  // another tab, or from an impatient second click on this very button. Those
-  // rows come back skipped, and the count used to claim them anyway.
+  // another tab, or an impatient second click on this button. Rows that come
+  // back skipped must not be counted as inserted.
   it('"add all" counts what was inserted, not what it hoped to insert', async () => {
     getAllEntriesByLevel.mockResolvedValueOnce([entry('a'), entry('b'), entry('c')])
     listSavedEntryIds.mockResolvedValueOnce(new Set())

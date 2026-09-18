@@ -8,8 +8,8 @@ import { localDay, computeStreak } from '@/lib/wordlist/activity'
  */
 describe('localDay', () => {
   it('uses the Vietnam calendar day, not the running process timezone', () => {
-    // 23:05 UTC on the 11th is 06:05 on the 12th in Vietnam. A UTC server used to
-    // read this back as the 11th and report the streak as broken.
+    // 23:05 UTC on the 11th is 06:05 on the 12th in Vietnam; a server reading in
+    // UTC must not read this back as the 11th and report the streak as broken.
     expect(localDay(Date.parse('2026-09-11T23:05:00.000Z'))).toBe('2026-09-12')
   })
 

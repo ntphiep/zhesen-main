@@ -14,16 +14,13 @@ type DetailState =
   | { status: 'ok'; detail: DictEntryDetail | null }
   | { status: 'error' }
 
-// The wordlist mounts this only while a row is expanded, so collapsing and expanding
-// the same word unmounts and remounts it, and every remount was another Supabase round
-// trip from the browser -- the entry page serves the same data from a one-hour server
-// cache. Dictionary entries do not change while a page is open, so remember them for
-// the life of the tab.
+// The wordlist mounts this only while a row is expanded, so without the cache every
+// collapse and expand is another Supabase round trip. Entries do not change in a tab.
 // ponytail: never evicted; add a cap if a session can realistically expand thousands.
 const detailCache = new Map<string, DictEntryDetail | null>()
 
-/** Empty the cache. Tests need it for the same reason `resetSessionState` exists:
- *  module-level state outlives a single render and leaks between cases. */
+/** Empty the cache. Module-level state outlives a render and leaks between test
+ *  cases, the same reason `resetSessionState` exists. */
 export function resetDetailCache(): void {
   detailCache.clear()
 }
@@ -80,7 +77,6 @@ export function WordDetail({ word }: { word: UserWord }) {
   const glosses = [detail.glossVi, ...detail.senses.map((sense) => sense.glossVi)]
   const examples = pickExamples(detail.examples)
 
-  // Group relations by relationType
   const relationGroups = detail.relations.reduce<Record<string, string[]>>((acc, r) => {
     if (!r.relatedText) return acc
     const key = r.relationType
@@ -91,7 +87,6 @@ export function WordDetail({ word }: { word: UserWord }) {
 
   return (
     <div className="flex flex-col gap-3 text-sm">
-      {/* Senses */}
       {detail.senses.length > 0 && (
         <div className="flex flex-col gap-1">
           {detail.senses.map((s, i) => (
@@ -104,7 +99,6 @@ export function WordDetail({ word }: { word: UserWord }) {
         </div>
       )}
 
-      {/* Pronunciations */}
       {detail.pronunciations.length > 0 && (
         <div className="flex flex-col gap-1">
           {detail.pronunciations.map((p, i) => (
@@ -117,10 +111,8 @@ export function WordDetail({ word }: { word: UserWord }) {
         </div>
       )}
 
-      {/* Examples. Filtered exactly like the lookup page: the same corrupted
-          sentences and the same gloss-copied-into-the-translation-field rows
-          are in this data, and hiding them on one page but not the other was
-          the wordlist quietly showing what the dictionary had already rejected. */}
+      {/* Filtered exactly like the lookup page: the same corrupted sentences and the
+          same gloss-copied-into-the-translation rows are in this data. */}
       {examples.length > 0 && (
         <div className="flex flex-col gap-1 border-l-2 border-black/10 pl-3">
           {examples.map((e, i) => (
@@ -134,7 +126,6 @@ export function WordDetail({ word }: { word: UserWord }) {
         </div>
       )}
 
-      {/* Relations */}
       {Object.keys(relationGroups).length > 0 && (
         <div className="flex flex-col gap-1">
           {Object.entries(relationGroups).map(([type, words]) => (

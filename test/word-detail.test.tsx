@@ -41,8 +41,8 @@ describe('WordDetail', () => {
   })
 
   // Expanding a row, collapsing it and expanding it again unmounts and remounts
-  // this component; each remount used to be another round trip to Supabase from the
-  // browser, while the entry page serves the same data from a one-hour server cache.
+  // this component; a remount must not repeat the round trip to Supabase, since
+  // the entry page already serves the same data from a one-hour server cache.
   it('does not ask Supabase again for an entry it already loaded', async () => {
     const { unmount } = render(<WordDetail word={base} />)
     expect(await screen.findByText('Con chó sủa.')).toBeInTheDocument()

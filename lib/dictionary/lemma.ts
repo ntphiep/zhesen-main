@@ -1,14 +1,9 @@
 import type { DictSense } from './types'
 
 /**
- * The dictionary word an inflected entry belongs to.
- *
- * Wiktionary files every inflected form as its own entry whose only gloss is a
- * pointer: "simple past and past participle of adjourn", "plural of person".
- * Extracting the lemma from that gloss lets a learner who looked up "adjourned"
- * reach the verb itself instead of a dead end.
- *
- * The word the gloss points at is not always in the dictionary yet; those
+ * The dictionary word an inflected entry belongs to. Wiktionary files every inflected form
+ * as its own entry whose only gloss is a pointer ("plural of person"), so the lemma is
+ * extracted from that gloss. The word it points at is not always an entry, and those must
  * render as plain text rather than a link that would 404.
  */
 const LEMMA_RE =

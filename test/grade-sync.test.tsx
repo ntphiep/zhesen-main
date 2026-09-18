@@ -32,9 +32,9 @@ describe('useGradeSync', () => {
     expect(result.current.failed).toBe(false)
   })
 
-  // The whole point: a session on a dropped connection used to finish with
-  // "Kết quả: 9/10 — Tuyệt vời!" having written no fsrs_* column at all, and
-  // nothing on screen told the learner tomorrow's queue was untouched.
+  // A session on a dropped connection must not finish silently as
+  // "Kết quả: 9/10 — Tuyệt vời!" with no fsrs_* column written -- the learner
+  // needs to know tomorrow's queue is untouched.
   it('remembers a failed write', async () => {
     vi.mocked(gradeWordById).mockRejectedValue(new Error('offline'))
     const { result } = renderHook(() => useGradeSync(supabase))

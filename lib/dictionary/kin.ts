@@ -4,18 +4,10 @@ import type { DictEntryPreview } from './types'
 import type { LangCode } from '@/lib/languages'
 
 /**
- * The words built on the same stem: adjourn -> adjourned, adjourning, adjournment,
- * adjourns.
- *
- * `lex.lex_relations` was supposed to answer this and mostly cannot -- it holds no
- * row at all for `en:adjourned` -- so a page for an inflected word showed the two
- * junk comparatives ("more adjourned", "most adjourned") and nothing else. The
- * stem is already searchable: `lex.search` ranks an exact headword above a prefix
- * match, and a prefix match is exactly what a derived word is. Asking it with the
- * stem and keeping only the prefixes costs no new SQL.
- *
- * Chinese is excluded by the caller: a prefix of a Chinese headword is a compound,
- * which `getEntriesContaining` already answers with the right ranking.
+ * The words built on the same stem: adjourn to adjourned, adjourning, adjournment.
+ * `lex.lex_relations` holds no row at all for `en:adjourned`, so this asks `lex.search`
+ * with the stem and keeps only the prefix matches, which is what a derived word is. The
+ * caller must exclude Chinese: a Chinese prefix is a compound, `getEntriesContaining`.
  */
 export async function getWordKin(
   supabase: SupabaseClient, lang: LangCode, stem: string, headword: string, limit = 12,

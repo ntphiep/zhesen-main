@@ -4,19 +4,15 @@ import { useAccount } from '@/lib/hooks/useAccount'
 import { LinkPending } from '@/components/ui/LinkPending'
 
 /**
- * The account corner of the header: the signed-in address, or the two doors
- * every site has, sign in and sign up.
+ * The account corner of the header: the signed-in address, or sign in and sign up.
  *
- * Read in the browser rather than in the root layout on purpose. Reading the
- * session on the server would call `cookies()` in a layout that wraps every
- * route, which opts the whole site into dynamic rendering -- the grammar pages
- * are prerendered today and would stop being.
+ * Read in the browser, not in the root layout: reading the session there calls
+ * `cookies()` in a layout wrapping every route, which opts the whole site into
+ * dynamic rendering, and the grammar pages are prerendered today.
  *
- * The cost is one frame before the answer arrives. The brand holds `mr-auto`, so
- * a corner that appears only then drags every nav item left; the signed-out pair
- * is therefore laid out from the first paint and merely hidden, which reserves
- * the right width without a hardcoded one. `visibility: hidden` also keeps it
- * out of the tab order.
+ * The cost is one frame. The brand holds `mr-auto`, so a corner appearing only then
+ * drags every nav item left; the signed-out pair is laid out from the first paint and
+ * merely hidden, which reserves the width and keeps it out of the tab order.
  */
 export function AccountLink() {
   const { kind, email } = useAccount()

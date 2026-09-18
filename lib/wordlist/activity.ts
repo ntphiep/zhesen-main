@@ -5,18 +5,9 @@ import { z } from '@/lib/zod'
 
 const DAY = 86_400_000
 
-/**
- * The timezone the study day is measured in.
- *
- * A fixed zone rather than the running process's own, because the two ends of a
- * streak run in different places: the day is written by a Client Component in the
- * reader's browser and read back by a Server Component. With `getFullYear` and
- * friends, someone in Vietnam practising at 06:00 wrote "2026-09-12" while a
- * UTC server reading the same row an instant later asked for "2026-09-11", found
- * nothing, and reported a streak of zero — every day between midnight and 07:00.
- *
- * The audience is Vietnamese, so their calendar day is the one that counts.
- */
+/** The timezone the study day is measured in. Must be fixed, not the process's own: a
+ *  streak day is written in the reader's browser and read back on a server, and with
+ *  `getFullYear` a 06:00 practice in Vietnam read as the previous day on a UTC server. */
 export const STUDY_TIMEZONE = 'Asia/Ho_Chi_Minh'
 
 const dayFormatter = new Intl.DateTimeFormat('en-CA', {
@@ -32,11 +23,8 @@ export function localDay(ts: number): string {
   return dayFormatter.format(new Date(ts))
 }
 
-/**
- * Current study streak: consecutive days with activity, counting back from today.
- * Today being absent does not break the streak until yesterday is also missed (so a
- * streak survives until a full day lapses).
- */
+/** Current study streak: consecutive days with activity, counting back from today. Today
+ *  being absent does not break it until yesterday is also missed. */
 export function computeStreak(days: string[], now: number): number {
   const set = new Set(days)
   let cursor = now

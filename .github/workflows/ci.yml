@@ -10,15 +10,13 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# The workflow only ever reads the repository. Without this block the job would
-# inherit whatever the repository default is, which may be read-write.
+# The workflow only reads the repository. Without this it inherits the repository default,
+# which may be read-write.
 permissions:
   contents: read
 
 env:
-  # Matches the `engines.node` range in package.json and the version used for
-  # local development. CI and the developer machine run the same major on
-  # purpose: a test that only fails on one of them is the worst kind to debug.
+  # Same major as local development, so a test cannot fail on only one of them.
   NODE_VERSION: '24.x'
 
 jobs:
@@ -36,9 +34,8 @@ jobs:
 
       - run: npm ci
 
-      # Split into three steps rather than one `npm run verify` so a failure
-      # names itself in the job summary. The scripts are the same ones the Stop
-      # hook and a developer run, so there is one definition of each check.
+      # Three steps rather than one `npm run verify`, so a failure names itself in the job
+      # summary. The scripts are the ones the Stop hook and a developer run.
       - name: ESLint
         run: npm run lint
 
@@ -53,8 +50,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: verify
-    # The build prerenders pages that read from Supabase, so it only runs where
-    # the project secrets are available. Forked pull requests skip it.
+    # The build prerenders pages that read Supabase, so it only runs where the project
+    # secrets exist. Forked pull requests skip it.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v7
@@ -66,15 +63,11 @@ jobs:
 
       - run: npm ci
 
-      # Skipped rather than failed when the secrets are missing, the same way the
-      # deploy below treats a missing token. Dependabot pull requests are the case
-      # that matters: they run in this repository, so the `if` above lets them in,
-      # but GitHub hands them the Dependabot secret store rather than the Actions
-      # one, so both variables arrive empty and the prerender dies with
-      # "@supabase/ssr: Your project's URL and API key are required to create a
-      # Supabase client!" while exporting /_not-found. Every Dependabot pull
-      # request was therefore permanently red on a job it could never pass, which
-      # is worse than no signal: it trains the reviewer to merge over a failure.
+      # Skipped, not failed, when the secrets are absent. Dependabot pull requests run in
+      # this repository but receive the Dependabot secret store, so both variables arrive
+      # empty and the prerender would die on "@supabase/ssr: Your project's URL and API key
+      # are required to create a Supabase client!". A job that can never pass trains the
+      # reviewer to merge over a red check.
       - name: Next build
         run: |
           if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
@@ -85,45 +78,6 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-
-  deploy:
-    name: Deploy to Vercel
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: [verify, build, migrations]
-    # Production only, and only for a real push: a pull request must not replace
-    # what is live, and a re-run of an old commit must not roll the site back.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    # Vercel's own GitHub integration refuses these commits -- it blocks any
-    # commit whose GitHub author is not a member of the Vercel team, and the
-    # commits here are authored by a different account than the one that owns the
-    # team (readyStateReason: "the commit author doesn't have permission to
-    # create deployments for this project"). Deploying with a token is not
-    # subject to that check, and it also puts the deploy behind the tests rather
-    # than beside them.
-    env:
-      VERCEL_ORG_ID: team_rfK6c0vpzY7uNlCrXsnRt489
-      VERCEL_PROJECT_ID: prj_7uctsKu2VekNg9E1hUI67ziDnTqT
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      # Skipped rather than failed when the token is missing, so the rest of the
-      # pipeline still reports on a fork or on a clone without the secret.
-      - name: Deploy
-        run: |
-          if [ -z "$VERCEL_TOKEN" ]; then
-            echo "No VERCEL_TOKEN secret; skipping the deploy."
-            exit 0
-          fi
-          npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
-          npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
-          npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
 
   migrations:
     name: Migration hygiene
@@ -146,15 +100,9 @@ jobs:
       - name: Destructive statements are declared
         run: |
           cd supabase/migrations
-          # Migrations are replayed against a database that already holds real user
-          # data, so dropping or truncating has to be a deliberate, reviewed act.
-          # A migration is allowed to do it, but it has to say so on its own line:
-          #
+          # Migrations replay against a database holding real user data. A destructive
+          # statement is allowed, but the file must say so on its own line:
           #   -- reviewed-destructive: <who approved it, and why>
-          #
-          # A destructive statement nobody wrote that line for fails the build. The
-          # line cannot appear by accident, and it keeps the reason in the file
-          # rather than in a pull request comment nobody reads again.
           pattern='^[[:space:]]*(drop[[:space:]]+(table|column|schema)|truncate|delete[[:space:]]+from)'
           status=0
           for f in *.sql; do
@@ -172,3 +120,39 @@ jobs:
             exit 1
           fi
           echo "Every destructive statement is declared."
+
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [verify, build, migrations]
+    # Production only, and only for a real push: a pull request must not replace what is
+    # live, and a re-run of an old commit must not roll the site back.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    # Vercel's GitHub integration refuses these commits, because their GitHub author is not
+    # a member of the Vercel team ("the commit author doesn't have permission to create
+    # deployments for this project"). A token deploy is not subject to that check and puts
+    # the deploy behind the tests rather than beside them.
+    env:
+      VERCEL_ORG_ID: team_rfK6c0vpzY7uNlCrXsnRt489
+      VERCEL_PROJECT_ID: prj_7uctsKu2VekNg9E1hUI67ziDnTqT
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # Skipped, not failed, when the token is absent, so a fork still gets the rest of the
+      # pipeline's signal.
+      - name: Deploy
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "No VERCEL_TOKEN secret; skipping the deploy."
+            exit 0
+          fi
+          npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
+          npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"

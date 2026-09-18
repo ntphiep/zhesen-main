@@ -19,8 +19,8 @@ describe('Ipa', () => {
     expect(screen.getByText('yǒu méi yǒu')).toBeInTheDocument()
   })
 
-  // Every call site used to guard with `{x.ipa && ...}`. The component owns that
-  // now, so it has to render nothing at all rather than an empty styled span.
+  // With no transcription the component must render nothing at all, not an
+  // empty styled span, since call sites rely on it rather than guarding themselves.
   it('renders nothing when there is no transcription', () => {
     const { container } = render(<Ipa value={null} lang="en" />)
     expect(container).toBeEmptyDOMElement()

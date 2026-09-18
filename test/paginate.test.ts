@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { fetchAllRows, POSTGREST_MAX_ROWS } from '@/lib/supabase/paginate'
+import { fetchAllRows, MAX_PAGES, POSTGREST_MAX_ROWS } from '@/lib/supabase/paginate'
 
 const rows = (n: number, offset = 0) => Array.from({ length: n }, (_, i) => ({ id: offset + i }))
 
@@ -42,6 +42,8 @@ describe('fetchAllRows', () => {
 
   it('gives up rather than looping forever if pages never run short', async () => {
     const page = vi.fn(async () => ({ data: rows(POSTGREST_MAX_ROWS), error: null }))
-    await expect(fetchAllRows(page)).rejects.toThrow(/không bao giờ kết thúc/)
+    // The page cap, not the wording: the guard is that it stops, and says after how many.
+    await expect(fetchAllRows(page)).rejects.toThrow(new RegExp(String(MAX_PAGES)))
+    expect(page).toHaveBeenCalledTimes(MAX_PAGES)
   })
 })

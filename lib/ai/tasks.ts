@@ -3,17 +3,14 @@ import { isLangCode, type LangCode } from '@/lib/languages'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 
 /**
- * The assistant's whole surface: one task per row, each a schema in and out.
- *
- * Kept as a table rather than a route per task so the API route stays one
- * handler, and so a new task cannot be added without declaring what it accepts
- * and what it promises to return. Both directions are Zod-checked -- the input
- * because it arrives from a browser, the output because it arrives from a model.
+ * The assistant's whole surface: one task per row, each a schema in and out. Both
+ * directions must stay Zod-checked -- the input arrives from a browser, the output
+ * from a model.
  */
 
 /** Trim and cap free text arriving from the browser; a wordlist word is short. */
 const shortText = z.string().trim().min(1).max(120)
-const langCode = z.string().refine(isLangCode, 'ngôn ngữ không hợp lệ').transform((v) => v as LangCode)
+const langCode = z.string().refine(isLangCode, 'unsupported language code').transform((v) => v as LangCode)
 
 // ---------------------------------------------------------------- enrich
 
@@ -52,9 +49,8 @@ export const coachInput = z.object({
 export const coachOutput = z.object({
   /** A memory hook in Vietnamese: word shape, root, or a picture to hold on to. */
   mnemonic: z.string().max(400),
-  // Deduped here rather than at the render: a model repeating itself is ordinary,
-  // and the lists are keyed by their own text, so a repeat is both a duplicate
-  // React key and a duplicate on screen.
+  // Deduped here rather than at the render: the lists are keyed by their own text, so a
+  // repeat is both a duplicate React key and a duplicate on screen.
   /** Words this one habitually travels with, as the learner will meet them. */
   collocations: z.array(z.string().max(80)).max(6).transform(unique),
   /** Two sentences in the word's own language, each with its Vietnamese. */
@@ -199,15 +195,9 @@ export const TASKS = {
       ].filter(Boolean).join('\n'),
   } satisfies TaskSpec<z.infer<typeof coachInput>, CoachOutput>,
 
-  /**
-   * The way out of an empty search.
-   *
-   * The dictionary matches text; a learner who knows the meaning but not the
-   * word ("hoãn cuộc họp lại") has nothing to match on, and the page currently
-   * ends at "Không tìm thấy kết quả". The suggestions are not dictionary data
-   * and are labelled as generated, but each one is a headword the dictionary can
-   * then be asked about properly.
-   */
+  /** The way out of an empty search: the dictionary matches text, so a learner who knows
+   *  the meaning but not the word has nothing to match on. Not dictionary data -- every
+   *  suggestion must reach the page labelled as generated. */
   suggest: {
     input: suggestInput,
     output: suggestOutput,
@@ -227,15 +217,9 @@ export const TASKS = {
       ].join('\n'),
   } satisfies TaskSpec<z.infer<typeof suggestInput>, SuggestOutput>,
 
-  /**
-   * Topic tags for words already saved.
-   *
-   * A wordlist of four hundred words is a wall unless it can be sliced, and the
-   * tag filter has been there all along with nothing to filter by, because
-   * tagging four hundred words by hand is not something anyone does. The tags
-   * already in use are sent along so the model reuses "văn phòng" rather than
-   * coining "công sở" beside it.
-   */
+  /** Topic tags for words already saved, so the wordlist's tag filter has something to
+   *  filter by. Tags already in use go in the prompt so the model reuses "văn phòng"
+   *  instead of coining "công sở" beside it. */
   tags: {
     input: tagsInput,
     output: tagsOutput,
@@ -255,14 +239,9 @@ export const TASKS = {
       ].filter(Boolean).join('\n'),
   } satisfies TaskSpec<z.infer<typeof tagsInput>, TagsOutput>,
 
-  /**
-   * The assistant as a conversation, reachable from every page.
-   *
-   * The other four tasks answer one fixed question each; a learner who wants to
-   * know why "adjourned" takes "until" and not "to" had nowhere to ask. The page
-   * the learner is on is sent as one line of context so a pronoun in the question
-   * resolves, and history is capped because every turn is re-sent and re-charged.
-   */
+  /** The assistant as a conversation, reachable from every page. The current page goes in
+   *  as one line of context so a pronoun in the question resolves; history stays capped
+   *  because every turn is re-sent and re-charged. */
   chat: {
     input: chatInput,
     output: chatOutput,
@@ -285,15 +264,9 @@ export function isTaskName(v: unknown): v is TaskName {
   return typeof v === 'string' && Object.hasOwn(TASKS, v)
 }
 
-/**
- * The registry with its types erased, which is what the API route needs.
- *
- * A route that looks a task up by name sees a union of `TaskSpec`s, and a union
- * of schemas cannot validate anything: the compiler has no way to pair the input
- * schema of one entry with the prompt of the same entry. Narrowing once here,
- * where each entry is written out with its concrete types, keeps the route free
- * of casts.
- */
+/** The registry with its types erased, which is what the API route needs: a union of
+ *  `TaskSpec`s validates nothing, because the compiler cannot pair one entry's input
+ *  schema with the same entry's prompt. Narrowing here keeps the route free of casts. */
 export interface ErasedTask {
   system: string
   maxTokens: number

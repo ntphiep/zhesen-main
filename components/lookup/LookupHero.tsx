@@ -6,9 +6,8 @@ import type { DictEntryDetail } from '@/lib/dictionary/types'
 export function LookupHero({ detail, hanViet }: { detail: DictEntryDetail; hanViet?: string | null }) {
   const pinyin = typeof detail.attributes.pinyin === 'string' ? detail.attributes.pinyin : null
   const gender = genderLabel(detail.attributes)
-  // For Chinese the pronunciation row below already shows the pinyin, next to the
-  // audio button, so printing it here too put "yǒu méi yǒu" on two lines in a row.
-  // It stays only as the fallback for an entry with no pronunciation row at all.
+  // The Chinese pronunciation row below already carries the pinyin, so this is only
+  // the fallback for an entry with no pronunciation row at all.
   const showPinyin = pinyin !== null && !detail.pronunciations.some((p) => p.ipa?.trim())
   return (
     <header className="flex flex-col gap-3 border-b border-black/10 pb-5">

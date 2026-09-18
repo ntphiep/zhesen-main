@@ -27,9 +27,9 @@ describe('formatWordDate', () => {
 describe('isDueAt', () => {
   const now = Date.parse('2026-09-16T10:00:00Z')
 
-  // The wordlist renders DUE_LABEL from this answer. Callers used to compare the
-  // rendered label against 'Cần ôn' instead, so renaming the label would have
-  // silently changed the branch they took.
+  // The wordlist renders DUE_LABEL from this answer; a caller must not compare
+  // the rendered label against 'Cần ôn' instead, or renaming the label silently
+  // changes which branch it takes.
   it('is true at or before the due moment and false after it', () => {
     expect(isDueAt('2026-09-16T09:59:00Z', now)).toBe(true)
     expect(isDueAt('2026-09-16T10:01:00Z', now)).toBe(false)

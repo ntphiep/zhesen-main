@@ -4,22 +4,13 @@ import type { DictEntryPreview } from './types'
 const HAN = /\p{Script=Han}/u
 const SPANISH = /[ñáéíóúü¿¡]/iu
 
-/**
- * Vietnamese-exclusive signal: đ/ơ/ư/ă (not used by en/es/zh headwords at all)
- * plus the Latin Extended Additional block (U+1EA0-U+1EF9), which covers every
- * other Vietnamese tone-marked vowel (ạ, ấ, ằ, ệ, ...). Deliberately excludes
- * â/ê/ô alone -- those are shared with French/Portuguese loanwords and are too
- * weak a signal on their own; the marks below never appear in this app's en/es/zh
- * data (verified: 0 matches when spot-checked against headword_normalized).
- */
+/** Vietnamese-exclusive signal: đ/ơ/ư/ă plus Latin Extended Additional (U+1EA0-U+1EF9).
+ *  Excludes â/ê/ô alone, shared with French and Portuguese loanwords. Verified: 0 matches
+ *  against en/es/zh `headword_normalized`. */
 const VIETNAMESE = /[đĐơƠưƯăĂẠ-ỹ]/u
 
-/**
- * Order the supported languages by how likely the query belongs to each, so a
- * "search all languages" UI can show the most relevant group first. Heuristic:
- * Han script -> Chinese; Spanish-only letters/punctuation -> Spanish; else English.
- * Always returns all three (results are grouped, never filtered out).
- */
+/** Order the supported languages by how likely the query belongs to each: Han to Chinese,
+ *  Spanish-only letters to Spanish, else English. Always returns all three. */
 export function detectOrder(query: string): LangCode[] {
   const q = query.trim()
   if (HAN.test(q)) return ['zh', 'en', 'es']
@@ -27,47 +18,25 @@ export function detectOrder(query: string): LangCode[] {
   return ['en', 'es', 'zh']
 }
 
-/**
- * Whether a query is very likely Vietnamese, based on diacritics unique to
- * Vietnamese among this app's three target languages. Used to decide whether to
- * also run the reverse (Vietnamese -> en/es/zh) lookup -- see
- * lib/dictionary/search.ts `searchBothDirections`, which also falls back to the
- * reverse lookup when this is false but the forward search found nothing (covers
- * Vietnamese typed without diacritics, e.g. "nhan duoc").
- */
+/** Whether a query is very likely Vietnamese, by diacritics unique to Vietnamese among the
+ *  three target languages. `searchBothDirections` also runs the reverse lookup when this is
+ *  false but the forward search found nothing, covering "nhan duoc" typed without marks. */
 export function looksVietnamese(query: string): boolean {
   return VIETNAMESE.test(query.trim())
 }
 
-/**
- * Whether the query contains Han script. Vietnamese is written in Latin script,
- * so such a query cannot be Vietnamese and the reverse lookup cannot answer it
- * -- see lib/dictionary/search.ts `searchBothDirections`, which uses this to
- * skip a call that costs 800 ms and returns nothing.
- *
- * 22 of 183,526 Vietnamese glosses do quote a Han character, all of them on
- * Chinese entries ("biến thể của 從"). Forward search reaches every one of those
- * entries by headword, so skipping the reverse call loses no result a reader can
- * only get that way.
- */
+/** Whether the query contains Han script. Vietnamese is Latin, so the reverse lookup cannot
+ *  answer such a query: `searchBothDirections` skips a call costing 800 ms for nothing.
+ *  22 of 183,526 Vietnamese glosses quote a Han character, all on Chinese entries forward
+ *  search already reaches by headword. */
 export function looksHan(query: string): boolean {
   return HAN.test(query.trim())
 }
 
-/**
- * Reorder the language groups by how well each actually matched, keeping
- * `fallback` as the tie-break.
- *
- * The script heuristic above only sees the letters typed, and for anything in the
- * Latin alphabet it can only guess English first. Searching the Spanish gerund
- * "corriendo" put corridor, condo and corridors above correr: three weak trigram
- * guesses scoring under 1.0, ahead of the word the learner was reading at 3.51.
- * The scores are already in hand by the time the groups are rendered, so the
- * group with a real match leads and the guesses fall in behind it.
- *
- * Entries without a score (anything not from `lex.search`) count as zero, which
- * leaves such a caller on the heuristic order.
- */
+/** Reorder the language groups by how well each actually matched, `fallback` breaking ties.
+ *  "corriendo" put corridor, condo and corridors, three trigram guesses under 1.0, above
+ *  correr at 3.51. An entry with no score counts as zero, leaving that caller on the
+ *  heuristic order. */
 export function orderByBestMatch(
   fallback: LangCode[],
   ...groups: Partial<Record<LangCode, DictEntryPreview[]>>[]

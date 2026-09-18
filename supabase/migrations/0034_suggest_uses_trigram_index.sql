@@ -53,7 +53,8 @@
 -- depend on `extensions` sitting in the caller's search_path -- which it does not for
 -- every role (`supabase_read_only_user` raises 42883 on a bare `%`).
 --
--- Two further changes, both from AGENTS.md's "rank first, enrich after":
+-- Two further changes, both from "rank first, enrich second" in
+-- .claude/rules/database.md:
 --   * each arm keeps only its 200 best, so the sort and the dedupe work on a bounded
 --     set instead of on whatever the threshold admitted;
 --   * the per-entry gloss lookup now runs after the final LIMIT. At 0018:318 it ran

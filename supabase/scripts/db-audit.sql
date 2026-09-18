@@ -1,66 +1,66 @@
--- Kiểm kê dung lượng và rác của database zhesen.
--- Chạy trong Supabase SQL Editor. Chỉ đọc, không sửa gì.
--- Xem AGENTS.md mục "Bẫy dữ liệu và Postgres" trước khi hành động theo kết quả.
+-- Inventory of database size and reclaimable space for zhesen.
+-- Run in the Supabase SQL Editor. Read-only, changes nothing.
+-- Read .claude/rules/database.md before acting on the results.
 
--- 1. Tổng dung lượng so với trần 500 MB của gói Free.
+-- 1. Total size against the Free plan's 500 MB cap.
 select pg_size_pretty(pg_database_size(current_database())) as db_size,
        round(pg_database_size(current_database()) / 1048576.0, 1) as db_mb,
-       round(100 * pg_database_size(current_database()) / (500 * 1048576.0), 1) as pct_cua_tran_500mb;
+       round(100 * pg_database_size(current_database()) / (500 * 1048576.0), 1) as pct_of_500mb_cap;
 
--- 2. Từng bảng chiếm bao nhiêu, và phần chênh thuộc về PGroonga.
---    PGroonga giữ dữ liệu index ở tệp riêng mà pg_relation_size không thấy,
---    nên tổng các bảng dưới đây sẽ NHỎ HƠN pg_database_size ở trên.
-select n.nspname as schema, c.relname as ten_bang,
-       pg_size_pretty(pg_total_relation_size(c.oid)) as tong,
-       pg_size_pretty(pg_relation_size(c.oid)) as rieng_bang,
+-- 2. Size per table, and the gap that belongs to PGroonga.
+--    PGroonga keeps index data in files pg_relation_size cannot see, so the
+--    sum of the tables below will be SMALLER than pg_database_size above.
+select n.nspname as schema, c.relname as table_name,
+       pg_size_pretty(pg_total_relation_size(c.oid)) as total,
+       pg_size_pretty(pg_relation_size(c.oid)) as table_only,
        pg_size_pretty(pg_indexes_size(c.oid)) as index,
-       c.reltuples::bigint as so_dong_uoc_tinh
+       c.reltuples::bigint as estimated_rows
 from pg_class c
 join pg_namespace n on n.oid = c.relnamespace
 where c.relkind = 'r' and n.nspname in ('public', 'lex', 'auth', 'storage')
 order by pg_total_relation_size(c.oid) desc;
 
--- 3. Mọi schema và số bảng trong đó, để phát hiện schema rác.
-select n.nspname as schema, count(c.oid) as so_bang,
-       pg_size_pretty(coalesce(sum(pg_total_relation_size(c.oid)), 0)) as tong
+-- 3. Every schema and its table count, to spot orphaned schemas.
+select n.nspname as schema, count(c.oid) as table_count,
+       pg_size_pretty(coalesce(sum(pg_total_relation_size(c.oid)), 0)) as total
 from pg_namespace n
 left join pg_class c on c.relnamespace = n.oid and c.relkind = 'r'
 where n.nspname not like 'pg_%' and n.nspname <> 'information_schema'
 group by n.nspname order by 3 desc;
 
--- 4. Index chưa bao giờ được dùng: ứng viên xoá để lấy lại dung lượng.
---    idx_scan = 0 nghĩa là chưa lần nào Postgres chọn index này kể từ lần
---    thống kê được reset gần nhất.
-select s.schemaname, s.relname as bang, s.indexrelname as index, s.idx_scan,
-       pg_size_pretty(pg_relation_size(s.indexrelid)) as kich_thuoc
+-- 4. Indexes never used: candidates to drop to reclaim space.
+--    idx_scan = 0 means Postgres has not picked this index once since the
+--    last stats reset.
+select s.schemaname, s.relname as table_name, s.indexrelname as index, s.idx_scan,
+       pg_size_pretty(pg_relation_size(s.indexrelid)) as size
 from pg_stat_user_indexes s
 join pg_index i on i.indexrelid = s.indexrelid
 where not i.indisunique and s.schemaname in ('public', 'lex')
 order by s.idx_scan, pg_relation_size(s.indexrelid) desc;
 
--- 5. Chỗ chết trong bảng: dead tuple nhiều là dấu hiệu cần `vacuum` thường.
---    KHÔNG chạy `vacuum full` trên lex.entries, xem AGENTS.md.
+-- 5. Dead space in tables: a high dead-tuple count signals a plain `vacuum` is due.
+--    Do NOT run `vacuum full` on lex.entries; see .claude/rules/database.md.
 select schemaname, relname, n_live_tup, n_dead_tup,
-       round(100.0 * n_dead_tup / nullif(n_live_tup + n_dead_tup, 0), 1) as pct_chet,
+       round(100.0 * n_dead_tup / nullif(n_live_tup + n_dead_tup, 0), 1) as pct_dead,
        last_vacuum, last_autovacuum
 from pg_stat_user_tables
 where schemaname in ('public', 'lex') and n_dead_tup > 0
 order by n_dead_tup desc;
 
--- 6. Đối tượng PGroonga thừa: mỗi khoá Sources<n> phải khớp relfilenode của
---    một index PGroonga đang sống. Khoá không khớp là rác từ lần VACUUM FULL cũ.
+-- 6. Surplus PGroonga objects: each Sources<n> key must match the relfilenode
+--    of a live PGroonga index. An unmatched key is leftover from an old VACUUM FULL.
 select c.relname, c.relfilenode
 from pg_class c join pg_namespace n on n.oid = c.relnamespace
 where c.relam = (select oid from pg_am where amname = 'pgroonga');
 
--- 7. Dòng mồ côi: con trỏ tới mục từ không còn tồn tại.
-select 'senses' as bang, count(*) from lex.senses s left join lex.entries e on e.id = s.entry_id where e.id is null
+-- 7. Orphaned rows: pointers to entries that no longer exist.
+select 'senses' as table_name, count(*) from lex.senses s left join lex.entries e on e.id = s.entry_id where e.id is null
 union all select 'examples', count(*) from lex.examples x left join lex.entries e on e.id = x.entry_id where e.id is null
 union all select 'inflections', count(*) from lex.inflections i left join lex.entries e on e.id = i.entry_id where e.id is null
 union all select 'pronunciations', count(*) from lex.pronunciations p left join lex.entries e on e.id = p.entry_id where e.id is null
 union all select 'lex_relations', count(*) from lex.lex_relations r left join lex.entries e on e.id = r.entry_id where e.id is null;
 
--- 8. Chi phí của index đang cân nhắc thêm cho lex.inflections(form_text),
---    ước lượng trước khi tạo: tổng độ dài khoá cộng overhead mỗi dòng.
-select pg_size_pretty((sum(pg_column_size(form_text)) + count(*) * 16)::bigint) as uoc_tinh_index
+-- 8. Cost of an index being considered for lex.inflections(form_text),
+--    estimated before creating it: total key length plus per-row overhead.
+select pg_size_pretty((sum(pg_column_size(form_text)) + count(*) * 16)::bigint) as estimated_index_size
 from lex.inflections;

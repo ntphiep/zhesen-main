@@ -1,19 +1,10 @@
 import type { WordForm } from './types'
 
 /**
- * Spanish verb conjugation, parsed from the `lex.inflections` rows of an entry.
- *
- * The inflection labels come from Wiktionary and mix two vocabularies: a clean
- * Spanish one (`indicativo presente yo`, person encoded as the subject pronoun)
- * and a noisier English one (`indicative present singular third-person`). We
- * parse the Spanish vocabulary only — it is complete and unambiguous about
- * person — and ignore clitic-combined forms (`combined-form`/`object-*`),
- * obsolete/alternative spellings, and the compound (haber + participle) tenses,
- * which are second-tier for a learner.
- *
- * The shape mirrors the default SpanishDict learner view: a single indicative
- * grid (present · preterite · imperfect · conditional · future), a subjunctive
- * grid (present · imperfect), the imperative, and the three non-finite forms.
+ * Spanish verb conjugation parsed from an entry's `lex.inflections` rows. Only the Spanish
+ * label vocabulary (`indicativo presente yo`) is parsed; the English one Wiktionary also
+ * writes is ambiguous about person. Clitic-combined, obsolete and compound (haber +
+ * participle) forms are skipped. The grid follows the default SpanishDict learner view.
  */
 
 export type ConjPerson = '1s' | '2s' | '3s' | '1p' | '2p' | '3p'
@@ -53,16 +44,15 @@ const PRONOUNS: Record<string, { person: ConjPerson; rank: number }> = {
 
 function pronounOf(tokens: string[]): { person: ConjPerson; rank: number } | null {
   for (const t of tokens) {
-    // The tokens come from a database label, so a bare lookup could answer with
-    // something off Object.prototype instead of a pronoun.
+    // The tokens come from a database label, so a bare lookup could answer with something
+    // off Object.prototype instead of a pronoun.
     if (Object.hasOwn(PRONOUNS, t)) return PRONOUNS[t]
   }
   return null
 }
 
-/** Indicative/subjunctive tense key from a Spanish-vocabulary label, or null.
- * Compound (haber + participle) tenses are filtered earlier by the space in the
- * form text, so this only sees single-word simple tenses. */
+/** Indicative or subjunctive tense key from a Spanish-vocabulary label, or null. Compound
+ *  tenses are filtered earlier by the space in the form text, so only simple ones arrive. */
 function tenseKeyOf(label: string): ConjTenseKey | null {
   if (label.includes('subjuntivo')) {
     if (label.includes('presente')) return 'subPresent'

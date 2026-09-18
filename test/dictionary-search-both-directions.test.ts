@@ -39,9 +39,9 @@ describe('searchBothDirections', () => {
 
   it('runs the reverse lookup when the forward search only guessed', async () => {
     // "nhà" carries only à, which Spanish uses too, so looksVietnamese rightly
-    // declines to claim it. The forward search answers with trigram guesses under
-    // 1.0; treating those as "found something" used to hide the reverse lookup,
-    // which is the one that actually answers the query.
+    // declines to claim it. A forward trigram guess under 1.0 is not a real
+    // match, so it must not suppress the reverse lookup, which is what actually
+    // answers the query.
     const { client, called } = mockClient({ en: [0.9, 0.8], es: [0.95], zh: [] }, ['家'])
     const out = await searchBothDirections(client, 'nhà')
     expect(called('search_vi')).toBe(true)
@@ -62,11 +62,11 @@ describe('searchBothDirections', () => {
   })
 
   it('skips the reverse lookup for a Han query the forward search only matched loosely', async () => {
-    // lex.search scores a PGroonga match at 1.5, under STRUCTURAL_MATCH, so every
-    // Chinese query that is not an exact headword used to fall through to
-    // lex.search_vi. Measured on 習: 780 to 1,195 ms for zero rows, and the search
-    // route answered 500 on production when it crossed the statement timeout.
-    // Vietnamese is written in Latin script, so the call can never answer.
+    // lex.search scores a PGroonga match at 1.5, under STRUCTURAL_MATCH, so a Han
+    // query that is not an exact headword must not fall through to lex.search_vi:
+    // Vietnamese is written in Latin script, so that call can never answer.
+    // Measured on 習: 780 to 1,195 ms for zero rows, and the search route
+    // answered 500 in production when it crossed the statement timeout.
     const { client, called } = mockClient({ en: [], es: [], zh: [1.5] })
     const out = await searchBothDirections(client, '習')
     expect(out.forward.zh).toHaveLength(1)

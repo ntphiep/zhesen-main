@@ -39,10 +39,9 @@ describe('AccountLink', () => {
     expect(await screen.findByRole('link', { name: /Đăng nhập/i })).toHaveAttribute('href', '/login')
   })
 
-  // The corner used to render nothing until the session answered. The brand holds
-  // mr-auto, so the whole nav row slid left the moment it appeared. It now lays the
-  // signed-out pair out from the first paint and hides it: same width, no motion.
-  // jsdom applies no stylesheet, so the class is what can be checked here.
+  // The signed-out corner reserves its width, hidden, from first paint so the nav
+  // row (brand uses mr-auto) does not shift once the session resolves. jsdom
+  // applies no stylesheet, so the class is what this test can check.
   it('reserves its width, hidden, until it knows which account this is', () => {
     getSession.mockReturnValue(new Promise(() => {}))
     const { container } = render(<AccountLink />)

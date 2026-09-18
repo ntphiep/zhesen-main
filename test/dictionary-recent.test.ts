@@ -31,8 +31,8 @@ describe('readRecent', () => {
     expect(readRecent()).toEqual([])
   })
 
-  // The page used to cast this value to string[] and hand it straight to .map().
-  // Anything that is not a list of strings has to come back as an empty list, or
+  // The page casts this value to string[] and hands it straight to .map(), so
+  // anything that is not a list of strings must come back as an empty list, or
   // the render throws and the user gets a blank page.
   it('survives a key holding something that is not a list of strings', () => {
     localStorage.setItem('zhesen:recent-searches', '{"a":1}')

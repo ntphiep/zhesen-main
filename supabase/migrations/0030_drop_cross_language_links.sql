@@ -29,7 +29,7 @@
 -- Measure the space this returns, before and after:
 --   select pg_size_pretty(pg_total_relation_size('lex.cross_language_links'));
 --   select pg_size_pretty(pg_database_size(current_database()));
--- Then `vacuum lex.entries` -- plain, never FULL, see AGENTS.md on PGroonga.
+-- Then `vacuum lex.entries` -- plain, never FULL; see .claude/rules/database.md.
 
 drop policy if exists "lex_cross_language_links_select_anon" on lex.cross_language_links;
 drop table if exists lex.cross_language_links;

@@ -12,13 +12,9 @@ const ORDER: LangCode[] = ['zh', 'es', 'en']
 /**
  * "Từ này ở ngôn ngữ khác": what the word is in each of the other two languages.
  *
- * The panel used to show one flat list of up to twelve matches ordered by
- * language, so a word with several Spanish equivalents filled it and the Chinese
- * one never appeared -- the panel answered "in one other language" rather than
- * "in the others". The quota is now per language (see `lex.match_cross_language`),
- * and a Chinese equivalent carries its pinyin, without which it is unreadable to
- * someone who has not learnt the characters yet. A Spanish one carries its
- * gender, without which the learner cannot put an article in front of it.
+ * The quota is per language (see `lex.match_cross_language`), or a word with several
+ * Spanish equivalents fills the panel and the Chinese one never appears. A Chinese row
+ * carries its pinyin and a Spanish one its gender, without which neither can be used.
  */
 export function CrossLanguagePanel({ siblings }: { siblings: CrossLangSibling[] }) {
   if (siblings.length === 0) return null

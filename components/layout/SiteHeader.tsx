@@ -5,12 +5,10 @@ import { AccountLink } from '@/components/account/AccountLink'
 import { LinkPending } from '@/components/ui/LinkPending'
 
 /**
- * `prefetch` is off for the two routes that read the session. A Link prefetches
- * as soon as it enters the viewport, and this header is in the viewport of every
- * page, so each page load was fetching /practice and /wordlist as well -- two
- * renders that each query Supabase, for a visitor who is reading a dictionary
- * entry and may never open either. The dictionary and grammar routes stay on,
- * because they are answered from the edge cache and cost the server nothing.
+ * `prefetch` is off for the two routes that read the session. A Link prefetches as
+ * soon as it enters the viewport and this header is on every page, so otherwise each
+ * page load also fetches /practice and /wordlist, two renders that query Supabase.
+ * The dictionary and grammar routes stay on: the edge cache answers them.
  */
 const NAV = [
   { href: '/dictionary', label: 'Tra cứu', prefetch: true },
@@ -37,8 +35,8 @@ export function SiteHeader() {
               className={`rounded-lg px-3 py-1.5 text-sm ${active ? 'bg-black/10 font-medium text-black' : 'text-black/60 hover:bg-black/5'}`}
             >
               {n.label}
-              {/* Only the two that are not prefetched: the other two arrive from
-                  the edge cache in well under the dot's own delay. */}
+              {/* Only the two that are not prefetched: the others arrive from the edge
+                  cache well inside the dot's own delay. */}
               {!n.prefetch && <LinkPending />}
             </Link>
           )

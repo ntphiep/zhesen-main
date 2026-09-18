@@ -3,9 +3,9 @@ import { parseCsvRows, parseImportCsv, UnterminatedQuoteError } from '@/lib/word
 
 /**
  * A stray double quote — easy to produce, since example sentences are full of
- * them — used to make the parser absorb the rest of the file into one field and
- * report the truncated result as a clean parse. The import preview then offered a
- * handful of rows and the rest of the user's words vanished without a word.
+ * them — must not make the parser absorb the rest of the file into one field
+ * and report a clean parse: that silently drops every row after it from the
+ * import preview.
  */
 describe('an unterminated quote', () => {
   const good = 'headword,lang\ndog,en\ncat,en\n'

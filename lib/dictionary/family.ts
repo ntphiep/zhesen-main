@@ -1,20 +1,11 @@
 import type { WordForm } from './types'
 
 /**
- * The grammatical word family: the inflected forms of an entry, named in
- * Vietnamese and ordered so the forms a learner needs come first.
- *
- * The data already knows what each form is -- `lex.inflections.form_label` says
- * "comparative", "participle past", "alternative dialectal" -- but the page used
- * to render the bare `form_text` and drop the label. For "smooth" that produced
- * eight identical chips in which "smoothed" (the past participle) sat beside
- * "smeeth" (a dialect form nobody writes) with nothing to tell them apart.
- *
- * The labels are not a closed vocabulary. They are space-separated tags from
- * Wiktionary, mixing a grammatical form with usage markers: "alternative archaic
- * rare", "UK participle past", "nonstandard plural". So the form is matched by
- * the first rule that fits and the markers are collected separately, which keeps
- * working when the pipeline emits a combination nobody has seen yet.
+ * The grammatical word family: an entry's inflected forms, named in Vietnamese and ordered
+ * so the forms a learner needs come first. `lex.inflections.form_label` is not a closed
+ * vocabulary -- it is space-separated Wiktionary tags mixing a form with usage markers
+ * ("UK participle past") -- so the form takes the first matching rule and markers are
+ * collected separately, which survives a combination nobody has seen yet.
  */
 export interface FamilyForm {
   text: string

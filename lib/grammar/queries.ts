@@ -18,14 +18,9 @@ export async function listGrammarPointsByLang(supabase: SupabaseClient, lang: La
   return grammarPointRow.array().parse(data ?? []).map(toGrammarPoint)
 }
 
-/**
- * Number of grammar points per language, for the `/grammar` landing page.
- *
- * One `head` request per language rather than one request for every row's `lang`
- * column. PostgREST caps a response at 1,000 rows without saying so, so counting
- * rows client-side would have quietly stopped at 1,000 once the table grew;
- * `count: 'exact'` is answered by Postgres and carries no rows at all.
- */
+/** Grammar points per language, for the `/grammar` landing page. One `head` request each:
+ *  PostgREST caps a response at 1,000 rows without saying so, so counting client-side would
+ *  quietly stop there, while `count: 'exact'` is answered by Postgres and carries no rows. */
 export async function countGrammarPointsByLang(supabase: SupabaseClient): Promise<Record<LangCode, number>> {
   const entries = await Promise.all(
     LANG_CODES.map(async (lang) => {
