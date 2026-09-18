@@ -1,42 +1,57 @@
 # ZHESEN
 
-Từ điển và sổ tay từ vựng cho người Việt học tiếng Trung, Tây Ban Nha và Anh. Tên gọi
-ghép từ mã ba ngôn ngữ: **zh**, **es**, **en**.
+A dictionary and vocabulary notebook for Vietnamese speakers learning Chinese, Spanish and
+English. The name is the three language codes: **zh**, **es**, **en**.
 
-Tra một từ ở bất kỳ ngôn ngữ nào trong ba thứ tiếng, hoặc gõ thẳng tiếng Việt để tra
-ngược. Lưu từ vào sổ tay, gắn thẻ, xuất ra Anki. Ôn lại theo lịch FSRS-6.
+Look a word up in any of the three languages, or type Vietnamese to search in reverse. Save
+words to a notebook, tag them, export to Anki, and review them on an FSRS-6 schedule.
 
-## Chạy tại máy
+The interface is in Vietnamese; the source, comments and documentation are in English.
+
+## Quick start
 
 ```bash
 npm install
-cp .env.example .env.local   # điền URL và anon key của Supabase
+cp .env.example .env.local   # fill in the Supabase URL and anon key
 npm run dev                  # http://localhost:3000
 ```
 
-Cần Node theo khoảng ghi ở `engines` trong `package.json`. Các biến môi trường cùng phần
-giải thích nằm trong `.env.example`; chỉ hai biến Supabase là bắt buộc.
+Node must satisfy the `engines` range in `package.json`. Every environment variable is
+documented in `.env.example`; only the two Supabase values are required.
 
-## Lệnh
+## Scripts
 
-| Lệnh | Việc |
+| Command | What it does |
 | --- | --- |
-| `npm run dev` | Máy chủ phát triển |
-| `npm run build` rồi `npm run start` | Chạy bản production |
-| `npm run verify` | Lint, kiểm kiểu, chạy toàn bộ test |
+| `npm run dev` | Development server |
+| `npm run build` then `npm run start` | Production build, served locally |
+| `npm run verify` | Lint, typecheck and the full test suite |
 
-## Cấu trúc
+## Layout
 
 ```
-app/          route và layout
-components/   giao diện, chia theo nhóm
-lib/          logic không phụ thuộc giao diện
-supabase/     migration
-test/         Vitest
+app/          routes and layouts
+components/   UI, grouped by feature
+lib/          logic with no UI dependency
+supabase/     migrations
+test/         Vitest suites
 ```
 
-## Đọc thêm
+## Deployment
 
-- [`AGENTS.md`](AGENTS.md) — quy ước bắt buộc khi sửa mã, và những cái bẫy đã có người vấp.
-- [`docs/`](docs/README.md) — spec và plan còn hiệu lực.
-- [`zhesen-pipeline`](https://github.com/ntphiep/zhesen-pipeline) — repo nạp dữ liệu từ điển.
+Deployed to Vercel from `master` by `.github/workflows/ci.yml` after lint, types, tests,
+production build and migration checks all pass. Functions are pinned to the `icn1` region to
+sit beside the database in `ap-northeast-2`.
+
+## Further reading
+
+This repository holds code. Documents live in the wiki and work lives in issues.
+
+- [`AGENTS.md`](AGENTS.md) — conventions and traps for anyone, human or agent, changing this
+  code.
+- [Wiki](https://github.com/ntphiep/zhesen-main/wiki) — current status and the decision
+  records still in force.
+- [ZHESEN board](https://github.com/users/ntphiep/projects/2) — open defects and outstanding
+  work, prioritised.
+- [`zhesen-pipeline`](https://github.com/ntphiep/zhesen-pipeline) — the ETL repository that
+  loads the dictionary data.
