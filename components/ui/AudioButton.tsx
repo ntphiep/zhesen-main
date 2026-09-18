@@ -2,19 +2,32 @@
 import { useState } from 'react'
 import { speechLang, type LangCode } from '@/lib/languages'
 
-// Chrome/Edge return [] from getVoices() until the async 'voiceschanged' fires, so a
-// speak() on the first interaction of a session silently plays nothing. Resolve the
-// voice list once and reuse it.
+// Chrome/Edge return [] from getVoices() until the async 'voiceschanged' fires, so
+// the first speak() of a session plays nothing. Resolve the list once and reuse it.
 let voicesPromise: Promise<SpeechSynthesisVoice[]> | null = null
+let probes = 0
 function loadVoices(): Promise<SpeechSynthesisVoice[]> {
   if (typeof speechSynthesis === 'undefined') return Promise.resolve([])
   if (voicesPromise) return voicesPromise
-  voicesPromise = new Promise((resolve) => {
+  probes++
+  voicesPromise = new Promise<SpeechSynthesisVoice[]>((resolve) => {
     const ready = speechSynthesis.getVoices()
     if (ready.length) return resolve(ready)
     const onChange = () => resolve(speechSynthesis.getVoices())
     speechSynthesis.addEventListener('voiceschanged', onChange, { once: true })
-    setTimeout(() => resolve(speechSynthesis.getVoices()), 1000)
+    setTimeout(() => {
+      // `once` only detaches on the event, which never fires where there are no
+      // voices at all, so each probe would otherwise leave a listener behind.
+      speechSynthesis.removeEventListener('voiceschanged', onChange)
+      resolve(speechSynthesis.getVoices())
+    }, 1000)
+  }).then((voices) => {
+    // An empty first list usually means the timeout won the race, not that the
+    // machine is mute, so probe once more. A machine with no voices installed
+    // answers empty forever, and re-probing on every click costs a second and a
+    // listener each time for the same muted icon.
+    if (!voices.length && probes < 2) voicesPromise = null
+    return voices
   })
   return voicesPromise
 }
@@ -22,6 +35,7 @@ function loadVoices(): Promise<SpeechSynthesisVoice[]> {
 /** Exported for tests only. */
 export function resetVoiceCache() {
   voicesPromise = null
+  probes = 0
 }
 
 function pickVoice(voices: SpeechSynthesisVoice[], bcp47: string): SpeechSynthesisVoice | null {
@@ -36,11 +50,8 @@ function pickVoice(voices: SpeechSynthesisVoice[], bcp47: string): SpeechSynthes
 
 /**
  * Speak `text`, returning false when the machine has no voice for the language.
- *
- * Speaking with the wrong voice is worse than not speaking: a Chinese word read
- * by an English voice teaches a pronunciation that does not exist. Playing the
- * utterance on a voiceless machine produces silence, indistinguishable to the
- * reader from a broken speaker, so this checks for a voice first.
+ * A wrong-language voice teaches a pronunciation that does not exist, and an
+ * utterance on a voiceless machine is silence, so check for a voice first.
  */
 async function speakTts(text: string, bcp47: string, onEnd: () => void): Promise<boolean> {
   if (typeof speechSynthesis === 'undefined') {
@@ -80,11 +91,9 @@ const NO_VOICE: Record<LangCode, string> = {
 }
 
 /**
- * Pronunciation button. Prefers a recorded file; otherwise (and on any playback
- * failure) falls back to browser speech synthesis. When the browser has no voice
- * for the language it says so instead of failing quietly -- the Chinese entries
- * carry no recordings at all, so on a machine without a Chinese voice this button
- * was simply dead.
+ * Pronunciation button: a recorded file when there is one, browser speech synthesis
+ * otherwise and on any playback failure. It says so when the browser has no voice
+ * for the language; the Chinese entries carry no recordings at all.
  */
 export function AudioButton({
   text, lang, audioUrl, accent,
@@ -109,9 +118,8 @@ export function AudioButton({
     }
   }
 
-  // The reason is carried by the icon and the label rather than by text beside the
-  // button: this button sits in a table cell in the wordlist, and anything wider
-  // than the button itself would push the column out.
+  // The reason rides on the icon and the label, not on text beside the button: this
+  // sits in a wordlist table cell, where anything wider pushes the column out.
   return (
     <button
       type="button"

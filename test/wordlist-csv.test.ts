@@ -83,6 +83,21 @@ describe('parseImportCsv', () => {
     expect(rows[0].kind).toBe('duplicate')
   })
 
+  // user_words is unique on entry_id, not on the headword, so a row whose spelling
+  // was edited after export still collides. Previewing it as importable promised a
+  // row the import then dropped, and the learner was told a word was skipped
+  // because it already existed under a name they could not find.
+  it('flags a row as duplicate when only its entry id matches an existing word', () => {
+    const existing = [mk({ entryId: 'en:dog', headword: 'dog' })]
+    const rows = parseImportCsv('headword,lang,entryId\ndogg,en,en:dog\n', existing)
+    expect(rows[0].kind).toBe('duplicate')
+  })
+
+  it('flags a second row in the same file carrying an entry id the first one used', () => {
+    const rows = parseImportCsv('headword,lang,entryId\ndog,en,en:dog\ndogg,en,en:dog\n', [])
+    expect(rows.map((r) => r.kind)).toEqual(['ok', 'duplicate'])
+  })
+
   it('flags duplicates within the same file', () => {
     const rows = parseImportCsv(header + 'cat,en,,new,\ncat,en,,new,', [])
     expect(rows[0].kind).toBe('ok')

@@ -19,7 +19,7 @@ interface SpeechRecognitionLike {
   interimResults: boolean
   maxAlternatives: number
   onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void
-  onerror: () => void
+  onerror: (e: { error?: string }) => void
   onend: () => void
   start: () => void
   stop: () => void
@@ -31,6 +31,15 @@ function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
     webkitSpeechRecognition?: new () => SpeechRecognitionLike
   }
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
+}
+
+/** Recogniser error codes worth explaining. Anything else falls back to one line. */
+const RECOGNITION_ERRORS: Record<string, string> = {
+  'not-allowed': 'Trình duyệt đang chặn micro. Cho phép micro cho trang này rồi thử lại.',
+  'service-not-allowed': 'Trình duyệt đang chặn micro. Cho phép micro cho trang này rồi thử lại.',
+  'audio-capture': 'Không tìm thấy micro. Kiểm tra thiết bị thu âm rồi thử lại.',
+  'no-speech': 'Chưa nghe thấy gì. Bấm Nói rồi đọc to hơn một chút.',
+  network: 'Mất kết nối tới dịch vụ nhận diện giọng nói. Thử lại sau ít giây.',
 }
 
 interface SpeakWord { id: string; headword: string; meaningVi: string | null; audioUrl: string | null; lang: LangCode }
@@ -46,6 +55,7 @@ export function SpeakSession() {
   const [listening, setListening] = useState(false)
   const [heard, setHeard] = useState<string | null>(null)
   const [result, setResult] = useState<TypedResult | null>(null)
+  const [micError, setMicError] = useState<string | null>(null)
   const [score, setScore] = useState(0)
   const [round, setRound] = useState(0)
 
@@ -58,7 +68,7 @@ export function SpeakSession() {
           .filter((w) => w.headword)
           .map((w): SpeakWord => ({ id: w.id, headword: w.headword, meaningVi: w.meaningVi, audioUrl: w.audioUrl, lang: w.lang }))
         setQueue(shuffle(usable).slice(0, SIZE))
-        setIndex(0); setHeard(null); setResult(null); setScore(0); setListening(false)
+        setIndex(0); setHeard(null); setResult(null); setScore(0); setListening(false); setMicError(null)
       })
       .catch(() => active && setQueue([]))
     return () => { active = false; recognitionRef.current?.stop() }
@@ -114,20 +124,23 @@ export function SpeakSession() {
       setHeard(transcript)
       setResult(verdict)
       if (verdict !== 'wrong') setScore((s) => s + 1)
-      // Successes count towards the schedule; failures do not. The recogniser
-      // mishears for reasons that are not the learner's -- a noisy room, an accent
-      // it was not trained on -- and `gradeForMode` returns null for those rather
-      // than resetting a card over a microphone. See lib/practice/grading.ts.
+      // Successes count towards the schedule, failures do not: the recogniser mishears
+      // for reasons that are not the learner's, so `gradeForMode` returns null there.
       recordGrade(current.id, gradeForMode('speak', { correct: verdict !== 'wrong', nearly: verdict === 'close' }))
       if (!logged.current) { logged.current = true; logDay() }
     }
-    r.onerror = () => setListening(false)
+    // Without a message the button flips straight back to "🎤 Nói" and a blocked
+    // microphone never says so.
+    r.onerror = (e) => {
+      setListening(false)
+      setMicError(RECOGNITION_ERRORS[e.error ?? ''] ?? 'Không nhận được giọng nói. Thử lại.')
+    }
     r.onend = () => setListening(false)
-    setHeard(null); setResult(null); setListening(true)
+    setHeard(null); setResult(null); setMicError(null); setListening(true)
     r.start()
   }
   function next() {
-    setHeard(null); setResult(null); setListening(false); setIndex((i) => i + 1)
+    setHeard(null); setResult(null); setMicError(null); setListening(false); setIndex((i) => i + 1)
   }
 
   return (
@@ -145,7 +158,7 @@ export function SpeakSession() {
         {current.meaningVi && <div className="mt-1 text-black/50">{current.meaningVi}</div>}
         <p className="mt-2 text-sm text-black/40">Nghe mẫu rồi đọc lại từ này</p>
 
-        {result === null ? (
+        {result === null && (
           <button
             onClick={listen}
             disabled={listening}
@@ -153,7 +166,11 @@ export function SpeakSession() {
           >
             {listening ? 'Đang nghe… nói đi!' : '🎤 Nói'}
           </button>
-        ) : (
+        )}
+        {result === null && micError && (
+          <p role="status" aria-live="polite" className="mt-3 text-sm text-rose-700">{micError}</p>
+        )}
+        {result !== null && (
           <div role="status" aria-live="polite" className="mt-6">
             {result === 'correct' && <p className="font-medium text-emerald-700">Chính xác ✓</p>}
             {result === 'close' && <p className="font-medium text-amber-700">Gần đúng</p>}

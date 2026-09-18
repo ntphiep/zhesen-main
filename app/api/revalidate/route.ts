@@ -13,12 +13,21 @@ import { revalidateTag } from 'next/cache'
 /** Every cached dictionary read is tagged with this; see lib/dictionary/cached.ts. */
 const LEX_TAG = 'lex'
 
+/** Constant time in the length of the secret, so a wrong header cannot be refined
+ *  one character at a time. The length itself is not secret. */
+function secretMatches(given: string | null, expected: string): boolean {
+  if (given === null || given.length !== expected.length) return false
+  let diff = 0
+  for (let i = 0; i < given.length; i++) diff |= given.charCodeAt(i) ^ expected.charCodeAt(i)
+  return diff === 0
+}
+
 export async function POST(request: Request): Promise<Response> {
   const secret = process.env.REVALIDATE_SECRET
   if (!secret) {
     return Response.json({ error: 'REVALIDATE_SECRET chưa được cấu hình' }, { status: 503 })
   }
-  if (request.headers.get('x-revalidate-secret') !== secret) {
+  if (!secretMatches(request.headers.get('x-revalidate-secret'), secret)) {
     return Response.json({ error: 'Sai khoá' }, { status: 401 })
   }
 

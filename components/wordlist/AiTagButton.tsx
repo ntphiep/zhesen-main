@@ -4,24 +4,23 @@ import { callAi } from '@/lib/ai/browser'
 import { useAiEnabled } from '@/lib/hooks/useAiEnabled'
 import type { UserWord } from '@/lib/wordlist/types'
 
-/** How many words go in one request. The task caps the list at 40; a larger
- *  selection is sent in several rounds so tagging the whole list is possible
- *  without a prompt long enough to blunt the answers. */
+/** Words per request. The task caps the list at 40, so a larger selection goes in
+ *  several rounds rather than one prompt long enough to blunt the answers. */
 const BATCH = 20
 
+/** `tagsInput.existing` is capped at 40; a longer array fails the schema and turns
+ *  the whole run into a 400. */
+const MAX_EXISTING = 40
+
 /**
- * Tagging by topic, which is the only thing that makes a four-hundred-word list
- * navigable.
+ * Tagging by topic, the only thing that makes a four-hundred-word list navigable.
  *
- * The tag filter has been there all along with almost nothing to filter by,
- * because tagging four hundred words by hand is not something anyone does. The
- * tags already in use are sent with the request so the assistant reuses
- * "văn phòng" instead of coining "công sở" beside it, which would leave the
- * filter bar with two chips for one idea.
+ * Tags already in use go with each request so the assistant reuses "văn phòng"
+ * instead of coining "công sở" beside it, and tags coined during the run must join
+ * that list, or a ten-round run reintroduces the duplicate.
  *
- * Matching by headword rather than by position: the model is asked to keep the
- * order and usually does, but a dropped line would otherwise shift every tag
- * onto the wrong word, and a wrong tag is worse than a missing one.
+ * Rows are matched by headword, not position, and requests are grouped by language:
+ * English "no" and Spanish "no" would otherwise share one answer.
  */
 export function AiTagButton({
   words,
@@ -32,7 +31,8 @@ export function AiTagButton({
   words: UserWord[]
   /** Every tag already used anywhere in the wordlist. */
   existingTags: string[]
-  onTagged: (byHeadword: Map<string, string[]>) => void | Promise<void>
+  /** Keyed `lang:headword`. */
+  onTagged: (byKey: Map<string, string[]>) => void | Promise<void>
 }) {
   const enabled = useAiEnabled()
   const [busy, setBusy] = useState(false)
@@ -43,27 +43,45 @@ export function AiTagButton({
   async function run() {
     setBusy(true)
     setError(null)
-    const byHeadword = new Map<string, string[]>()
+    const byKey = new Map<string, string[]>()
+    const known = new Set(existingTags)
 
-    for (let i = 0; i < words.length; i += BATCH) {
-      const batch = words.slice(i, i + BATCH)
-      const outcome = await callAi('tags', {
-        words: batch.map((w) => ({ headword: w.headword, meaningVi: w.meaningVi })),
-        existing: existingTags,
-      })
-      if (outcome.status === 'error') {
-        // Keep whatever earlier rounds produced: a learner who selected two
-        // hundred words and lost the last round should not lose the first nine.
-        setError(outcome.message)
-        break
-      }
-      for (const row of outcome.data.tags) {
-        if (batch.some((w) => w.headword === row.headword)) byHeadword.set(row.headword, row.tags)
-      }
+    const byLang = new Map<UserWord['lang'], UserWord[]>()
+    for (const w of words) {
+      const group = byLang.get(w.lang)
+      if (group) group.push(w)
+      else byLang.set(w.lang, [w])
     }
 
-    if (byHeadword.size > 0) await onTagged(byHeadword)
-    setBusy(false)
+    try {
+      rounds: for (const [lang, group] of byLang) {
+        for (let i = 0; i < group.length; i += BATCH) {
+          const batch = group.slice(i, i + BATCH)
+          const outcome = await callAi('tags', {
+            words: batch.map((w) => ({ headword: w.headword, meaningVi: w.meaningVi })),
+            // Take the tail: a Set keeps insertion order, so tags coined during this
+            // run are at the end, and slicing from the front would send the same
+            // starting list every round and coin a duplicate anyway.
+            existing: [...known].slice(-MAX_EXISTING),
+          })
+          if (outcome.status === 'error') {
+            // Keep whatever earlier rounds produced: losing the last round of two
+            // hundred words must not lose the first nine.
+            setError(outcome.message)
+            break rounds
+          }
+          for (const row of outcome.data.tags) {
+            if (!batch.some((w) => w.headword === row.headword)) continue
+            byKey.set(`${lang}:${row.headword}`, row.tags)
+            for (const tag of row.tags) known.add(tag)
+          }
+        }
+      }
+
+      if (byKey.size > 0) await onTagged(byKey)
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (

@@ -11,7 +11,8 @@ interface Props {
   /** Every tag already used in the wordlist, so the assistant reuses them. */
   allTags: string[]
   onBulkTag: (tags: string[]) => void
-  onAiTag: (tagsByHeadword: Map<string, string[]>) => void
+  /** Keyed `lang:headword`. */
+  onAiTag: (tagsByKey: Map<string, string[]>) => void
   onBulkStatus: (status: WordStatus) => void
   onBulkDelete: () => void
 }

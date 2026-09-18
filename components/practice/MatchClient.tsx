@@ -20,10 +20,8 @@ export function MatchClient() {
   const [seconds, setSeconds] = useState(0)
   const [round, setRound] = useState(0)
   const logged = useRef(false)
-  // Words that were part of a wrong pairing this round. The game always ends with
-  // every pair matched, so a plain match says nothing about difficulty; hesitating
-  // over a word is the only signal it has, and it grades the pair `hard` instead of
-  // `good`. There is no outcome here that could mean forgetting.
+  // Every pair matches eventually, so a match says nothing about difficulty. A wrong
+  // pairing is the only signal, and grades `hard` instead of `good`, never `again`.
   const stumbled = useRef<Set<string>>(new Set())
 
   useEffect(() => {
@@ -64,7 +62,10 @@ export function MatchClient() {
     if (!logged.current) { logged.current = true; logDay() }
     if (selected === null) { setSelected(tile.key); return }
     if (selected === tile.key) { setSelected(null); return }
-    const first = tiles!.find((t) => t.key === selected)!
+    // A round can advance while a click is in flight, leaving `selected` naming a
+    // tile the current round does not hold.
+    const first = tiles?.find((t) => t.key === selected)
+    if (!first) { setSelected(null); return }
     if (first.wordId === tile.wordId && first.kind !== tile.kind) {
       setMatched((m) => new Set(m).add(first.key).add(tile.key))
       setSelected(null)

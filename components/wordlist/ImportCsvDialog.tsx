@@ -29,7 +29,7 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
   const [importing, setImporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Reset preview whenever the dialog is (re)opened.
+  // Modal keeps its children mounted while closed, so clear the preview on reopen.
   const [prevOpen, setPrevOpen] = useState(open)
   if (open !== prevOpen) {
     setPrevOpen(open)
@@ -38,8 +38,15 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
 
   async function handleFile(file: File) {
     setFileName(file.name)
-    const text = await file.text()
-    setRows(parseImportCsv(text, existing))
+    setError(null)
+    try {
+      setRows(parseImportCsv(await file.text(), existing))
+    } catch {
+      // An unreadable file, or a parse error that is not the quote case the parser
+      // reports as a preview row. Without this the dialog gives a file name and no reason.
+      setRows([])
+      setError('Không đọc được file này. Kiểm tra lại rồi chọn file khác.')
+    }
   }
 
   const okRows = rows.filter((r): r is Extract<ImportPreviewRow, { kind: 'ok' }> => r.kind === 'ok')

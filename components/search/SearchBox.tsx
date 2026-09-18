@@ -11,48 +11,41 @@ import { LANG_LABELS } from '@/lib/dictionary/labels'
 import { posGroup } from '@/lib/dictionary/pos'
 import { Ipa } from '@/components/ui/Ipa'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
-import { EMPTY_SEARCH_RESPONSE, type SearchResponse } from '@/lib/dictionary/response'
+import { bestScore, EMPTY_SEARCH_RESPONSE, type SearchResponse } from '@/lib/dictionary/response'
 import { fetchSearch } from '@/lib/dictionary/searchClient'
 import type { LangCode } from '@/lib/languages'
 
 type ByLang = SearchResponse['forward']
 
-/** Best `lex.search` score in a group, 0 when nothing carries one. */
-function bestScore(groups: ByLang): number {
-  return Math.max(0, ...[...groups.en, ...groups.es, ...groups.zh].map((e) => e.matchScore ?? 0))
-}
+/** One entry per prefix typed, not per word, so the map fills fast. */
+const CACHE_LIMIT = 100
 const BUSY_MESSAGE = 'Đang có quá nhiều lượt tra cứu. Vui lòng thử lại sau ít giây.'
-/** en levels only as of this writing (verified: 0 es/zh rows have a level), in
- * CEFR order; any level value not in this list (there shouldn't be one) still
- * renders, just after these. */
+/** CEFR order. Only en rows carry a level (0 es/zh rows have one); a value outside
+ * this list still renders, after these. */
 const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 
 /**
- * Auto-detecting, bidirectional search box via the cached /dictionary/search route.
- * Searches forward (en/es/zh) and, when the query looks Vietnamese or forward finds nothing, reverse (vi -> en/es/zh) too.
+ * Auto-detecting, bidirectional search box over the cached /dictionary/search route:
+ * forward (en/es/zh), plus reverse (vi -> en/es/zh) when the query looks Vietnamese.
  */
 export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { initialQuery?: string; autoFocus?: boolean; lang?: LangCode }) {
   const [query, setQuery] = useState(initialQuery)
   const [data, setData] = useState<SearchResponse>(EMPTY_SEARCH_RESPONSE)
   const [loading, setLoading] = useState(false)
-  // Set when the route refused the request rather than answering it. "Không tìm
-  // thấy kết quả" would be a claim about the dictionary, and the dictionary was
-  // never asked.
+  // The route refused rather than answered, so "Không tìm thấy kết quả" would be a
+  // claim about a dictionary that was never asked.
   const [refused, setRefused] = useState(false)
   const [active, setActive] = useState(0)
   const [levelFilter, setLevelFilter] = useState<string | null>(null)
   const [posFilter, setPosFilter] = useState<string | null>(null)
-  // Lazy-init from localStorage on mount; readRecent is guarded for SSR, since this
-  // runs during the server-rendered pass too, before hydration takes over.
+  // readRecent must stay SSR-guarded: this lazy initializer also runs in the server pass.
   const [recent, setRecent] = useState<string[]>(readRecent)
   const [focused, setFocused] = useState(false)
   const cache = useRef(new Map<string, SearchResponse>())
   const router = useRouter()
 
-  // Reset selection, filters and stale results synchronously as soon as the query
-  // changes, instead of in an effect (adjust state during render, per
-  // react.dev/learn/you-might-not-need-an-effect). The ref-backed cache can't be read
-  // during render, so the cache-hit/fetch branching for `data` stays in the effect.
+  // Adjust state during render, not in an effect: react.dev/learn/you-might-not-need-an-effect.
+  // A ref can't be read during render, so `data` branching stays in the effect below.
   const [prevQuery, setPrevQuery] = useState(query)
   if (query !== prevQuery) {
     setPrevQuery(query)
@@ -75,11 +68,15 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
       id = setTimeout(async () => {
         try {
           const outcome = await fetchSearch(q, ctrl.signal)
-          // A refused request carries a body that is not a result set. Show
-          // nothing rather than caching it, so the next keystroke tries again
-          // instead of replaying it.
+          // A refusal body is not a result set; caching it would replay the refusal
+          // on every later keystroke.
           if (outcome.status === 'refused') { setRefused(true); setData(EMPTY_SEARCH_RESPONSE); return }
           setRefused(false)
+          // Map insertion order is age, so the first key is the oldest.
+          if (cache.current.size >= CACHE_LIMIT) {
+            const oldest = cache.current.keys().next()
+            if (!oldest.done) cache.current.delete(oldest.value)
+          }
           cache.current.set(key, outcome.data)
           setData(outcome.data)
         } catch (e) {
@@ -101,9 +98,8 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   )
   const hasReverse = order.some((l) => reverse[l].length > 0)
 
-  // Every entry currently on screen (both directions, restricted to `order`),
-  // unfiltered -- the level/pos filter options are derived from this so a chip
-  // only ever appears when picking it would actually narrow something down.
+  // Unfiltered, both directions: filter options derive from this, so a chip appears
+  // only when picking it would narrow something down.
   const allShown = useMemo(
     () => order.flatMap((l) => [...forward[l], ...reverse[l]]),
     [order, forward, reverse],
@@ -127,9 +123,8 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
     () => (e: DictEntryPreview) => (!levelFilter || e.level === levelFilter) && (!posFilter || posGroup(e.pos)?.key === posFilter),
     [levelFilter, posFilter],
   )
-  // Filter every language rather than only those in `order`, so the result keeps
-  // all three keys and needs no cast to claim it does. `order` still decides what
-  // actually renders.
+  // Filter all three languages so the result keeps every key and needs no cast.
+  // `order` still decides what renders.
   const applyFilters = useMemo(
     () => (groups: ByLang): ByLang => ({
       en: groups.en.filter(matches),
@@ -141,10 +136,8 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   const forwardShown = useMemo(() => applyFilters(forward), [applyFilters, forward])
   const reverseShown = useMemo(() => applyFilters(reverse), [applyFilters, reverse])
 
-  // Which direction answered better. Typing "con mèo" produces forward hits --
-  // con, cone, cons, all trigram guesses under 1.8 -- while the reverse lookup
-  // finds cat. Showing the guesses first because they happen to be the forward
-  // direction buries the answer, so the stronger direction leads.
+  // The stronger direction leads: "con mèo" yields forward trigram guesses scoring
+  // under 1.8, while the reverse lookup finds cat.
   const reverseLeads = useMemo(
     () => bestScore(reverseShown) > bestScore(forwardShown),
     [forwardShown, reverseShown],
@@ -160,11 +153,8 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   const indexById = useMemo(() => new Map(flat.map((e, i) => [e.id, i])), [flat])
   const total = flat.length
 
-  // Warm the row the keyboard is on, which is the first result until an arrow key
-  // moves it. Hovering a row already does this, and a touch screen never hovers:
-  // the reader taps the first suggestion and then waits for the whole entry page.
-  // One prefetch per result set, not one per row, so a list of twenty-four
-  // suggestions still costs a single request.
+  // Warm the keyboard-active row: a touch screen never hovers, so without this the
+  // first suggestion is tapped cold. One prefetch per result set, not per row.
   const activeHref = flat[active] ? entryPath(flat[active].id) : null
   useEffect(() => {
     if (activeHref) router.prefetch(activeHref)
@@ -191,10 +181,8 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   const showSuggestions = !loading && !refused && query.trim() && allShown.length === 0 && data.suggestions.length > 0
   const showFilteredEmpty = !loading && query.trim() && allShown.length > 0 && total === 0
 
-  // ARIA combobox wiring (w3.org/WAI/ARIA/apg/patterns/combobox). Arrow keys moved the
-  // highlight without telling a screen reader anything: it read out the result count
-  // and then went silent, because the list carried `aria-selected` on elements that
-  // were never options. `aria-activedescendant` is what announces the row.
+  // ARIA combobox pattern: w3.org/WAI/ARIA/apg/patterns/combobox. `aria-activedescendant`
+  // is what announces the highlighted row; `aria-selected` alone announces nothing.
   const optionId = (entryId: string) => `search-option-${entryId.replace(/[^\w-]/g, '_')}`
   const activeId = flat[active] ? optionId(flat[active].id) : undefined
   const groupLabel = (l: LangCode, reversed: boolean) =>
@@ -208,17 +196,16 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
           {LANG_LABELS[lang]}
           {reversed && <span className="ml-1 normal-case text-black/30">· dịch từ tiếng Việt</span>}
         </span>
-        {/* The group carries the language name the heading above shows visually, so a
-            listbox reader hears which language a row belongs to. */}
+        {/* Carries the language name the heading shows visually, so a listbox reader
+            hears which language a row belongs to. */}
         <ul role="group" aria-label={groupLabel(lang, reversed)} className="flex flex-col gap-0.5">
           {entries.map((e) => {
             const href = entryPath(e.id)
             const warm = () => router.prefetch(href)
             const isActive = indexById.get(e.id) === active
             return (
-              // The option is the row, not the link inside it: a result is still a
-              // link a reader can follow or open in a new tab, and `role="option"`
-              // on the anchor itself would take that away.
+              // role="option" belongs on the row, not the anchor: on the anchor it would
+              // stop the result being followable or openable in a new tab.
               <li key={e.id} role="option" id={optionId(e.id)} aria-selected={isActive}>
                 <Link
                   href={href}
@@ -279,8 +266,8 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
           </div>
         </div>
       )}
-      {/* Visually-hidden live region: screen readers only get result-count updates from
-          here, since the visible list below has no other role="status" text. */}
+      {/* The only role="status" text on the page: screen readers get result counts
+          from here alone. */}
       <p role="status" aria-live="polite" className="sr-only">
         {loading
           ? 'Đang tìm…'

@@ -4,28 +4,23 @@ import { usePathname } from 'next/navigation'
 import { callAi } from '@/lib/ai/browser'
 import { useAiEnabled } from '@/lib/hooks/useAiEnabled'
 
-/** Turns re-sent on every question, so the cap is what keeps one long session
- *  from costing more each time it is used. Matches `chatInput` in `lib/ai/tasks.ts`. */
+/** Turns are re-sent on every question, so this cap bounds the cost of one long
+ *  session. Matches `chatInput` in `lib/ai/tasks.ts`. */
 const HISTORY = 12
 
 type Turn = { role: 'user' | 'assistant'; text: string }
 
-/** One line naming the page, so "từ này" in a question has a referent. The
- *  document title carries the headword on an entry page; the path carries the
- *  section everywhere else. */
+/** One line naming the page, so "từ này" in a question has a referent. The document
+ *  title carries the headword on an entry page, the path the section elsewhere. */
 function pageContext(path: string, title: string): string {
   const name = title.replace(/\s*[|·—-]\s*Zhesen\s*$/i, '').trim()
   return name && name !== 'Zhesen' ? `${name} (${path})` : path
 }
 
 /**
- * The assistant on every page.
- *
- * The other assistant features each answer one fixed question about one word.
- * A learner with an ordinary question -- why this preposition, is my sentence
- * right, what should I revise -- had nowhere to put it. Closed by default and
- * silent when the deployment has no model, so the button never appears where it
- * could only fail.
+ * The assistant on every page, for questions no fixed per-word task covers. Closed
+ * by default, and silent when the deployment has no model, so the button never
+ * appears where it could only fail.
  */
 export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
   const enabled = useAiEnabled(known)
@@ -48,15 +43,21 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
     setError(null)
     setBusy(true)
 
-    const outcome = await callAi('chat', {
-      context: pageContext(path, typeof document === 'undefined' ? '' : document.title),
-      messages: next.slice(-HISTORY),
-    })
-    setBusy(false)
-    // The question stays on screen either way: a learner who has to retype what
-    // they just asked stops asking.
-    if (outcome.status === 'error') setError(outcome.message)
-    else setTurns([...next, { role: 'assistant', text: outcome.data.reply }])
+    try {
+      const outcome = await callAi('chat', {
+        context: pageContext(path, typeof document === 'undefined' ? '' : document.title),
+        messages: next.slice(-HISTORY),
+      })
+      // The question stays on screen either way, so a failure costs no retyping.
+      if (outcome.status === 'error') setError(outcome.message)
+      else setTurns([...next, { role: 'assistant', text: outcome.data.reply }])
+    } catch {
+      // `callAi` handles fetch failures, but its dynamic task-module import rejects
+      // after a redeploy, leaving the send button disabled for the life of the page.
+      setError('Không gửi được câu hỏi. Vui lòng thử lại.')
+    } finally {
+      setBusy(false)
+    }
     endRef.current?.scrollIntoView({ block: 'end' })
   }
 
@@ -121,9 +122,8 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
-            // Enter sends, Shift+Enter breaks the line: the questions here are
-            // one or two lines, and a send button reached by mouse every time
-            // is slower than the question is worth.
+            // Enter sends, Shift+Enter breaks the line: questions here run one or
+            // two lines, and reaching for the button by mouse costs more.
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send() }
           }}
           aria-label="Câu hỏi cho gia sư"

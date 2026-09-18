@@ -18,19 +18,17 @@ type Mode = 'login' | 'register'
 type Feedback = { tone: 'ok' | 'bad'; text: string } | null
 
 /**
- * The sign-in and sign-up form, one component because they differ by two fields
- * and a verb.
+ * The sign-in and sign-up form; the two modes differ by two fields and a verb.
  *
- * The one unusual door is a browser still holding a legacy anonymous session
- * with words saved before the notebook required an account. Registering there
- * must NOT create a second account -- the words hang off the anonymous one and
- * nothing would move them -- so the form attaches the email to the account
- * already present. Supabase will not accept a password until that address is
- * confirmed, so the password step waits for `/account` after the emailed link.
+ * On a browser still holding a legacy anonymous session with saved words,
+ * registering must NOT create a second account: the words hang off the anonymous
+ * one and nothing would move them, so the email is attached to the account already
+ * present. Supabase accepts a password only once that address is confirmed, so the
+ * password step waits for `/account`.
  * https://supabase.com/docs/guides/auth/auth-anonymous
  *
- * `localWordCount` is read on the server by the page, because the guard has to
- * hold before the form is interactive, not after a round trip.
+ * `localWordCount` is read on the server: the guard must hold before the form is
+ * interactive, not after a round trip.
  */
 export function AuthForm({
   mode,
@@ -46,9 +44,8 @@ export function AuthForm({
   hasAnonymousSession?: boolean
   /** Where the browser goes once the session is live. */
   next?: string
-  /** Why the visitor was sent here, when something already went wrong -- an
-   *  emailed link that had expired, for instance. Rendered above the form,
-   *  separately from `feedback`, which belongs to this form's own submissions. */
+  /** Why the visitor was sent here, such as an expired emailed link. Rendered above
+   *  the form, apart from `feedback`, which belongs to this form's own submissions. */
   notice?: string
 }) {
   const supabase = useMemo(() => createClient(), [])
@@ -66,7 +63,15 @@ export function AuthForm({
     if (busy) return
     setBusy(true)
     setFeedback(null)
-    const outcome = await action()
+    let outcome: AuthOutcome
+    try {
+      outcome = await action()
+    } catch {
+      // Without this every button stays disabled until a reload, with nothing to say why.
+      setFeedback({ tone: 'bad', text: 'Không kết nối được. Vui lòng thử lại.' })
+      setBusy(false)
+      return
+    }
     if (outcome.status === 'active') {
       router.push(next)
       router.refresh()
@@ -127,9 +132,8 @@ export function AuthForm({
             is confirmed, so a box here would take a password it cannot store. */}
         {!upgrading && (
           <div className="flex flex-col gap-1 text-sm">
-            {/* The hint sits outside the label on purpose: inside it, the
-                accessible name of the field becomes "Mật khẩu" plus the hint,
-                which is what a screen reader would then read out on focus. */}
+            {/* The hint sits outside the label: inside it, the field's accessible name
+                becomes "Mật khẩu" plus the hint. */}
             <label className="flex flex-col gap-1">
               <span className="font-medium">Mật khẩu</span>
               <input

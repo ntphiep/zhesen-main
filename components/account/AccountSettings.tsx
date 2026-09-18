@@ -15,14 +15,12 @@ const ROLE_LABEL: Record<Profile['role'], string> = {
 /**
  * Everything an account owner can change about their own account.
  *
- * The role is shown and not editable: RLS refuses an update that changes it, so
- * a control here would be a button that always fails. It is granted from the
- * database, on purpose.
+ * The role is shown and not editable: RLS refuses an update that changes it, so a
+ * control here would be a button that always fails. It is granted in the database.
  *
- * The password box is not "change password" -- it is also the second half of the
- * anonymous upgrade. A learner who attached an email to the account holding their
- * words arrives here from the emailed link with a confirmed address and no
- * password at all, and this is where they get one.
+ * The password box is also the second half of the anonymous upgrade: a learner who
+ * attached an email to the account holding their words arrives here from the emailed
+ * link with a confirmed address and no password at all.
  */
 export function AccountSettings({ email, profile }: { email: string; profile: Profile | null }) {
   const supabase = useMemo(() => createClient(), [])
@@ -53,8 +51,11 @@ export function AccountSettings({ email, profile }: { email: string; profile: Pr
     if (outcome.status === 'active') {
       setPasswordValue('')
       setPasswordFeedback({ tone: 'ok', text: 'Đã đặt mật khẩu mới.' })
-    } else if (outcome.status === 'error') {
-      setPasswordFeedback({ tone: 'bad', text: outcome.message })
+    } else {
+      // `setPassword` returns only 'active' or 'error' today, but an `else if` on
+      // 'error' would leave the form silent if that ever changes.
+      const text = outcome.status === 'error' ? outcome.message : 'Không đặt được mật khẩu. Vui lòng thử lại.'
+      setPasswordFeedback({ tone: 'bad', text })
     }
     setBusy(false)
   }

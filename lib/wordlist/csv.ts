@@ -1,14 +1,10 @@
-// CSV export/import and Anki-importable TSV export for the personal wordlist. This is
-// the anti-data-loss escape hatch: the wordlist lives behind anonymous auth, so clearing
-// cookies loses it; export/import lets a user back it up and restore it elsewhere.
+// CSV export/import and Anki-importable TSV export for the personal wordlist: the escape
+// hatch from anonymous auth, where clearing cookies loses the wordlist.
 import { isLangCode, type LangCode } from '@/lib/languages'
 import type { UserWord, WordDraft, WordStatus } from './types'
 
-// `entryId` and `audioUrl` are here because the export is a backup: without them a
-// restored word has lost its link to the dictionary, so WordDetail falls back to the
-// bare stored fields (no senses, no pronunciations, no related words) and playback
-// falls back to speech synthesis instead of the recording. Both columns are optional
-// on import, so a file written by hand or by another tool still works.
+// `entryId` and `audioUrl` must stay: without them a restored word loses its dictionary
+// link and its recording. Both are optional on import, so a hand-written file still works.
 const CSV_COLUMNS = [
   'headword', 'lang', 'entryId', 'reading', 'ipa', 'pos', 'meaningVi', 'meaningEn', 'level',
   'example', 'exampleTranslation', 'audioUrl', 'notes', 'status', 'tags', 'createdAt',
@@ -90,9 +86,8 @@ export function parseCsvRows(text: string): CsvRow[] {
   let inQuotes = false
   // Where the currently open quote started, so an unclosed one can name its line.
   let quoteOpenedAt = 0
-  // A quote only opens a quoted field at the start of one. Elsewhere it is an
-  // ordinary character: `ab"cd` used to swallow everything up to the next quote,
-  // and an even number of stray quotes parsed silently into nonsense.
+  // A quote only opens a quoted field at the start of one; elsewhere it is an ordinary
+  // character, or `ab"cd` swallows everything up to the next quote.
   let atFieldStart = true
   let line = 1
   let rowLine = 1
@@ -105,17 +100,16 @@ export function parseCsvRows(text: string): CsvRow[] {
         if (text[i + 1] === '"') { field += '"'; i += 2; continue }
         inQuotes = false; i++; continue
       }
-      // A quoted field may span lines, and a file written on Windows separates
-      // them with CRLF. Keeping the CR stored a stray carriage return inside the
-      // note. A lone CR, which no CSV writer emits, is left alone.
+      // A quoted field may span lines, and Windows separates them with CRLF; keeping the
+      // CR stores a stray carriage return inside the note. A lone CR is left alone.
       if (c === '\r' && text[i + 1] === '\n') { i++; continue }
       if (c === '\n') line++
       field += c; i++; continue
     }
     if (c === '"' && atFieldStart) { inQuotes = true; quoteOpenedAt = line; atFieldStart = false; i++; continue }
     if (c === ',') { cells.push(field); field = ''; atFieldStart = true; i++; continue }
-    // Only a CR that belongs to a CRLF pair is a line ending. A lone CR is kept:
-    // dropping it turned `d\rog` into `dog` and called the import clean.
+    // Only a CR belonging to a CRLF pair is a line ending. A lone CR is kept: dropping it
+    // turns `d\rog` into `dog` and calls the import clean.
     if (c === '\r' && text[i + 1] === '\n') { i++; continue }
     if (c === '\n') {
       cells.push(field); rows.push({ line: rowLine, cells })
@@ -123,10 +117,8 @@ export function parseCsvRows(text: string): CsvRow[] {
     }
     field += c; atFieldStart = false; i++
   }
-  // Falling out of the loop still inside a quote means every line after the stray
-  // quote was absorbed into one field. Left unreported, a 500-row file with one
-  // unbalanced quote on line 12 imported eleven words and dropped the other 489
-  // without a word of warning.
+  // Still inside a quote means every later line was absorbed into one field. Unreported,
+  // a 500-row file with one unbalanced quote on line 12 imports 11 words and drops 489.
   if (inQuotes) throw new UnterminatedQuoteError(quoteOpenedAt)
   if (field.length > 0 || cells.length > 0) { cells.push(field); rows.push({ line: rowLine, cells }) }
   return rows.filter((r) => !(r.cells.length === 1 && r.cells[0] === ''))
@@ -143,13 +135,10 @@ function existingKey(lang: LangCode, headword: string): string {
   return `${lang}:${headword.trim().toLowerCase()}`
 }
 
-/**
- * Parse a CSV export (or a compatible file) into preview rows: `ok` rows are new and
- * importable, `duplicate` rows already exist (same lang + headword, case-insensitive)
- * either in the current wordlist or earlier in the same file, and `error` rows are
- * missing required fields. Header row must include at least `headword`; other columns
- * are matched by name against `CSV_COLUMNS` and are optional.
- */
+/** Parse a CSV export into preview rows: `ok` is new, `duplicate` already exists by lang +
+ *  headword case-insensitively or by `entryId`, `error` is missing a required field. The
+ *  header must carry at least `headword`; other columns match `CSV_COLUMNS` by name and
+ *  are optional. */
 export function parseImportCsv(text: string, existing: UserWord[]): ImportPreviewRow[] {
   let table: CsvRow[]
   try {
@@ -169,6 +158,9 @@ export function parseImportCsv(text: string, existing: UserWord[]): ImportPrevie
   const idx = (name: string) => header.indexOf(name)
 
   const seen = new Set(existing.map((w) => existingKey(w.lang, w.headword)))
+  // The unique constraint is on entry_id, not headword, so a row whose spelling was edited
+  // after export still collides on insert and must not preview as importable.
+  const seenEntryIds = new Set(existing.flatMap((w) => (w.entryId ? [w.entryId] : [])))
   const out: ImportPreviewRow[] = []
 
   for (let r = 1; r < table.length; r++) {
@@ -181,7 +173,7 @@ export function parseImportCsv(text: string, existing: UserWord[]): ImportPrevie
       out.push({ kind: 'error', line, message: `Ngôn ngữ không hợp lệ: "${langRaw}".` })
       continue
     }
-    const lang = langRaw as LangCode
+    const lang = langRaw
 
     const statusRaw = (idx('status') >= 0 ? cols[idx('status')] : '')?.trim() || 'new'
     const status = (STATUS_VALUES as string[]).includes(statusRaw) ? (statusRaw as WordStatus) : 'new'
@@ -195,10 +187,8 @@ export function parseImportCsv(text: string, existing: UserWord[]): ImportPrevie
       return v.length > 0 ? v : null
     }
 
-    // An entry id names a row in lex.entries, and user_words has a foreign key to it.
-    // Keep one only when it is shaped like this row's language ("en:holy"); anything
-    // else is a value from somewhere unrelated, and a foreign key violation would
-    // fail the whole import rather than this one row.
+    // `user_words` has a foreign key to lex.entries, so keep an entry id only when it is
+    // shaped like this row's language ("en:holy"): a violation fails the whole import.
     const entryIdRaw = field('entryId')
     const entryId = entryIdRaw?.startsWith(`${lang}:`) ? entryIdRaw : null
 
@@ -221,11 +211,12 @@ export function parseImportCsv(text: string, existing: UserWord[]): ImportPrevie
     }
 
     const key = existingKey(lang, headword)
-    if (seen.has(key)) {
+    if (seen.has(key) || (entryId !== null && seenEntryIds.has(entryId))) {
       out.push({ kind: 'duplicate', line, draft })
       continue
     }
     seen.add(key)
+    if (entryId !== null) seenEntryIds.add(entryId)
     out.push({ kind: 'ok', line, draft })
   }
   return out

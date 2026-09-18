@@ -11,21 +11,19 @@ export type SortKey = 'headword' | 'createdAt' | 'fsrsDueAt' | 'fsrsLapses' | 'l
 /** Which words the review columns single out. '' is every word. */
 export type ReviewFilter = '' | 'due' | 'leech'
 
-/** A word missed this often is one the learner is not going to get from more of
- *  the same repetitions. Anki calls it a leech at eight; this list is reviewed
- *  far less often than an Anki deck, so three is already the signal. */
+/** A word missed this often needs a different approach, not more repetitions. Anki's leech
+ *  threshold is eight; this list is reviewed far less often, so three is already the signal. */
 export const LEECH_LAPSES = 3
 export type SortDir = 'asc' | 'desc'
 
-/** Drop diacritics so "thuong mai" finds "thương mại": the list box gets typed
- *  without a Vietnamese keyboard often enough that exact matching hides words the
- *  learner knows are there. */
+/** Drop diacritics so "thuong mai" finds "thương mại": the box gets typed without a
+ *  Vietnamese keyboard often enough that exact matching hides words the learner has. */
 function fold(s: string): string {
   return s
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
-    // "đ" carries no combining mark, so NFD leaves it alone and "hop dong"
-    // would still miss "hợp đồng".
+    // "đ" carries no combining mark, so NFD leaves it alone and "hop dong" would still
+    // miss "hợp đồng".
     .replace(/đ/g, 'd')
     .replace(/Đ/g, 'D')
     .toLowerCase()
@@ -38,9 +36,8 @@ function haystack(w: UserWord): string {
     .filter(Boolean).join(' '))
 }
 
-/** Rows with nothing in the sorted column, kept at the end whichever way the
- *  column is sorted: an ungraded word is not "before A1", it is a word the
- *  pipeline never graded. Returns 0 when both sides have a value. */
+/** Rows with nothing in the sorted column stay at the end whichever way it is sorted: an
+ *  ungraded word is not "before A1". Returns 0 when both sides have a value. */
 function emptyRank(a: UserWord, b: UserWord, key: SortKey): number {
   if (key !== 'level' && key !== 'pos') return 0
   const x = a[key], y = b[key]
@@ -52,30 +49,26 @@ function compare(a: UserWord, b: UserWord, key: SortKey): number {
   switch (key) {
     case 'headword': return a.headword.localeCompare(b.headword)
     case 'fsrsDueAt': return a.fsrsDueAt.localeCompare(b.fsrsDueAt)
-    // Ties on lapses are common -- most words have none -- so the due date breaks
-    // them and the hardest words stay in a stable order between renders.
+    // Ties on lapses are common, so the due date breaks them and the order stays stable
+    // between renders.
     case 'fsrsLapses': return a.fsrsLapses - b.fsrsLapses || a.fsrsDueAt.localeCompare(b.fsrsDueAt)
-    // Empty last in both directions: a row with no level is not "before A1", it
-    // is a row the pipeline never graded, and it belongs at the end either way.
     case 'level': return (a.level ?? '').localeCompare(b.level ?? '')
     case 'pos': return (a.pos ?? '').localeCompare(b.pos ?? '')
     default: return a.createdAt.localeCompare(b.createdAt)
   }
 }
 
-/** Filter/sort/view-mode state for the wordlist table, plus the derived visible list.
- * Pulled out of WordlistClient so the filtering logic can be tested and reasoned about
- * on its own, independent of the (large) table/card rendering. */
+/** Filter, sort and view-mode state for the wordlist table, plus the derived visible list.
+ *  Kept out of WordlistClient so the filtering can be tested without the table. */
 export function useWordlistFilters(words: UserWord[]) {
   const [query, setQuery] = useState('')
   const [langFilter, setLangFilter] = useState<LangCode | ''>('')
   const [statusFilter, setStatusFilter] = useState<WordStatus | ''>('')
-  // A set, not one tag: "TOEIC" and "Part 5" only mean something together, and a
-  // single-tag filter cannot express the intersection a learner is after.
+  // A set, not one tag: "TOEIC" and "Part 5" only mean something together, and a single-tag
+  // filter cannot express that intersection.
   const [tagFilter, setTagFilter] = useState<ReadonlySet<string>>(() => new Set())
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>('')
-  // CEFR or HSK band, and part of speech. Both are columns in the table, so the
-  // learner can already see them; being able to keep only one was missing.
+  // CEFR or HSK band, and part of speech.
   const [levelFilter, setLevelFilter] = useState('')
   const [posFilter, setPosFilter] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('createdAt')
@@ -91,7 +84,7 @@ export function useWordlistFilters(words: UserWord[]) {
       for (const t of tagFilter) if (!w.tags.includes(t)) return false
       if (q && !haystack(w).includes(q)) return false
       if (levelFilter && w.level !== levelFilter) return false
-      if (posFilter && (posGroup(w.pos)?.labelEn ?? w.pos ?? '') !== posFilter) return false
+      if (posFilter && (posGroup(w.pos)?.labelVi ?? w.pos ?? '') !== posFilter) return false
       if (reviewFilter === 'due' && !isDueAt(w.fsrsDueAt)) return false
       if (reviewFilter === 'leech' && w.fsrsLapses < LEECH_LAPSES) return false
       return true
@@ -107,14 +100,14 @@ export function useWordlistFilters(words: UserWord[]) {
     return list
   }, [words, query, langFilter, statusFilter, tagFilter, reviewFilter, levelFilter, posFilter, sortKey, sortDir])
 
-  // The options offered are the values the list actually holds: a wordlist with
-  // no Spanish verbs should not offer to filter for them.
+  // The options offered are the values the list actually holds: a wordlist with no Spanish
+  // verbs must not offer to filter for them.
   const levelOptions = useMemo(
     () => [...new Set(words.map((w) => w.level).filter((l): l is string => !!l))].sort(),
     [words],
   )
   const posOptions = useMemo(
-    () => [...new Set(words.map((w) => posGroup(w.pos)?.labelEn ?? w.pos).filter((p): p is string => !!p))].sort(),
+    () => [...new Set(words.map((w) => posGroup(w.pos)?.labelVi ?? w.pos).filter((p): p is string => !!p))].sort(),
     [words],
   )
 

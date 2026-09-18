@@ -14,43 +14,41 @@ type State =
   | { kind: 'error'; message: string }
 
 /**
- * The way out of "Không tìm thấy kết quả."
+ * The way out of "Không tìm thấy kết quả." for a learner who knows the meaning but
+ * not the word: ask the assistant for candidate headwords, then hand each one back
+ * to the dictionary, so what reaches the entry page is still sourced data.
  *
- * The dictionary matches text. A learner who knows the meaning but not the word
- * has nothing to match on, and until now the page simply ended there. This asks
- * the assistant for candidate headwords and then hands each one back to the
- * dictionary, so what reaches the entry page is still sourced data.
- *
- * Deliberately behind a button rather than fired on every empty search: an empty
- * search is common (a typo mid-typing produces one on almost every keystroke)
- * and a model call per keystroke would be both slow and expensive. The button is
- * the learner saying the search really is finished.
+ * Behind a button, not fired on every empty search: a typo mid-typing empties the
+ * search on almost every keystroke, and a model call per keystroke is slow and dear.
  */
 export function AiSuggest({ query }: { query: string }) {
   const enabled = useAiEnabled()
   const [state, setState] = useState<State>({ kind: 'idle' })
 
-  // A new query invalidates the previous answer; leaving it on screen would
-  // attach suggestions for "recieve" to a search for something else. Reset
-  // during render rather than in an effect, the way SearchBox above does it:
-  // an effect would paint the stale list once before clearing it.
+  // A new query invalidates the previous answer. Reset during render, since an
+  // effect would paint the stale list once before clearing it.
   const [askedFor, setAskedFor] = useState(query)
   if (query !== askedFor) {
     setAskedFor(query)
     setState({ kind: 'idle' })
   }
 
-  // `aiConfig()` returning null is a supported state: the router lives on a
-  // private network, so a deployment that cannot reach it shows no button at all
-  // rather than one that fails when pressed.
+  // `aiConfig()` returning null is a supported state: the router is on a private
+  // network, so a deployment that cannot reach it shows no button at all.
   if (!enabled) return null
 
   async function ask() {
     setState({ kind: 'loading' })
-    const outcome = await callAi('suggest', { query })
-    setState(outcome.status === 'ok'
-      ? { kind: 'done', words: outcome.data.words }
-      : { kind: 'error', message: outcome.message })
+    try {
+      const outcome = await callAi('suggest', { query })
+      setState(outcome.status === 'ok'
+        ? { kind: 'done', words: outcome.data.words }
+        : { kind: 'error', message: outcome.message })
+    } catch {
+      // `callAi` handles fetch failures, but its dynamic task-module import rejects
+      // after a redeploy, which would leave this stuck on the loading state.
+      setState({ kind: 'error', message: 'Không hỏi được trợ lý. Vui lòng thử lại.' })
+    }
   }
 
   if (state.kind === 'idle') {

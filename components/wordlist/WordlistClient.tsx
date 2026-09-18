@@ -32,8 +32,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   const [importOpen, setImportOpen] = useState(false)
   const [editWord, setEditWord] = useState<UserWord | null>(null)
   const { notice, notify, dismiss } = useNotice()
-  // One slot, not one flag per action: the dialog carries its own wording and
-  // the work to run, so adding a third destructive action needs no new state.
+  // One slot, not a flag per action: the dialog carries its own wording and the
+  // work to run, so a third destructive action needs no new state.
   const [confirming, setConfirming] = useState<
     { title: string; message: string; confirmLabel: string; run: () => void } | null
   >(null)
@@ -48,14 +48,12 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   const allVisibleIds = visible.map((w) => w.id)
   const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selected.has(id))
 
-  // Render a page at a time. The list is 400+ rows for a real learner and every
-  // row mounts an audio button and a row-actions group, so rendering the whole
-  // thing cost a visible pause on every keystroke in the filter box. Selection
-  // and export still work on the full filtered set, not on what is on screen.
+  // 400+ rows for a real learner, each mounting an audio button and a row-actions
+  // group. Selection and export still use the full filtered set, not what is on screen.
   const PAGE_SIZE = 50
   const [limit, setLimit] = useState(PAGE_SIZE)
-  // The tag filter is a Set, so it has to be spelled out: interpolating it gives
-  // "[object Set]" for every combination and the page size would never reset.
+  // tagFilter is a Set and must be spelled out: interpolated it gives "[object Set]"
+  // for every combination, so the page size would never reset.
   const filterSignature =
     `${query}|${langFilter}|${statusFilter}|${reviewFilter}|${levelFilter}|${posFilter}|${[...tagFilter].join(',')}|${sortKey}|${sortDir}`
   const [prevSignature, setPrevSignature] = useState(filterSignature)
@@ -65,8 +63,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   }
   const shown = visible.slice(0, limit)
 
-  // Which dictionary entries are already saved, so the add dialog can say "Đã có"
-  // rather than let the insert fail against the unique index from migration 0031.
+  // Lets the add dialog say "Đã có" instead of letting the insert fail against the
+  // unique index from migration 0031.
   const savedEntryIds = useMemo(
     () => new Set(words.map((w) => w.entryId).filter((id): id is string => id !== null)),
     [words],
@@ -126,21 +124,16 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     }
   }
 
-  // CSV import: bulk-insert already-deduped drafts, then append the real rows.
-  // The preview dedupes against the list as it was when the file was opened, so
-  // a word saved in another tab since then comes back as one fewer row here
-  // rather than as an error. Say so instead of quietly importing less.
+  // The preview dedupes against the list as of file-open, so a word saved in another
+  // tab since then returns as a skip, which must be reported rather than swallowed.
   async function handleImport(drafts: WordDraft[]) {
     try {
       const added = await addWords(supabase, drafts)
       const skipped = drafts.length - added.length
       if (skipped > 0) notify(`Đã bỏ qua ${skipped} từ vì đã có trong sổ tay.`, 'info')
     } finally {
-      // Whatever happened, show what the database now holds. An import is
-      // chunked, so a failure part way through leaves the earlier chunks
-      // written: reporting "Không nhập được" over a list that still shows the
-      // old words told the learner the opposite of the truth, and their next
-      // move was to import the same file again.
+      // An import is chunked, so a failure part way through leaves earlier chunks
+      // written. Show what the database now holds, whatever happened.
       const fresh = await listWords(supabase).catch(() => null)
       if (fresh) setWords(fresh)
     }
@@ -156,9 +149,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   }
 
   async function deleteOne(id: string) {
-    // Snapshot from the rendered list, not from inside the updater: React is free to
-    // call an updater more than once, and the assignment would not have landed yet
-    // when the catch block below reads it.
+    // Snapshot outside the updater: React may call an updater more than once, and the
+    // catch below needs the pre-delete list.
     const snapshot = words
     setWords((prev) => prev.filter((w) => w.id !== id))
     setSelected((prev) => {
@@ -198,23 +190,13 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     }
   }
 
-  // Bulk tag: union each selected word's own tags with the tags to add. It has to
-  // be one request per row, because a flat bulk UPDATE would write the same tag
-  // array over every row and an upsert cannot carry a partial row past the
-  // table's NOT NULL columns.
-  //
-  // `allSettled`, not `all`: a row that saved keeps its tag, only a row that
-  // failed reverts, and the message reports how many failed.
-  //
-  // `tagsFor` is per word rather than one array for all of them: the assistant
-  // returns a different set for each word, and the hand-typed box returns the
-  // same set for every word, which is the same function with a constant.
+  // One request per row: a flat bulk UPDATE would write the same tag array over every
+  // row, and an upsert cannot carry a partial row past the table's NOT NULL columns.
   async function applyTags(tagsFor: (w: UserWord) => string[]) {
     const ids = [...selected]
     if (ids.length === 0) return
-    // A word whose tags would not change is left out of the request entirely:
-    // the assistant often agrees with tags already there, and writing them back
-    // would burn a request per row to store what is already stored.
+    // Skip rows whose tags would not change: the assistant often returns tags
+    // that are already stored.
     const merged = new Map<string, string[]>()
     for (const w of words) {
       if (!ids.includes(w.id)) continue
@@ -240,10 +222,10 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
 
   const handleBulkTag = (tagsToAdd: string[]) => applyTags(() => tagsToAdd)
 
-  // The assistant answers per headword, so a word it skipped keeps its own tags
-  // rather than being cleared.
-  const handleAiTag = (tagsByHeadword: Map<string, string[]>) =>
-    applyTags((w) => tagsByHeadword.get(w.headword) ?? [])
+  // Per word, so a word the assistant skipped keeps its own tags. The key carries the
+  // language because "no" exists in both English and Spanish.
+  const handleAiTag = (tagsByKey: Map<string, string[]>) =>
+    applyTags((w) => tagsByKey.get(`${w.lang}:${w.headword}`) ?? [])
 
   async function handleBulkStatus(status: WordStatus) {
     const ids = [...selected]
@@ -262,10 +244,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     const original = words.find((w) => w.id === id)
     if (!original) return
     setEditWord(null)
-    // The dialog reports only the fields that changed, so opening a word and
-    // pressing Lưu without touching anything sends an empty patch. PostgREST
-    // refuses an empty update, which surfaced as "Không lưu được thay đổi" for
-    // a save that had nothing to save.
+    // The dialog reports only changed fields, so an untouched save sends an empty
+    // patch, and PostgREST refuses an empty update.
     if (Object.keys(patch).length === 0) return
     setWords((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)))
     try {
@@ -402,7 +382,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     </td>
                     <td className="px-3 py-2.5 align-top font-medium">{w.headword}</td>
                     <td className="px-3 py-2.5 align-top text-black/50"><Ipa value={w.ipa} lang={w.lang} /></td>
-                    <td className="px-3 py-2.5 align-top text-black/50">{posGroup(w.pos)?.labelEn ?? w.pos ?? ''}</td>
+                    <td className="px-3 py-2.5 align-top text-black/50">{posGroup(w.pos)?.labelVi ?? w.pos ?? ''}</td>
                     <td className="px-3 py-2.5 align-top">{w.meaningVi ?? ''}</td>
                     <td className="px-3 py-2.5 align-top text-black/50">{w.level ?? ''}</td>
                     <td className="px-3 py-2.5 align-top">
@@ -458,7 +438,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                 <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
               </div>
 
-              {w.pos && <span className="text-xs text-black/55">{posGroup(w.pos)?.labelEn ?? w.pos}</span>}
+              {w.pos && <span className="text-xs text-black/55">{posGroup(w.pos)?.labelVi ?? w.pos}</span>}
               {w.meaningVi && <p className="text-sm text-black/80">{w.meaningVi}</p>}
               {w.level && (
                 <span className="self-start rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/50">

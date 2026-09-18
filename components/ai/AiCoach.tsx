@@ -15,11 +15,9 @@ type State =
  * The assistant's panel for one saved word: a memory hook, the phrases the word
  * travels with, two worked examples and the words it is confused with.
  *
- * Behind a button rather than loaded with the row on purpose. A model call is the
- * most expensive thing a click can trigger here, and most of the time a learner
- * expanding a row wants the dictionary entry, which is already on screen above.
- * Nothing is cached across mounts: the answer is worth about one read, and a
- * learner who asks twice usually wants a second opinion.
+ * Behind a button: a model call is the most expensive thing a click here can trigger,
+ * and an expanded row usually wants the dictionary entry already on screen above.
+ * Nothing is cached across mounts; a learner who asks twice wants a second opinion.
  */
 export function AiCoach({ lang, headword, meaningVi }: {
   lang: LangCode
@@ -33,10 +31,16 @@ export function AiCoach({ lang, headword, meaningVi }: {
 
   async function ask() {
     setState({ status: 'loading' })
-    const outcome = await callAi('coach', { lang, headword, meaningVi })
-    setState(outcome.status === 'ok'
-      ? { status: 'ok', data: outcome.data }
-      : { status: 'error', message: outcome.message })
+    try {
+      const outcome = await callAi('coach', { lang, headword, meaningVi })
+      setState(outcome.status === 'ok'
+        ? { status: 'ok', data: outcome.data }
+        : { status: 'error', message: outcome.message })
+    } catch {
+      // `callAi` handles fetch failures, but its dynamic task-module import rejects
+      // after a redeploy, which would leave this stuck on the loading state.
+      setState({ status: 'error', message: 'Không hỏi được trợ lý. Vui lòng thử lại.' })
+    }
   }
 
   if (state.status === 'idle' || state.status === 'error') {
