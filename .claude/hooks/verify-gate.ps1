@@ -1,22 +1,17 @@
 #Requires -Version 7
 <#
-Stop hook. Holds the project's rule that a turn touching TypeScript is not over
-until lint, types and the related tests agree.
+Stop hook: a turn that touched TypeScript does not end until types, lint and the related
+tests agree.
 
-Two failures this script exists to avoid, both of which actually happened here:
+Two constraints this script exists to hold, both learned the hard way:
+  - It finds the repository from its own path. A hard-coded root went stale on a folder
+    rename and the gate was dead for months.
+  - A missing tool is a BLOCK, not a skip. A gate that cannot check must never report clean.
 
-1. It locates the repository from its own path, never from a hard-coded one. The
-   previous version pinned C:\Users\Hiep\Desktop\chesen; the folder was renamed
-   to zhesen and the gate went dead for months without a word.
-2. A tool it cannot find is a BLOCK, not a skip. The previous version wrapped
-   each check in `if (Test-Path $tool)`, so a wrong root meant every check was
-   skipped, $problems stayed empty, and the gate reported success having run
-   nothing. A gate that cannot check must never claim the code is clean.
-
-Contract (https://code.claude.com/docs/en/hooks):
+Hook contract (https://code.claude.com/docs/en/hooks):
   exit 0  the turn may end
-  exit 2  the turn may not end; stderr becomes the reason Claude is given
-  exit 1  does NOT block. Never use it to enforce anything.
+  exit 2  the turn may not end; stderr becomes the reason given to Claude
+  exit 1  does NOT block, so it can never enforce anything
 #>
 
 $ErrorActionPreference = 'Continue'
@@ -26,10 +21,8 @@ function Deny([string]$Message) {
   exit 2
 }
 
-# --- Anti-loop -------------------------------------------------------------
-# stop_hook_active is true when Claude is already continuing because of this
-# hook. Blocking again on a condition the model cannot resolve would spin until
-# Claude Code's own 8-block ceiling cuts it off.
+# stop_hook_active means Claude is already continuing because of this hook. Blocking again
+# on something it cannot resolve would spin until Claude Code's 8-block ceiling cuts it off.
 try {
   $raw = [Console]::In.ReadToEnd()
   if ($raw) {
@@ -37,26 +30,21 @@ try {
     if ($stdin.stop_hook_active) { exit 0 }
   }
 } catch {
-  # Unparseable stdin is not a reason to let unverified code through, but it is
-  # also not evidence of a problem. Carry on and let the checks decide.
+  # Unparseable stdin is not evidence of a problem, and not a reason to pass unverified code.
 }
 
-# --- Locate the repository -------------------------------------------------
-# $PSScriptRoot is <repo>\.claude\hooks, so the repo is two levels up. This is
-# independent of the working directory, of $env:CLAUDE_PROJECT_DIR, and of git.
+# $PSScriptRoot is <repo>\.claude\hooks, independent of the working directory and of git.
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 if (-not (Test-Path (Join-Path $root 'package.json'))) {
-  Deny "verify-gate: khong tim thay package.json o '$root'. Hook nam sai cho, khong the verify."
+  Deny "verify-gate: no package.json at '$root'. The hook is in the wrong place and cannot verify."
 }
 Set-Location $root
 
-# Heartbeat. The one thing a silently disabled gate cannot fake is a fresh
-# timestamp here, so it is how you check the gate is alive.
+# A silently disabled gate cannot fake a fresh timestamp, so this is how to check it is alive.
 Set-Content -LiteralPath (Join-Path $root '.claude\.verify-gate-last-run') `
             -Value (Get-Date -Format 'o') -Encoding utf8
 
-# --- Which files changed ---------------------------------------------------
-# -z gives NUL-separated, unquoted paths: without it git escapes non-ASCII names
+# -z gives NUL-separated, unquoted paths. Without it git escapes non-ASCII names
 # (core.quotepath) and Test-Path silently misses them.
 $changed = @()
 $fields = (git status --porcelain -z 2>$null) -split "`0" | Where-Object { $_ -ne '' }
@@ -73,14 +61,12 @@ for ($i = 0; $i -lt $fields.Count; $i++) {
 }
 if ($changed.Count -eq 0) { exit 0 }
 
-# --- The checks ------------------------------------------------------------
-# Mirrors `npm run verify` in package.json, minus the whole-suite test run:
-# `vitest related` walks the module graph instead, so only tests that actually
-# import a changed file run.
+# Mirrors `npm run verify`, minus the whole-suite run: `vitest related` walks the module
+# graph so only tests that import a changed file run.
 function Tool([string]$Name) {
   $path = Join-Path $root "node_modules\.bin\$Name.cmd"
   if (-not (Test-Path -LiteralPath $path)) {
-    Deny "verify-gate: thieu node_modules\.bin\$Name.cmd. Chay 'npm ci' roi thu lai. KHONG bo qua buoc nay: mot moi truong khong chay duoc kiem tra thi khong the tuyen bo code sach."
+    Deny "verify-gate: node_modules\.bin\$Name.cmd is missing. Run 'npm ci' and try again. Do not skip this step: an environment that cannot run the checks cannot declare the code clean."
   }
   return $path
 }
@@ -98,10 +84,10 @@ if ($LASTEXITCODE -ne 0) { $problems += "[vitest related] FAIL`n$out" }
 
 if ($problems.Count -gt 0) {
   Deny (@(
-    '=== VERIFY GATE: chua the ket thuc luot ==='
+    '=== VERIFY GATE: this turn cannot end ==='
     ($problems -join "`n`n")
-    'Sua cho hong, dung sua test cho qua.'
-    'Neu vua doi giao dien: build lai roi mo app bam thu, va dan bang chung runtime.'
+    'Fix the code. Do not edit a test to make it pass.'
+    'If the UI changed: rebuild, click through it, and paste the runtime evidence.'
   ) -join "`n`n")
 }
 
