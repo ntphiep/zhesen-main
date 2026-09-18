@@ -172,6 +172,20 @@ thời gian trong `.claude/.verify-gate-last-run`.
   Vercel là `iad1` Washington, tức mỗi truy vấn trượt cache đi vòng qua Mỹ rồi sang Seoul.
   Chuyển database sang region khác thì phải đổi `regions` theo, nếu không mất đúng khoản
   vừa tiết kiệm. Mã region: https://vercel.com/docs/regions
+- **`lex.search_vi` ghim `pg_trgm.similarity_threshold = 0.45` trên chính function**
+  (`0044`). Mặc định 0,3 làm toán tử `%` lấy ra 19.206 dòng để giữ 166: đo trên
+  `lex.search_vi('bầu trời', array['en','es','zh'], 24)` thì recheck chiếm 3.116 ms trong
+  3.461 ms, và 3.350 heap block xuống còn 1.187 ở 0,45. Chất lượng không đổi, đo trên 18
+  lượt tra: ba kết quả đầu y nguyên, 16 lượt vẫn đủ 24 dòng. Viết lại function thì giữ
+  `SET` đó, và nhớ `select extensions.similarity('a','b')` trước khi `alter function ...
+  set pg_trgm.*`: pg_trgm không preload nên GUC còn là placeholder và lệnh báo
+  `42501 permission denied to set parameter`. KHÔNG đặt ngưỡng này ở role hay database:
+  `lex.search` và `lex.suggest` khớp headword ngắn và chiều xuôi đã nhanh.
+- **Role `anon` bị ghim `statement_timeout = 3s`**, `authenticated` là 8 giây. Một câu
+  truy vấn nguội vượt 3 giây trả `SQLSTATE 57014` chứ không chỉ chậm, và build chết theo
+  vì `/learn/[lang]` dựng sẵn lúc build: đã xảy ra ở `/learn/en` với `canceling statement
+  due to statement timeout`, chạy lại thì xanh. Gói Free là compute Nano, `shared_buffers`
+  224 MB trên 383 MB dữ liệu, nên đuôi dài là đọc đĩa chứ không phải shape truy vấn.
 - **`VACUUM` thường không trả dung lượng về đĩa**, chỉ đánh dấu chỗ trống để tái dùng.
 - **Mọi `update` trong migration phải idempotent theo trạng thái ĐÍCH, không phải theo
   trạng thái NGUỒN.** Migration `0017` từng chỉ lọc theo cột `srs_*` cũ; các cột đó đóng
