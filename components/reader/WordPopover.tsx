@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Ipa } from '@/components/ui/Ipa'
 import { AddToWordlistButton } from '@/components/lookup/AddToWordlistButton'
 import { entryPath } from '@/lib/dictionary/entryId'
+import { LinkPending } from '@/components/ui/LinkPending'
 import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
 
 // Only inline-capable elements (span / a / button) so the popover is valid HTML
@@ -21,6 +22,7 @@ export function WordPopover({ entry, charInfo }: { entry?: DictEntryPreview; cha
         <span className="mt-2 flex items-center gap-3">
           <Link href={entryPath(entry.id)} className="text-sm text-blue-700 hover:underline">
             Xem chi tiết
+            <LinkPending />
           </Link>
           <AddToWordlistButton entry={entry} />
         </span>

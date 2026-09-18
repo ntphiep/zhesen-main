@@ -113,6 +113,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
             <span className="font-medium">{e.headword}</span>
             <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/40" />
             {e.glossVi && <span className="truncate text-sm text-black/55">{e.glossVi}</span>}
+            <LinkPending />
           </Link>
         ))}
       </div>

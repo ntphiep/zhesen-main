@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Ipa } from '@/components/ui/Ipa'
 import { SearchBox } from '@/components/search/SearchBox'
 import { entryPath } from '@/lib/dictionary/entryId'
+import { LinkPending } from '@/components/ui/LinkPending'
 import type { Language } from '@/lib/languages'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { LevelSummary } from '@/lib/dictionary/levels'
@@ -62,6 +63,7 @@ export function LanguageHub({ language, common, levels }: { language: Language; 
                 <span className="font-medium">{e.headword}</span>
                 <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/40" />
                 {e.glossVi && <span className="truncate text-sm text-black/55">{e.glossVi}</span>}
+                <LinkPending />
               </Link>
             ))}
           </div>

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { entryPath } from '@/lib/dictionary/entryId'
+import { LinkPending } from '@/components/ui/LinkPending'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import { posGroup } from '@/lib/dictionary/pos'
 import { genderFromCode } from '@/lib/dictionary/gender'
@@ -51,6 +52,7 @@ export function CrossLanguagePanel({ siblings }: { siblings: CrossLangSibling[] 
                     {(s.glossVi || s.glossEn) && (
                       <span className="text-sm text-black/55">{s.glossVi || s.glossEn}</span>
                     )}
+                    <LinkPending />
                   </Link>
                 </li>
               )

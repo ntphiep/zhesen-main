@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { entryPath } from '@/lib/dictionary/entryId'
+import { LinkPending } from '@/components/ui/LinkPending'
 import type { ContainingWord } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 
@@ -29,6 +30,7 @@ export function ContainingWords({ words, lang }: { words: ContainingWord[]; lang
             >
               <span className="font-medium">{w.headword}</span>
               {w.glossVi && <span className="text-sm text-black/60">{w.glossVi}</span>}
+              <LinkPending />
             </Link>
           </li>
         ))}

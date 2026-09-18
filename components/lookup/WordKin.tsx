@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { entryPath } from '@/lib/dictionary/entryId'
+import { LinkPending } from '@/components/ui/LinkPending'
 import { posGroup } from '@/lib/dictionary/pos'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 
@@ -38,7 +39,7 @@ export function WordKin({ words }: { words: DictEntryPreview[] }) {
                 {g.words.map((w) => (
                   <tr key={w.id} className="border-t border-black/5 align-baseline">
                     <td className="px-2 py-1.5">
-                      <Link href={entryPath(w.id)} className="font-medium hover:underline">{w.headword}</Link>
+                      <Link href={entryPath(w.id)} className="font-medium hover:underline">{w.headword}<LinkPending /></Link>
                     </td>
                     <td className="px-2 py-1.5 whitespace-nowrap text-xs text-black/55">{w.level ?? ''}</td>
                     <td className="px-2 py-1.5 text-black/60">{w.glossVi || w.glossEn || ''}</td>

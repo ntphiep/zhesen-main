@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Ipa } from '@/components/ui/Ipa'
 import { entryPath } from '@/lib/dictionary/entryId'
+import { LinkPending } from '@/components/ui/LinkPending'
 import type { DailyWord } from '@/lib/dictionary/wordOfDay'
 
 export function WordOfDayCard({ word }: { word: DailyWord | null }) {
@@ -20,6 +21,7 @@ export function WordOfDayCard({ word }: { word: DailyWord | null }) {
         {word.glossVi && <div className="mt-0.5 text-sm text-black/60">{word.glossVi}</div>}
       </div>
       <span className="text-sm font-medium text-black/40 transition group-hover:text-black/70">Xem →</span>
+      <LinkPending />
     </Link>
   )
 }

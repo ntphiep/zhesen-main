@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { entryPath } from '@/lib/dictionary/entryId'
+import { LinkPending } from '@/components/ui/LinkPending'
 import { AiSuggest } from './AiSuggest'
 import { detectOrder, orderByBestMatch } from '@/lib/dictionary/detect'
 import { pushRecent, readRecent, writeRecent } from '@/lib/dictionary/recent'
@@ -230,6 +231,7 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
                   <span className="font-medium">{e.headword}</span>
                   <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/40" />
                   {e.glossVi && <span className="text-sm text-black/60">{e.glossVi}</span>}
+                  <LinkPending />
                 </Link>
               </li>
             )

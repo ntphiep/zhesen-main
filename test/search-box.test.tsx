@@ -39,6 +39,16 @@ describe('SearchBox', () => {
     expect(fetch).toHaveBeenCalled()
   })
 
+  // A result row is the click that waits longest in this app: the entry page
+  // behind it is dynamic and took 2,101 ms on a local production build. The dot
+  // is what says the click was heard, and it went missing here once already.
+  it('gives each result row a pending marker for the click', async () => {
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('combobox'), 'dog')
+    const link = await screen.findByRole('link', { name: /dog/ })
+    expect(link.querySelector('.link-pending')).not.toBeNull()
+  })
+
   it('prefetches a result route on hover', async () => {
     render(<SearchBox initialQuery="" />)
     await userEvent.type(screen.getByRole('combobox'), 'dog')
