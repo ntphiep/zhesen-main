@@ -27,6 +27,9 @@ Six subagents in `.claude/agents/` cover planning, implementation, tests, review
 QA and the backlog. Delegate a step to the one that owns it rather than doing every step
 in one context.
 
+One identity owns this repository: `Harry Nguyen <ng.hiep0822@gmail.com>`, GitHub `ntphiep`.
+Never commit, push or open an issue under another account.
+
 ## Commands
 
 | Command | Purpose |
