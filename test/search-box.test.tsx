@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SearchBox } from '@/components/search/SearchBox'
+import { resetTargetsCache } from '@/lib/dictionary/targetLangs'
 
 const preview = (id: string, lang: string, headword: string, glossVi: string, extra: Partial<Record<'level' | 'pos', string | null>> = {}) => ({
   id, lang, headword, traditional: null, level: extra.level ?? null, ipa: null, pos: extra.pos ?? null, glossVi, glossEn: null, audioUrl: null,
@@ -236,5 +237,64 @@ describe('SearchBox', () => {
     await screen.findByRole('link', { name: /dog/ })
     expect(screen.getAllByRole('link').map((l) => l.getAttribute('href')))
       .toEqual(['/dictionary/en/dog', '/dictionary/en/hound'])
+  })
+})
+
+describe('SearchBox target languages', () => {
+  beforeEach(() => { localStorage.clear(); resetTargetsCache() })
+
+  it('asks for all three languages until one is unchecked', async () => {
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('combobox'), 'dog')
+    await screen.findByRole('link', { name: /dog/ })
+    const url = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
+    expect(url).not.toContain('langs=')
+  })
+
+  it('asks the route for one language when the others are unchecked', async () => {
+    render(<SearchBox initialQuery="" />)
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Tiếng Tây Ban Nha' }))
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Tiếng Trung' }))
+    await userEvent.type(screen.getByRole('combobox'), 'dog')
+    await screen.findByRole('link', { name: /dog/ })
+    const urls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0] as string)
+    expect(urls.at(-1)).toContain('langs=en')
+  })
+
+  // Asking for nothing reads as "all three" at the route, so the control would stop
+  // meaning what it shows.
+  it('keeps the last language checked', async () => {
+    render(<SearchBox initialQuery="" />)
+    for (const name of ['Tiếng Tây Ban Nha', 'Tiếng Trung', 'Tiếng Anh']) {
+      await userEvent.click(screen.getByRole('checkbox', { name }))
+    }
+    expect(screen.getByRole('checkbox', { name: 'Tiếng Anh' })).toBeChecked()
+  })
+
+  it('remembers the choice for the next visit', async () => {
+    const { unmount } = render(<SearchBox initialQuery="" />)
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Tiếng Trung' }))
+    unmount()
+    render(<SearchBox initialQuery="" />)
+    expect(screen.getByRole('checkbox', { name: 'Tiếng Trung' })).not.toBeChecked()
+  })
+})
+
+describe('SearchBox on the Vietnamese-first page', () => {
+  it('asks the route for the reverse direction and shows only what it answered', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => response({
+        reverse: { en: [{ ...preview('en:dog', 'en', 'dog', 'Con chó'), matchScore: 4 }], zh: [], es: [] },
+      }),
+    })))
+    render(<SearchBox initialQuery="" direction="reverse" />)
+    await userEvent.type(screen.getByRole('combobox'), 'con chó')
+    const link = await screen.findByRole('link', { name: /dog/ })
+    expect(link).toHaveAttribute('href', '/dictionary/en/dog')
+    const url = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
+    expect(url).toContain('dir=reverse')
+    // The whole page is the reverse direction, so labelling each group with it is noise.
+    expect(screen.queryByText(/dịch từ tiếng Việt/)).toBeNull()
   })
 })

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { entryPath } from '@/lib/dictionary/entryId'
@@ -7,14 +7,15 @@ import { LinkPending } from '@/components/ui/LinkPending'
 import { AiSuggest } from './AiSuggest'
 import { detectOrder, orderByBestMatch } from '@/lib/dictionary/detect'
 import { pushRecent, readRecent, writeRecent } from '@/lib/dictionary/recent'
+import { serverTargetsSnapshot, setTargets, subscribeTargets, targetsSnapshot, toggleTarget } from '@/lib/dictionary/targetLangs'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import { posGroups, splitPos, type PosGroup } from '@/lib/dictionary/pos'
 import { Ipa } from '@/components/ui/Ipa'
 import { PosTag } from '@/components/ui/PosTag'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import { bestScore, EMPTY_SEARCH_RESPONSE, type SearchResponse } from '@/lib/dictionary/response'
-import { fetchSearch } from '@/lib/dictionary/searchClient'
-import type { LangCode } from '@/lib/languages'
+import { fetchSearch, searchQueryString } from '@/lib/dictionary/searchClient'
+import { LANG_CODES, type LangCode } from '@/lib/languages'
 
 type ByLang = SearchResponse['forward']
 
@@ -28,8 +29,17 @@ const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 /**
  * Auto-detecting, bidirectional search box over the cached /dictionary/search route:
  * forward (en/es/zh), plus reverse (vi -> en/es/zh) when the query looks Vietnamese.
+ *
+ * `direction="reverse"` is the Vietnamese-first page: the query is Vietnamese because the
+ * page says so, so no forward search runs and no detection decides anything.
  */
-export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { initialQuery?: string; autoFocus?: boolean; lang?: LangCode }) {
+export function SearchBox({ initialQuery = '', autoFocus = false, lang, direction = 'both' }: {
+  initialQuery?: string
+  autoFocus?: boolean
+  lang?: LangCode
+  direction?: 'both' | 'reverse'
+}) {
+  const reverseOnly = direction === 'reverse'
   const [query, setQuery] = useState(initialQuery)
   const [data, setData] = useState<SearchResponse>(EMPTY_SEARCH_RESPONSE)
   const [loading, setLoading] = useState(false)
@@ -41,6 +51,9 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   const [posFilter, setPosFilter] = useState<string | null>(null)
   // readRecent must stay SSR-guarded: this lazy initializer also runs in the server pass.
   const [recent, setRecent] = useState<string[]>(readRecent)
+  // Not lazy state the way `recent` does it: that value renders before hydration, and a
+  // stored choice differing from the server's pass is React #418 on the summary text.
+  const targets = useSyncExternalStore(subscribeTargets, targetsSnapshot, serverTargetsSnapshot)
   const [focused, setFocused] = useState(false)
   const cache = useRef(new Map<string, SearchResponse>())
   const router = useRouter()
@@ -59,7 +72,8 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   useEffect(() => {
     const q = query.trim()
     if (!q) return
-    const key = q.toLowerCase()
+    const opts = { langs: targets, direction } as const
+    const key = searchQueryString(q.toLowerCase(), opts)
     const ctrl = new AbortController()
     let id: ReturnType<typeof setTimeout> | undefined
     async function run() {
@@ -68,7 +82,7 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
       setLoading(true)
       id = setTimeout(async () => {
         try {
-          const outcome = await fetchSearch(q, ctrl.signal)
+          const outcome = await fetchSearch(q, ctrl.signal, opts)
           // A refusal body is not a result set; caching it would replay the refusal
           // on every later keystroke.
           if (outcome.status === 'refused') { setRefused(true); setData(EMPTY_SEARCH_RESPONSE); return }
@@ -89,14 +103,17 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
     }
     run()
     return () => { if (id) clearTimeout(id); ctrl.abort() }
-  }, [query])
+  }, [query, targets, direction])
 
   const forward = data.forward
   const reverse = data.reverse
-  const order = useMemo(
-    () => (lang ? [lang] : orderByBestMatch(detectOrder(query), forward, reverse)),
-    [query, lang, forward, reverse],
-  )
+  const order = useMemo(() => {
+    if (lang) return [lang]
+    // The Vietnamese-first page has nothing to detect: the query is Vietnamese, and the
+    // groups are target languages, so they keep their own order.
+    const picked = (reverseOnly ? LANG_CODES : detectOrder(query)).filter((l) => targets.includes(l))
+    return reverseOnly ? picked : orderByBestMatch(picked, forward, reverse)
+  }, [query, lang, targets, reverseOnly, forward, reverse])
   const hasReverse = order.some((l) => reverse[l].length > 0)
 
   // Unfiltered, both directions: filter options derive from this, so a chip appears
@@ -162,6 +179,9 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
     if (activeHref) router.prefetch(activeHref)
   }, [activeHref, router])
 
+  function chooseTarget(l: LangCode) {
+    setTargets(toggleTarget(targets, l))
+  }
   function remember(q: string) {
     const next = pushRecent(recent, q)
     setRecent(next)
@@ -187,8 +207,10 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
   // is what announces the highlighted row; `aria-selected` alone announces nothing.
   const optionId = (entryId: string) => `search-option-${entryId.replace(/[^\w-]/g, '_')}`
   const activeId = flat[active] ? optionId(flat[active].id) : undefined
+  // On the Vietnamese-first page every group is a translation from Vietnamese, so saying
+  // so on each one is noise; on the mixed page it is the only thing telling them apart.
   const groupLabel = (l: LangCode, reversed: boolean) =>
-    reversed ? `${LANG_LABELS[l]}, dịch từ tiếng Việt` : LANG_LABELS[l]
+    reversed && !reverseOnly ? `${LANG_LABELS[l]}, dịch từ tiếng Việt` : LANG_LABELS[l]
 
   function renderGroup(lang: LangCode, entries: DictEntryPreview[], reversed: boolean) {
     if (entries.length === 0) return null
@@ -196,7 +218,9 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
       <div key={`${reversed ? 'rev' : 'fwd'}-${lang}`} className="flex flex-col gap-1">
         <span className="text-xs font-semibold uppercase tracking-wide text-black/40" aria-hidden="true">
           {LANG_LABELS[lang]}
-          {reversed && <span className="ml-1 normal-case text-black/30">· dịch từ tiếng Việt</span>}
+          {reversed && !reverseOnly && (
+            <span className="ml-1 normal-case text-black/30">· dịch từ tiếng Việt</span>
+          )}
         </span>
         {/* Carries the language name the heading shows visually, so a listbox reader
             hears which language a row belongs to. */}
@@ -231,27 +255,62 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
     )
   }
 
+  const allTargets = targets.length === LANG_CODES.length
+
   return (
     <div className="relative flex flex-col gap-3">
-      <input
-        type="text"
-        autoFocus={autoFocus}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={onKeyDown}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        id="dictionary-search"
-        name="q"
-        aria-label="Tra cứu từ"
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded={total > 0}
-        aria-controls="dictionary-search-results"
-        aria-activedescendant={activeId}
-        placeholder="Nhập từ cần tra (Anh · Trung · Tây Ban Nha · Việt)..."
-        className="w-full rounded-xl border border-black/15 px-4 py-3 text-base shadow-sm focus:border-black/40 focus:outline-none"
-      />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+        <input
+          type="text"
+          autoFocus={autoFocus}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={onKeyDown}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          id="dictionary-search"
+          name="q"
+          aria-label="Tra cứu từ"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={total > 0}
+          aria-controls="dictionary-search-results"
+          aria-activedescendant={activeId}
+          placeholder={reverseOnly
+            ? 'Nhập từ tiếng Việt...'
+            : 'Nhập từ cần tra (Anh · Trung · Tây Ban Nha · Việt)...'}
+          className="w-full rounded-xl border border-black/15 px-4 py-3 text-base shadow-sm focus:border-black/40 focus:outline-none sm:flex-1"
+        />
+        {/* A native disclosure, so the list opens and closes with no state and no outside-click
+            handler, and the summary stays keyboard-reachable. `lang` means the caller already
+            fixed the language, and the control would contradict it. */}
+        {!lang && (
+          <details className="relative shrink-0">
+            <summary className="flex cursor-pointer list-none items-center gap-2 rounded-xl border border-black/15 px-4 py-3 text-sm shadow-sm hover:bg-black/5">
+              <span className="text-black/60">Dịch sang</span>
+              <span className="font-medium">
+                {allTargets ? 'Tất cả' : targets.map((l) => LANG_LABELS[l]).join(', ')}
+              </span>
+            </summary>
+            <fieldset className="absolute right-0 z-20 mt-1 flex min-w-56 flex-col gap-1 rounded-xl border border-black/15 bg-white p-2 shadow-lg">
+              <legend className="sr-only">Ngôn ngữ cần dịch sang</legend>
+              {LANG_CODES.map((l) => (
+                <label key={l} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-black/5">
+                  <input
+                    type="checkbox"
+                    name="target-lang"
+                    value={l}
+                    checked={targets.includes(l)}
+                    onChange={() => chooseTarget(l)}
+                    className="size-4"
+                  />
+                  {LANG_LABELS[l]}
+                </label>
+              ))}
+            </fieldset>
+          </details>
+        )}
+      </div>
       {showRecent && (
         <div className="flex flex-col gap-1">
           <span className="text-xs font-semibold uppercase tracking-wide text-black/40">Tìm gần đây</span>

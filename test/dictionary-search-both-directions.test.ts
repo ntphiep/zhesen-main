@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { searchBothDirections } from '@/lib/dictionary/search'
+import { searchBothDirections, searchVietnameseFirst } from '@/lib/dictionary/search'
 
 const row = (lang: string, headword: string, rank: number) => ({
   id: `${lang}:${headword}`, lang, headword, traditional: null, level: null,
@@ -98,5 +98,49 @@ describe('searchBothDirections', () => {
       suggestions: [],
     })
     expect(rpc).not.toHaveBeenCalled()
+  })
+})
+
+describe('target languages', () => {
+  it('asks the database only for the languages requested', async () => {
+    const { client, rpc } = mockClient({ en: [4.02], es: [2], zh: [2] })
+    const out = await searchBothDirections(client, 'dog', 8, ['en'])
+    const asked = rpc.mock.calls.filter(([name]) => name === 'search').map(([, a]) => a.p_langs)
+    expect(asked).toEqual([['en']])
+    expect(out.forward.es).toEqual([])
+    expect(out.forward.zh).toEqual([])
+  })
+
+  it('passes the same list to the Vietnamese lookup', async () => {
+    const { client, rpc } = mockClient({ en: [], es: [], zh: [] }, ['家'])
+    await searchBothDirections(client, 'nhà', 8, ['en', 'zh'])
+    const vi = rpc.mock.calls.find(([name]) => name === 'search_vi')
+    expect(vi?.[1].p_langs).toEqual(['en', 'zh'])
+  })
+
+  it('touches nothing when no language is wanted', async () => {
+    const { client, rpc } = mockClient({ en: [4], es: [], zh: [] })
+    const out = await searchBothDirections(client, 'dog', 8, [])
+    expect(rpc).not.toHaveBeenCalled()
+    expect(out.suggestions).toEqual([])
+  })
+})
+
+describe('searchVietnameseFirst', () => {
+  // The page declares the direction, so a Vietnamese word typed without tone marks
+  // must not have to lose a forward search first.
+  it('runs the Vietnamese lookup and never the forward search', async () => {
+    const { client, called } = mockClient({ en: [4.02], es: [], zh: [] }, ['家'])
+    const out = await searchVietnameseFirst(client, 'nha')
+    expect(called('search_vi')).toBe(true)
+    expect(called('search')).toBe(false)
+    expect(out.forward).toEqual({ en: [], zh: [], es: [] })
+    expect(out.reverse.zh.map((e) => e.headword)).toEqual(['家'])
+  })
+
+  it('falls back to suggestions when the Vietnamese lookup found nothing', async () => {
+    const { client, called } = mockClient({ en: [], es: [], zh: [] }, [])
+    await searchVietnameseFirst(client, 'xyzzy')
+    expect(called('suggest')).toBe(true)
   })
 })

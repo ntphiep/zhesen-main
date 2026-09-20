@@ -1,8 +1,9 @@
 import { unstable_cache } from 'next/cache'
 import { createContentClient } from '@/lib/supabase/content'
-import { searchBothDirections } from '@/lib/dictionary/search'
+import { searchBothDirections, searchVietnameseFirst } from '@/lib/dictionary/search'
 import { EMPTY_SEARCH_RESPONSE } from '@/lib/dictionary/response'
 import { clientKey, createColdQueryLimiter, createRateLimiter } from '@/lib/http/rateLimit'
+import { isLangCode, LANG_CODES, type LangCode } from '@/lib/languages'
 
 // Cache search results server-side, keyed by the normalized query. This removes the
 // per-keystroke cross-region round-trip to Supabase for any prefix anyone has typed
@@ -12,11 +13,25 @@ import { clientKey, createColdQueryLimiter, createRateLimiter } from '@/lib/http
 // forget it at the same moment.
 const SEARCH_CACHE_SECONDS = 3600
 
+// The language list and the direction are part of the key, not a filter applied to a
+// cached three-language answer: a one-language request asks the database for one
+// language, so it cannot be served from the entry the three-language request stored.
 const cachedSearch = unstable_cache(
-  (q: string) => searchBothDirections(createContentClient(), q),
+  (q: string, langs: LangCode[], reverseOnly: boolean) => (reverseOnly
+    ? searchVietnameseFirst(createContentClient(), q, 8, langs)
+    : searchBothDirections(createContentClient(), q, 8, langs)),
   ['dict-search-all'],
   { revalidate: SEARCH_CACHE_SECONDS, tags: ['lex'] },
 )
+
+/** The `langs` parameter, in the canonical order, or all three when it names none of
+ *  them. Canonical because the list is part of the cache key, and `en,es` and `es,en`
+ *  are the same request. */
+function targetLangs(raw: string | null): LangCode[] {
+  const asked = new Set((raw ?? '').split(',').map((l) => l.trim()).filter(isLangCode))
+  const picked = LANG_CODES.filter((l) => asked.has(l))
+  return picked.length > 0 ? picked : [...LANG_CODES]
+}
 
 // Only a query the cache has never seen reaches Supabase, so a caller feeding the
 // route random strings misses every time and spends the database budget directly.
@@ -88,13 +103,16 @@ export async function GET(request: Request) {
     if (!perCaller.allowed) return tooFast(perCaller.retryAfterSeconds)
   }
 
-  const q = truncate(new URL(request.url).searchParams.get('q')?.trim() ?? '')
+  const params = new URL(request.url).searchParams
+  const q = truncate(params.get('q')?.trim() ?? '')
   if (!q) return Response.json(EMPTY_SEARCH_RESPONSE)
 
+  const langs = targetLangs(params.get('langs'))
+  const reverseOnly = params.get('dir') === 'reverse'
   const key = q.toLowerCase()
-  const cold = admitColdQuery(key)
+  const cold = admitColdQuery(`${reverseOnly ? 'vi' : 'both'}:${langs.join(',')}:${key}`)
   if (!cold.allowed) return tooFast(cold.retryAfterSeconds)
 
-  const data = await cachedSearch(key)
+  const data = await cachedSearch(key, langs, reverseOnly)
   return Response.json(data, { headers: CACHE_HEADERS })
 }
