@@ -12,6 +12,7 @@ import { LinkPending } from '@/components/ui/LinkPending'
  */
 const NAV = [
   { href: '/dictionary', label: 'Tra cứu', prefetch: true },
+  { href: '/dictionary/reverse', label: 'Tra Việt', prefetch: true },
   { href: '/grammar', label: 'Ngữ pháp', prefetch: true },
   { href: '/practice', label: 'Luyện tập', prefetch: false },
   { href: '/wordlist', label: 'Sổ tay', prefetch: false },
@@ -19,6 +20,11 @@ const NAV = [
 
 export function SiteHeader() {
   const path = usePathname() || '/'
+  // The longest match wins. /dictionary/reverse is inside /dictionary, so a plain prefix
+  // test lights both of them up at once.
+  const current = NAV.map((n) => n.href)
+    .filter((h) => path === h || path.startsWith(h + '/'))
+    .sort((a, b) => b.length - a.length)[0]
   return (
     <header className="sticky top-0 z-30 border-b border-black/10 bg-white/85 backdrop-blur">
       <nav className="mx-auto flex max-w-5xl items-center gap-1 px-6 py-3">
@@ -26,7 +32,7 @@ export function SiteHeader() {
           Zhesen
         </Link>
         {NAV.map((n) => {
-          const active = path === n.href || path.startsWith(n.href + '/')
+          const active = n.href === current
           return (
             <Link
               key={n.href}
