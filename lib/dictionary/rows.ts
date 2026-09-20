@@ -1,7 +1,7 @@
 import { z } from '@/lib/zod'
 import type { LangCode } from '@/lib/languages'
 import type { ContainingWord, DictEntryPreview, DictSense, DictPron, SuggestionPreview } from './types'
-import { cleanMtGloss } from './textQuality'
+import { cleanMtGloss, cleanGlossVi } from './textQuality'
 import { audioMatchesHeadword } from './pronunciation'
 
 /**
@@ -163,7 +163,7 @@ export function pickPrimarySense(senses: DictSense[]): DictSense | null {
 }
 
 export function toSenses(rows: SenseRow[] | null): DictSense[] {
-  return (rows ?? []).map((r) => ({ pos: r.pos, glossVi: cleanMtGloss(r.gloss_vi), glossEn: r.gloss_en, senseOrder: r.sense_order }))
+  return (rows ?? []).map((r) => ({ pos: r.pos, glossVi: cleanGlossVi(cleanMtGloss(r.gloss_vi)), glossEn: r.gloss_en, senseOrder: r.sense_order }))
 }
 export function toProns(rows: PronRow[] | null): DictPron[] {
   return (rows ?? []).map((r) => ({ accent: r.accent, ipa: r.ipa, audioUrl: r.audio_url }))
@@ -189,7 +189,7 @@ export function toPreview(r: EntryPreviewRow): DictEntryPreview {
 export function toPreviewFromSearchRow(r: SearchRpcRow): DictEntryPreview {
   return {
     id: r.id, lang: r.lang, headword: r.headword, traditional: r.traditional, level: r.level,
-    ipa: r.ipa, pos: r.pos, glossVi: r.gloss_vi, glossEn: r.gloss_en,
+    ipa: r.ipa, pos: r.pos, glossVi: cleanGlossVi(r.gloss_vi), glossEn: r.gloss_en,
     audioUrl: audioMatchesHeadword(r.audio_url, r.headword) ? r.audio_url : null,
     // `lex.entries.attributes->>'pinyin'` covers every Chinese entry including multi-syllable
     // ones; `lex.characters.pinyin` holds single characters only.
@@ -200,7 +200,7 @@ export function toPreviewFromSearchRow(r: SearchRpcRow): DictEntryPreview {
 }
 
 export function toSuggestion(r: SuggestRow): SuggestionPreview {
-  return { id: r.id, lang: r.lang, headword: r.headword, glossVi: r.gloss_vi }
+  return { id: r.id, lang: r.lang, headword: r.headword, glossVi: cleanGlossVi(r.gloss_vi) }
 }
 
 /** Row from the `lex.entries_containing` RPC
@@ -220,6 +220,6 @@ export type ContainingRow = z.infer<typeof containingRow>
 export function toContaining(r: ContainingRow): ContainingWord {
   return {
     id: r.id, lang: r.lang, headword: r.headword, traditional: r.traditional,
-    level: r.level, glossVi: r.gloss_vi, glossEn: r.gloss_en,
+    level: r.level, glossVi: cleanGlossVi(r.gloss_vi), glossEn: r.gloss_en,
   }
 }

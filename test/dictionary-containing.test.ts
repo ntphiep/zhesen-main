@@ -14,7 +14,7 @@ describe('getEntriesContaining', () => {
     const { client } = mockClient([row('学生'), row('大学')])
     const out = await getEntriesContaining(client, 'zh', '学')
     expect(out.map((w) => w.headword)).toEqual(['学生', '大学'])
-    expect(out[0]).toMatchObject({ id: 'zh:学生', lang: 'zh', glossVi: 'nghĩa', glossEn: null })
+    expect(out[0]).toMatchObject({ id: 'zh:学生', lang: 'zh', glossVi: 'Nghĩa', glossEn: null })
   })
 
   it('asks the database for the language and word it was given', async () => {

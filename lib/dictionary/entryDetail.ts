@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { DictEntryDetail, DictEntryPreview, DictSense, DictExample, DictRelation, CrossLangSibling, TermPreview, CharInfo, WordForm } from './types'
 import { entryDetailRow, crossLanguageSourceRow, crossLangSiblingRow, termPreviewRow, pivotViRow, inflectionRow, charRow, toPreview, toSenses, toProns } from './rows'
-import { fillPivotVi, cleanMtGloss } from './textQuality'
+import { fillPivotVi, cleanMtGloss, cleanGlossVi } from './textQuality'
 import { entryPivots, cleanGlossTerm } from './crosslang'
 import { PREVIEW_SELECT } from './entrySelect'
 import { searchAllLanguagesVi } from './search'
@@ -55,7 +55,7 @@ async function withPivotVi(supabase: SupabaseClient, senses: DictSense[]): Promi
   const viByTerm = new Map<string, string>()
   for (const row of pivotViRow.array().parse(data ?? [])) {
     const vi = [...(row.senses ?? [])].sort((a, b) => a.sense_order - b.sense_order)
-      .map((x) => cleanMtGloss(x.gloss_vi)).find((x): x is string => Boolean(x))
+      .map((x) => cleanGlossVi(cleanMtGloss(x.gloss_vi))).find((x): x is string => Boolean(x))
     if (vi) viByTerm.set(row.headword_normalized, vi)
   }
   return fillPivotVi(senses, viByTerm)
@@ -103,7 +103,7 @@ async function matchByPivot(
   if (error) throw error
   return crossLangSiblingRow.array().parse(data ?? []).map((r) => ({
     id: r.id, lang: r.lang, headword: r.headword, reading: r.reading, gender: r.gender,
-    pos: r.pos, glossVi: r.gloss_vi, glossEn: r.gloss_en,
+    pos: r.pos, glossVi: cleanGlossVi(r.gloss_vi), glossEn: r.gloss_en,
   }))
 }
 
@@ -131,7 +131,7 @@ export async function getTermPreviews(
   return termPreviewRow.array().parse(data ?? []).map((r) => ({
     matchText: r.match_text, id: r.id, headword: r.headword, pos: r.pos,
     ipa: r.ipa, reading: r.reading, gender: r.gender,
-    glossVi: r.gloss_vi, glossEn: r.gloss_en,
+    glossVi: cleanGlossVi(r.gloss_vi), glossEn: r.gloss_en,
   }))
 }
 

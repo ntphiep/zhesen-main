@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from '@/lib/zod'
 import { localDay } from '@/lib/wordlist/activity'
+import { cleanGlossVi } from './textQuality'
 import type { LangCode } from '@/lib/languages'
 
 /** The pool is English-only: the frequency ranks that make the pick meaningful
@@ -62,7 +63,7 @@ export async function getWordOfDay(supabase: SupabaseClient, dayNum: number): Pr
     lang: WORD_OF_DAY_LANG,
     headword: row.headword,
     ipa,
-    glossVi: primary?.gloss_vi ?? primary?.gloss_en ?? null,
+    glossVi: cleanGlossVi(primary?.gloss_vi ?? null) ?? primary?.gloss_en ?? null,
     level: row.level,
   }
 }

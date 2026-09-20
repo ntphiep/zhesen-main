@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pickSenses, isCleanExample, isClassifierGloss, parseClassifiers, fillPivotVi, cleanMtGloss, isSentenceTranslation, hasUnknownLongWord, entryMeaningVi } from '@/lib/dictionary/textQuality'
+import { pickSenses, isCleanExample, isClassifierGloss, parseClassifiers, fillPivotVi, cleanMtGloss, cleanGlossVi, isSentenceTranslation, hasUnknownLongWord, entryMeaningVi } from '@/lib/dictionary/textQuality'
 import { tokenize } from '@/lib/reader/tokenize'
 import { classifyRelations } from '@/lib/dictionary/relations'
 import { groupWordForms } from '@/lib/dictionary/family'
@@ -51,6 +51,32 @@ describe('cleanMtGloss', () => {
     expect(cleanMtGloss('học, nghiên cứu')).toBe('học, nghiên cứu')
     expect(cleanMtGloss('con chó')).toBe('con chó')
     expect(cleanMtGloss(null)).toBeNull()
+  })
+})
+
+describe('cleanGlossVi', () => {
+  it('gives every meaning the same opening case', () => {
+    // Both of these sit on /dictionary/en/intent today, one under the other.
+    expect(cleanGlossVi('mải mê')).toBe('Mải mê')
+    expect(cleanGlossVi('Ý định phạm tội, chủ tâm')).toBe('Ý định phạm tội, chủ tâm')
+    expect(cleanGlossVi('đồ sứ')).toBe('Đồ sứ')
+  })
+  it('turns a gloss written in full capitals into sentence case', () => {
+    // "holding" renders as CÔNG TY CỔ PHẦN; the source carries the capitals.
+    expect(cleanGlossVi('CÔNG TY CỔ PHẦN')).toBe('Công ty cổ phần')
+  })
+  it('leaves a proper noun alone', () => {
+    // Headwords are stored lowercased, so nothing in the data marks these; the rule
+    // normalises upward precisely so they cannot be damaged.
+    expect(cleanGlossVi('Trung Quốc')).toBe('Trung Quốc')
+    expect(cleanGlossVi('Alberta')).toBe('Alberta')
+  })
+  it('leaves a word whose own spelling carries an inner capital', () => {
+    expect(cleanGlossVi('iPhone của Apple')).toBe('iPhone của Apple')
+  })
+  it('returns null for nothing', () => {
+    expect(cleanGlossVi(null)).toBeNull()
+    expect(cleanGlossVi('   ')).toBeNull()
   })
 })
 

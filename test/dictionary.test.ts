@@ -60,7 +60,7 @@ describe('searchEntries', () => {
     ])
     const res = await searchEntries(client, 'en', 'dog')
     expect(res[0]).toMatchObject({
-      id: 'en:dog', headword: 'dog', ipa: '/dɔːɡ/', glossVi: 'con chó', pos: 'noun', level: 'A1',
+      id: 'en:dog', headword: 'dog', ipa: '/dɔːɡ/', glossVi: 'Con chó', pos: 'noun', level: 'A1',
       audioUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/15/En-uk-dog.ogg',
     })
   })
@@ -153,7 +153,7 @@ describe('suggestNearby', () => {
   it('maps the lex.suggest RPC row to a suggestion', async () => {
     const { client } = rpcClient([{ id: 'en:receive', lang: 'en', headword: 'receive', gloss_vi: 'nhận được', kind: 'headword', score: 0.5 }])
     const res = await suggestNearby(client, 'recieve')
-    expect(res).toEqual([{ id: 'en:receive', lang: 'en', headword: 'receive', glossVi: 'nhận được' }])
+    expect(res).toEqual([{ id: 'en:receive', lang: 'en', headword: 'receive', glossVi: 'Nhận được' }])
   })
 
   it('returns [] without calling the RPC for an empty query', async () => {
@@ -190,7 +190,7 @@ describe('searchBothDirections', () => {
       suggest: [{ id: 'en:receive', lang: 'en', headword: 'receive', gloss_vi: 'nhận được', kind: 'headword', score: 0.5 }],
     })
     const res = await searchBothDirections(client, 'zzzz')
-    expect(res.suggestions).toEqual([{ id: 'en:receive', lang: 'en', headword: 'receive', glossVi: 'nhận được' }])
+    expect(res.suggestions).toEqual([{ id: 'en:receive', lang: 'en', headword: 'receive', glossVi: 'Nhận được' }])
     expect(rpc).toHaveBeenCalledWith('suggest', expect.objectContaining({ p_q: 'zzzz' }))
   })
 
@@ -254,7 +254,7 @@ describe('getCrossLanguage', () => {
     ])
     const res = await getCrossLanguage(client, 'en:dog')
     expect(res.map((r) => r.id)).toEqual(['es:perro', 'zh:狗'])
-    expect(res[0]).toMatchObject({ glossVi: 'con chó', glossEn: 'dog' })
+    expect(res[0]).toMatchObject({ glossVi: 'Con chó', glossEn: 'dog' })
   })
 
   it('maps the matcher result for a non-English word', async () => {
@@ -359,7 +359,7 @@ describe('resolveTokens', () => {
   it('resolves a token by direct headword match', async () => {
     const client = thenableClient([{ data: [dogRow], error: null }])
     const map = await resolveTokens(client, 'en', ['Dog'])
-    expect(map.get('dog')).toMatchObject({ id: 'en:dog', glossVi: 'con chó' })
+    expect(map.get('dog')).toMatchObject({ id: 'en:dog', glossVi: 'Con chó' })
   })
 
   it('resolves an inflected form through lex.resolve_inflections', async () => {

@@ -18,6 +18,31 @@ export function cleanMtGloss(gloss: string | null): string | null {
   return t
 }
 
+/**
+ * One casing for every Vietnamese meaning on screen. The source carries three:
+ * sampled over 4,000 English senses on 2026-09-20, 2,118 began with a capital and the
+ * rest did not, so one entry reads "1. mải mê" then "2. Ý định phạm tội".
+ *
+ * Normalised UP, not down. Headwords are stored lowercased -- `lex.entries.headword`
+ * differs from `headword_normalized` in 0 of 21,004 English rows -- and `pos` is null
+ * on the proper-noun senses as often as on any other, so nothing in the data separates
+ * "Alberta" from "Một". Lowercasing would turn a place name into a common word;
+ * capitalising a common word costs nothing.
+ *
+ * A gloss written entirely in capitals is the separate defect in #26: the source
+ * carries them ("holding" -> "CÔNG TY CỔ PHẦN") and they are not emphasis.
+ */
+export function cleanGlossVi(gloss: string | null): string | null {
+  const t = gloss?.trim()
+  if (!t) return null
+  const body = /\p{Lu}/u.test(t) && t === t.toLocaleUpperCase('vi') ? t.toLocaleLowerCase('vi') : t
+  // A capital inside the first word is the word's own spelling ("iPhone", "eBay"), so
+  // the whole gloss is left as written.
+  const first = body.split(/\s+/, 1)[0]
+  if (/\p{Lu}/u.test(first.slice(1))) return body
+  return body.charAt(0).toLocaleUpperCase('vi') + body.slice(1)
+}
+
 /** Whether a sense carries any Vietnamese gloss (direct or via the English pivot). */
 const hasVi = (s: DictSense): boolean => Boolean(s.glossVi || s.pivotVi)
 
