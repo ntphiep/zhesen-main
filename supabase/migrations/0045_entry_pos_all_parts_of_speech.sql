@@ -27,9 +27,10 @@
 --
 -- lex.search_vi loses `hit_pos`, the part of speech of the sense that matched the
 -- Vietnamese query. That was one value where the row needs all of them; the matched
--- SENSE is #12 and is a different field.
+-- SENSE is #12 and is a different field. It carries the expression twice, once in each
+-- branch of `if length(v_norm) < 4 ...` (0036), so that one expects two hits.
 --
--- Applied as a text transform of the live definitions, asserting one hit each,
+-- Applied as a text transform of the live definitions, asserting the hit count,
 -- rather than re-emitting four function bodies by hand. Same method as 0042.
 --
 -- TO ROLL BACK: replace each `lex.entry_pos(<alias>.id)` with the subquery quoted in
@@ -52,6 +53,12 @@ $function$;
 
 grant execute on function lex.entry_pos(text) to anon, authenticated, service_role;
 
+-- pg_get_functiondef re-emits lex.search_vi with its own
+-- `SET pg_trgm.similarity_threshold TO '0.45'` (0044), and setting that parameter fails
+-- with 42501 until pg_trgm is loaded into the session. Calling one of its functions
+-- loads it. Measured: without this line the block dies on lex.search_vi.
+select extensions.similarity('a', 'b');
+
 do $mig$
 declare
   target record;
@@ -63,20 +70,21 @@ begin
       -- lex.search: one line, alias `e`, from 0024.
       ('search',
        '\(select s\.pos from lex\.senses s where s\.entry_id = e\.id order by s\.sense_order limit 1\)',
-       'lex.entry_pos(e.id)'),
-      -- lex.search_vi: the matched sense's pos with sense 1 as the fallback, from 0036.
+       'lex.entry_pos(e.id)', 1),
+      -- lex.search_vi: the matched sense's pos with sense 1 as the fallback, from 0036,
+      -- once per branch of the short-query test.
       ('search_vi',
        'coalesce\(r\.hit_pos, ps\.pos\)',
-       'lex.entry_pos(r.id)'),
+       'lex.entry_pos(r.id)', 2),
       -- lex.term_previews: alias `h`, from 0029.
       ('term_previews',
        '\(select s\.pos from lex\.senses s\s+where s\.entry_id = h\.id and s\.pos is not null\s+order by s\.sense_order limit 1\)',
-       'lex.entry_pos(h.id)'),
+       'lex.entry_pos(h.id)', 1),
       -- lex.match_cross_language: alias `r`, from 0029.
       ('match_cross_language',
        '\(select s\.pos from lex\.senses s\s+where s\.entry_id = r\.id and s\.pos is not null\s+order by s\.sense_order limit 1\)',
-       'lex.entry_pos(r.id)')
-    ) as t(fn, pattern, replacement)
+       'lex.entry_pos(r.id)', 1)
+    ) as t(fn, pattern, replacement, expected)
   loop
     select pg_get_functiondef(p.oid) into def
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -86,11 +94,11 @@ begin
     hits := (
       select count(*) from regexp_matches(def, target.pattern, 'g')
     );
-    if hits <> 1 then
-      raise exception 'lex.%: expected 1 pos subquery, found %', target.fn, hits;
+    if hits <> target.expected then
+      raise exception 'lex.%: expected % pos subquery, found %', target.fn, target.expected, hits;
     end if;
 
-    execute regexp_replace(def, target.pattern, target.replacement);
+    execute regexp_replace(def, target.pattern, target.replacement, 'g');
   end loop;
 end
 $mig$;
