@@ -1,0 +1,61 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { DictEntryPreview } from '@/lib/dictionary/types'
+
+const { resolveTokens, getZhSegmentCandidatesForTexts, getCharacters } = vi.hoisted(() => ({
+  resolveTokens: vi.fn(async () => new Map<string, DictEntryPreview>()),
+  getZhSegmentCandidatesForTexts: vi.fn(async () => [] as string[]),
+  getCharacters: vi.fn(async () => []),
+}))
+vi.mock('@/lib/dictionary/resolveTokens', () => ({ resolveTokens, getZhSegmentCandidatesForTexts }))
+vi.mock('@/lib/dictionary/entryDetail', () => ({ getCharacters }))
+
+import { lookUpText } from '@/lib/dictionary/textLookup'
+
+const client = {} as SupabaseClient
+const preview = (headword: string): DictEntryPreview => ({
+  id: `en:${headword}`, lang: 'en', headword, traditional: null, level: null,
+  ipa: null, pos: 'noun,verb', glossVi: 'Nghĩa', glossEn: null, audioUrl: null,
+})
+
+beforeEach(() => vi.clearAllMocks())
+
+describe('lookUpText', () => {
+  it('returns every word of the sentence in the order it was written', async () => {
+    resolveTokens.mockResolvedValueOnce(new Map([['dog', preview('dog')]]))
+    const out = await lookUpText(client, 'The dog barks.')
+    expect(out.words.map((w) => w.text)).toEqual(['The', 'dog', 'barks'])
+  })
+
+  // A word the dictionary does not hold is an answer, not a gap: dropping it would
+  // renumber the passage against what the learner is reading.
+  it('keeps a word with no entry, marked as unresolved', async () => {
+    resolveTokens.mockResolvedValueOnce(new Map([['dog', preview('dog')]]))
+    const out = await lookUpText(client, 'dog zzzz')
+    expect(out.words.map((w) => w.entry?.headword ?? null)).toEqual(['dog', null])
+  })
+
+  it('matches a capitalised word against its lowercased entry', async () => {
+    resolveTokens.mockResolvedValueOnce(new Map([['dog', preview('dog')]]))
+    const out = await lookUpText(client, 'Dog')
+    expect(out.words[0].entry?.id).toBe('en:dog')
+  })
+
+  it('reads Han text as Chinese, so it is segmented rather than split on spaces', async () => {
+    getZhSegmentCandidatesForTexts.mockResolvedValueOnce(['吃饭'])
+    const out = await lookUpText(client, '我吃饭')
+    expect(out.lang).toBe('zh')
+    expect(out.words.map((w) => w.text)).toEqual(['我', '吃饭'])
+  })
+
+  it('reads a Spanish-only letter as Spanish', async () => {
+    const out = await lookUpText(client, 'el niño come')
+    expect(out.lang).toBe('es')
+  })
+
+  it('answers empty for a passage with nothing in it', async () => {
+    const out = await lookUpText(client, '   ')
+    expect(out.words).toEqual([])
+    expect(resolveTokens).not.toHaveBeenCalled()
+  })
+})
