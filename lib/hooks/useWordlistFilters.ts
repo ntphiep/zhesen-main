@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import type { LangCode } from '@/lib/languages'
 import { isDueAt } from '@/lib/wordlist/format'
 import type { UserWord, WordStatus } from '@/lib/wordlist/types'
-import { posGroup } from '@/lib/dictionary/pos'
+import { posGroups, splitPos, type PosGroup } from '@/lib/dictionary/pos'
 import { useStoredView, type ViewMode } from './useStoredView'
 
 export type { ViewMode }
@@ -84,7 +84,9 @@ export function useWordlistFilters(words: UserWord[]) {
       for (const t of tagFilter) if (!w.tags.includes(t)) return false
       if (q && !haystack(w).includes(q)) return false
       if (levelFilter && w.level !== levelFilter) return false
-      if (posFilter && (posGroup(w.pos)?.labelVi ?? w.pos ?? '') !== posFilter) return false
+      // Matches on any of the word's parts of speech: a word that is both a noun and a
+      // verb belongs in both filters.
+      if (posFilter && !posGroups(splitPos(w.pos)).some((g) => g.key === posFilter)) return false
       if (reviewFilter === 'due' && !isDueAt(w.fsrsDueAt)) return false
       if (reviewFilter === 'leech' && w.fsrsLapses < LEECH_LAPSES) return false
       return true
@@ -106,10 +108,11 @@ export function useWordlistFilters(words: UserWord[]) {
     () => [...new Set(words.map((w) => w.level).filter((l): l is string => !!l))].sort(),
     [words],
   )
-  const posOptions = useMemo(
-    () => [...new Set(words.map((w) => posGroup(w.pos)?.labelVi ?? w.pos).filter((p): p is string => !!p))].sort(),
-    [words],
-  )
+  const posOptions = useMemo(() => {
+    const byKey = new Map<string, PosGroup>()
+    for (const w of words) for (const g of posGroups(splitPos(w.pos))) byKey.set(g.key, g)
+    return [...byKey.values()].sort((a, b) => a.labelVi.localeCompare(b.labelVi, 'vi'))
+  }, [words])
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {

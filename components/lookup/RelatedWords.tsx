@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { searchPath } from '@/lib/dictionary/entryId'
 import { classifyRelations, type ClassifiedRelations } from '@/lib/dictionary/relations'
-import { posGroup } from '@/lib/dictionary/pos'
+import { PosTag } from '@/components/ui/PosTag'
 import type { DictRelation, TermPreview } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 
@@ -22,13 +22,12 @@ const SECTIONS: { key: keyof ClassifiedRelations; label: string; hint: string }[
 const CAP = 8
 
 function Row({ text, preview, lang }: { text: string; preview?: TermPreview; lang: LangCode }) {
-  const pos = posGroup(preview?.pos)
   return (
     <tr className="border-t border-black/5 align-baseline">
       <td className="px-2 py-1.5">
         <Link href={searchPath(lang, text)} className="font-medium hover:underline">{text}</Link>
       </td>
-      <td className="px-2 py-1.5 whitespace-nowrap text-xs text-black/55">{pos?.labelVi ?? ''}</td>
+      <td className="px-2 py-1.5 whitespace-nowrap text-xs text-black/55"><PosTag value={preview?.pos} /></td>
       <td className="px-2 py-1.5 text-black/60">{preview?.glossVi || preview?.glossEn || ''}</td>
     </tr>
   )

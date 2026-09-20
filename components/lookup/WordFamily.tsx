@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { searchPath } from '@/lib/dictionary/entryId'
-import { posGroup } from '@/lib/dictionary/pos'
+import { PosTag } from '@/components/ui/PosTag'
 import { Ipa } from '@/components/ui/Ipa'
 import type { FamilyForm } from '@/lib/dictionary/family'
 import type { TermPreview } from '@/lib/dictionary/types'
@@ -25,7 +25,7 @@ export function WordFamily({ headword, forms, previews, lang }: {
     const p = previews[f.text.toLowerCase()]
     return {
       form: f,
-      pos: posGroup(p?.pos)?.labelVi ?? null,
+      pos: p?.pos ?? null,
       sound: (lang === 'zh' ? p?.reading : p?.ipa) ?? null,
       gloss: p?.glossVi || p?.glossEn || null,
     }
@@ -84,7 +84,7 @@ export function WordFamily({ headword, forms, previews, lang }: {
                     {form.text}
                   </Link>
                 </td>
-                {hasPos && <td className="px-2 py-1.5 whitespace-nowrap text-xs text-black/55">{pos ?? ''}</td>}
+                {hasPos && <td className="px-2 py-1.5 whitespace-nowrap text-xs text-black/55"><PosTag value={pos} /></td>}
                 {hasSound && <td className="px-2 py-1.5 text-black/60"><Ipa value={sound} lang={lang} /></td>}
                 {hasGloss && <td className="px-2 py-1.5 text-black/60">{gloss ?? ''}</td>}
               </tr>

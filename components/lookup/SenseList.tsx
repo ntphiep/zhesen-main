@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { pickSenses, isClassifierGloss, parseClassifiers } from '@/lib/dictionary/textQuality'
-import { posGroup } from '@/lib/dictionary/pos'
+import { PosTag } from '@/components/ui/PosTag'
 import type { DictSense } from '@/lib/dictionary/types'
 
 export function SenseList({ senses }: { senses: DictSense[] }) {
@@ -28,11 +28,7 @@ export function SenseList({ senses }: { senses: DictSense[] }) {
       <h2 className="text-lg font-semibold">Nghĩa</h2>
       {groups.map((g, gi) => (
         <div key={gi} className="flex flex-col gap-1.5">
-          {g.pos && (
-            <span className="text-xs font-semibold uppercase tracking-wide text-black/55">
-              {posGroup(g.pos)?.labelVi ?? g.pos}
-            </span>
-          )}
+          {g.pos && <PosTag value={g.pos} className="text-xs font-semibold tracking-wide text-black/55" />}
           <ol className="flex list-inside list-decimal flex-col gap-1">
             {g.items.map((s, i) => (
               <li key={i}>

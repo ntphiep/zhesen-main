@@ -131,7 +131,10 @@ describe('useWordlistFilters', () => {
     expect(result.current.visible.map((w) => w.id)).toEqual(['a'])
 
     act(() => result.current.setLevelFilter(''))
-    act(() => result.current.setPosFilter(result.current.posOptions[0]))
+    // posOptions carries the group, not a label: the filter matches on `key` so a word
+    // that is several parts of speech at once appears under each of them.
+    expect(result.current.posOptions.map((g) => g.abbr)).toEqual(['n.', 'v.'])
+    act(() => result.current.setPosFilter(result.current.posOptions[0].key))
     expect(result.current.visible).toHaveLength(1)
   })
 

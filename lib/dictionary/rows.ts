@@ -3,6 +3,7 @@ import type { LangCode } from '@/lib/languages'
 import type { ContainingWord, DictEntryPreview, DictSense, DictPron, SuggestionPreview } from './types'
 import { cleanMtGloss, cleanGlossVi } from './textQuality'
 import { audioMatchesHeadword } from './pronunciation'
+import { joinPos } from './pos'
 
 /**
  * Zod schemas for every row shape read from PostgREST here, plus the mapping from those
@@ -176,7 +177,8 @@ export function toPreview(r: EntryPreviewRow): DictEntryPreview {
   return {
     id: r.id, lang: r.lang, headword: r.headword, traditional: r.traditional, level: r.level,
     ipa: pickIpa(prons, r.lang),
-    pos: primary?.pos ?? null,
+    // Every part of speech the entry has, not the primary sense's: see 0045.
+    pos: joinPos(senses.map((s) => s.pos)),
     glossVi: primary?.glossVi ?? null,
     glossEn: primary?.glossEn ?? null,
     audioUrl: prons.find((p) => audioMatchesHeadword(p.audioUrl, r.headword))?.audioUrl ?? null,

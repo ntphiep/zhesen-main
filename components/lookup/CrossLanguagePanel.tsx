@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { LinkPending } from '@/components/ui/LinkPending'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
-import { posGroup } from '@/lib/dictionary/pos'
+import { PosTag } from '@/components/ui/PosTag'
 import { genderFromCode } from '@/lib/dictionary/gender'
 import type { CrossLangSibling } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
@@ -31,7 +31,6 @@ export function CrossLanguagePanel({ siblings }: { siblings: CrossLangSibling[] 
           </span>
           <ul className="flex flex-col">
             {rows.map((s) => {
-              const pos = posGroup(s.pos)
               const gender = genderFromCode(s.gender)
               return (
                 <li key={s.id}>
@@ -42,7 +41,7 @@ export function CrossLanguagePanel({ siblings }: { siblings: CrossLangSibling[] 
                     <span className="flex flex-wrap items-baseline gap-x-2">
                       <span className="font-medium">{s.headword}</span>
                       {s.reading && <span className="text-sm text-black/45">{s.reading}</span>}
-                      {pos && <span className="text-xs text-black/35">{pos.labelVi}</span>}
+                      <PosTag value={s.pos} className="text-xs text-black/35" />
                       {gender && <span className="text-xs text-black/35">{gender}</span>}
                     </span>
                     {(s.glossVi || s.glossEn) && (

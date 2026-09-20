@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { LinkPending } from '@/components/ui/LinkPending'
-import { posGroup } from '@/lib/dictionary/pos'
+import { posGroups, splitPos } from '@/lib/dictionary/pos'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 
 /**
@@ -12,11 +12,13 @@ import type { DictEntryPreview } from '@/lib/dictionary/types'
 export function WordKin({ words }: { words: DictEntryPreview[] }) {
   if (words.length === 0) return null
 
-  const groups = new Map<string, { label: string; words: DictEntryPreview[] }>()
+  // Grouped by the word's main part of speech, not by the whole stored list: a word
+  // that is both a noun and a verb belongs under the noun, not in a group of its own.
+  const groups = new Map<string, { label: string; title: string; words: DictEntryPreview[] }>()
   for (const w of words) {
-    const g = posGroup(w.pos)
+    const g = posGroups(splitPos(w.pos))[0]
     const key = g?.key ?? ''
-    const bucket = groups.get(key) ?? { label: g?.labelVi ?? 'Khác', words: [] }
+    const bucket = groups.get(key) ?? { label: g?.abbr ?? 'Khác', title: g?.labelVi ?? 'Không rõ từ loại', words: [] }
     bucket.words.push(w)
     groups.set(key, bucket)
   }
@@ -29,7 +31,7 @@ export function WordKin({ words }: { words: DictEntryPreview[] }) {
       </div>
       {[...groups.values()].map((g) => (
         <div key={g.label} className="flex flex-col gap-1">
-          <span className="text-xs font-semibold uppercase tracking-wide text-black/55">{g.label}</span>
+          <abbr title={g.title} className="text-xs font-semibold tracking-wide text-black/55 no-underline">{g.label}</abbr>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <tbody>

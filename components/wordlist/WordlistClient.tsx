@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { addWord, addWords, listWords, updateWord, updateWordsStatus, deleteWord, deleteWords } from '@/lib/wordlist/store'
 import { mergeTags, tagCounts } from '@/lib/wordlist/tags'
 import { formatWordDate, isDueAt, DUE_LABEL } from '@/lib/wordlist/format'
-import { posGroup } from '@/lib/dictionary/pos'
+import { PosTag } from '@/components/ui/PosTag'
 import { wordsToCsv, wordsToAnkiTsv } from '@/lib/wordlist/csv'
 import { downloadTextFile } from '@/lib/wordlist/download'
 import { useWordlistFilters } from '@/lib/hooks/useWordlistFilters'
@@ -382,7 +382,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     </td>
                     <td className="px-3 py-2.5 align-top font-medium">{w.headword}</td>
                     <td className="px-3 py-2.5 align-top text-black/50"><Ipa value={w.ipa} lang={w.lang} /></td>
-                    <td className="px-3 py-2.5 align-top text-black/50">{posGroup(w.pos)?.labelVi ?? w.pos ?? ''}</td>
+                    <td className="px-3 py-2.5 align-top text-black/50"><PosTag value={w.pos} /></td>
                     <td className="px-3 py-2.5 align-top">{w.meaningVi ?? ''}</td>
                     <td className="px-3 py-2.5 align-top text-black/50">{w.level ?? ''}</td>
                     <td className="px-3 py-2.5 align-top">
@@ -438,7 +438,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                 <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
               </div>
 
-              {w.pos && <span className="text-xs text-black/55">{posGroup(w.pos)?.labelVi ?? w.pos}</span>}
+              <PosTag value={w.pos} className="text-xs text-black/55" />
               {w.meaningVi && <p className="text-sm text-black/80">{w.meaningVi}</p>}
               {w.level && (
                 <span className="self-start rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/50">

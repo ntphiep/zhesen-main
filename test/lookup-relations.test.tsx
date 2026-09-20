@@ -45,7 +45,9 @@ describe('RelatedWords', () => {
         previews={{ hound: preview({ matchText: 'hound', pos: 'noun', glossVi: 'chó săn' }) }}
       />,
     )
-    expect(screen.getByText('Danh từ')).toBeInTheDocument()
+    // Abbreviated on screen, with the Vietnamese name on the <abbr> for anyone who
+    // does not read "n." — the same pairing every other surface uses.
+    expect(screen.getByTitle('Danh từ')).toHaveTextContent('n.')
     expect(screen.getByText('chó săn')).toBeInTheDocument()
   })
   it('still lists a word the dictionary has no entry for', () => {

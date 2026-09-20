@@ -8,8 +8,9 @@ import { AiSuggest } from './AiSuggest'
 import { detectOrder, orderByBestMatch } from '@/lib/dictionary/detect'
 import { pushRecent, readRecent, writeRecent } from '@/lib/dictionary/recent'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
-import { posGroup } from '@/lib/dictionary/pos'
+import { posGroups, splitPos, type PosGroup } from '@/lib/dictionary/pos'
 import { Ipa } from '@/components/ui/Ipa'
+import { PosTag } from '@/components/ui/PosTag'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import { bestScore, EMPTY_SEARCH_RESPONSE, type SearchResponse } from '@/lib/dictionary/response'
 import { fetchSearch } from '@/lib/dictionary/searchClient'
@@ -111,16 +112,17 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
     return [...ordered, ...rest]
   }, [allShown])
   const posOptions = useMemo(() => {
-    const byKey = new Map<string, string>()
+    const byKey = new Map<string, PosGroup>()
     for (const e of allShown) {
-      const g = posGroup(e.pos)
-      if (g) byKey.set(g.key, g.labelVi)
+      for (const g of posGroups(splitPos(e.pos))) byKey.set(g.key, g)
     }
-    return [...byKey.entries()]
+    return [...byKey.values()]
   }, [allShown])
 
   const matches = useMemo(
-    () => (e: DictEntryPreview) => (!levelFilter || e.level === levelFilter) && (!posFilter || posGroup(e.pos)?.key === posFilter),
+    () => (e: DictEntryPreview) =>
+      (!levelFilter || e.level === levelFilter) &&
+      (!posFilter || posGroups(splitPos(e.pos)).some((g) => g.key === posFilter)),
     [levelFilter, posFilter],
   )
   // Filter all three languages so the result keeps every key and needs no cast.
@@ -217,6 +219,7 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
                 >
                   <span className="font-medium">{e.headword}</span>
                   <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/40" />
+                  <PosTag value={e.pos} className="text-xs text-black/45" />
                   {e.glossVi && <span className="text-sm text-black/60">{e.glossVi}</span>}
                   <LinkPending />
                 </Link>
@@ -316,15 +319,16 @@ export function SearchBox({ initialQuery = '', autoFocus = false, lang }: { init
               {l}
             </button>
           ))}
-          {posOptions.map(([key, labelVi]) => (
+          {posOptions.map((g) => (
             <button
-              key={key}
+              key={g.key}
               type="button"
-              onClick={() => setPosFilter((cur) => (cur === key ? null : key))}
-              aria-pressed={posFilter === key}
-              className={`rounded-full px-2.5 py-1 font-medium ${posFilter === key ? 'bg-black text-white' : 'bg-black/5 text-black/60 hover:bg-black/10'}`}
+              onClick={() => setPosFilter((cur) => (cur === g.key ? null : g.key))}
+              aria-pressed={posFilter === g.key}
+              aria-label={g.labelVi}
+              className={`rounded-full px-2.5 py-1 font-medium ${posFilter === g.key ? 'bg-black text-white' : 'bg-black/5 text-black/60 hover:bg-black/10'}`}
             >
-              {labelVi}
+              {g.abbr}
             </button>
           ))}
         </div>

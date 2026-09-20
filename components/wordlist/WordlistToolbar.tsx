@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { LANGUAGES, type LangCode } from '@/lib/languages'
 import type { ReviewFilter, ViewMode } from '@/lib/hooks/useWordlistFilters'
 import { STATUS_OPTIONS, type WordStatus } from '@/lib/wordlist/types'
+import type { PosGroup } from '@/lib/dictionary/pos'
 
 interface Props {
   query: string
@@ -18,7 +19,7 @@ interface Props {
   levelOptions: string[]
   posFilter: string
   onPosFilterChange: (p: string) => void
-  posOptions: string[]
+  posOptions: PosGroup[]
   view: ViewMode
   onViewChange: (v: ViewMode) => void
   onAddClick: () => void
@@ -92,7 +93,9 @@ export function WordlistToolbar({
           aria-label="Lọc từ loại"
         >
           <option value="">Tất cả từ loại</option>
-          {posOptions.map((p) => <option key={p} value={p}>{p}</option>)}
+          {/* The abbreviation leads, as it does everywhere else, but an option list has
+              no column to be read in: "art." and "adv." are indistinguishable alone. */}
+          {posOptions.map((g) => <option key={g.key} value={g.key}>{g.abbr} — {g.labelVi}</option>)}
         </select>
       )}
 

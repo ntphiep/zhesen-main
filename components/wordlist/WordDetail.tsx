@@ -7,6 +7,7 @@ import { pickExamples, isSentenceTranslation } from '@/lib/dictionary/textQualit
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 import type { UserWord } from '@/lib/wordlist/types'
 import { Ipa } from '@/components/ui/Ipa'
+import { PosTag } from '@/components/ui/PosTag'
 
 type DetailState =
   | { status: 'loading' }
@@ -92,7 +93,7 @@ export function WordDetail({ word }: { word: UserWord }) {
         <div className="flex flex-col gap-1">
           {detail.senses.map((s, i) => (
             <div key={i} className="flex gap-2 items-baseline">
-              {s.pos && <span className="text-xs font-medium text-black/40 uppercase">{s.pos}</span>}
+              <PosTag value={s.pos} className="text-xs font-medium text-black/40" />
               {s.glossVi && <span className="text-black/80">{s.glossVi}</span>}
               {s.glossEn && <span className="text-black/50">{s.glossEn}</span>}
             </div>
