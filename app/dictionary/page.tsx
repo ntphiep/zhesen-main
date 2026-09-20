@@ -1,5 +1,4 @@
 import { SearchBox } from '@/components/search/SearchBox'
-import { LookupTabs } from '@/components/search/LookupTabs'
 import { LANGUAGES, isLangCode } from '@/lib/languages'
 import { pageMetadata } from '@/lib/site'
 
@@ -28,11 +27,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
     <main className="mx-auto max-w-5xl px-6 py-10">
       <h1 className="text-3xl font-bold">Tra cứu</h1>
       <p className="mt-1 text-sm text-black/60">
-        Gõ một từ tiếng Anh, Trung hoặc Tây Ban Nha — hệ thống tự nhận diện ngôn ngữ.
+        Gõ tiếng Anh, Trung, Tây Ban Nha hoặc tiếng Việt — hệ thống tự nhận diện ngôn ngữ.
       </p>
-      <div className="mt-6">
-        <LookupTabs />
-      </div>
       <div className="mt-6">
         <SearchBox initialQuery={sp.q ?? ''} lang={lang} autoFocus />
       </div>

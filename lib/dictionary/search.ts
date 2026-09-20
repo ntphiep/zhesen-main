@@ -39,7 +39,11 @@ export async function searchAllLanguages(
 
 /** Reverse lookup across all three languages in one RPC. The candidate-gloss scan is the
  *  expensive half of `lex.search_vi` and barely shrinks per language, so three calls pay
- *  for that scan three times. */
+ *  for that scan three times.
+ *
+ *  `p_limit` counts per language since 0047. Before that one budget covered all three and
+ *  the strongest language took it: "di bo" returned 16 English rows, 7 Spanish and 1
+ *  Chinese, and this function then discarded 8 of the English ones. */
 export async function searchAllLanguagesVi(
   supabase: SupabaseClient, query: string, perLang = 8, langs: readonly LangCode[] = LANG_CODES,
 ): Promise<Record<LangCode, DictEntryPreview[]>> {
@@ -47,13 +51,15 @@ export async function searchAllLanguagesVi(
   if (!q || langs.length === 0) return { en: [], zh: [], es: [] }
   const { data, error } = await supabase
     .schema('lex')
-    .rpc('search_vi', { p_q: q, p_langs: langs, p_limit: perLang * langs.length })
+    .rpc('search_vi', { p_q: q, p_langs: langs, p_limit: perLang })
+  // A timeout is not an empty dictionary, and it must not be answered as one. Swallowing
+  // SQLSTATE 57014 here was tried and measured: "cái bàn" costs 122 ms warm and returns
+  // table, tables, mesa and tabla, but on a cold read it crossed the 3 s the anon role
+  // allows, and the learner was shown a page saying their word is in no language. The
+  // route turns this into a 503 that says to try again.
   if (error) throw error
   const grouped: Record<LangCode, DictEntryPreview[]> = { en: [], zh: [], es: [] }
-  for (const row of searchRpcRow.array().parse(data ?? [])) {
-    const bucket = grouped[row.lang]
-    if (bucket.length < perLang) bucket.push(toPreviewFromSearchRow(row))
-  }
+  for (const row of searchRpcRow.array().parse(data ?? [])) grouped[row.lang].push(toPreviewFromSearchRow(row))
   return grouped
 }
 
@@ -91,9 +97,16 @@ const STRUCTURAL_MATCH = 3.0
 /** The search box's one field: always forward (en/es/zh), plus the Vietnamese reverse
  *  direction when the query looks Vietnamese or the forward BEST SCORE is below
  *  `STRUCTURAL_MATCH` -- result count would let weak guesses suppress the reverse lookup.
- *  Trigram suggestions only when neither direction found anything. */
+ *  Trigram suggestions only when neither direction found anything.
+ *
+ *  `forceReverse` is the learner saying the word is Vietnamese. Nothing else can tell:
+ *  "an", "ban" and "con" are real headwords in English and Spanish and score 4.01 to
+ *  4.12, above STRUCTURAL_MATCH, so ăn, bàn and con would never be looked up. Running
+ *  the Vietnamese direction for every Latin query instead is not an option: it costs 543
+ *  to 1,936 ms measured on production, against 176 to 513 ms for the forward search. */
 export async function searchBothDirections(
   supabase: SupabaseClient, query: string, perLang = 8, langs: readonly LangCode[] = LANG_CODES,
+  forceReverse = false,
 ): Promise<SearchBothDirections> {
   const q = query.trim()
   if (!q || langs.length === 0) return { forward: EMPTY_BY_LANG, reverse: EMPTY_BY_LANG, suggestions: [] }
@@ -106,7 +119,7 @@ export async function searchBothDirections(
   // A Vietnamese diacritic decides the reverse lookup without any forward result, so the
   // two run together. Measured in production: 334 to 4,078 ms for a Vietnamese query
   // against 176 to 513 ms for an English, Spanish or Chinese one.
-  const reverseIsCertain = !looksHan(q) && looksVietnamese(q)
+  const reverseIsCertain = !looksHan(q) && (forceReverse || looksVietnamese(q))
   const [forward, eagerReverse] = await Promise.all([
     searchAllLanguages(supabase, q, perLang, langs),
     reverseIsCertain ? searchAllLanguagesVi(supabase, q, perLang, langs) : null,
@@ -121,21 +134,6 @@ export async function searchBothDirections(
     : []
 
   return { forward, reverse, suggestions }
-}
-
-/** The Vietnamese-first page: the query is Vietnamese by declaration, so the reverse
- *  lookup runs whatever the text looks like and no forward search is attempted. This is
- *  what separates `/dictionary/reverse` from the detection on `/dictionary`, where a
- *  Vietnamese word spelled without tone marks reaches `lex.search_vi` only after the
- *  forward search has scored badly enough. */
-export async function searchVietnameseFirst(
-  supabase: SupabaseClient, query: string, perLang = 8, langs: readonly LangCode[] = LANG_CODES,
-): Promise<SearchBothDirections> {
-  const q = query.trim()
-  if (!q || langs.length === 0) return { forward: EMPTY_BY_LANG, reverse: EMPTY_BY_LANG, suggestions: [] }
-  const reverse = await searchAllLanguagesVi(supabase, q, perLang, langs)
-  const suggestions = countAll(reverse) === 0 ? await suggestNearby(supabase, q) : []
-  return { forward: EMPTY_BY_LANG, reverse, suggestions }
 }
 
 /** Most frequent entries for a language (for the per-language "common words" list). */

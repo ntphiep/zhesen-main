@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SearchBox } from '@/components/search/SearchBox'
 import { resetTargetsCache } from '@/lib/dictionary/targetLangs'
@@ -95,7 +95,7 @@ describe('SearchBox', () => {
     await userEvent.type(screen.getByRole('combobox'), 'nhận được')
     const link = await screen.findByRole('link', { name: /receive/ })
     expect(link).toHaveAttribute('href', '/dictionary/en/receive')
-    expect(screen.getByText('· dịch từ tiếng Việt')).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Tiếng Anh, dịch từ tiếng Việt' })).toBeInTheDocument()
   })
 
   it('shows "did you mean" suggestions when nothing matches in either direction', async () => {
@@ -163,7 +163,29 @@ describe('SearchBox', () => {
     await userEvent.type(screen.getByRole('combobox'), 'dog')
     await new Promise((r) => setTimeout(r, 300))
     expect(screen.queryByText('Không tìm thấy kết quả.')).toBeNull()
-    expect(screen.getAllByText(/quá nhiều lượt tra cứu/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('chậm lại').length).toBeGreaterThan(0)
+  })
+
+  // A rate limit and a cold database are different things to be told: the first says
+  // wait your turn, the second says the dictionary itself is not ready yet.
+  it('repeats whatever reason the route gave', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: false, status: 503, json: async () => ({ error: 'Từ điển đang khởi động chậm.' }),
+    })))
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('combobox'), 'ăn')
+    await new Promise((r) => setTimeout(r, 300))
+    expect(screen.getAllByText('Từ điển đang khởi động chậm.').length).toBeGreaterThan(0)
+  })
+
+  it('has something to say when the failure carries no reason', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: false, status: 502, json: async () => { throw new Error('not json') },
+    })))
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('combobox'), 'dog')
+    await new Promise((r) => setTimeout(r, 300))
+    expect(screen.getAllByText(/Chưa tra cứu được/).length).toBeGreaterThan(0)
   })
 
   it('clears the busy notice once a later search succeeds', async () => {
@@ -182,7 +204,7 @@ describe('SearchBox', () => {
     await userEvent.clear(box)
     await userEvent.type(box, 'dogs')
     await screen.findByRole('link', { name: /dog/ })
-    expect(screen.queryAllByText(/quá nhiều lượt tra cứu/)).toHaveLength(0)
+    expect(screen.queryAllByText('chậm lại')).toHaveLength(0)
   })
 
   it('does not cache a refused request, so the next keystroke asks again', async () => {
@@ -280,21 +302,105 @@ describe('SearchBox target languages', () => {
   })
 })
 
-describe('SearchBox on the Vietnamese-first page', () => {
-  it('asks the route for the reverse direction and shows only what it answered', async () => {
+describe('SearchBox Vietnamese direction', () => {
+  beforeEach(() => { localStorage.clear(); resetTargetsCache() })
+
+  // The question a Vietnamese query asks is "what is this in each language", so the
+  // three answers are read side by side rather than as three stacked lists.
+  it('gives each language a column of its own', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({
       ok: true,
       json: async () => response({
-        reverse: { en: [{ ...preview('en:dog', 'en', 'dog', 'Con chó'), matchScore: 4 }], zh: [], es: [] },
+        reverse: {
+          en: [{ ...preview('en:dog', 'en', 'dog', 'con chó'), matchScore: 5 }],
+          zh: [{ ...preview('zh:狗', 'zh', '狗', 'chó'), matchScore: 4 }],
+          es: [],
+        },
       }),
     })))
-    render(<SearchBox initialQuery="" direction="reverse" />)
+    render(<SearchBox initialQuery="" />)
     await userEvent.type(screen.getByRole('combobox'), 'con chó')
-    const link = await screen.findByRole('link', { name: /dog/ })
-    expect(link).toHaveAttribute('href', '/dictionary/en/dog')
-    const url = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
-    expect(url).toContain('dir=reverse')
-    // The whole page is the reverse direction, so labelling each group with it is noise.
-    expect(screen.queryByText(/dịch từ tiếng Việt/)).toBeNull()
+    await screen.findByRole('link', { name: /dog/ })
+    expect(screen.getByRole('group', { name: 'Tiếng Anh, dịch từ tiếng Việt' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Tiếng Trung, dịch từ tiếng Việt' })).toBeInTheDocument()
+  })
+
+  // A column that vanishes reads as a bug next to two full ones: it has to say the
+  // dictionary was asked and had nothing.
+  it('says so when a language has no match', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => response({
+        reverse: { en: [{ ...preview('en:dog', 'en', 'dog', 'con chó'), matchScore: 5 }], zh: [], es: [] },
+      }),
+    })))
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('combobox'), 'con chó')
+    await screen.findByRole('link', { name: /dog/ })
+    expect(screen.getAllByText('Chưa có từ khớp')).toHaveLength(2)
+  })
+})
+
+describe('SearchBox passage lookup', () => {
+  beforeEach(() => { localStorage.clear(); resetTargetsCache() })
+
+  it('offers the passage lookup once the query stops being one word', async () => {
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('combobox'), 'the dog barks')
+    const link = await screen.findByRole('link', { name: 'Tra từng từ trong cả đoạn' })
+    expect(link).toHaveAttribute('href', '/dictionary/text?q=the%20dog%20barks')
+  })
+
+  it('stays out of the way for a single word', async () => {
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('combobox'), 'dog')
+    await screen.findByRole('link', { name: /dog/ })
+    expect(screen.queryByRole('link', { name: 'Tra từng từ trong cả đoạn' })).toBeNull()
+  })
+})
+
+describe('SearchBox asking for the Vietnamese direction', () => {
+  beforeEach(() => { localStorage.clear(); resetTargetsCache() })
+
+  it('offers it when the forward search answered and the Vietnamese one did not', async () => {
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('combobox'), 'an')
+    const ask = await screen.findByRole('button', { name: /như tiếng Việt/ })
+    await userEvent.click(ask)
+    await waitFor(() => {
+      const urls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0] as string)
+      expect(urls.at(-1)).toContain('vi=1')
+    })
+  })
+
+  // Vietnamese is written in Latin script, so the button would only spend time.
+  it('stays out of the way for a Han query', async () => {
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('combobox'), '習惯')
+    await screen.findByRole('link', { name: /dog/ })
+    expect(screen.queryByRole('button', { name: /như tiếng Việt/ })).toBeNull()
+  })
+
+  // A question deserves a reply even when the reply is "nothing".
+  it('shows the columns after being asked, empty or not', async () => {
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('combobox'), 'an')
+    await userEvent.click(await screen.findByRole('button', { name: /như tiếng Việt/ }))
+    expect(await screen.findAllByText('Chưa có từ khớp')).toHaveLength(3)
+  })
+})
+
+describe('SearchBox recent searches', () => {
+  beforeEach(() => { localStorage.clear(); resetTargetsCache() })
+
+  // Storing the query stored whatever prefix a result was clicked on: gra, inten,
+  // forens. The word opened is the only thing worth offering again.
+  it('remembers the word opened, not the text typed', async () => {
+    render(<SearchBox initialQuery="" />)
+    await userEvent.type(screen.getByRole('combobox'), 'do')
+    await screen.findByRole('link', { name: /dog/ })
+    await userEvent.keyboard('{Enter}')
+    expect(push).toHaveBeenCalledWith('/dictionary/en/dog')
+    expect(JSON.parse(localStorage.getItem('zhesen:recent-searches') ?? '[]')).toEqual(['dog'])
   })
 })

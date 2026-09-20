@@ -73,6 +73,12 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: SECURITY_HEADERS }]
   },
+  // /dictionary/reverse was a page of its own for one release and sat on the header, so
+  // it is in bookmarks and in history. The lookup box now answers both directions, and a
+  // 404 would be a worse answer than the page that replaced it.
+  async redirects() {
+    return [{ source: '/dictionary/reverse', destination: '/dictionary', permanent: true }]
+  },
 }
 
 export default nextConfig

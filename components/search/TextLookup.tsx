@@ -1,6 +1,7 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { Ipa } from '@/components/ui/Ipa'
 import { PosTag } from '@/components/ui/PosTag'
@@ -35,7 +36,10 @@ type TranslationState =
  */
 export function TextLookup() {
   const aiOn = useAiEnabled()
-  const [text, setText] = useState('')
+  // Arriving from the lookup box, which links here with the query already typed. Read
+  // in the client so the page itself stays static.
+  const fromUrl = (useSearchParams().get('q') ?? '').trim().slice(0, MAX_CHARS)
+  const [text, setText] = useState(fromUrl)
   const [words, setWords] = useState<WordsState>({ kind: 'idle' })
   const [translation, setTranslation] = useState<TranslationState>({ kind: 'idle' })
   const translating = useRef<AbortController | null>(null)
@@ -43,19 +47,31 @@ export function TextLookup() {
   const trimmed = text.trim()
   const tooLong = trimmed.length > MAX_CHARS
 
-  async function lookUp() {
-    if (!trimmed || tooLong) return
+  // Stable, so the effect below can depend on it: it reads its argument and the
+  // setters, and nothing else.
+  const lookUp = useCallback(async (target: string) => {
+    if (!target || target.length > MAX_CHARS) return
     setWords({ kind: 'loading' })
     setTranslation({ kind: 'idle' })
     try {
-      const outcome = await fetchTextLookup(trimmed)
+      const outcome = await fetchTextLookup(target)
       setWords(outcome.status === 'ok'
         ? { kind: 'done', result: outcome.data }
         : { kind: 'error', message: outcome.message })
     } catch {
       setWords({ kind: 'error', message: 'Không tra được đoạn văn bản này. Vui lòng thử lại.' })
     }
-  }
+  }, [])
+
+  // The learner pressed a link called "Tra từng từ trong cả đoạn". Pressing a second
+  // button would be the answer to a question they already asked, so the query in the URL
+  // runs by itself, once.
+  const answered = useRef<string | null>(null)
+  useEffect(() => {
+    if (!fromUrl || answered.current === fromUrl) return
+    answered.current = fromUrl
+    void lookUp(fromUrl)
+  }, [fromUrl, lookUp])
 
   async function translate(lang: TextLookupResult['lang']) {
     const ctrl = new AbortController()
@@ -93,7 +109,7 @@ export function TextLookup() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={lookUp}
+            onClick={() => lookUp(trimmed)}
             disabled={!trimmed || tooLong || words.kind === 'loading'}
             className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
           >

@@ -125,20 +125,39 @@ describe('searchAllLanguagesVi', () => {
     // Three calls, one per language, meant paying for the same gloss scan three
     // times; the scan barely shrinks when the language is narrowed.
     expect(rpc).toHaveBeenCalledTimes(1)
-    expect(rpc).toHaveBeenCalledWith('search_vi', { p_q: 'nhận được', p_langs: ['en', 'es', 'zh'], p_limit: 24 })
+    expect(rpc).toHaveBeenCalledWith('search_vi', { p_q: 'nhận được', p_langs: ['en', 'es', 'zh'], p_limit: 8 })
     expect(out.en.map((e) => e.headword)).toEqual(['get', 'got'])
     expect(out.zh.map((e) => e.headword)).toEqual(['收'])
     expect(out.es).toEqual([])
   })
 
-  it('caps each language at perLang even when one language dominates', async () => {
+  // The quota moved into lex.search_vi in 0047, which applies it per language before
+  // ranking. Capping again here would throw away rows the database had already
+  // reserved for that language.
+  it('keeps every row the database allotted to a language', async () => {
     const { client } = rpcClient([
       viRow('en:a', 'en', 'a'), viRow('en:b', 'en', 'b'), viRow('en:c', 'en', 'c'),
       viRow('zh:d', 'zh', 'd'),
     ])
     const out = await searchAllLanguagesVi(client, 'x', 2)
-    expect(out.en.map((e) => e.headword)).toEqual(['a', 'b'])
+    expect(out.en.map((e) => e.headword)).toEqual(['a', 'b', 'c'])
     expect(out.zh.map((e) => e.headword)).toEqual(['d'])
+  })
+
+  // SQLSTATE 57014 is the statement timeout. Answering it as an empty result was tried
+  // and measured: "cái bàn" costs 122 ms warm and returns table, tables, mesa and tabla,
+  // but on a cold read it crossed the 3 s the anon role allows and the learner was shown
+  // a page saying their word is in no language. The route turns this into a 503.
+  it('raises on the statement timeout rather than calling the dictionary empty', async () => {
+    const rpc = vi.fn(async () => ({ data: null, error: { code: '57014', message: 'canceling statement due to statement timeout' } }))
+    const client = { schema: () => ({ rpc }) } as unknown as import('@supabase/supabase-js').SupabaseClient
+    await expect(searchAllLanguagesVi(client, 'nhận được')).rejects.toMatchObject({ code: '57014' })
+  })
+
+  it('still raises any other database error', async () => {
+    const rpc = vi.fn(async () => ({ data: null, error: { code: '42883', message: 'operator does not exist' } }))
+    const client = { schema: () => ({ rpc }) } as unknown as import('@supabase/supabase-js').SupabaseClient
+    await expect(searchAllLanguagesVi(client, 'nhận được')).rejects.toMatchObject({ code: '42883' })
   })
 
   it('skips the round trip on an empty query', async () => {

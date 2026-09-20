@@ -12,7 +12,6 @@ import { LinkPending } from '@/components/ui/LinkPending'
  */
 const NAV = [
   { href: '/dictionary', label: 'Tra cứu', prefetch: true },
-  { href: '/dictionary/reverse', label: 'Tra Việt', prefetch: true },
   { href: '/grammar', label: 'Ngữ pháp', prefetch: true },
   { href: '/practice', label: 'Luyện tập', prefetch: false },
   { href: '/wordlist', label: 'Sổ tay', prefetch: false },
@@ -20,8 +19,8 @@ const NAV = [
 
 export function SiteHeader() {
   const path = usePathname() || '/'
-  // The longest match wins. /dictionary/reverse is inside /dictionary, so a plain prefix
-  // test lights both of them up at once.
+  // Prefix, not equality: /dictionary/en/hello and /dictionary/text are still the lookup.
+  // Longest first, so a future nested route marks its own item rather than its parent's.
   const current = NAV.map((n) => n.href)
     .filter((h) => path === h || path.startsWith(h + '/'))
     .sort((a, b) => b.length - a.length)[0]

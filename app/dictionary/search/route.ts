@@ -1,6 +1,6 @@
 import { unstable_cache } from 'next/cache'
 import { createContentClient } from '@/lib/supabase/content'
-import { searchBothDirections, searchVietnameseFirst } from '@/lib/dictionary/search'
+import { searchBothDirections } from '@/lib/dictionary/search'
 import { EMPTY_SEARCH_RESPONSE } from '@/lib/dictionary/response'
 import { clientKey, createColdQueryLimiter, createRateLimiter } from '@/lib/http/rateLimit'
 import { isLangCode, LANG_CODES, type LangCode } from '@/lib/languages'
@@ -13,13 +13,12 @@ import { isLangCode, LANG_CODES, type LangCode } from '@/lib/languages'
 // forget it at the same moment.
 const SEARCH_CACHE_SECONDS = 3600
 
-// The language list and the direction are part of the key, not a filter applied to a
-// cached three-language answer: a one-language request asks the database for one
-// language, so it cannot be served from the entry the three-language request stored.
+// The language list and the Vietnamese flag are part of the key, not a filter applied
+// to a cached answer: each combination asks the database something different, so one
+// cannot be served from another's entry.
 const cachedSearch = unstable_cache(
-  (q: string, langs: LangCode[], reverseOnly: boolean) => (reverseOnly
-    ? searchVietnameseFirst(createContentClient(), q, 8, langs)
-    : searchBothDirections(createContentClient(), q, 8, langs)),
+  (q: string, langs: LangCode[], vietnamese: boolean) =>
+    searchBothDirections(createContentClient(), q, 8, langs, vietnamese),
   ['dict-search-all'],
   { revalidate: SEARCH_CACHE_SECONDS, tags: ['lex'] },
 )
@@ -96,6 +95,26 @@ function tooFast(retryAfterSeconds: number): Response {
   )
 }
 
+// SQLSTATE 57014 is the statement timeout, which the anon role carries at 3 s. It is
+// what a cold read of the Vietnamese lookup hits on the Free plan's Nano compute:
+// measured on a freshly started server, "ăn" took 3,896 ms and the route answered 500,
+// while the same query took 594 ms once the shared buffers held the pages. The
+// condition is temporary and the answer is to wait, so it is a 503 with its own
+// message rather than an error page or a refusal the learner reads as a rate limit.
+const TIMEOUT_CODE = '57014'
+/** Supabase rejects with a `PostgrestError`, which carries the SQLSTATE as `code`, but a
+ *  network failure rejects with a plain `Error` that has no such field. Read rather than
+ *  cast: `as` here would claim a shape the failure path does not guarantee. */
+function isStatementTimeout(e: unknown): boolean {
+  return typeof e === 'object' && e !== null && 'code' in e && e.code === TIMEOUT_CODE
+}
+function tooSlow(): Response {
+  return Response.json(
+    { error: 'Từ điển đang khởi động chậm. Vui lòng thử lại sau vài giây.' },
+    { status: 503, headers: { 'Retry-After': '3' } },
+  )
+}
+
 export async function GET(request: Request) {
   const caller = clientKey(request)
   if (caller) {
@@ -108,11 +127,16 @@ export async function GET(request: Request) {
   if (!q) return Response.json(EMPTY_SEARCH_RESPONSE)
 
   const langs = targetLangs(params.get('langs'))
-  const reverseOnly = params.get('dir') === 'reverse'
+  const vietnamese = params.get('vi') === '1'
   const key = q.toLowerCase()
-  const cold = admitColdQuery(`${reverseOnly ? 'vi' : 'both'}:${langs.join(',')}:${key}`)
+  const cold = admitColdQuery(`${vietnamese ? 'vi' : 'auto'}:${langs.join(',')}:${key}`)
   if (!cold.allowed) return tooFast(cold.retryAfterSeconds)
 
-  const data = await cachedSearch(key, langs, reverseOnly)
-  return Response.json(data, { headers: CACHE_HEADERS })
+  try {
+    const data = await cachedSearch(key, langs, vietnamese)
+    return Response.json(data, { headers: CACHE_HEADERS })
+  } catch (e) {
+    if (isStatementTimeout(e)) return tooSlow()
+    throw e
+  }
 }

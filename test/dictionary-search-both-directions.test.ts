@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { searchBothDirections, searchVietnameseFirst } from '@/lib/dictionary/search'
+import { searchBothDirections } from '@/lib/dictionary/search'
 
 const row = (lang: string, headword: string, rank: number) => ({
   id: `${lang}:${headword}`, lang, headword, traditional: null, level: null,
@@ -13,7 +13,7 @@ const row = (lang: string, headword: string, rank: number) => ({
  * `search_vi` answers from `reverse`; `suggest` answers empty.
  */
 function mockClient(forward: Record<string, number[]>, reverse: string[] = []) {
-  const rpc = vi.fn(async (fn: string, args: { p_langs?: string[] }) => {
+  const rpc = vi.fn(async (fn: string, args: { p_langs?: string[]; p_limit?: number }) => {
     if (fn === 'search') {
       const lang = args.p_langs?.[0] ?? 'en'
       const ranks = forward[lang] ?? []
@@ -126,21 +126,40 @@ describe('target languages', () => {
   })
 })
 
-describe('searchVietnameseFirst', () => {
-  // The page declares the direction, so a Vietnamese word typed without tone marks
-  // must not have to lose a forward search first.
-  it('runs the Vietnamese lookup and never the forward search', async () => {
-    const { client, called } = mockClient({ en: [4.02], es: [], zh: [] }, ['家'])
-    const out = await searchVietnameseFirst(client, 'nha')
+describe('an explicit Vietnamese query', () => {
+  // Nothing in the text says "an" is ăn: it is also an English headword and scores
+  // 4.09, above STRUCTURAL_MATCH, so the Vietnamese direction never runs by itself.
+  it('runs the Vietnamese lookup however well the forward search did', async () => {
+    const { client, called } = mockClient({ en: [4.02], es: [], zh: [] }, ['吃'])
+    const out = await searchBothDirections(client, 'an', 8, ['en', 'es', 'zh'], true)
     expect(called('search_vi')).toBe(true)
-    expect(called('search')).toBe(false)
-    expect(out.forward).toEqual({ en: [], zh: [], es: [] })
-    expect(out.reverse.zh.map((e) => e.headword)).toEqual(['家'])
+    expect(out.forward.en).toHaveLength(1)
+    expect(out.reverse.zh.map((e) => e.headword)).toEqual(['吃'])
   })
 
-  it('falls back to suggestions when the Vietnamese lookup found nothing', async () => {
-    const { client, called } = mockClient({ en: [], es: [], zh: [] }, [])
-    await searchVietnameseFirst(client, 'xyzzy')
-    expect(called('suggest')).toBe(true)
+  // Vietnamese is written in Latin script, so the call could not answer and costs
+  // 780 to 1,195 ms of statement timeout budget.
+  it('still refuses to run it for a Han query', async () => {
+    const { client, called } = mockClient({ en: [], es: [], zh: [4.0] })
+    await searchBothDirections(client, '習', 8, ['en', 'es', 'zh'], true)
+    expect(called('search_vi')).toBe(false)
+  })
+})
+
+describe('per-language budget', () => {
+  // `lex.search_vi` counts p_limit per language since 0047. Passing the total again
+  // would let one language take the whole budget, which is what it used to do:
+  // "di bo" came back 16 English rows, 7 Spanish and 1 Chinese.
+  it('asks the Vietnamese lookup for one budget per language', async () => {
+    const { client, rpc } = mockClient({ en: [], es: [], zh: [] }, ['家'])
+    await searchBothDirections(client, 'nhà', 8, ['en', 'es', 'zh'])
+    const vi = rpc.mock.calls.find(([name]) => name === 'search_vi')
+    expect(vi?.[1].p_limit).toBe(8)
+  })
+
+  it('keeps every row the database returned for a language', async () => {
+    const { client } = mockClient({ en: [], es: [], zh: [] }, ['家', '房子', '屋'])
+    const out = await searchBothDirections(client, 'nhà', 2, ['zh'])
+    expect(out.reverse.zh).toHaveLength(3)
   })
 })

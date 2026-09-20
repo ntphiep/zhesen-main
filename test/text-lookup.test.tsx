@@ -7,13 +7,16 @@ import { callAi, aiEnabled } from '@/lib/ai/browser'
 
 vi.mock('@/lib/ai/browser', () => ({ callAi: vi.fn(), aiEnabled: vi.fn() }))
 
+const params = { get: vi.fn(() => null as string | null) }
+vi.mock('next/navigation', () => ({ useSearchParams: () => params }))
+
 const entry = (headword: string) => ({
-  id: `en:${headword}`, lang: 'en', headword, traditional: null, level: null,
+  id: `en:${headword}`, lang: 'en' as const, headword, traditional: null, level: null,
   ipa: null, pos: 'noun,verb', glossVi: 'Con chó', glossEn: null, audioUrl: null,
 })
 
 const answer = {
-  lang: 'en',
+  lang: 'en' as const,
   words: [
     { text: 'The', entry: null },
     { text: 'dog', entry: entry('dog') },
@@ -27,6 +30,7 @@ function stubLookup(body: unknown = answer, ok = true) {
 beforeEach(() => {
   vi.mocked(callAi).mockReset()
   vi.mocked(aiEnabled).mockReset().mockResolvedValue(false)
+  params.get.mockReset().mockReturnValue(null)
   resetAiEnabledCache()
   stubLookup()
 })
@@ -92,6 +96,23 @@ describe('TextLookup', () => {
     await userEvent.type(screen.getByLabelText(/Dán một cụm từ/), 'The dog')
     await userEvent.click(screen.getByRole('button', { name: 'Tra từng từ' }))
     expect(await screen.findByText('Đoạn văn bản quá dài hoặc để trống.')).toBeInTheDocument()
+  })
+
+  // The learner reached this page by pressing a link, which is the question. A second
+  // button to press would be asking it again.
+  it('looks the passage up by itself when the URL carries it', async () => {
+    params.get.mockReturnValue('The dog')
+    render(<TextLookup />)
+    const link = await screen.findByRole('link', { name: /dog/ })
+    expect(link).toHaveAttribute('href', '/dictionary/en/dog')
+    expect(screen.getByLabelText(/Dán một cụm từ/)).toHaveValue('The dog')
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('asks for nothing when the URL carries no query', () => {
+    render(<TextLookup />)
+    expect(screen.getByLabelText(/Dán một cụm từ/)).toHaveValue('')
+    expect(fetch).not.toHaveBeenCalled()
   })
 
   it('refuses to send a passage over the cap', async () => {
