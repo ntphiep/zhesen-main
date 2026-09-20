@@ -1,7 +1,6 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { getEntryDetail } from '@/lib/dictionary/entryDetail'
+import { useEffect, useState } from 'react'
+import { fetchEntryDetail } from '@/lib/dictionary/entryResponse'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { AiCoach } from '@/components/ai/AiCoach'
 import { pickExamples, isSentenceTranslation } from '@/lib/dictionary/textQuality'
@@ -26,7 +25,6 @@ export function resetDetailCache(): void {
 }
 
 export function WordDetail({ word }: { word: UserWord }) {
-  const supabase = useMemo(() => createClient(), [])
   const [state, setState] = useState<DetailState>(() => {
     const id = word.entryId
     return id && detailCache.has(id)
@@ -37,20 +35,23 @@ export function WordDetail({ word }: { word: UserWord }) {
   useEffect(() => {
     const entryId = word.entryId
     if (!entryId || detailCache.has(entryId)) return
-    let cancelled = false
+    const ctrl = new AbortController()
     async function run(id: string) {
       setState({ status: 'loading' })
       try {
-        const d = await getEntryDetail(supabase, id)
-        detailCache.set(id, d)
-        if (!cancelled) setState({ status: 'ok', detail: d })
-      } catch {
-        if (!cancelled) setState({ status: 'error' })
+        const outcome = await fetchEntryDetail(id, ctrl.signal)
+        // A refusal is not an empty entry: caching it would replay the refusal for the
+        // rest of the session.
+        if (outcome.status === 'refused') { setState({ status: 'error' }); return }
+        detailCache.set(id, outcome.detail)
+        setState({ status: 'ok', detail: outcome.detail })
+      } catch (e) {
+        if ((e as Error).name !== 'AbortError') setState({ status: 'error' })
       }
     }
     run(entryId)
-    return () => { cancelled = true }
-  }, [supabase, word.entryId])
+    return () => { ctrl.abort() }
+  }, [word.entryId])
 
   if (!word.entryId) {
     return (

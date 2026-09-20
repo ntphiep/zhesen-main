@@ -1,19 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { WordDetail, resetDetailCache } from '@/components/wordlist/WordDetail'
-import { getEntryDetail } from '@/lib/dictionary/entryDetail'
+import { fetchEntryDetail } from '@/lib/dictionary/entryResponse'
 import type { UserWord } from '@/lib/wordlist/types'
 
-vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
-vi.mock('@/lib/dictionary/entryDetail', () => ({
-  getEntryDetail: vi.fn(async () => ({
-    id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: 'A1', ipa: '/dɔːɡ/', pos: 'noun',
-    glossVi: 'con chó', glossEn: 'dog', audioUrl: null,
-    senses: [{ pos: 'noun', glossVi: 'con chó', glossEn: 'dog', senseOrder: 1 }],
-    pronunciations: [{ accent: 'en-US', ipa: '/dɔːɡ/', audioUrl: null }],
-    examples: [{ text: 'The dog barked.', reading: null, translationVi: 'Con chó sủa.', translationEn: null }],
-    relations: [{ relationType: 'synonym', relatedText: 'hound', relatedEntryId: null }],
-    attributes: {},
+// The expanded row reads the cached /dictionary/entry route, not Supabase: a direct
+// query from the browser paid the full round trip on every first expand.
+vi.mock('@/lib/dictionary/entryResponse', () => ({
+  fetchEntryDetail: vi.fn(async () => ({
+    status: 'ok' as const,
+    detail: {
+      id: 'en:dog', lang: 'en' as const, headword: 'dog', traditional: null, level: 'A1', ipa: '/dɔːɡ/', pos: 'noun',
+      glossVi: 'Con chó', glossEn: 'dog', audioUrl: null,
+      senses: [{ pos: 'noun', glossVi: 'Con chó', glossEn: 'dog', senseOrder: 1 }],
+      pronunciations: [{ accent: 'en-US', ipa: '/dɔːɡ/', audioUrl: null }],
+      examples: [{ text: 'The dog barked.', reading: null, translationVi: 'Con chó sủa.', translationEn: null }],
+      relations: [{ relationType: 'synonym', relatedText: 'hound', relatedEntryId: null }],
+      attributes: {},
+    },
   })),
 }))
 
@@ -40,22 +44,32 @@ describe('WordDetail', () => {
     expect(screen.getByText('ghi chú')).toBeInTheDocument()
   })
 
-  // Expanding a row, collapsing it and expanding it again unmounts and remounts
-  // this component; a remount must not repeat the round trip to Supabase, since
-  // the entry page already serves the same data from a one-hour server cache.
-  it('does not ask Supabase again for an entry it already loaded', async () => {
+  // Expanding a row, collapsing it and expanding it again unmounts and remounts this
+  // component; a remount must not repeat the request.
+  it('does not fetch again for an entry it already loaded', async () => {
     const { unmount } = render(<WordDetail word={base} />)
     expect(await screen.findByText('Con chó sủa.')).toBeInTheDocument()
-    const callsAfterFirst = vi.mocked(getEntryDetail).mock.calls.length
+    const callsAfterFirst = vi.mocked(fetchEntryDetail).mock.calls.length
     unmount()
     render(<WordDetail word={base} />)
     expect(screen.getByText('Con chó sủa.')).toBeInTheDocument()
-    expect(vi.mocked(getEntryDetail).mock.calls.length).toBe(callsAfterFirst)
+    expect(vi.mocked(fetchEntryDetail).mock.calls.length).toBe(callsAfterFirst)
   })
 
-  it('shows error message when detail fetch fails', async () => {
-    vi.mocked(getEntryDetail).mockRejectedValueOnce(new Error('network error'))
+  it('shows error message when the request fails', async () => {
+    vi.mocked(fetchEntryDetail).mockRejectedValueOnce(new Error('network error'))
     render(<WordDetail word={base} />)
     expect(await screen.findByText(/Không tải được/i)).toBeInTheDocument()
+  })
+
+  // A refused request is not an entry with nothing in it. Caching the refusal would
+  // replay it for the rest of the session.
+  it('shows an error and remembers nothing when the route refuses', async () => {
+    vi.mocked(fetchEntryDetail).mockResolvedValueOnce({ status: 'refused' })
+    const { unmount } = render(<WordDetail word={base} />)
+    expect(await screen.findByText(/Không tải được/i)).toBeInTheDocument()
+    unmount()
+    render(<WordDetail word={base} />)
+    expect(await screen.findByText('Con chó sủa.')).toBeInTheDocument()
   })
 })
