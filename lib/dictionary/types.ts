@@ -58,6 +58,9 @@ export interface SuggestionPreview {
   lang: LangCode
   headword: string
   glossVi: string | null
+  /** Which side of the entry the trigram matched. A lookup panel only offers the side it
+   *  searches: a Vietnamese query answered with a Spanish headword reads as nonsense. */
+  kind: 'headword' | 'gloss_vi'
 }
 /** A longer entry that contains the word being looked at: 学 -> 学生, water -> water down.
  *  See supabase/migrations/0025_entries_containing.sql. */

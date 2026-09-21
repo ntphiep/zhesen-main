@@ -1,9 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
-import { looksHan, looksVietnamese } from './detect'
 import type { DictEntryPreview, SuggestionPreview } from './types'
 import { entryPreviewRow, searchRpcRow, suggestRow, toPreview, toPreviewFromSearchRow, toSuggestion } from './rows'
-import { bestScore } from './response'
 
 /**
  * Preview-list queries: `lex.search` (supabase/migrations/0016_search.sql), the Vietnamese
@@ -63,7 +61,9 @@ export async function searchAllLanguagesVi(
   return grouped
 }
 
-/** Trigram-nearest "did you mean...?" candidates, via the `lex.suggest` RPC. */
+/** Trigram-nearest "did you mean...?" candidates, via the `lex.suggest` RPC. `lex.suggest`
+ *  searches headwords and Vietnamese glosses at once and labels each row with the side it
+ *  matched, so the caller keeps only the side it asked about. */
 export async function suggestNearby(
   supabase: SupabaseClient, query: string, limit = 5,
 ): Promise<SuggestionPreview[]> {
@@ -74,13 +74,16 @@ export async function suggestNearby(
   return suggestRow.array().parse(data ?? []).map(toSuggestion)
 }
 
-export interface SearchBothDirections {
-  /** Direct forward search (query typed in en/es/zh), grouped by language. */
-  forward: Record<LangCode, DictEntryPreview[]>
-  /** Reverse search (query typed in Vietnamese), grouped by the target language of the
-   *  match. Populated only when it was worth attempting. */
-  reverse: Record<LangCode, DictEntryPreview[]>
-  /** Trigram-nearest suggestions, populated only when both directions came back empty. */
+/** Which way round the lookup runs. The learner chooses it by which box they type in, so
+ *  nothing is guessed from the text: "an", "ban" and "con" are real English and Spanish
+ *  headwords as well as Vietnamese words, and no rule can separate them. */
+export type Direction = 'vi' | 'fw'
+
+export interface SearchOneDirection {
+  /** Grouped by language. For `vi` that is the language the answer is written in. */
+  entries: Record<LangCode, DictEntryPreview[]>
+  /** Trigram-nearest suggestions, populated only when `entries` came back empty, and only
+   *  from the side this direction searches. */
   suggestions: SuggestionPreview[]
 }
 
@@ -90,50 +93,36 @@ function countAll(byLang: Record<LangCode, DictEntryPreview[]>): number {
   return LANG_CODES.reduce((n, l) => n + byLang[l].length, 0)
 }
 
-/** Below this, `lex.search` found no structural match: 4.0 exact headword, 3.5 inflected
- *  form, 3.0 prefix, anything lower a trigram guess. supabase/migrations/0016_search.sql */
-const STRUCTURAL_MATCH = 3.0
-
-/** The search box's one field: always forward (en/es/zh), plus the Vietnamese reverse
- *  direction when the query looks Vietnamese or the forward BEST SCORE is below
- *  `STRUCTURAL_MATCH` -- result count would let weak guesses suppress the reverse lookup.
- *  Trigram suggestions only when neither direction found anything.
+/**
+ * One lookup, one direction, one round trip.
  *
- *  `forceReverse` is the learner saying the word is Vietnamese. Nothing else can tell:
- *  "an", "ban" and "con" are real headwords in English and Spanish and score 4.01 to
- *  4.12, above STRUCTURAL_MATCH, so ăn, bàn and con would never be looked up. Running
- *  the Vietnamese direction for every Latin query instead is not an option: it costs 543
- *  to 1,936 ms measured on production, against 176 to 513 ms for the forward search. */
-export async function searchBothDirections(
-  supabase: SupabaseClient, query: string, perLang = 8, langs: readonly LangCode[] = LANG_CODES,
-  forceReverse = false,
-): Promise<SearchBothDirections> {
+ * The previous shape ran both directions and let a score decide which to show. That cost a
+ * second Supabase call on every weak forward match and still answered "cá" with ca, can and
+ * called, because the forward search scored a real English headword above the threshold and
+ * the Vietnamese direction never ran. Two input boxes remove the guess entirely.
+ */
+export async function searchOneDirection(
+  supabase: SupabaseClient,
+  query: string,
+  direction: Direction,
+  perLang = 8,
+  langs: readonly LangCode[] = LANG_CODES,
+): Promise<SearchOneDirection> {
   const q = query.trim()
-  if (!q || langs.length === 0) return { forward: EMPTY_BY_LANG, reverse: EMPTY_BY_LANG, suggestions: [] }
+  if (!q || langs.length === 0) return { entries: EMPTY_BY_LANG, suggestions: [] }
 
-  // A Han query must skip the reverse lookup: `lex.search` scores a PGroonga match at 1.5,
-  // under STRUCTURAL_MATCH, so any inexact Chinese query falls through to `lex.search_vi`
-  // for 780 to 1,195 ms and zero rows (measured on 習), and production answered 500 past
-  // the statement timeout (SQLSTATE 57014).
-  //
-  // A Vietnamese diacritic decides the reverse lookup without any forward result, so the
-  // two run together. Measured in production: 334 to 4,078 ms for a Vietnamese query
-  // against 176 to 513 ms for an English, Spanish or Chinese one.
-  const reverseIsCertain = !looksHan(q) && (forceReverse || looksVietnamese(q))
-  const [forward, eagerReverse] = await Promise.all([
-    searchAllLanguages(supabase, q, perLang, langs),
-    reverseIsCertain ? searchAllLanguagesVi(supabase, q, perLang, langs) : null,
-  ])
-  const reverse = eagerReverse
-    ?? (!looksHan(q) && bestScore(forward) < STRUCTURAL_MATCH
-      ? await searchAllLanguagesVi(supabase, q, perLang, langs)
-      : EMPTY_BY_LANG)
+  const entries = direction === 'vi'
+    ? await searchAllLanguagesVi(supabase, q, perLang, langs)
+    : await searchAllLanguages(supabase, q, perLang, langs)
 
-  const suggestions = countAll(forward) === 0 && countAll(reverse) === 0
-    ? await suggestNearby(supabase, q)
-    : []
+  if (countAll(entries) > 0) return { entries, suggestions: [] }
 
-  return { forward, reverse, suggestions }
+  // Offered only from the side the learner is typing on. A Vietnamese query answered with
+  // sagrado, divino and santidad under "Có phải bạn tìm" was the previous behaviour, and
+  // those three were in fact the correct answer to "thiêng liêng" all along.
+  const want = direction === 'vi' ? 'gloss_vi' : 'headword'
+  const suggestions = (await suggestNearby(supabase, q)).filter((s) => s.kind === want)
+  return { entries, suggestions }
 }
 
 /** Most frequent entries for a language (for the per-language "common words" list). */

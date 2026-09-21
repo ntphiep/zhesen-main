@@ -19,7 +19,7 @@ const NAV = [
 
 export function SiteHeader() {
   const path = usePathname() || '/'
-  // Prefix, not equality: /dictionary/en/hello and /dictionary/text are still the lookup.
+  // Prefix, not equality: /dictionary/en/hello is still the lookup.
   // Longest first, so a future nested route marks its own item rather than its parent's.
   const current = NAV.map((n) => n.href)
     .filter((h) => path === h || path.startsWith(h + '/'))

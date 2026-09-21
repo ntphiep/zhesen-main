@@ -1,6 +1,6 @@
 import { unstable_cache } from 'next/cache'
 import { createContentClient } from '@/lib/supabase/content'
-import { searchBothDirections } from '@/lib/dictionary/search'
+import { searchOneDirection, type Direction } from '@/lib/dictionary/search'
 import { EMPTY_SEARCH_RESPONSE } from '@/lib/dictionary/response'
 import { clientKey, createColdQueryLimiter, createRateLimiter } from '@/lib/http/rateLimit'
 import { isLangCode, LANG_CODES, type LangCode } from '@/lib/languages'
@@ -13,13 +13,13 @@ import { isLangCode, LANG_CODES, type LangCode } from '@/lib/languages'
 // forget it at the same moment.
 const SEARCH_CACHE_SECONDS = 3600
 
-// The language list and the Vietnamese flag are part of the key, not a filter applied
-// to a cached answer: each combination asks the database something different, so one
-// cannot be served from another's entry.
+// The language list and the direction are part of the key, not a filter applied to a
+// cached answer: each combination asks the database something different, so one cannot be
+// served from another's entry.
 const cachedSearch = unstable_cache(
-  (q: string, langs: LangCode[], vietnamese: boolean) =>
-    searchBothDirections(createContentClient(), q, 8, langs, vietnamese),
-  ['dict-search-all'],
+  (q: string, langs: LangCode[], direction: Direction) =>
+    searchOneDirection(createContentClient(), q, direction, 8, langs),
+  ['dict-search-one'],
   { revalidate: SEARCH_CACHE_SECONDS, tags: ['lex'] },
 )
 
@@ -127,13 +127,15 @@ export async function GET(request: Request) {
   if (!q) return Response.json(EMPTY_SEARCH_RESPONSE)
 
   const langs = targetLangs(params.get('langs'))
-  const vietnamese = params.get('vi') === '1'
+  // Which box the learner typed in. `fw` unless they said otherwise, because the foreign
+  // direction is the cheaper query and an unknown caller should not get the expensive one.
+  const direction: Direction = params.get('dir') === 'vi' ? 'vi' : 'fw'
   const key = q.toLowerCase()
-  const cold = admitColdQuery(`${vietnamese ? 'vi' : 'auto'}:${langs.join(',')}:${key}`)
+  const cold = admitColdQuery(`${direction}:${langs.join(',')}:${key}`)
   if (!cold.allowed) return tooFast(cold.retryAfterSeconds)
 
   try {
-    const data = await cachedSearch(key, langs, vietnamese)
+    const data = await cachedSearch(key, langs, direction)
     return Response.json(data, { headers: CACHE_HEADERS })
   } catch (e) {
     if (isStatementTimeout(e)) return tooSlow()

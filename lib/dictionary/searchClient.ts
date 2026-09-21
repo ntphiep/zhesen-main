@@ -1,4 +1,5 @@
 import { searchResponse, type SearchResponse } from './response'
+import type { Direction } from './search'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
 
 /** One call to the cached /dictionary/search route. `refused` is an outcome, not an error:
@@ -16,9 +17,8 @@ export const REFUSED_MESSAGE = 'Chưa tra cứu được. Vui lòng thử lại 
 export interface SearchOptions {
   /** Which languages to translate into. Omitted means all three. */
   langs?: readonly LangCode[]
-  /** The learner said the query is Vietnamese, so run that direction whatever the
-   *  forward search scored. */
-  vietnamese?: boolean
+  /** Which box the query was typed in. Omitted means the foreign direction. */
+  dir?: Direction
 }
 
 /** The query string the route reads. Exported because the search box keys its own
@@ -27,7 +27,7 @@ export function searchQueryString(query: string, opts: SearchOptions = {}): stri
   const langs = opts.langs ?? LANG_CODES
   const params = new URLSearchParams({ q: query.trim() })
   if (langs.length !== LANG_CODES.length) params.set('langs', langs.join(','))
-  if (opts.vietnamese) params.set('vi', '1')
+  if (opts.dir === 'vi') params.set('dir', 'vi')
   return params.toString()
 }
 

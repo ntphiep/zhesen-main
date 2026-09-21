@@ -12,15 +12,16 @@ const fetchSearch = vi.hoisted(() => vi.fn())
 vi.mock('@/lib/dictionary/searchClient', () => ({ fetchSearch }))
 vi.mock('@/lib/ai/browser', () => ({ callAi: vi.fn(), aiEnabled: vi.fn(async () => false) }))
 
+// AddWordDialog now makes one call per direction: fw with no opts, vi with { dir: 'vi' }.
+// The mock dispatches on that third argument the same way the route dispatches on `dir`.
 function answer(forwardEn: unknown[], reverseEn: unknown[] = []) {
-  fetchSearch.mockResolvedValue({
+  fetchSearch.mockImplementation(async (_q: string, _signal: unknown, opts?: { dir?: string }) => ({
     status: 'ok',
     data: {
-      forward: { en: forwardEn, es: [], zh: [] },
-      reverse: { en: reverseEn, es: [], zh: [] },
+      entries: opts?.dir === 'vi' ? { en: reverseEn, es: [], zh: [] } : { en: forwardEn, es: [], zh: [] },
       suggestions: [],
     },
-  })
+  }))
 }
 
 beforeEach(() => {

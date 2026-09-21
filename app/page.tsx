@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { LANGUAGES } from '@/lib/languages'
 import { LanguageCard } from '@/components/home/LanguageCard'
 import { WordOfDayCard } from '@/components/home/WordOfDayCard'
-import { SearchBox } from '@/components/search/SearchBox'
+import { LookupPair } from '@/components/search/LookupPair'
 import { getCachedWordOfDay } from '@/lib/dictionary/cached'
 
 const SECTIONS = [
@@ -20,7 +20,7 @@ export default async function Home() {
       <h1 className="text-4xl font-bold">Zhesen</h1>
       <p className="mt-2 text-black/60">Học tiếng Trung, Tây Ban Nha và Anh.</p>
       <div className="mt-8">
-        <SearchBox />
+        <LookupPair />
       </div>
       <div className="mt-6">
         <WordOfDayCard word={wordOfDay} />

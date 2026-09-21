@@ -1,69 +1,31 @@
-import { SearchBox } from '@/components/search/SearchBox'
-import { LANGUAGES, isLangCode } from '@/lib/languages'
+import { LookupPair } from '@/components/search/LookupPair'
+import { isLangCode } from '@/lib/languages'
 import { pageMetadata } from '@/lib/site'
 
 export const metadata = pageMetadata({
   title: 'Tra từ',
-  description: 'Tra từ tiếng Trung, Tây Ban Nha và Anh, hoặc gõ thẳng tiếng Việt để tra ngược.',
+  description: 'Tra tiếng Việt sang Anh, Trung, Tây Ban Nha, và ngược lại. Một từ hay cả đoạn.',
 })
 
-/** What the box accepts, shown because none of it is guessable from an empty
- * field: that Vietnamese works as a query, that accents and tone marks are
- * optional, and that a misspelling still finds the word. */
-const HINTS: { label: string; example: string }[] = [
-  { label: 'Một từ ở bất kỳ ngôn ngữ nào', example: 'holy · hola · 有没有' },
-  { label: 'Tiếng Việt, để tra ngược', example: 'con chó · thiêng liêng' },
-  { label: 'Pinyin không dấu thanh', example: 'you mei you' },
-  { label: 'Gõ sai hoặc thiếu dấu vẫn tìm được', example: 'comio · nino' },
-]
-
+/**
+ * Two boxes, one per direction, instead of one box that guessed.
+ *
+ * Nothing in a Vietnamese word separates it from an English or Spanish one: "an", "ban"
+ * and "con" are real headwords in both. The guess was wrong often enough that "cá"
+ * answered with ca, can and called, and it cost a second database call every time it was
+ * unsure. Which box the learner types in is the answer.
+ */
 export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string; lang?: string }> }) {
   const sp = await searchParams
-  // `searchPath` (lib/dictionary/entryId.ts) appends the language, because a chip
-  // for a related word or an inflected form already knows which language it came
-  // from. Dropping it here made every such chip search all three.
+  // `searchPath` (lib/dictionary/entryId.ts) appends the language, because a chip for a
+  // related word or an inflected form already knows which language it came from.
   const lang = sp.lang && isLangCode(sp.lang) ? sp.lang : undefined
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
       <h1 className="text-3xl font-bold">Tra cứu</h1>
-      <p className="mt-1 text-sm text-black/60">
-        Gõ tiếng Anh, Trung, Tây Ban Nha hoặc tiếng Việt — hệ thống tự nhận diện ngôn ngữ.
-      </p>
       <div className="mt-6">
-        <SearchBox initialQuery={sp.q ?? ''} lang={lang} autoFocus />
+        <LookupPair lang={lang} initialQuery={sp.q ?? ''} autoFocus />
       </div>
-
-      {!sp.q && (
-        <section className="mt-10 flex flex-col gap-6">
-          <div className="flex flex-col gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-black/55">Có thể gõ gì</h2>
-            <ul className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
-              {HINTS.map((h) => (
-                <li key={h.label} className="flex flex-col">
-                  <span className="text-sm text-black/70">{h.label}</span>
-                  <span className="text-sm text-black/45">{h.example}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-black/55">Hoặc học theo ngôn ngữ</h2>
-            <div className="flex flex-wrap gap-2">
-              {LANGUAGES.map((l) => (
-                <a
-                  key={l.code}
-                  href={`/learn/${l.code}`}
-                  className="rounded-lg border border-black/10 px-4 py-2 text-sm hover:bg-black/5"
-                >
-                  <span className="font-medium">{l.nativeName}</span>
-                  <span className="ml-2 text-black/50">{l.name}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
     </main>
   )
 }

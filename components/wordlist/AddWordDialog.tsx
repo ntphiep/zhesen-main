@@ -71,13 +71,13 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
         // Through the cached route: straight to Supabase costs a cross-region round trip
         // per keystroke and skips both the shared cache and the per-address budget.
         const outcome = await fetchSearch(query, ctrl.signal)
-        // Both directions: reading only `forward` means typing a word's Vietnamese
-        // meaning finds nothing, though the route already answered under `reverse`.
         if (outcome.status !== 'ok') { setResults([]); return }
-        // Keyed by id, so this keeps the first of each and the arrival order,
-        // forward before reverse.
+        // Both directions, because the learner may type either the word or its Vietnamese
+        // meaning, and the route now answers one per call. Keyed by id so the foreign
+        // direction, which is the cheaper and more likely answer, keeps first place.
+        const vi = await fetchSearch(query, ctrl.signal, { dir: 'vi' })
         const byId = new Map<string, DictEntryPreview>()
-        for (const e of [...outcome.data.forward[lang], ...outcome.data.reverse[lang]]) {
+        for (const e of [...outcome.data.entries[lang], ...(vi.status === 'ok' ? vi.data.entries[lang] : [])]) {
           if (!byId.has(e.id)) byId.set(e.id, e)
         }
         setResults([...byId.values()])

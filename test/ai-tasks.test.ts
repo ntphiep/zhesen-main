@@ -49,24 +49,3 @@ describe('task inputs', () => {
     expect(ERASED_TASKS.enrich.promptFor({ lang: 'fr', headword: 'chien' })).toBeNull()
   })
 })
-
-describe('translate', () => {
-  // Layer two of phrase lookup. Layer one answers with no model at all, so this one
-  // only has to refuse what it cannot read.
-  it('accepts a passage and names its language in the prompt', () => {
-    const prompt = ERASED_TASKS.translate.promptFor({ lang: 'en', text: 'The dog barks.' })
-    expect(prompt).toContain('The dog barks.')
-    expect(prompt).toContain('Tiếng Anh')
-  })
-
-  it('refuses a passage over the cap the route enforces', () => {
-    expect(ERASED_TASKS.translate.promptFor({ lang: 'en', text: 'x'.repeat(1001) })).toBeNull()
-    expect(ERASED_TASKS.translate.promptFor({ lang: 'en', text: '   ' })).toBeNull()
-  })
-
-  it('refuses an answer with no translation in it', () => {
-    expect(ERASED_TASKS.translate.parseOutput({ translationVi: 'Con chó sủa.' }))
-      .toEqual({ translationVi: 'Con chó sủa.' })
-    expect(ERASED_TASKS.translate.parseOutput({ translationVi: '' })).toBeNull()
-  })
-})

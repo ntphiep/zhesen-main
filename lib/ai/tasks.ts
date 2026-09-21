@@ -106,26 +106,6 @@ export const tagsOutput = z.object({
 
 export type TagsOutput = z.infer<typeof tagsOutput>
 
-// ---------------------------------------------------------------- translate
-
-/** The same ceiling as one chat turn: this text is pasted by a learner and sent to the
- *  model whole, so the two paths bill the same way. */
-const passage = z.string().trim().min(1).max(1000)
-
-export const translateInput = z.object({
-  /** The language the text is written in, as the lookup page detected it. */
-  lang: langCode,
-  text: passage,
-})
-
-export const translateOutput = z.object({
-  /** The whole passage in Vietnamese, not a word list: the word-by-word layer beside it
-   *  already covers the words. */
-  translationVi: z.string().min(1).max(2000),
-})
-
-export type TranslateOutput = z.infer<typeof translateOutput>
-
 // ---------------------------------------------------------------- chat
 
 /** One turn of the conversation. Long enough for a paragraph the learner pasted
@@ -259,25 +239,6 @@ export const TASKS = {
       ].filter(Boolean).join('\n'),
   } satisfies TaskSpec<z.infer<typeof tagsInput>, TagsOutput>,
 
-  /** The second layer of phrase lookup. The first layer splits the text and resolves each
-   *  word against the dictionary, so it answers with no model at all; this one reads the
-   *  passage as a whole, which is the part a word list cannot do. */
-  translate: {
-    input: translateInput,
-    output: translateOutput,
-    maxTokens: 1400,
-    system: TEACHER,
-    prompt: ({ lang, text }) =>
-      [
-        `Đoạn văn bản sau viết bằng ${LANG_LABELS[lang]}:`,
-        text,
-        'Dịch toàn bộ sang tiếng Việt tự nhiên, giữ đúng nghĩa và giọng văn, không thêm bớt.',
-        'Không giải thích từng từ, không chú thích.',
-        'Trả JSON với đúng khoá sau:',
-        '{"translationVi": bản dịch tiếng Việt của toàn bộ đoạn trên}',
-      ].join('\n'),
-  } satisfies TaskSpec<z.infer<typeof translateInput>, TranslateOutput>,
-
   /** The assistant as a conversation, reachable from every page. The current page goes in
    *  as one line of context so a pronoun in the question resolves; history stays capped
    *  because every turn is re-sent and re-charged. */
@@ -337,6 +298,5 @@ export const ERASED_TASKS: Record<TaskName, ErasedTask> = {
   coach: erase(TASKS.coach),
   suggest: erase(TASKS.suggest),
   tags: erase(TASKS.tags),
-  translate: erase(TASKS.translate),
   chat: erase(TASKS.chat),
 }

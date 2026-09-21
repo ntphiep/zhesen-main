@@ -130,6 +130,20 @@ loosen or delete a test to make it pass.
   behaviour created an `auth.users` row per cookieless request: 122 accounts of which 1 held
   data, and hitting Supabase's sign-in ceiling cost real users their sessions. Any new write
   path must call `ensureSession`.
+- The lookup has one box per direction and detects nothing. Vietnamese cannot be told from
+  English or Spanish by its text: "an", "ban" and "con" are real headwords in both and
+  score 4.01 to 4.12 in `lex.search`, above any threshold, so a single box answered "cá"
+  with ca, can and called. `LookupPanel` (`components/search/LookupPanel.tsx`) takes a
+  `direction`, the route reads `dir=vi`, and `searchOneDirection` runs exactly one RPC. Do
+  not reintroduce a detector; `looksVietnamese` and `looksHan` were deleted for this.
+- `lex.gloss_terms` is derived from `lex.senses`, never written by hand. Three
+  statement-level triggers rebuild an entry's rows through `lex.gloss_terms_reload`
+  whenever its senses change. A gloss over 80 characters is a definition, not a list of
+  terms, and contributes none: splitting one made taco answer "cơm" as strongly as 饭.
+- `azureTranslatorConfig()` returning null is a valid state, like `aiConfig()`.
+  `POST /dictionary/translate` then answers `{"enabled": false}` and the passage block
+  disappears instead of failing. One Azure request carries every target language; never
+  loop over them. Azure spells Chinese `zh-Hans` and this project spells it `zh`.
 - Wiktionary audio does not always pronounce its own headword: `En-uk-a_cat.ogg` says "a cat"
   and sits on the entry for "cat". Every read of `audio_url` goes through
   `audioMatchesHeadword` (`lib/dictionary/pronunciation.ts`). Measured over 699 records, 631
@@ -159,6 +173,13 @@ loosen or delete a test to make it pass.
   line in `ERASED_TASKS`. The route needs no change.
 
 ## Removed, do not rebuild
+
+Verified to have no remaining callers before deletion on 2026-09-21: `components/search/SearchBox.tsx`
+and `components/search/TextLookup.tsx` (both replaced by `LookupPanel`), the
+`/dictionary/text` page (the passage lookup lives inside each lookup box now, and the
+`POST /dictionary/text/lookup` route under it stays), `looksVietnamese` and `looksHan` in
+`lib/dictionary/detect.ts`, `bestScore` in `lib/dictionary/response.ts`, and the assistant's
+`translate` task in `lib/ai/tasks.ts`, which Azure AI Translator replaces.
 
 Verified to have no remaining callers before deletion on 2026-09-12: `lib/content/` (the
 ContentSource abstraction, replaced by constants in `lib/languages.ts`), `lib/quiz/`

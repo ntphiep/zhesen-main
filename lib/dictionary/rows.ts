@@ -202,7 +202,7 @@ export function toPreviewFromSearchRow(r: SearchRpcRow): DictEntryPreview {
 }
 
 export function toSuggestion(r: SuggestRow): SuggestionPreview {
-  return { id: r.id, lang: r.lang, headword: r.headword, glossVi: cleanGlossVi(r.gloss_vi) }
+  return { id: r.id, lang: r.lang, headword: r.headword, glossVi: cleanGlossVi(r.gloss_vi), kind: r.kind }
 }
 
 /** Row from the `lex.entries_containing` RPC

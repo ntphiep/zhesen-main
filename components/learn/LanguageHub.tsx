@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Ipa } from '@/components/ui/Ipa'
-import { SearchBox } from '@/components/search/SearchBox'
+import { LookupPair } from '@/components/search/LookupPair'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { LinkPending } from '@/components/ui/LinkPending'
 import type { Language } from '@/lib/languages'
@@ -19,7 +19,7 @@ export function LanguageHub({ language, common, levels }: { language: Language; 
       </div>
 
       <div className="mt-6">
-        <SearchBox lang={language.code} />
+        <LookupPair lang={language.code} />
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <Link href="/practice" className="inline-block rounded-lg bg-black px-4 py-2 text-sm font-medium text-white">
