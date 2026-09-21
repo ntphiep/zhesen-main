@@ -1,4 +1,20 @@
 import { unstable_cache } from 'next/cache'
+
+/**
+ * How long a dictionary read stays cached.
+ *
+ * Seven days, not the hour every one of these used to carry. The dictionary is a static
+ * corpus: an entry changes when a load script runs, which is a handful of times a year,
+ * and `POST /api/revalidate` flushes the `lex` tag by hand when one does. An hour meant
+ * that with 36,361 entries and the traffic this site has, essentially every visit to a
+ * word page was the first one inside its window and paid three sequential round trips to
+ * Seoul. Measured on production: a word nobody had opened cost 542 to 1,723 ms, the same
+ * word again cost 128 to 159 ms.
+ *
+ * Raising it does not risk stale data reaching a learner unnoticed, because nothing writes
+ * to `lex` except a load, and a load is the moment to call `/api/revalidate`.
+ */
+export const LEX_REVALIDATE = 604800
 import { createContentClient } from '@/lib/supabase/content'
 import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getTermPreviews } from './entryDetail'
 import { getCommonWords } from './search'
@@ -13,40 +29,40 @@ import type { LangCode } from '@/lib/languages'
 export const getCachedEntryDetail = unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),
   ['dict-entry-detail'],
-  { revalidate: 3600, tags: ['lex'] },
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
 export const getCachedCrossLanguage = unstable_cache(
   (entryId: string): Promise<CrossLangSibling[]> => getCrossLanguage(createContentClient(), entryId),
   ['dict-cross-language'],
-  { revalidate: 3600, tags: ['lex'] },
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
 export const getCachedCharacters = unstable_cache(
   (headword: string): Promise<CharInfo[]> => getCharacters(createContentClient(), headword),
   ['dict-characters'],
-  { revalidate: 3600, tags: ['lex'] },
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
 export const getCachedEntriesContaining = unstable_cache(
   (lang: LangCode, headword: string): Promise<ContainingWord[]> =>
     getEntriesContaining(createContentClient(), lang, headword),
   ['dict-entries-containing'],
-  { revalidate: 3600, tags: ['lex'] },
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
 export const getCachedWordKin = unstable_cache(
   (lang: LangCode, stem: string, headword: string): Promise<DictEntryPreview[]> =>
     getWordKin(createContentClient(), lang, stem, headword),
   ['dict-word-kin'],
-  { revalidate: 3600, tags: ['lex'] },
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
 const cachedTermPreviews = unstable_cache(
   (lang: LangCode, texts: string[]): Promise<TermPreview[]> =>
     getTermPreviews(createContentClient(), lang, texts),
   ['dict-term-previews'],
-  { revalidate: 3600, tags: ['lex'] },
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
 /** Cached per language and set of terms. The normalisation must happen HERE, not inside the
@@ -59,13 +75,14 @@ export function getCachedTermPreviews(lang: LangCode, texts: string[]): Promise<
 export const getCachedInflections = unstable_cache(
   (entryId: string): Promise<WordForm[]> => getInflections(createContentClient(), entryId),
   ['dict-inflections'],
-  { revalidate: 3600, tags: ['lex'] },
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
 // Keyed by day index so the word is stable for the whole day and cached across users.
 /** Word of the day. The day index is computed in here, not passed in: `Date.now()` in a
  *  Server Component body breaks `react-hooks/purity`. After midnight the new word appears
- *  at worst one `revalidate` window later, which is an hour. */
+ *  at worst one `revalidate` window later. This is the one read that is not static, so it
+ *  keeps the hour rather than `LEX_REVALIDATE`. */
 export const getCachedWordOfDay = unstable_cache(
   (): Promise<DailyWord | null> => getWordOfDay(createContentClient(), dayNumber(Date.now())),
   ['dict-word-of-day'],
@@ -75,13 +92,13 @@ export const getCachedWordOfDay = unstable_cache(
 export const getCachedCommonWords = unstable_cache(
   (lang: LangCode): Promise<DictEntryPreview[]> => getCommonWords(createContentClient(), lang),
   ['dict-common-words'],
-  { revalidate: 3600, tags: ['lex'] },
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
 export const getCachedLevelsForLanguage = unstable_cache(
   (lang: LangCode): Promise<LevelSummary[]> => getLevelsForLanguage(createContentClient(), lang),
   ['dict-levels-for-language'],
-  { revalidate: 3600, tags: ['lex'] },
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
 /** First page of a level's word list, for the initial server render of
@@ -90,7 +107,7 @@ export const getCachedEntriesByLevel = unstable_cache(
   (lang: LangCode, level: string, offset: number, limit: number): Promise<LevelPage> =>
     getEntriesByLevel(createContentClient(), lang, level, offset, limit),
   ['dict-entries-by-level'],
-  { revalidate: 3600, tags: ['lex'] },
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
 /** Tappable example sentences for one entry page, resolved server-side. Keyed by the texts
@@ -99,5 +116,5 @@ export const getCachedTappableTexts = unstable_cache(
   (lang: LangCode, texts: string[]): Promise<ResolvedText[]> =>
     resolveTappableTexts(createContentClient(), lang, texts),
   ['dict-tappable'],
-  { revalidate: 3600, tags: ['lex'] },
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )

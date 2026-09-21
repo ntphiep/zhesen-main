@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 
 vi.mock('next/navigation', () => ({ notFound: () => { throw new Error('NEXT_NOT_FOUND') } }))
 vi.mock('@/lib/dictionary/cached', () => ({
+  LEX_REVALIDATE: 604800,
   getCachedEntryDetail: vi.fn(),
   getCachedCrossLanguage: vi.fn(async () => []),
   getCachedCharacters: vi.fn(async () => []),
@@ -9,6 +10,7 @@ vi.mock('@/lib/dictionary/cached', () => ({
   getCachedEntriesContaining: vi.fn(async () => []),
   getCachedTermPreviews: vi.fn(async () => []),
   getCachedTappableTexts: vi.fn(async () => []),
+  getCachedWordKin: vi.fn(async () => []),
 }))
 vi.mock('@/lib/grammar/cached', () => ({
   getCachedGrammarPointsForEntry: vi.fn(async () => []),

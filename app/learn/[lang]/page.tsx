@@ -1,3 +1,4 @@
+import { LEX_REVALIDATE } from '@/lib/dictionary/cached'
 import { notFound } from 'next/navigation'
 import { LANG_CODES, getLanguage, isLangCode } from '@/lib/languages'
 import { getCachedCommonWords, getCachedLevelsForLanguage } from '@/lib/dictionary/cached'
@@ -21,7 +22,7 @@ export function generateStaticParams(): { lang: string }[] {
  * stored and served from the edge, on the same one-hour window the data caches
  * already use.
  */
-export const revalidate = 3600
+export const revalidate = LEX_REVALIDATE
 
 
 export async function generateMetadata(

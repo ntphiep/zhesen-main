@@ -1,3 +1,4 @@
+import { LEX_REVALIDATE } from '@/lib/dictionary/cached'
 import { notFound } from 'next/navigation'
 import { getLanguage, isLangCode } from '@/lib/languages'
 import { percentDecode } from '@/lib/http/percentDecode'
@@ -31,7 +32,7 @@ export function generateStaticParams(): { lang: string; id: string }[] {
  * stored and served from the edge, on the same one-hour window the data caches
  * already use.
  */
-export const revalidate = 3600
+export const revalidate = LEX_REVALIDATE
 
 
 type Params = Promise<{ lang: string; id: string }>
