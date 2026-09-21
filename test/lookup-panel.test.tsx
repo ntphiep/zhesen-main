@@ -60,8 +60,9 @@ describe('LookupPanel', () => {
     stubFetch({ entries: { ...EMPTY, en: [entry({ glossVi: 'Con chó' })] }, suggestions: [] })
     render(<LookupPanel direction="fw" label="FW" placeholder="p" />)
     await userEvent.type(screen.getByLabelText('FW'), 'dog')
-    expect(await screen.findByText('dog')).toBeInTheDocument()
-    expect(screen.getByText('Con chó')).toBeInTheDocument()
+    // findByText('dog') would match the textarea's own value, so wait on the gloss.
+    expect(await screen.findByText('Con chó')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /dog/ })).toBeInTheDocument()
   })
 
   it('renders an empty result with suggestions as links to the entry, not refill buttons', async () => {
@@ -84,17 +85,30 @@ describe('LookupPanel', () => {
     expect(screen.queryByText('Chưa tìm thấy từ nào.')).toBeNull()
   })
 
-  it('shows the target-language chips only on the vi panel with no lang prop', () => {
+  it('shows language chips on both panels, naming the question each one answers', () => {
     stubFetch({ entries: EMPTY, suggestions: [] })
     const { unmount } = render(<LookupPanel direction="vi" label="VN" placeholder="p" />)
     expect(screen.getAllByRole('checkbox')).toHaveLength(3)
+    expect(screen.getByRole('group', { name: 'Ngôn ngữ cần dịch sang' })).toBeInTheDocument()
     unmount()
 
     render(<LookupPanel direction="fw" label="FW" placeholder="p" />)
-    expect(screen.queryAllByRole('checkbox')).toHaveLength(0)
+    expect(screen.getAllByRole('checkbox')).toHaveLength(3)
+    expect(screen.getByRole('group', { name: 'Ngôn ngữ cần tìm' })).toBeInTheDocument()
   })
 
-  it('hides the target-language chips on the vi panel once a language is fixed', () => {
+  it('keeps the language choice of each panel apart from the other', async () => {
+    stubFetch({ entries: EMPTY, suggestions: [] })
+    const { unmount } = render(<LookupPanel direction="fw" label="FW" placeholder="p" />)
+    await userEvent.click(screen.getByText('Tiếng Trung'))
+    expect(screen.getAllByRole('checkbox').filter((c) => (c as HTMLInputElement).checked)).toHaveLength(2)
+    unmount()
+
+    render(<LookupPanel direction="vi" label="VN" placeholder="p" />)
+    expect(screen.getAllByRole('checkbox').filter((c) => (c as HTMLInputElement).checked)).toHaveLength(3)
+  })
+
+  it('hides the language chips once the caller fixed a language', () => {
     stubFetch({ entries: EMPTY, suggestions: [] })
     render(<LookupPanel direction="vi" label="VN" placeholder="p" lang="en" />)
     expect(screen.queryAllByRole('checkbox')).toHaveLength(0)

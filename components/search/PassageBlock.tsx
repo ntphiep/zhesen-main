@@ -13,9 +13,15 @@ import type { TranslateLangCode } from '@/lib/translate/azure'
 import type { Direction } from '@/lib/dictionary/search'
 import type { LangCode } from '@/lib/languages'
 
-/** The ceiling `POST /dictionary/translate` and `POST /dictionary/text/lookup` both
- *  enforce. Shown as a counter, so the limit is visible before the paste is refused. */
-export const MAX_PASSAGE_CHARS = 1000
+/** The ceiling `POST /dictionary/translate` enforces, and the same one Google Translate's
+ *  web page uses. The counter appears only near it, because a two-word query does not need
+ *  to be told it is under a five-thousand-character limit. */
+export const MAX_PASSAGE_CHARS = 5000
+
+/** `POST /dictionary/text/lookup` resolves every word against the dictionary, so it keeps
+ *  the lower ceiling: the per-word list is an extra, and a five-thousand-character paste
+ *  would make it the slowest thing on the page. */
+export const MAX_WORDLIST_CHARS = 1000
 
 /** Three words is where one dictionary entry usually stops being the answer. Han text
  *  carries no spaces, so it is counted in characters. */
@@ -54,6 +60,7 @@ export function PassageBlock({ text, direction, targets }: {
 
   const trimmed = text.trim()
   const tooLong = trimmed.length > MAX_PASSAGE_CHARS
+  const nearLimit = trimmed.length > MAX_PASSAGE_CHARS - 500
   const from: TranslateLangCode = direction === 'vi' ? 'vi' : detectOrder(trimmed)[0]
   // Memoised so the effect below does not refire on every render: a fresh array literal
   // is a new dependency each time.
@@ -87,7 +94,7 @@ export function PassageBlock({ text, direction, targets }: {
   // The word list is a different request to a different route, and it answers whether or
   // not Azure is configured, so it does not wait on the translation.
   useEffect(() => {
-    if (direction !== 'fw' || tooLong) return
+    if (direction !== 'fw' || trimmed.length > MAX_WORDLIST_CHARS) return
     const ctrl = new AbortController()
     const id = setTimeout(async () => {
       try {
@@ -98,18 +105,17 @@ export function PassageBlock({ text, direction, targets }: {
       }
     }, TRANSLATE_DEBOUNCE_MS)
     return () => { clearTimeout(id); ctrl.abort() }
-  }, [direction, trimmed, tooLong])
+  }, [direction, trimmed])
 
   if (!trimmed) return null
 
   return (
     <section className="flex flex-col gap-3 rounded-xl border border-black/10 p-4">
-      <div className="flex items-baseline gap-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-black/55">Cả đoạn</h3>
+      {(nearLimit || tooLong) && (
         <span className={`text-xs ${tooLong ? 'text-red-600' : 'text-black/35'}`}>
           {trimmed.length}/{MAX_PASSAGE_CHARS} ký tự
         </span>
-      </div>
+      )}
 
       {tooLong && <p className="text-sm text-red-600">Đoạn này dài quá giới hạn dịch.</p>}
       {state.kind === 'loading' && <p className="text-sm text-black/40">Đang dịch…</p>}

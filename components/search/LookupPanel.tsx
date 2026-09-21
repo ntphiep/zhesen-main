@@ -10,9 +10,7 @@ import { detectOrder, orderByBestMatch } from '@/lib/dictionary/detect'
 import { pushRecent, readRecent, writeRecent } from '@/lib/dictionary/recent'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import { posGroups, splitPos, type PosGroup } from '@/lib/dictionary/pos'
-import {
-  serverTargetsSnapshot, setTargets, subscribeTargets, targetsSnapshot, toggleTarget,
-} from '@/lib/dictionary/targetLangs'
+import { sourceLangs, targetLangs, toggleTarget } from '@/lib/dictionary/targetLangs'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import { EMPTY_SEARCH_RESPONSE, type SearchResponse } from '@/lib/dictionary/response'
 import { fetchSearch, searchQueryString } from '@/lib/dictionary/searchClient'
@@ -35,11 +33,13 @@ const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
  * ca, can and called. The box the learner types in is the answer, and it costs one round
  * trip instead of two.
  */
-export function LookupPanel({ direction, label, placeholder, hint, autoFocus = false, initialQuery = '', lang }: {
+export function LookupPanel({ direction, label, placeholder, examples = [], autoFocus = false, initialQuery = '', lang }: {
   direction: Direction
   label: string
   placeholder: string
-  hint?: string
+  /** Shown as buttons under an empty box, in place of a sentence explaining what to type.
+   *  A learner who has searched before sees their own history there instead. */
+  examples?: readonly string[]
   autoFocus?: boolean
   initialQuery?: string
   /** The caller already fixed the language, so the target control would contradict it. */
@@ -57,18 +57,17 @@ export function LookupPanel({ direction, label, placeholder, hint, autoFocus = f
   // readRecent must stay SSR-guarded: this lazy initializer also runs in the server pass.
   const [recent, setRecent] = useState<string[]>(readRecent)
   const [focused, setFocused] = useState(false)
-  // Not lazy state the way `recent` is: that value renders before hydration, and a stored
-  // choice differing from the server's pass is React #418 on the summary text.
-  const stored = useSyncExternalStore(subscribeTargets, targetsSnapshot, serverTargetsSnapshot)
+  // One store per direction: the Vietnamese box picks what to translate into, the foreign
+  // box picks what to search in, and a shared key would tie the two controls together.
+  // Read through useSyncExternalStore and not as lazy state the way `recent` is: a lazy
+  // value renders before hydration, and a stored choice differing from the server's pass
+  // is React #418 on the summary text.
+  const store = direction === 'vi' ? targetLangs : sourceLangs
+  const stored = useSyncExternalStore(store.subscribe, store.snapshot, store.serverSnapshot)
   const cache = useRef(new Map<string, SearchResponse>())
   const router = useRouter()
 
-  // The target control belongs to the Vietnamese direction only. Typing a foreign word
-  // asks about that word, and which language it is written in is not the learner's choice.
-  const targets = useMemo(
-    () => (lang ? [lang] : direction === 'vi' ? stored : [...LANG_CODES]),
-    [lang, direction, stored],
-  )
+  const targets = useMemo(() => (lang ? [lang] : stored), [lang, stored])
 
   // Adjust state during render, not in an effect:
   // react.dev/learn/you-might-not-need-an-effect
@@ -162,14 +161,31 @@ export function LookupPanel({ direction, label, placeholder, hint, autoFocus = f
     setRecent(next)
     writeRecent(next)
   }
+
+  // `prefetch={false}` on every result, then one prefetch when a result is pointed at.
+  // Link's own prefetch fires as soon as a link enters the viewport, and a keystroke here
+  // can put twenty-four of them there at once, which would fetch twenty-four entry pages
+  // to open one. Hover and keyboard focus are the two signals that one of them is about
+  // to be opened, and the entry page is static, so the prefetch is a CDN read.
+  const prefetched = useRef(new Set<string>())
+  function warm(id: string) {
+    const href = entryPath(id)
+    if (prefetched.current.has(href)) return
+    prefetched.current.add(href)
+    router.prefetch(href)
+  }
+  // Enter opens the top hit, as it did when the box was an `<input>`. Shift+Enter and a
+  // passage both fall through to the textarea's own behaviour, because a paragraph needs
+  // its line breaks and has no single word to open.
   function onKeyDown(ev: React.KeyboardEvent) {
-    if (ev.key !== 'Enter' || !first) return
+    if (ev.key !== 'Enter' || ev.shiftKey || isPassage || !first) return
     ev.preventDefault()
     remember(first)
     router.push(entryPath(first.id))
   }
 
   const showRecent = focused && !trimmed && recent.length > 0
+  const showExamples = !trimmed && !showRecent && examples.length > 0
   // A whole sentence has no single headword, so neither a trigram suggestion nor the
   // assistant has anything to add to the translation PassageBlock already shows.
   const showEmpty =
@@ -184,10 +200,18 @@ export function LookupPanel({ direction, label, placeholder, hint, autoFocus = f
           href={entryPath(e.id)}
           prefetch={false}
           onClick={() => remember(e)}
+          onMouseEnter={() => warm(e.id)}
+          onFocus={() => warm(e.id)}
+          onTouchStart={() => warm(e.id)}
           className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-lg px-3 py-2 hover:bg-black/5"
         >
           <span className="font-medium">{e.headword}</span>
           <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/40" />
+          {e.level && (
+            <span className="rounded-full border border-black/15 px-1.5 py-0.5 text-[0.65rem] text-black/50">
+              {e.level}
+            </span>
+          )}
           <PosTag value={e.pos} className="text-xs text-black/45" />
           {e.glossVi && <span className="text-sm text-black/60">{e.glossVi}</span>}
           <LinkPending />
@@ -196,46 +220,21 @@ export function LookupPanel({ direction, label, placeholder, hint, autoFocus = f
     )
   }
 
-  /** One language card. The first hit is set above the rest, because a lookup asks for one
-   *  answer and the others are alternatives to it. An empty language in the Vietnamese
-   *  direction says so rather than disappearing: a missing card next to two full ones
-   *  reads as a bug, where "chưa có từ khớp" is the truth. */
+  /** One language card. Every hit is set the same size: the ranking already says which is
+   *  the best answer, and drawing the first one twice as large made a weak top hit look
+   *  authoritative. An empty language in the Vietnamese direction says so rather than
+   *  disappearing: a missing card next to two full ones reads as a bug, where
+   *  "chưa có từ khớp" is the truth. */
   function renderCard(l: LangCode, list: DictEntryPreview[]) {
     if (list.length === 0 && direction !== 'vi') return null
-    const [lead, ...rest] = list
     return (
       <section key={l} className="overflow-hidden rounded-xl border border-black/10">
         <h3 className="border-b border-black/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black/55">
           {LANG_LABELS[l]}
         </h3>
-        {!lead
+        {list.length === 0
           ? <p className="px-4 py-3 text-sm text-black/35">Chưa có từ khớp</p>
-          : (
-            <>
-              <Link
-                href={entryPath(lead.id)}
-                prefetch={false}
-                onClick={() => remember(lead)}
-                className="flex flex-col gap-1 border-b border-black/5 px-4 py-3 hover:bg-black/5"
-              >
-                <span className="flex flex-wrap items-baseline gap-2">
-                  <span className="text-2xl font-semibold">{lead.headword}</span>
-                  <Ipa value={lead.ipa} lang={lead.lang} className="text-sm text-black/40" />
-                  {lead.level && (
-                    <span className="rounded-full border border-black/15 px-2 py-0.5 text-xs text-black/50">
-                      {lead.level}
-                    </span>
-                  )}
-                  <LinkPending />
-                </span>
-                <span className="flex flex-wrap items-baseline gap-2 text-sm text-black/60">
-                  <PosTag value={lead.pos} className="text-xs text-black/45" />
-                  {lead.glossVi}
-                </span>
-              </Link>
-              {rest.length > 0 && <ul className="flex flex-col gap-0.5 py-1">{rest.map(renderRow)}</ul>}
-            </>
-          )}
+          : <ul className="flex flex-col gap-0.5 py-1">{list.map(renderRow)}</ul>}
       </section>
     )
   }
@@ -243,10 +242,13 @@ export function LookupPanel({ direction, label, placeholder, hint, autoFocus = f
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <label htmlFor={inputId} className="text-sm font-semibold">{label}</label>
-      <input
+      {/* A textarea rather than an input, because the same box takes a word and a
+          paragraph. Three rows is the height Google Translate uses and it stops a pasted
+          sentence from scrolling out of sight as it is typed. */}
+      <textarea
         id={inputId}
         name={`q-${direction}`}
-        type="text"
+        rows={3}
         autoFocus={autoFocus}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -255,12 +257,15 @@ export function LookupPanel({ direction, label, placeholder, hint, autoFocus = f
         onBlur={() => setFocused(false)}
         placeholder={placeholder}
         autoComplete="off"
-        className="w-full rounded-xl border border-black/15 px-4 py-3 text-base shadow-sm focus:border-black/40 focus:outline-none"
+        spellCheck={false}
+        className="w-full resize-y rounded-xl border border-black/15 px-4 py-3 text-base shadow-sm focus:border-black/40 focus:outline-none"
       />
 
-      {direction === 'vi' && !lang && (
+      {!lang && (
         <fieldset className="flex flex-wrap items-center gap-2 border-0 p-0">
-          <legend className="sr-only">Ngôn ngữ cần dịch sang</legend>
+          <legend className="sr-only">
+            {direction === 'vi' ? 'Ngôn ngữ cần dịch sang' : 'Ngôn ngữ cần tìm'}
+          </legend>
           {LANG_CODES.map((l) => (
             <label
               key={l}
@@ -270,10 +275,10 @@ export function LookupPanel({ direction, label, placeholder, hint, autoFocus = f
             >
               <input
                 type="checkbox"
-                name="target-lang"
+                name={`${direction}-lang`}
                 value={l}
                 checked={stored.includes(l)}
-                onChange={() => setTargets(toggleTarget(stored, l))}
+                onChange={() => store.set(toggleTarget(stored, l))}
                 className="sr-only"
               />
               {LANG_LABELS[l]}
@@ -281,7 +286,21 @@ export function LookupPanel({ direction, label, placeholder, hint, autoFocus = f
           ))}
         </fieldset>
       )}
-      {hint && <p className="text-xs text-black/40">{hint}</p>}
+
+      {showExamples && (
+        <div className="flex flex-wrap gap-2">
+          {examples.map((x) => (
+            <button
+              key={x}
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); setQuery(x) }}
+              className="rounded-full border border-black/15 px-3 py-1 text-xs text-black/60 hover:bg-black/5"
+            >
+              {x}
+            </button>
+          ))}
+        </div>
+      )}
 
       {showRecent && (
         <div className="flex flex-wrap gap-2">

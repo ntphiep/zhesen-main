@@ -23,7 +23,10 @@ const langCodeSchema = z.enum(['en', 'es', 'zh', 'vi'])
 
 // The same ceiling as `dictionary/text/lookup`: both read one pasted passage.
 const requestBody = z.object({
-  text: z.string().trim().min(1).max(1000),
+  // 5,000 characters, the same ceiling Google Translate's web page uses. Azure accepts
+  // 50,000 per request, so the limit here is the free tier's 2 million characters a
+  // month: at 5,000 that is roughly 400 full-length translations, at 50,000 only 40.
+  text: z.string().trim().min(1).max(5000),
   from: langCodeSchema.optional(),
   to: z.array(langCodeSchema).min(1).max(4),
 })

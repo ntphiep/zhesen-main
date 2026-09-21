@@ -41,9 +41,9 @@ describe('POST /dictionary/translate', () => {
     await expect(res.json()).resolves.toEqual({ enabled: false })
   })
 
-  it('rejects a passage over 1000 characters', async () => {
-    const res = await post({ text: 'x'.repeat(1001), to: ['en'] })
-    expect(res.status).toBe(400)
+  it('rejects a passage over 5000 characters and accepts one at the limit', async () => {
+    expect((await post({ text: 'x'.repeat(5001), to: ['en'] })).status).toBe(400)
+    expect((await post({ text: 'x'.repeat(5000), to: ['en'] })).status).toBe(200)
   })
 
   it('rejects a blank passage', async () => {
