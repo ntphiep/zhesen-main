@@ -19,9 +19,12 @@
 -- `where gloss_vi is null` is the whole safety story: the import can only fill a gap, never
 -- overwrite a gloss that came from Wiktionary or from a person.
 --
--- Every row it writes is marked `gloss_vi_is_mt` and attributed to the `azure-translator`
--- source, because a machine translation of an English definition is not the same thing as
--- a gloss a lexicographer wrote and the difference has to survive in the data.
+-- Every row it writes is marked `gloss_vi_is_mt`, because a machine translation of an
+-- English definition is not the same thing as a gloss a lexicographer wrote and the
+-- difference has to survive in the data. `source_id` names where the sense itself came
+-- from, so the coalesce below only fills it when it is empty; every English sense already
+-- carries `wiktionary-en` and keeps it. The `azure-translator` row exists so the flag has
+-- a source to point at once a sense arrives without one.
 --
 -- TO REPLAY THE IMPORT: apply this file, insert a fresh token, run the script, apply 0054.
 -- Never leave the function in place.
