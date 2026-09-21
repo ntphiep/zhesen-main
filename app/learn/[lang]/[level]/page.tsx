@@ -1,4 +1,3 @@
-import { LEX_REVALIDATE } from '@/lib/dictionary/cached'
 import { notFound } from 'next/navigation'
 import { getLanguage, isLangCode } from '@/lib/languages'
 import { getCachedLevelsForLanguage, getCachedEntriesByLevel } from '@/lib/dictionary/cached'
@@ -30,7 +29,11 @@ export function generateStaticParams(): { lang: string; level: string }[] {
  * stored and served from the edge, on the same one-hour window the data caches
  * already use.
  */
-export const revalidate = LEX_REVALIDATE
+// One week, the literal value of `LEX_REVALIDATE` in `lib/dictionary/cached.ts`,
+// which the data caches under this page use and which explains the figure. Written
+// out because a segment config must be statically analysable: importing the constant
+// fails the build with "Invalid segment configuration export detected".
+export const revalidate = 604800
 
 
 export async function generateMetadata(

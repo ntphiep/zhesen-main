@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { LEX_REVALIDATE, getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections, getCachedEntriesContaining, getCachedTermPreviews, getCachedTappableTexts, getCachedWordKin } from '@/lib/dictionary/cached'
+import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections, getCachedEntriesContaining, getCachedTermPreviews, getCachedTappableTexts, getCachedWordKin } from '@/lib/dictionary/cached'
 import { getCachedGrammarPointsForEntry } from '@/lib/grammar/cached'
 import { buildEntryId, entryPath } from '@/lib/dictionary/entryId'
 import { LookupView } from '@/components/lookup/LookupView'
@@ -34,7 +34,11 @@ export function generateStaticParams(): { lang: string; id: string }[] {
  * stored and served from the edge, on the same window the data caches use. See
  * `LEX_REVALIDATE` for why that window is a week and not an hour.
  */
-export const revalidate = LEX_REVALIDATE
+// One week, the literal value of `LEX_REVALIDATE` in `lib/dictionary/cached.ts`,
+// which the data caches under this page use and which explains the figure. Written
+// out because a segment config must be statically analysable: importing the constant
+// fails the build with "Invalid segment configuration export detected".
+export const revalidate = 604800
 
 
 type Params = Promise<{ lang: string; id: string }>
