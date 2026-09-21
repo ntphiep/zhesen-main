@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { pickIpa, pickPrimarySense } from '@/lib/dictionary/rows'
-import { searchEntries, searchAllLanguagesVi, suggestNearby, searchOneDirection } from '@/lib/dictionary/search'
+import { searchEntries, searchAllLanguages, searchAllLanguagesVi, suggestNearby, searchOneDirection } from '@/lib/dictionary/search'
 import { getEntryDetail, getCrossLanguage, getCharacters } from '@/lib/dictionary/entryDetail'
 import { resolveTokens, getZhSegmentCandidates } from '@/lib/dictionary/resolveTokens'
 
@@ -429,5 +429,42 @@ describe('getZhSegmentCandidates', () => {
     const client = thenableClient([])
     expect(await getZhSegmentCandidates(client, 'a')).toEqual([])
     expect(await getZhSegmentCandidates(client, '')).toEqual([])
+  })
+})
+
+describe('searchAllLanguages trigram gate', () => {
+  const row = (id: string, lang: string, rank: number) => ({
+    id, lang, headword: id, traditional: null, level: null, frequency_rank: null,
+    attributes: null, pos: null, gloss_vi: null, gloss_en: null, ipa: null,
+    audio_url: null, rank,
+  })
+
+  function clientReturning(byLang: Record<string, ReturnType<typeof row>[]>) {
+    return {
+      schema: () => ({
+        rpc: (_name: string, args: { p_langs: string[] }) =>
+          Promise.resolve({ data: byLang[args.p_langs[0]] ?? [], error: null }),
+      }),
+    } as unknown as Parameters<typeof searchAllLanguages>[0]
+  }
+
+  it('drops a trigram guess where another language matched structurally', async () => {
+    const out = await searchAllLanguages(clientReturning({
+      en: [row('fish', 'en', 4.5)],
+      es: [row('fiscal', 'es', 1.58), row('fi', 'es', 1.17)],
+      zh: [],
+    }), 'fish')
+    expect(out.en.map((e) => e.id)).toEqual(['fish'])
+    expect(out.es).toEqual([])
+  })
+
+  it('keeps every guess where no language matched structurally', async () => {
+    const out = await searchAllLanguages(clientReturning({
+      en: [row('receive', 'en', 1.9)],
+      es: [row('recibir', 'es', 1.2)],
+      zh: [],
+    }), 'recieve')
+    expect(out.en.map((e) => e.id)).toEqual(['receive'])
+    expect(out.es.map((e) => e.id)).toEqual(['recibir'])
   })
 })

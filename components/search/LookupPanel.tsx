@@ -170,7 +170,10 @@ export function LookupPanel({ direction, label, placeholder, hint, autoFocus = f
   }
 
   const showRecent = focused && !trimmed && recent.length > 0
-  const showEmpty = !loading && !refusal && trimmed.length > 0 && allShown.length === 0
+  // A whole sentence has no single headword, so neither a trigram suggestion nor the
+  // assistant has anything to add to the translation PassageBlock already shows.
+  const showEmpty =
+    !loading && !refusal && !isPassage && trimmed.length > 0 && allShown.length === 0
   const showFilteredEmpty = !loading && allShown.length > 0 && total === 0
   const inputId = `lookup-${direction}`
 

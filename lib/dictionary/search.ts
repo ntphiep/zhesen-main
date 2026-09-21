@@ -21,9 +21,16 @@ export async function searchEntries(
   return searchRpcRow.array().parse(data ?? []).map(toPreviewFromSearchRow)
 }
 
-/** Search the requested languages at once, grouped by language (for auto-detect search).
+/** Search the requested languages at once, grouped by language.
  *  A language left out is not queried: the caller asked for one, so three round trips
- *  would be two answers nobody reads. */
+ *  would be two answers nobody reads.
+ *
+ *  A trigram guess is kept only where no language matched structurally. Each language is
+ *  its own RPC and each fills its own quota, so "fish" used to fill the Spanish column
+ *  with fiscal (rank 1.58) and fi (1.17) beside the eight real English hits. A genuine
+ *  misspelling matches nothing anywhere, so the spell-check path is untouched: `recieve`
+ *  reaches `receive` on a similarity of 0.333, the same figure as the noise, which is why
+ *  the threshold cannot do this job. */
 export async function searchAllLanguages(
   supabase: SupabaseClient, query: string, perLang = 8, langs: readonly LangCode[] = LANG_CODES,
 ): Promise<Record<LangCode, DictEntryPreview[]>> {
@@ -31,8 +38,17 @@ export async function searchAllLanguages(
   const q = query.trim()
   if (!q) return out
   const found = await Promise.all(langs.map((l) => searchEntries(supabase, l, q, perLang)))
-  langs.forEach((l, i) => { out[l] = found[i] })
+  const structural = found.some((list) => list.some(isStructuralMatch))
+  langs.forEach((l, i) => { out[l] = structural ? found[i].filter(isStructuralMatch) : found[i] })
   return out
+}
+
+/** `lex.search` scores a structural match (exact headword, prefix, inflection, pinyin) at
+ *  3.0 or above and caps its trigram arm at 2.9, so the two bands never overlap. */
+const STRUCTURAL_FLOOR = 2.95
+
+function isStructuralMatch(e: DictEntryPreview): boolean {
+  return (e.matchScore ?? 0) >= STRUCTURAL_FLOOR
 }
 
 /** Reverse lookup across all three languages in one RPC. The candidate-gloss scan is the
