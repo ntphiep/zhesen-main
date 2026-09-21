@@ -37,16 +37,26 @@ contradicting one.
   single-language query out of a pool drawn from all three.
 - `= any (subquery)` is read as the `IN` form, not the array form. Comparing against an
   array returned by a CTE needs a cast: `e.id = any ((select ids from t)::text[])`.
-- `lex.search_vi` pins `pg_trgm.similarity_threshold = 0.45` on the function itself
-  (`0044`). At the default 0.3 the `%` operator produced 19,206 rows to keep 166: on
-  `lex.search_vi('bầu trời', array['en','es','zh'], 24)` the recheck was 3,116 ms of 3,461 ms
-  and 3,350 heap blocks, against 1,187 blocks at 0.45. Quality was unchanged across 18
-  lookups: the top three results were identical and 16 still returned a full 24 rows. Keep
-  the `SET` when rewriting the function, and run `select extensions.similarity('a','b')`
-  before `alter function ... set pg_trgm.*`, because pg_trgm is not preloaded and the GUC is
-  still a placeholder until then, which fails with `42501 permission denied to set
-  parameter`. Do not set this threshold on the role or the database: `lex.search` and
-  `lex.suggest` match short headwords in the forward direction and are already fast.
+- Before `alter function ... set pg_trgm.*`, run `select extensions.similarity('a','b')`
+  in the same session. pg_trgm is not preloaded, so until something touches it the GUC is
+  still a placeholder and the `alter` fails with `42501 permission denied to set parameter`.
+  Never set a pg_trgm threshold on the role or the database, only on the function that
+  needs it. `lex.search_vi` carried `pg_trgm.similarity_threshold = 0.45` from `0044` until
+  `0048` removed trigram matching from it; `lex.suggest` is the remaining trigram caller.
+- Match a Vietnamese query against `lex.gloss_terms`, never against the gloss string. The
+  table holds one row per comma-separated term plus its classifier-stripped and unaccented
+  forms, and two `text_pattern_ops` btree indexes answer prefix ranges over it. Two rules
+  came out of measuring it. Write the range as `~>=~` and `~<~` rather than `like 'x%'`,
+  because Postgres derives the bounds from `like` only when the pattern is a constant at
+  plan time and inside a function it never is; `0049` cut 13,820 ms to 395 ms on that alone.
+  And match the classifier-stripped form only for equality, never as a prefix: stripping
+  "con cá" to "cá" and prefix-searching that pulled 5,921 candidate rows and 1,771 heap
+  blocks, against 24 and 24 without it (`0052`).
+- A `language sql` function's body is not planned through the plan cache, so
+  `plan_cache_mode = 'force_custom_plan'` does nothing on one; `0050` set it on
+  `lex.search_vi` and changed no timing until `0051` rewrote the body in plpgsql. Both
+  `SET` clauses have to be restated on every `create or replace`, which drops the ones it
+  omits.
 
 ## PGroonga
 
