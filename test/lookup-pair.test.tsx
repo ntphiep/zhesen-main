@@ -35,14 +35,14 @@ describe('LookupPair', () => {
 
   it('draws one direction only when the display control asks for one', async () => {
     render(<LookupPair />)
-    await userEvent.click(screen.getByRole('button', { name: 'Ngoại ngữ sang Việt' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Ngoại ngữ' }))
     expect(order()).toEqual(['panel-fw'])
     expect(screen.queryByTestId('panel-vi')).toBeNull()
   })
 
   it('has nothing to swap while one direction is hidden', async () => {
     render(<LookupPair />)
-    await userEvent.click(screen.getByRole('button', { name: 'Việt sang ngoại ngữ' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Tiếng Việt' }))
     expect(screen.getByRole('button', { name: 'Đổi chỗ hai ô' })).toBeDisabled()
   })
 

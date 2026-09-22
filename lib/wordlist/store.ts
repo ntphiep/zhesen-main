@@ -80,6 +80,15 @@ export async function listWords(supabase: SupabaseClient): Promise<UserWord[]> {
   return rows.map(parseUserWordRow)
 }
 
+/** The newest few words, for the strip under the lookup boxes. `listWords` pages through
+ *  the whole notebook, which is the wrong cost for a row of chips. */
+export async function listRecentWords(supabase: SupabaseClient, limit: number): Promise<UserWord[]> {
+  const { data, error } = await supabase.from('user_words').select('*')
+    .order('created_at', { ascending: false }).order('id').limit(limit)
+  if (error) throw error
+  return (data ?? []).map(parseUserWordRow)
+}
+
 /** Row count without downloading the rows. The sign-in pages need only the number: a
  *  browser that already holds words must not sign in to a different account. */
 export async function countWords(supabase: SupabaseClient): Promise<number> {

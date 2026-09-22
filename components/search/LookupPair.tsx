@@ -16,9 +16,9 @@ import type { LangCode } from '@/lib/languages'
  */
 
 const MODES = [
-  { key: 'vi', label: 'Việt sang ngoại ngữ' },
-  { key: 'both', label: 'Cả hai' },
-  { key: 'fw', label: 'Ngoại ngữ sang Việt' },
+  { key: 'vi', label: 'Tiếng Việt' },
+  { key: 'both', label: '2 chiều' },
+  { key: 'fw', label: 'Ngoại ngữ' },
 ] as const
 
 /** The two panels, as opposed to `LookupMode`, which also carries "show both". */
@@ -82,8 +82,8 @@ export function LookupPair({ lang, initialQuery = '', autoFocus = false }: {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-3">
         <fieldset className="flex items-center gap-2 border-0 p-0">
-          <legend className="sr-only">Hướng dịch cần hiển thị</legend>
-          <span aria-hidden className="text-xs uppercase tracking-wide text-black/40">Hiển thị</span>
+          <legend className="sr-only">Dịch từ ngôn ngữ nào</legend>
+          <span aria-hidden className="text-xs text-black/50">Dịch từ:</span>
           <div className="inline-flex overflow-hidden rounded-lg border border-black/15">
             {MODES.map((m, i) => (
               <button
@@ -105,7 +105,6 @@ export function LookupPair({ lang, initialQuery = '', autoFocus = false }: {
           onClick={swap}
           disabled={!both}
           aria-label="Đổi chỗ hai ô"
-          title="Đổi chỗ hai ô"
           className="rounded-lg border border-black/15 px-2.5 py-1.5 text-black/60 transition-colors hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-35"
         >
           <svg viewBox="0 0 20 20" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">

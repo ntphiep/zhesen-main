@@ -23,7 +23,6 @@ import { getEntriesContaining } from './containing'
 import { getWordKin } from './kin'
 import { getWordOfDay, dayNumber, type DailyWord } from './wordOfDay'
 import { getLevelsForLanguage, getEntriesByLevel, type LevelSummary, type LevelPage } from './levels'
-import { getEntriesByLetter, type LetterPage } from './browse'
 import type { ContainingWord, DictEntryDetail, DictEntryPreview, CrossLangSibling, TermPreview, CharInfo, WordForm } from './types'
 import type { LangCode } from '@/lib/languages'
 
@@ -94,13 +93,6 @@ export const getCachedCommonWords = unstable_cache(
   (lang: LangCode, options: CommonWordsOptions = {}): Promise<DictEntryPreview[]> =>
     getCommonWords(createContentClient(), lang, options),
   ['dict-common-words'],
-  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
-)
-
-export const getCachedEntriesByLetter = unstable_cache(
-  (lang: LangCode, letter: string, offset: number, limit: number): Promise<LetterPage> =>
-    getEntriesByLetter(createContentClient(), lang, letter, offset, limit),
-  ['dict-entries-by-letter'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 

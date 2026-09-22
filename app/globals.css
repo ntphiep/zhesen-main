@@ -229,3 +229,18 @@ dialog::backdrop {
   animation-duration: 220ms;
   animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
+
+/* The common-words strip replaces its chips on a timer; the fade is what makes the swap
+   read as one row changing rather than the page jumping. */
+@keyframes chip-fade-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: none; }
+}
+
+.chip-rotate {
+  animation: chip-fade-in 260ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip-rotate { animation: none; }
+}

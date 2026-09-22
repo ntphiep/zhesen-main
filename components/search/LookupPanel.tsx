@@ -7,7 +7,7 @@ import { LinkPending } from '@/components/ui/LinkPending'
 import { Ipa } from '@/components/ui/Ipa'
 import { PosTag } from '@/components/ui/PosTag'
 import { detectOrder, orderByBestMatch } from '@/lib/dictionary/detect'
-import { pushRecent, readRecent, writeRecent } from '@/lib/dictionary/recent'
+import { pushRecent, readRecent, recentEntries, writeRecent } from '@/lib/dictionary/recent'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import { posGroups, splitPos, type PosGroup } from '@/lib/dictionary/pos'
 import { sourceLangs, targetLangs, toggleTarget } from '@/lib/dictionary/targetLangs'
@@ -156,6 +156,9 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     const next = pushRecent(recent, e.headword)
     setRecent(next)
     writeRecent(next)
+    // The query goes in the box's own "Tìm gần đây" row; the word goes in the strip under
+    // the boxes, which links back to the word page rather than refilling the box.
+    recentEntries.record({ id: e.id, headword: e.headword, lang: e.lang, glossVi: e.glossVi ?? null })
   }
 
   // `prefetch={false}` on every result, then one prefetch when a result is pointed at.
