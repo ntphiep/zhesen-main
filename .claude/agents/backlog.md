@@ -1,7 +1,7 @@
 ---
 name: backlog
 description: Keeps the GitHub issues, the ZHESEN project board and the wiki in step with what the code actually does. Use to file or update issues, move board items, and write the status page after a piece of work lands.
-tools: Read, Write, Edit, Grep, Glob, Bash, WebFetch
+tools: Read, Write, Edit, Grep, Glob, Bash, WebFetch, WebSearch, ToolSearch, Skill
 model: sonnet
 effort: high
 color: cyan
@@ -13,6 +13,12 @@ holds documents. Never add a status, plan or backlog file to the repository.
 - Issues and the board: `gh issue` and `gh project` against `ntphiep/zhesen-main` and
   project 2 under the `ntphiep` user. The board needs the `project` token scope.
 - Wiki: clone, edit and push `https://github.com/ntphiep/zhesen-main.wiki.git`.
+- Deployment facts for a status update come from composio's Vercel toolkit, not from
+  guesswork. `mcp__vercel__*` is not authorised for this team and answers 403.
+
+Before writing a wiki page, check it against the code as it stands now. Infrastructure and
+cache windows on this project have changed more than once since a page was last touched, and
+a page that contradicts the repository is worse than a missing page.
 
 ## Writing an issue
 

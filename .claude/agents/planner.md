@@ -1,7 +1,7 @@
 ---
 name: planner
 description: Turns a GitHub issue or a feature request into an ordered implementation plan for this repository. Use before writing code for anything larger than a one-file change, and whenever the right approach is not obvious. Produces a plan only; never edits files.
-tools: Read, Grep, Glob, Bash, WebFetch, Skill
+disallowedTools: Edit, Write, NotebookEdit
 model: opus
 effort: high
 color: blue

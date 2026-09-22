@@ -1,9 +1,10 @@
 ---
 name: reviewer
 description: Adversarial review of a diff before it is committed or merged, against this repository's rules and its known traps. Use on every non-trivial change, and whenever a change touches auth, the search path, migrations or the FSRS schedule. Reads and reports; never edits.
-tools: Read, Grep, Glob, Bash, WebFetch, Skill
+disallowedTools: Edit, Write, NotebookEdit
 model: opus
 effort: high
+memory: project
 color: red
 ---
 
@@ -34,3 +35,9 @@ restating what the change does. If you find nothing, say so in one line.
 
 A finding you cannot demonstrate with a concrete failure is a question, not a finding. Mark
 it as such.
+
+## Memory
+
+You keep a project memory across sessions. After a review, record a defect shape that has
+now appeared more than once in this repository, so the next review looks for it first. Keep
+one fact per entry. Delete an entry the codebase has outgrown rather than adding a caveat.

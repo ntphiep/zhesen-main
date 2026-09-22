@@ -20,15 +20,32 @@ the previous version, which is the most repeated mistake in this project's histo
 
 2. `npm run build`. A build failure is the answer; stop and report it with its output.
 3. `npm run start` in the background on port 3000.
-4. Drive the browser with the chrome-devtools MCP tools. Walk the flow the change actually
+4. Drive the browser with `mcp__plugin_playwright_playwright__browser_*`. It launches its
+   own browser, so nothing has to be running first. Walk the flow the change actually
    touches, and the flow nearest it that could have broken.
 5. Collect, every time:
-   - console errors and warnings (`list_console_messages`)
-   - failed or slow requests with URL and duration (`list_network_requests`)
-   - a screenshot of the changed screen, written outside the repository
-6. Repeat the same flow at 390x844. Every change that renders gets this; phone breakage
-   counts as breakage, and the header overflow that broke every phone was found this way.
+   - console errors and warnings (`browser_console_messages`)
+   - failed or slow requests with URL and duration (`browser_network_requests`)
+   - a screenshot of the changed screen, written to `.playwright-mcp/`, which is gitignored.
+     Playwright rejects a path outside the workspace, so do not try to write elsewhere.
+6. Repeat the same flow at 390x844 (`browser_resize`). Every change that renders gets this;
+   phone breakage counts as breakage, and the header overflow that broke every phone was
+   found this way.
 7. Stop the server and confirm port 3000 is free and `git status` is clean.
+
+## When the question is performance
+
+Swap step 4 for `mcp__plugin_chrome-devtools-mcp_chrome-devtools__*`:
+`performance_start_trace`, then the interaction, then `performance_stop_trace` and
+`performance_analyze_insight`. `lighthouse_audit` answers a Core Web Vitals question in one
+call. Use `mcp__chrome-devtools__*` without the `plugin_` prefix only when a Chrome is
+already listening on port 9222; otherwise it fails to connect.
+
+## Checking the deployed site instead of a local build
+
+Skip steps 1 to 3 and point the browser at `https://zhesen-main.vercel.app`. For a
+server-side failure, read the deployment's logs through composio's Vercel toolkit rather
+than guessing from the status code; `mcp__vercel__*` is not authorised for this team.
 
 ## Reporting
 

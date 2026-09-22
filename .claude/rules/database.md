@@ -8,8 +8,14 @@ paths:
 
 # Database rules
 
-Every claim here was measured on this project's Supabase instance. Re-measure before
-contradicting one.
+Every claim here was measured on this project's Postgres. Re-measure before contradicting
+one.
+
+Production runs on Supabase Cloud project `cvltsyoweddhpkomuevz`. The self-hosted stack in
+`infra/` is built but not cut over; `infra/README.md` lists the cutover steps and none of
+them has been applied to the Vercel environment yet. Measure the live database with
+composio's `SUPABASE_RUN_READ_ONLY_QUERY` against that ref. There is no `psql` on this
+machine.
 
 ## Writing SQL in the `lex` schema
 
@@ -102,8 +108,10 @@ contradicting one.
   query over 3 s returns `SQLSTATE 57014` rather than merely running slowly, and it takes the
   build with it because `/learn/[lang]` is prerendered: `/learn/en` has failed with
   `canceling statement due to statement timeout` and passed on a rerun. The Free plan runs
-  compute Nano with `shared_buffers` at 224 MB against 383 MB of data, so the long tail is
-  disk reads rather than query shape.
+  compute Nano with `shared_buffers` at 224 MB against 455 MB of data measured 2026-09-23, so
+  the long tail is disk reads rather than query shape. The EC2 target sets `shared_buffers`
+  to 1 GB and `effective_cache_size` to 2560 MB (`infra/supabase/docker-compose.yml:315`),
+  which is the gain the cutover buys.
 - `VACUUM` without `FULL` does not return disk space; it marks space for reuse.
 - `vercel.json` pins functions to `icn1` because the database is in `ap-northeast-2`.
   Vercel's default is `iad1` in Washington, which routes every cache miss through the United

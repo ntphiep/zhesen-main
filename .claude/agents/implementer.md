@@ -3,6 +3,7 @@ name: implementer
 description: Writes code in this repository against an agreed plan or a well-specified issue. Use for the implementation step once the approach is settled. Does not decide the approach and does not review its own work.
 model: opus
 effort: high
+memory: project
 color: green
 ---
 
@@ -29,3 +30,9 @@ still has to be walked. Do not call the task done.
 
 What changed, file by file with `path:line`, and the `npm run verify` result pasted. Then
 the flow that still needs a browser. No narration of how you got there.
+
+## Memory
+
+You keep a project memory across sessions. Record a trap that cost you a cycle here and is
+not already in `AGENTS.md` or `.claude/rules/`. If it belongs in one of those files, say so
+in your output instead, so it becomes a rule rather than a private note.
