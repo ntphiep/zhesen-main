@@ -1,0 +1,149 @@
+#cloud-config
+# Rendered by ec2.tf. `lifecycle { ignore_changes = [user_data] }` means editing
+# this file does not touch a running instance; it applies to the next one.
+package_update: true
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - unzip
+  - jq
+  - cron
+
+write_files:
+  - path: /etc/docker/daemon.json
+    permissions: "0644"
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": { "max-size": "20m", "max-file": "5" },
+        "live-restore": true
+      }
+
+  - path: /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+    permissions: "0644"
+    content: |
+      {
+        "agent": { "metrics_collection_interval": 60 },
+        "metrics": {
+          "append_dimensions": { "InstanceId": "$${aws:InstanceId}" },
+          "aggregation_dimensions": [["InstanceId"], ["InstanceId", "path"]],
+          "metrics_collected": {
+            "mem": { "measurement": ["mem_used_percent"] },
+            "swap": { "measurement": ["swap_used_percent"] },
+            "disk": {
+              "resources": ["/"],
+              "measurement": ["disk_used_percent"],
+              "ignore_file_system_types": ["sysfs", "devtmpfs", "tmpfs", "overlay"]
+            }
+          }
+        }
+      }
+
+  - path: /etc/cron.d/zhesen-backup
+    permissions: "0644"
+    content: |
+      SHELL=/bin/bash
+      PATH=/usr/local/bin:/usr/bin:/bin
+      30 3 * * * root ${compose_dir}/bin/backup.sh >> /var/log/zhesen-backup.log 2>&1
+
+  - path: /etc/logrotate.d/zhesen
+    permissions: "0644"
+    content: |
+      /var/log/zhesen-backup.log /var/log/zhesen-cloud-init.log {
+        weekly
+        rotate 8
+        compress
+        missingok
+        notifempty
+      }
+
+  - path: /etc/sysctl.d/99-zhesen.conf
+    permissions: "0644"
+    content: |
+      vm.swappiness=10
+
+  - path: /opt/zhesen/bootstrap.sh
+    permissions: "0750"
+    content: |
+      #!/usr/bin/env bash
+      # One script rather than a list of runcmd entries: cloud-init runs runcmd
+      # under /bin/sh, where `set -o pipefail` is not available.
+      set -euxo pipefail
+      exec >> /var/log/zhesen-cloud-init.log 2>&1
+
+      REGION="${region}"
+      ASSETS_BUCKET="${assets_bucket}"
+      COMPOSE_DIR="${compose_dir}"
+      export DEBIAN_FRONTEND=noninteractive
+
+      # Unattended-upgrades holds the dpkg lock for the first minutes of a boot.
+      apt_wait() {
+        for _ in $(seq 1 60); do
+          fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || return 0
+          sleep 5
+        done
+        return 1
+      }
+
+      # Docker Engine and the compose plugin, from Docker's own apt repository.
+      # https://docs.docker.com/engine/install/ubuntu/
+      install -m 0755 -d /etc/apt/keyrings
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+      chmod a+r /etc/apt/keyrings/docker.asc
+      echo "deb [arch=arm64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu noble stable" \
+        > /etc/apt/sources.list.d/docker.list
+      apt_wait
+      apt-get update
+      apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      systemctl enable --now docker
+
+      # AWS CLI v2. The distribution package is v1 and cannot read SSM the same way.
+      curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip -o /tmp/awscliv2.zip
+      unzip -q -o /tmp/awscliv2.zip -d /tmp
+      /tmp/aws/install --update
+      rm -rf /tmp/aws /tmp/awscliv2.zip
+
+      curl -fsSL https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/arm64/latest/amazon-cloudwatch-agent.deb \
+        -o /tmp/cwagent.deb
+      dpkg -i -E /tmp/cwagent.deb
+      rm -f /tmp/cwagent.deb
+      /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+        -a fetch-config -m ec2 -s \
+        -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+
+      # 4 GB of RAM with Postgres at shared_buffers=1GB leaves no headroom for a
+      # vacuum or a dump running beside Studio.
+      if [ ! -f /swapfile ]; then
+        fallocate -l 2G /swapfile
+        chmod 600 /swapfile
+        mkswap /swapfile
+        swapon /swapfile
+        echo '/swapfile none swap sw 0 0' >> /etc/fstab
+      fi
+      sysctl --system
+
+      mkdir -p "$COMPOSE_DIR"
+      # .env and the database files live under COMPOSE_DIR and are not in the bucket.
+      aws s3 sync "s3://$ASSETS_BUCKET/supabase" "$COMPOSE_DIR" --delete --region "$REGION" \
+        --exclude '.env' --exclude 'volumes/db/data/*'
+      chmod +x "$COMPOSE_DIR"/bin/*.sh
+
+      # The URL parameters are written after the CloudFront distribution exists,
+      # which is after this instance. render-env fails until they are there.
+      rendered=0
+      for _ in $(seq 1 60); do
+        if "$COMPOSE_DIR/bin/render-env.sh"; then rendered=1; break; fi
+        sleep 30
+      done
+      [ "$rendered" = "1" ] || { echo "bootstrap: .env not rendered after 30 minutes"; exit 1; }
+
+      docker compose -f "$COMPOSE_DIR/docker-compose.yml" \
+        --project-directory "$COMPOSE_DIR" --env-file "$COMPOSE_DIR/.env" pull
+      docker compose -f "$COMPOSE_DIR/docker-compose.yml" \
+        --project-directory "$COMPOSE_DIR" --env-file "$COMPOSE_DIR/.env" up -d
+
+      touch /var/lib/cloud/zhesen-ready
+
+runcmd:
+  - ["bash", "/opt/zhesen/bootstrap.sh"]

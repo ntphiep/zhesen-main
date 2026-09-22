@@ -1,7 +1,7 @@
 import { cache } from 'react'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { supabaseEnv } from './env'
+import { SUPABASE_AUTH_COOKIE, supabaseEnv } from './env'
 
 /**
  * Memoised for the length of one request, so a layout and the page inside it get
@@ -16,6 +16,7 @@ export const createClient = cache(async function createClient() {
     url,
     anonKey,
     {
+      cookieOptions: { name: SUPABASE_AUTH_COOKIE },
       cookies: {
         getAll() {
           return cookieStore.getAll()

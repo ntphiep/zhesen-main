@@ -1,0 +1,338 @@
+# Derived from supabase/supabase docker/docker-compose.yml at commit
+# 7ce4ee53ae13c8e71e78580abef0a18059006d49. Every deviation is listed in UPSTREAM.md.
+#
+# Usage on the instance:
+#   docker compose -f docker-compose.yml --env-file .env up -d
+# .env is rendered from SSM by bin/render-env.sh and is never committed.
+
+name: supabase
+
+services:
+
+  studio:
+    container_name: supabase-studio
+    image: supabase/studio:2026.09.07-sha-7996410
+    restart: unless-stopped
+    # Reached only through an SSM port-forwarding tunnel; the CloudFront function
+    # rejects every path outside /auth/v1/ and /rest/v1/.
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:3000/api/platform/profile').then((r) => {if (r.status !== 200) throw new Error(r.status)})\""
+        ]
+      timeout: 10s
+      interval: 5s
+      retries: 3
+      start_period: 20s
+    environment:
+      # Listen on all IPv4 interfaces
+      HOSTNAME: "0.0.0.0"
+
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # See: https://supabase.com/docs/guides/self-hosting/remove-superuser-access
+      POSTGRES_USER_READ_WRITE: postgres
+
+      PG_META_CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
+      PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS:-1000}
+      PGRST_DB_EXTRA_SEARCH_PATH: ${PGRST_DB_EXTRA_SEARCH_PATH:-public}
+
+      DEFAULT_ORGANIZATION_NAME: ${STUDIO_DEFAULT_ORGANIZATION}
+      DEFAULT_PROJECT_NAME: ${STUDIO_DEFAULT_PROJECT}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      SUPABASE_URL: http://api-gw:8000
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      AUTH_JWT_SECRET: ${JWT_SECRET}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY}
+
+      # See: docker-compose.logs.yml
+      ENABLED_FEATURES_LOGS_ALL: "false"
+
+      SNIPPETS_MANAGEMENT_FOLDER: /app/snippets
+      EDGE_FUNCTIONS_MANAGEMENT_FOLDER: /app/edge-functions
+    volumes:
+      - ./volumes/snippets:/app/snippets:z
+      - ./volumes/functions:/app/edge-functions:ro,z
+
+  # Envoy is the default API gateway
+  # See: https://github.com/orgs/supabase/discussions/48048
+  api-gw:
+    container_name: supabase-envoy
+    image: envoyproxy/envoy:v1.39.1
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    networks:
+      default:
+        # Expose `envoy` and `kong` as network aliases, so internal configs
+        # that reference either hostname resolve to whichever gateway is active.
+        aliases:
+          - envoy
+          - kong
+    healthcheck:
+      # Using a TCP port check because this image does not include curl or wget.
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/127.0.0.1/8000'"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    # Upstream waits for Studio to be healthy. Dropped: neither /auth/v1/ nor
+    # /rest/v1/ needs the dashboard, and a Studio that fails to start must not
+    # keep the API down.
+    ports:
+      # Bound on every interface, unlike upstream's configurable host port. The
+      # security group admits only this account's CloudFront VPC origin.
+      - "80:8000"
+    volumes:
+      - ./volumes/api/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./volumes/api/envoy/cds.yaml:/etc/envoy/cds.yaml:ro
+      - ./volumes/api/envoy/lds.template.yaml:/etc/envoy/lds.template.yaml:ro
+      - ./volumes/api/envoy/docker-entrypoint.sh:/docker-entrypoint.sh:ro
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:-}
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:-}
+      ANON_KEY_ASYMMETRIC: ${ANON_KEY_ASYMMETRIC:-}
+      SERVICE_ROLE_KEY_ASYMMETRIC: ${SERVICE_ROLE_KEY_ASYMMETRIC:-}
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
+      DASHBOARD_USERNAME: ${DASHBOARD_USERNAME}
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD}
+    entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
+
+  auth:
+    container_name: supabase-auth
+    # Bumped from upstream v2.196.0: the Cloud project runs v2.197.0 and its auth
+    # schema is at migration 20260831180000. An older binary refuses to start
+    # against a newer schema.
+    image: supabase/gotrue:v2.197.0
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:9999/health"
+        ]
+      timeout: 5s
+      interval: 5s
+      retries: 3
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL}
+
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+
+      GOTRUE_SITE_URL: ${SITE_URL}
+      GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS}
+      GOTRUE_DISABLE_SIGNUP: ${DISABLE_SIGNUP}
+
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY}
+
+      # Legacy symmetric HS256 key
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+
+      GOTRUE_JWT_ISSUER: ${API_EXTERNAL_URL}
+
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: ${ENABLE_EMAIL_SIGNUP}
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: ${ENABLE_ANONYMOUS_USERS}
+      GOTRUE_MAILER_AUTOCONFIRM: ${ENABLE_EMAIL_AUTOCONFIRM}
+
+      # Added here, not upstream: these mirror the Cloud project's auth settings.
+      # Every name checked against CONFIG.md at the cited line.
+      GOTRUE_MAILER_OTP_EXP: 3600                        # CONFIG.md:243
+      GOTRUE_MAILER_OTP_LENGTH: 8                        # CONFIG.md:244
+      GOTRUE_PASSWORD_MIN_LENGTH: 6                      # CONFIG.md:714
+      GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED: "true"  # CONFIG.md:245
+      GOTRUE_SMTP_MAX_FREQUENCY: 1m0s                    # CONFIG.md:255
+      # Cloud had 2 emails per hour, which is issue #6: a sign-in link silently
+      # rate-limited. 30 is the documented default.
+      GOTRUE_RATE_LIMIT_EMAIL_SENT: 30                   # CONFIG.md:647
+      GOTRUE_RATE_LIMIT_ANONYMOUS_USERS: 30              # CONFIG.md:646
+      # Behind CloudFront and Envoy the TCP peer is the Docker bridge for every
+      # visitor; the viewer address is the first X-Forwarded-For entry.
+      GOTRUE_RATE_LIMIT_HEADER: X-Forwarded-For          # CONFIG.md:648
+      GOTRUE_SECURITY_MANUAL_LINKING_ENABLED: "true"     # CONFIG.md:685
+      GOTRUE_SECURITY_REFRESH_TOKEN_ROTATION_ENABLED: "true"  # CONFIG.md:689
+      GOTRUE_SECURITY_REFRESH_TOKEN_REUSE_INTERVAL: 10   # CONFIG.md:688
+      GOTRUE_MFA_TOTP_ENROLL_ENABLED: "true"             # CONFIG.md:588
+      GOTRUE_MFA_TOTP_VERIFY_ENABLED: "true"             # CONFIG.md:589
+
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
+      GOTRUE_SMTP_HOST: ${SMTP_HOST}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT}
+      GOTRUE_SMTP_USER: ${SMTP_USER}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS}
+      GOTRUE_SMTP_SENDER_NAME: ${SMTP_SENDER_NAME}
+      GOTRUE_MAILER_URLPATHS_INVITE: ${MAILER_URLPATHS_INVITE}
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: ${MAILER_URLPATHS_CONFIRMATION}
+      GOTRUE_MAILER_URLPATHS_RECOVERY: ${MAILER_URLPATHS_RECOVERY}
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: ${MAILER_URLPATHS_EMAIL_CHANGE}
+
+      GOTRUE_EXTERNAL_PHONE_ENABLED: ${ENABLE_PHONE_SIGNUP}
+      GOTRUE_SMS_AUTOCONFIRM: ${ENABLE_PHONE_AUTOCONFIRM}
+
+  rest:
+    container_name: supabase-rest
+    image: postgrest/postgrest:v14.17
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "postgrest", "--ready" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+      # public,graphql_public,lex -- see env.template. The authenticator role also
+      # carries pgrst.db_schemas, replayed by bin/migrate.sh; the two must agree.
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
+      PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS:-1000}
+      PGRST_DB_EXTRA_SEARCH_PATH: ${PGRST_DB_EXTRA_SEARCH_PATH:-public}
+      PGRST_DB_ANON_ROLE: anon
+
+      PGRST_ADMIN_SERVER_PORT: 3001
+      PGRST_ADMIN_SERVER_HOST: localhost
+
+      PGRST_JWT_SECRET: ${JWT_JWKS:-${JWT_SECRET}}
+
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY}
+    command:
+      [
+        "postgrest"
+      ]
+
+  meta:
+    container_name: supabase-meta
+    image: supabase/postgres-meta:v0.99.0
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: ${POSTGRES_HOST}
+      PG_META_DB_PORT: ${POSTGRES_PORT}
+      PG_META_DB_NAME: ${POSTGRES_DB}
+      PG_META_DB_USER: postgres
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
+
+  db:
+    container_name: supabase-db
+    image: supabase/postgres:17.6.1.136
+    restart: unless-stopped
+    # No memory limit: Postgres sizes its own caches from the settings below and
+    # a cgroup ceiling under them means the OOM killer, not a slower query.
+    volumes:
+      - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
+      # Must be superuser to create event trigger
+      - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
+      # Must be superuser to alter reserved role
+      - ./volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
+      # Initialize the database settings with JWT_EXP
+      - ./volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
+      # PGDATA directory is persisted between restarts
+      - ./volumes/db/data:/var/lib/postgresql/data:Z
+      # Changes required for internal supabase data such as _analytics
+      - ./volumes/db/_supabase.sql:/docker-entrypoint-initdb.d/migrations/97-_supabase.sql:Z
+      # Changes required for Analytics support
+      - ./volumes/db/logs.sql:/docker-entrypoint-initdb.d/migrations/99-logs.sql:Z
+      # Changes required for Pooler support
+      - ./volumes/db/pooler.sql:/docker-entrypoint-initdb.d/migrations/99-pooler.sql:Z
+      # Use named volume to persist pgsodium decryption key between restarts
+      - db-config:/etc/postgresql-custom
+    healthcheck:
+      test:
+        [
+        "CMD",
+        "pg_isready",
+        "-U",
+        "postgres",
+        "-h",
+        "localhost"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: ${POSTGRES_PORT}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      POSTGRES_DB: ${POSTGRES_DB}
+      JWT_EXP: ${JWT_EXPIRY}
+    command:
+      [
+        "postgres",
+        "-c",
+        "config_file=/etc/postgresql/postgresql.conf",
+        # Sized for t4g.medium, 4 GB of RAM.
+        "-c",
+        "shared_buffers=1GB",
+        "-c",
+        "effective_cache_size=2560MB",
+        "-c",
+        "maintenance_work_mem=256MB",
+        "-c",
+        "work_mem=8MB",
+        "-c",
+        "max_connections=100",
+        # gp3 is an SSD, so a random page costs almost what a sequential one does.
+        "-c",
+        "random_page_cost=1.1",
+        "-c",
+        "wal_compression=on",
+        "-c",
+        "log_min_duration_statement=1000ms",
+        # Upstream sets fatal to hide Realtime's polling. Realtime is not run here,
+        # so warnings are worth having.
+        "-c",
+        "log_min_messages=warning"
+      ]
+
+volumes:
+  db-config:

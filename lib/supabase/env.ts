@@ -11,6 +11,14 @@
  * literal member expression, and `process.env[name]` would leave the browser
  * with undefined.
  */
+/**
+ * The cookie name @supabase/ssr derives from the host, pinned to the value it had
+ * on Supabase Cloud so a session survives the move to the CloudFront host
+ * (2026-09-23). Unpinned, every signed-in browser would silently lose its
+ * account, including the anonymous one holding 410 of the 444 saved words.
+ */
+export const SUPABASE_AUTH_COOKIE = 'sb-cvltsyoweddhpkomuevz-auth-token'
+
 export function supabaseEnv(): { url: string; anonKey: string } {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY

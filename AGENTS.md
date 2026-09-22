@@ -38,6 +38,7 @@ Never commit, push or open an issue under another account.
 | `npm run dev` | Development server on port 3000. |
 | `npm run build` then `npm run start` | Required before clicking through any UI change. |
 | `npx vitest related --run <file>` | Only the tests that import that file. |
+| `terraform -chdir=infra/terraform plan` | What an apply would change in AWS. |
 
 ## Definition of done
 
@@ -114,6 +115,17 @@ loosen or delete a test to make it pass.
   the argument. Do not silence the rule with `eslint-disable`.
 - `showModal()` races React Strict Mode, whose effects run twice. Guard with
   `if (open && !el.open)`.
+
+## Infrastructure
+
+The database is a self-hosted Supabase on one EC2 instance behind CloudFront, not
+Supabase Cloud. `infra/` is the source of truth for both the account and what the instance
+runs; see `infra/README.md`. The instance's `.env` is rendered from SSM Parameter Store by
+`bin/render-env.sh` and never committed; `.env.example` at the root is the app's, not the
+instance's. `NEXT_PUBLIC_SUPABASE_ANON_KEY` is the legacy anon JWT, because Envoy compares
+the `apikey` header to it by string equality. The auth cookie name is pinned in
+`lib/supabase/env.ts`: `@supabase/ssr` otherwise derives it from the host, and renaming it
+drops every session.
 
 ## Product invariants
 

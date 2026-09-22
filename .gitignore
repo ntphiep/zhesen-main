@@ -40,6 +40,15 @@ yarn-error.log*
 # supabase CLI scratch state
 supabase/.temp
 
+# terraform: provider cache, state, and the tfvars holding the two addresses
+infra/terraform/.terraform/
+infra/terraform/*.tfstate*
+infra/terraform/*.tfvars
+
+# the instance's database files and its rendered .env, if either is ever synced back
+infra/supabase/volumes/db/data/
+infra/supabase/.env
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -52,3 +61,6 @@ next-env.d.ts
 /*.png
 .claude/.verify-gate-last-run
 .claude/settings.local.json
+
+# terraform saved plans
+infra/terraform/*.tfplan
