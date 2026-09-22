@@ -59,7 +59,7 @@ export function LookupView({
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
-      <Link href="/dictionary" className="text-sm text-black/50 hover:underline">← Tra cứu</Link>
+      <Link href="/dictionary" className="text-sm text-black/50 hover:underline">← Dịch</Link>
       <LookupHero detail={detail} hanViet={detail.lang === 'zh' ? hanViet : null} />
       {lemma && <LemmaLink lemma={lemma} preview={previews[lemma.toLowerCase()]} lang={detail.lang} />}
 

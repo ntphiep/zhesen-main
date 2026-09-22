@@ -28,7 +28,7 @@ export default async function PracticePage() {
       {stats.total === 0 ? (
         <div className="mt-6 rounded-xl border border-black/10 p-6 text-black/60">
           Sổ tay chưa có từ nào.{' '}
-          <Link href="/dictionary" className="font-medium text-black underline">Tra cứu và thêm từ</Link>{' '}
+          <Link href="/dictionary" className="font-medium text-black underline">Dịch và thêm từ</Link>{' '}
           để bắt đầu luyện tập.
         </div>
       ) : (

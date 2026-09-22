@@ -17,12 +17,13 @@ import { unstable_cache } from 'next/cache'
 export const LEX_REVALIDATE = 604800
 import { createContentClient } from '@/lib/supabase/content'
 import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getTermPreviews } from './entryDetail'
-import { getCommonWords } from './search'
+import { getCommonWords, type CommonWordsOptions } from './search'
 import { resolveTappableTexts, type ResolvedText } from './tappable'
 import { getEntriesContaining } from './containing'
 import { getWordKin } from './kin'
 import { getWordOfDay, dayNumber, type DailyWord } from './wordOfDay'
 import { getLevelsForLanguage, getEntriesByLevel, type LevelSummary, type LevelPage } from './levels'
+import { getEntriesByLetter, type LetterPage } from './browse'
 import type { ContainingWord, DictEntryDetail, DictEntryPreview, CrossLangSibling, TermPreview, CharInfo, WordForm } from './types'
 import type { LangCode } from '@/lib/languages'
 
@@ -90,8 +91,16 @@ export const getCachedWordOfDay = unstable_cache(
 )
 
 export const getCachedCommonWords = unstable_cache(
-  (lang: LangCode): Promise<DictEntryPreview[]> => getCommonWords(createContentClient(), lang),
+  (lang: LangCode, options: CommonWordsOptions = {}): Promise<DictEntryPreview[]> =>
+    getCommonWords(createContentClient(), lang, options),
   ['dict-common-words'],
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
+)
+
+export const getCachedEntriesByLetter = unstable_cache(
+  (lang: LangCode, letter: string, offset: number, limit: number): Promise<LetterPage> =>
+    getEntriesByLetter(createContentClient(), lang, letter, offset, limit),
+  ['dict-entries-by-letter'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 

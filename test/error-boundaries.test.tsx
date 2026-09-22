@@ -8,7 +8,7 @@ describe('not-found page', () => {
   it('offers a way back into the site instead of ending the visit', () => {
     render(<NotFound />)
     expect(screen.getByRole('heading', { name: 'Không có trang này' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Tra từ khác' })).toHaveAttribute('href', '/dictionary')
+    expect(screen.getByRole('link', { name: 'Dịch từ khác' })).toHaveAttribute('href', '/dictionary')
     expect(screen.getByRole('link', { name: 'Về trang chủ' })).toHaveAttribute('href', '/')
   })
 })

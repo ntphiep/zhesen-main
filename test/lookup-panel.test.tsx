@@ -42,7 +42,7 @@ beforeEach(() => {
 describe('LookupPanel', () => {
   it('the vi panel asks the route for dir=vi', async () => {
     const fetchMock = stubFetch({ entries: EMPTY, suggestions: [] })
-    render(<LookupPanel direction="vi" label="VN" placeholder="p" />)
+    render(<LookupPanel direction="vi" label="VN" />)
     await userEvent.type(screen.getByLabelText('VN'), 'con cho')
     await screen.findByText('Chưa tìm thấy từ nào.')
     expect(String(fetchMock.mock.calls[0][0])).toContain('dir=vi')
@@ -50,7 +50,7 @@ describe('LookupPanel', () => {
 
   it('the fw panel does not send dir=vi', async () => {
     const fetchMock = stubFetch({ entries: EMPTY, suggestions: [] })
-    render(<LookupPanel direction="fw" label="FW" placeholder="p" />)
+    render(<LookupPanel direction="fw" label="FW" />)
     await userEvent.type(screen.getByLabelText('FW'), 'dog')
     await screen.findByText('Chưa tìm thấy từ nào.')
     expect(String(fetchMock.mock.calls[0][0])).not.toContain('dir=vi')
@@ -58,7 +58,7 @@ describe('LookupPanel', () => {
 
   it('renders a result with its headword and Vietnamese gloss', async () => {
     stubFetch({ entries: { ...EMPTY, en: [entry({ glossVi: 'Con chó' })] }, suggestions: [] })
-    render(<LookupPanel direction="fw" label="FW" placeholder="p" />)
+    render(<LookupPanel direction="fw" label="FW" />)
     await userEvent.type(screen.getByLabelText('FW'), 'dog')
     // findByText('dog') would match the textarea's own value, so wait on the gloss.
     expect(await screen.findByText('Con chó')).toBeInTheDocument()
@@ -70,7 +70,7 @@ describe('LookupPanel', () => {
       entries: EMPTY,
       suggestions: [{ id: 'en:cot', lang: 'en', headword: 'cot', glossVi: 'Cái nôi', kind: 'headword' }],
     })
-    render(<LookupPanel direction="fw" label="FW" placeholder="p" />)
+    render(<LookupPanel direction="fw" label="FW" />)
     await userEvent.type(screen.getByLabelText('FW'), 'cat')
     const link = await screen.findByRole('link', { name: /cot/ })
     expect(link).toHaveAttribute('href', entryPath('en:cot'))
@@ -79,7 +79,7 @@ describe('LookupPanel', () => {
 
   it('renders the refusal the route sent, not a generic empty result', async () => {
     stubFetch({ error: 'Đang có quá nhiều lượt tra cứu. Vui lòng thử lại sau ít giây.' }, false)
-    render(<LookupPanel direction="fw" label="FW" placeholder="p" />)
+    render(<LookupPanel direction="fw" label="FW" />)
     await userEvent.type(screen.getByLabelText('FW'), 'dog')
     expect(await screen.findByText('Đang có quá nhiều lượt tra cứu. Vui lòng thử lại sau ít giây.')).toBeInTheDocument()
     expect(screen.queryByText('Chưa tìm thấy từ nào.')).toBeNull()
@@ -87,36 +87,36 @@ describe('LookupPanel', () => {
 
   it('shows language chips on both panels, naming the question each one answers', () => {
     stubFetch({ entries: EMPTY, suggestions: [] })
-    const { unmount } = render(<LookupPanel direction="vi" label="VN" placeholder="p" />)
+    const { unmount } = render(<LookupPanel direction="vi" label="VN" />)
     expect(screen.getAllByRole('checkbox')).toHaveLength(3)
     expect(screen.getByRole('group', { name: 'Ngôn ngữ cần dịch sang' })).toBeInTheDocument()
     unmount()
 
-    render(<LookupPanel direction="fw" label="FW" placeholder="p" />)
+    render(<LookupPanel direction="fw" label="FW" />)
     expect(screen.getAllByRole('checkbox')).toHaveLength(3)
     expect(screen.getByRole('group', { name: 'Ngôn ngữ cần tìm' })).toBeInTheDocument()
   })
 
   it('keeps the language choice of each panel apart from the other', async () => {
     stubFetch({ entries: EMPTY, suggestions: [] })
-    const { unmount } = render(<LookupPanel direction="fw" label="FW" placeholder="p" />)
+    const { unmount } = render(<LookupPanel direction="fw" label="FW" />)
     await userEvent.click(screen.getByText('Tiếng Trung'))
     expect(screen.getAllByRole('checkbox').filter((c) => (c as HTMLInputElement).checked)).toHaveLength(2)
     unmount()
 
-    render(<LookupPanel direction="vi" label="VN" placeholder="p" />)
+    render(<LookupPanel direction="vi" label="VN" />)
     expect(screen.getAllByRole('checkbox').filter((c) => (c as HTMLInputElement).checked)).toHaveLength(3)
   })
 
   it('hides the language chips once the caller fixed a language', () => {
     stubFetch({ entries: EMPTY, suggestions: [] })
-    render(<LookupPanel direction="vi" label="VN" placeholder="p" lang="en" />)
+    render(<LookupPanel direction="vi" label="VN" lang="en" />)
     expect(screen.queryAllByRole('checkbox')).toHaveLength(0)
   })
 
   it('opens the first result on Enter', async () => {
     stubFetch({ entries: { ...EMPTY, en: [entry({ id: 'en:dog', glossVi: 'Con chó' })] }, suggestions: [] })
-    render(<LookupPanel direction="fw" label="FW" placeholder="p" />)
+    render(<LookupPanel direction="fw" label="FW" />)
     const input = screen.getByLabelText('FW')
     await userEvent.type(input, 'dog')
     await screen.findByText('Con chó')
@@ -126,7 +126,7 @@ describe('LookupPanel', () => {
 
   it('does nothing on Enter while there is no result yet', async () => {
     stubFetch({ entries: EMPTY, suggestions: [] })
-    render(<LookupPanel direction="fw" label="FW" placeholder="p" />)
+    render(<LookupPanel direction="fw" label="FW" />)
     const input = screen.getByLabelText('FW')
     await userEvent.type(input, 'zzzz')
     await screen.findByText('Chưa tìm thấy từ nào.')

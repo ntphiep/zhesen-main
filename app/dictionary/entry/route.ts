@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     const perCaller = rateLimit(caller)
     if (!perCaller.allowed) {
       return Response.json(
-        { error: 'Đang có quá nhiều lượt tra cứu. Vui lòng thử lại sau ít giây.' },
+        { error: 'Đang có quá nhiều lượt dịch. Vui lòng thử lại sau ít giây.' },
         { status: 429, headers: { 'Retry-After': String(perCaller.retryAfterSeconds) } },
       )
     }

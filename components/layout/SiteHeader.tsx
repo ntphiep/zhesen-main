@@ -11,7 +11,7 @@ import { LinkPending } from '@/components/ui/LinkPending'
  * The dictionary and grammar routes stay on: the edge cache answers them.
  */
 const NAV = [
-  { href: '/dictionary', label: 'Tra cứu', prefetch: true },
+  { href: '/dictionary', label: 'Dịch', prefetch: true },
   { href: '/grammar', label: 'Ngữ pháp', prefetch: true },
   { href: '/practice', label: 'Luyện tập', prefetch: false },
   { href: '/wordlist', label: 'Sổ tay', prefetch: false },

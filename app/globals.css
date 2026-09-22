@@ -217,3 +217,15 @@ dialog::backdrop {
     opacity: 0.6;
   }
 }
+
+/* The swap and the show-one-direction control in components/search/LookupPair.tsx run
+   through document.startViewTransition, whose default is half a second. A box sliding
+   past another for that long reads as a page load, so both sides are cut to 220 ms and
+   given the browser's own ease-out. The component skips the transition entirely under
+   prefers-reduced-motion, so there is nothing to disable here. */
+::view-transition-group(*),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}

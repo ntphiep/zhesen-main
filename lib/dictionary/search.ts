@@ -141,17 +141,32 @@ export async function searchOneDirection(
   return { entries, suggestions }
 }
 
+export interface CommonWordsOptions {
+  limit?: number
+  /** How far down the frequency list to start. Rank 1 to 300 is almost entirely function
+   *  words -- the, to, and, of, de, la, que, 的, 是, 在 -- true answers to "most frequent"
+   *  and useless as something to tap. */
+  offset?: number
+  /** Keep only entries carrying a CEFR or HSK level. Those are the curated part of the
+   *  corpus, so it drops the scraped single letters and bare inflections that otherwise
+   *  sit between the real words: measured at rank 301, "d", "makes" and "using" go and
+   *  important, news, book and friends take their place. */
+  leveled?: boolean
+}
+
 /** Most frequent entries for a language (for the per-language "common words" list). */
 export async function getCommonWords(
-  supabase: SupabaseClient, lang: LangCode, limit = 24,
+  supabase: SupabaseClient, lang: LangCode, { limit = 24, offset = 0, leveled = false }: CommonWordsOptions = {},
 ): Promise<DictEntryPreview[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .schema('lex')
     .from('entries')
     .select(PREVIEW_SELECT)
     .eq('lang', lang)
+  if (leveled) query = query.not('level', 'is', null)
+  const { data, error } = await query
     .order('frequency_rank', { ascending: true, nullsFirst: false })
-    .limit(limit)
+    .range(offset, offset + limit - 1)
   if (error) throw error
   return entryPreviewRow.array().parse(data ?? []).map(toPreview)
 }

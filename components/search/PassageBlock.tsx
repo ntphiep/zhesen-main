@@ -143,7 +143,7 @@ export function PassageBlock({ text, direction, targets }: {
 
       {words && words.words.length > 0 && (
         <details>
-          <summary className="cursor-pointer text-sm text-black/60">Tra từng từ trong đoạn</summary>
+          <summary className="cursor-pointer text-sm text-black/60">Từng từ trong đoạn</summary>
           <ul className="mt-2 flex flex-col gap-0.5">
             {words.words.map((w, i) => (
               <li key={`${i}-${w.text}`}>

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { pickIpa, pickPrimarySense } from '@/lib/dictionary/rows'
-import { searchEntries, searchAllLanguages, searchAllLanguagesVi, suggestNearby, searchOneDirection } from '@/lib/dictionary/search'
+import { searchEntries, searchAllLanguages, searchAllLanguagesVi, suggestNearby, searchOneDirection, getCommonWords } from '@/lib/dictionary/search'
+import { clientReturning } from './helpers/supabase'
 import { getEntryDetail, getCrossLanguage, getCharacters } from '@/lib/dictionary/entryDetail'
 import { resolveTokens, getZhSegmentCandidates } from '@/lib/dictionary/resolveTokens'
 
@@ -466,5 +467,25 @@ describe('searchAllLanguages trigram gate', () => {
     }), 'recieve')
     expect(out.en.map((e) => e.id)).toEqual(['receive'])
     expect(out.es.map((e) => e.id)).toEqual(['recibir'])
+  })
+})
+
+describe('getCommonWords', () => {
+  it('drops the uncurated rows when asked for levelled words only', async () => {
+    const not = vi.fn()
+    const built = clientReturning([], null, {
+      not: (...args: unknown[]) => { not(...args); return built.builder },
+    })
+    await getCommonWords(built.client, 'en', { limit: 10, offset: 300, leveled: true })
+    expect(not).toHaveBeenCalledWith('level', 'is', null)
+  })
+
+  it('keeps every row when it is not asked to', async () => {
+    const not = vi.fn()
+    const built = clientReturning([], null, {
+      not: (...args: unknown[]) => { not(...args); return built.builder },
+    })
+    await getCommonWords(built.client, 'en')
+    expect(not).not.toHaveBeenCalled()
   })
 })

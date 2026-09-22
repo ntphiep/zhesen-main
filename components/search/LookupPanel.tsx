@@ -33,13 +33,9 @@ const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
  * ca, can and called. The box the learner types in is the answer, and it costs one round
  * trip instead of two.
  */
-export function LookupPanel({ direction, label, placeholder, examples = [], autoFocus = false, initialQuery = '', lang }: {
+export function LookupPanel({ direction, label, autoFocus = false, initialQuery = '', lang }: {
   direction: Direction
   label: string
-  placeholder: string
-  /** Shown as buttons under an empty box, in place of a sentence explaining what to type.
-   *  A learner who has searched before sees their own history there instead. */
-  examples?: readonly string[]
   autoFocus?: boolean
   initialQuery?: string
   /** The caller already fixed the language, so the target control would contradict it. */
@@ -185,7 +181,6 @@ export function LookupPanel({ direction, label, placeholder, examples = [], auto
   }
 
   const showRecent = focused && !trimmed && recent.length > 0
-  const showExamples = !trimmed && !showRecent && examples.length > 0
   // A whole sentence has no single headword, so neither a trigram suggestion nor the
   // assistant has anything to add to the translation PassageBlock already shows.
   const showEmpty =
@@ -243,8 +238,9 @@ export function LookupPanel({ direction, label, placeholder, examples = [], auto
     <div className="flex min-w-0 flex-col gap-3">
       <label htmlFor={inputId} className="text-sm font-semibold">{label}</label>
       {/* A textarea rather than an input, because the same box takes a word and a
-          paragraph. Three rows is the height Google Translate uses and it stops a pasted
-          sentence from scrolling out of sight as it is typed. */}
+          paragraph, and tall enough that a pasted paragraph is readable without scrolling
+          it. No placeholder: the label above already names the direction, and a sentence
+          of grey text inside every box was the first thing on the page. */}
       <textarea
         id={inputId}
         name={`q-${direction}`}
@@ -255,51 +251,48 @@ export function LookupPanel({ direction, label, placeholder, examples = [], auto
         onKeyDown={onKeyDown}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        placeholder={placeholder}
         autoComplete="off"
         spellCheck={false}
-        className="w-full resize-y rounded-xl border border-black/15 px-4 py-3 text-base shadow-sm focus:border-black/40 focus:outline-none"
+        className="min-h-[13rem] w-full resize-y rounded-xl border border-black/15 px-4 py-3 text-base shadow-sm focus:border-black/40 focus:outline-none lg:min-h-[16rem]"
       />
 
+      {/* A joined segmented control, not the rounded chips the rest of this panel uses for
+          one-tap suggestions: this one sets state that persists, and drawing the two the
+          same way made a filter look like a shortcut. */}
       {!lang && (
         <fieldset className="flex flex-wrap items-center gap-2 border-0 p-0">
           <legend className="sr-only">
             {direction === 'vi' ? 'Ngôn ngữ cần dịch sang' : 'Ngôn ngữ cần tìm'}
           </legend>
-          {LANG_CODES.map((l) => (
-            <label
-              key={l}
-              className={`cursor-pointer rounded-full border px-3 py-1 text-xs ${
-                stored.includes(l) ? 'border-black/40 bg-black/5 font-medium' : 'border-black/15 text-black/50'
-              }`}
-            >
-              <input
-                type="checkbox"
-                name={`${direction}-lang`}
-                value={l}
-                checked={stored.includes(l)}
-                onChange={() => store.set(toggleTarget(stored, l))}
-                className="sr-only"
-              />
-              {LANG_LABELS[l]}
-            </label>
-          ))}
+          <span aria-hidden className="text-xs uppercase tracking-wide text-black/40">
+            {direction === 'vi' ? 'Dịch sang' : 'Tìm trong'}
+          </span>
+          <div className="inline-flex overflow-hidden rounded-lg border border-black/15">
+            {LANG_CODES.map((l, i) => {
+              const on = stored.includes(l)
+              return (
+              <label
+                key={l}
+                // The divider is drawn light on a selected segment: with all three on, one
+                // dark border colour made the control read as a single wide button.
+                className={`cursor-pointer px-3 py-1.5 text-xs transition-colors ${
+                  i > 0 ? (on ? 'border-l border-white/25' : 'border-l border-black/15') : ''
+                } ${on ? 'bg-black font-medium text-white' : 'text-black/55 hover:bg-black/5'}`}
+              >
+                <input
+                  type="checkbox"
+                  name={`${direction}-lang`}
+                  value={l}
+                  checked={on}
+                  onChange={() => store.set(toggleTarget(stored, l))}
+                  className="sr-only"
+                />
+                {LANG_LABELS[l]}
+              </label>
+              )
+            })}
+          </div>
         </fieldset>
-      )}
-
-      {showExamples && (
-        <div className="flex flex-wrap gap-2">
-          {examples.map((x) => (
-            <button
-              key={x}
-              type="button"
-              onMouseDown={(e) => { e.preventDefault(); setQuery(x) }}
-              className="rounded-full border border-black/15 px-3 py-1 text-xs text-black/60 hover:bg-black/5"
-            >
-              {x}
-            </button>
-          ))}
-        </div>
       )}
 
       {showRecent && (
@@ -320,7 +313,7 @@ export function LookupPanel({ direction, label, placeholder, examples = [], auto
 
       {isPassage && <PassageBlock text={trimmed} direction={direction} targets={targets} />}
 
-      {loading && <p className="text-sm text-black/40">Đang tra…</p>}
+      {loading && <p className="text-sm text-black/40">Đang dịch…</p>}
       {refusal && <p className="text-sm text-red-600">{refusal}</p>}
 
       {total > 0 && (

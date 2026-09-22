@@ -142,7 +142,7 @@ const TEACHER = [
 ].join(' ')
 
 const TUTOR = [
-  'Bạn là gia sư ngoại ngữ của một người Việt đang ôn TOEIC, đang trả lời ngay trong ứng dụng tra từ điển Zhesen.',
+  'Bạn là gia sư ngoại ngữ của một người Việt đang ôn TOEIC, đang trả lời ngay trong ứng dụng từ điển Zhesen.',
   'Trả lời bằng tiếng Việt, ngắn gọn, đi thẳng vào câu hỏi, tối đa vài câu.',
   'Ví dụ thì viết nguyên văn ở ngôn ngữ đích rồi kèm bản dịch tiếng Việt.',
   'Không bịa: không chắc thì nói thẳng là không chắc.',
@@ -205,7 +205,7 @@ export const TASKS = {
     system: TEACHER,
     prompt: ({ query }) =>
       [
-        `Người học gõ "${query}" vào ô tra từ điển và không có kết quả nào.`,
+        `Người học gõ "${query}" vào ô dịch và không có kết quả nào.`,
         'Đó có thể là tiếng Việt, một mô tả, hoặc một từ viết sai.',
         'Đề xuất tối đa 6 từ tiếng Anh, tiếng Trung hoặc tiếng Tây Ban Nha sát nghĩa nhất.',
         'Ưu tiên tiếng Anh và ngữ cảnh công sở vì học viên ôn TOEIC.',

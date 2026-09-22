@@ -1,10 +1,11 @@
 import { LookupPair } from '@/components/search/LookupPair'
+import { DiscoveryStrip } from '@/components/search/DiscoveryStrip'
 import { isLangCode } from '@/lib/languages'
 import { pageMetadata } from '@/lib/site'
 
 export const metadata = pageMetadata({
-  title: 'Tra từ',
-  description: 'Tra tiếng Việt sang Anh, Trung, Tây Ban Nha, và ngược lại. Một từ hay cả đoạn.',
+  title: 'Dịch',
+  description: 'Dịch tiếng Việt sang Anh, Trung, Tây Ban Nha, và ngược lại. Một từ hay cả đoạn.',
 })
 
 /**
@@ -22,10 +23,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
   const lang = sp.lang && isLangCode(sp.lang) ? sp.lang : undefined
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
-      <h1 className="text-3xl font-bold">Tra cứu</h1>
+      <h1 className="text-3xl font-bold">Dịch</h1>
       <div className="mt-6">
         <LookupPair lang={lang} initialQuery={sp.q ?? ''} autoFocus />
       </div>
+      <DiscoveryStrip />
     </main>
   )
 }

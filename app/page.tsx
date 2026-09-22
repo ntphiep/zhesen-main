@@ -6,7 +6,7 @@ import { LookupPair } from '@/components/search/LookupPair'
 import { getCachedWordOfDay } from '@/lib/dictionary/cached'
 
 const SECTIONS = [
-  { href: '/dictionary', title: 'Tra cứu', desc: 'Tìm nghĩa, phát âm, ví dụ' },
+  { href: '/dictionary', title: 'Dịch', desc: 'Nghĩa, phát âm, ví dụ, cả đoạn' },
   { href: '/grammar', title: 'Ngữ pháp', desc: 'Điểm ngữ pháp theo cấp độ, có ví dụ' },
   { href: '/practice', title: 'Luyện tập', desc: 'Ôn từ, kiểm tra, nghe & nói' },
   { href: '/wordlist', title: 'Sổ tay', desc: 'Từ vựng bạn đã lưu' },

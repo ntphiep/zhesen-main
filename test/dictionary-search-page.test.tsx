@@ -1,5 +1,10 @@
 import { describe, it, expect, vi } from 'vitest'
 
+// The strip reads the dictionary and has nothing to do with what this file asserts.
+vi.mock('@/components/search/DiscoveryStrip', () => ({
+  DiscoveryStrip: () => <div data-testid="strip" />,
+}))
+
 // LookupPair does the real searching; here only the props the page hands it matter.
 vi.mock('@/components/search/LookupPair', () => ({
   LookupPair: ({ initialQuery, lang }: { initialQuery: string; lang?: string }) =>

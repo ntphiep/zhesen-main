@@ -21,7 +21,7 @@ export default function NotFound() {
           href="/dictionary"
           className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/80"
         >
-          Tra từ khác
+          Dịch từ khác
         </Link>
         <Link
           href="/"
