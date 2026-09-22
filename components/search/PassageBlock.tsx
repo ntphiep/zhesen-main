@@ -6,7 +6,7 @@ import { Ipa } from '@/components/ui/Ipa'
 import { PosTag } from '@/components/ui/PosTag'
 import { LinkPending } from '@/components/ui/LinkPending'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
-import { detectOrder } from '@/lib/dictionary/detect'
+import { TappableText } from '@/components/reader/TappableText'
 import { fetchTextLookup, type TextLookup } from '@/lib/dictionary/textLookup'
 import { fetchTranslation } from '@/lib/translate/client'
 import type { TranslateLangCode } from '@/lib/translate/azure'
@@ -23,11 +23,13 @@ export const MAX_PASSAGE_CHARS = 5000
  *  would make it the slowest thing on the page. */
 export const MAX_WORDLIST_CHARS = 1000
 
-/** Three words is where one dictionary entry usually stops being the answer. Han text
- *  carries no spaces, so it is counted in characters. */
+/** Two words is where one dictionary entry stops being the whole answer. It used to be
+ *  three, which left a gap: at two words the panel had no translation to show and said
+ *  "Chưa tìm thấy từ nào" instead, then replaced that with "Đang dịch…" on the third word.
+ *  Han text carries no spaces, so it is counted in characters. */
 export function looksLikeAPassage(q: string, direction: Direction): boolean {
-  if (direction === 'fw' && /\p{Script=Han}/u.test(q)) return q.length >= 6
-  return q.trim().split(/\s+/).length >= 3
+  if (direction === 'fw' && /\p{Script=Han}/u.test(q)) return q.length >= 4
+  return q.trim().split(/\s+/).length >= 2
 }
 
 /** A translation is a whole extra request, so it waits for the typing to stop rather than
@@ -38,7 +40,7 @@ const TRANSLATE_DEBOUNCE_MS = 900
 type State =
   | { kind: 'idle' }
   | { kind: 'loading' }
-  | { kind: 'done'; translations: Partial<Record<TranslateLangCode, string>> }
+  | { kind: 'done'; from: string; translations: Partial<Record<TranslateLangCode, string>> }
   | { kind: 'disabled' }
   | { kind: 'error'; message: string }
 
@@ -61,7 +63,6 @@ export function PassageBlock({ text, direction, targets }: {
   const trimmed = text.trim()
   const tooLong = trimmed.length > MAX_PASSAGE_CHARS
   const nearLimit = trimmed.length > MAX_PASSAGE_CHARS - 500
-  const from: TranslateLangCode = direction === 'vi' ? 'vi' : detectOrder(trimmed)[0]
   // Memoised so the effect below does not refire on every render: a fresh array literal
   // is a new dependency each time.
   const to = useMemo<TranslateLangCode[]>(
@@ -78,8 +79,11 @@ export function PassageBlock({ text, direction, targets }: {
     const id = setTimeout(async () => {
       setState({ kind: 'loading' })
       try {
-        const outcome = await fetchTranslation(trimmed, from, to, ctrl.signal)
-        if (outcome.status === 'ok') setState({ kind: 'done', translations: outcome.translations })
+        // No source language is sent: Azure detects it. See fetchTranslation's own note.
+        const outcome = await fetchTranslation(trimmed, undefined, to, ctrl.signal)
+        if (outcome.status === 'ok') {
+          setState({ kind: 'done', from: outcome.from, translations: outcome.translations })
+        }
         else if (outcome.status === 'disabled') setState({ kind: 'disabled' })
         else setState({ kind: 'error', message: outcome.message })
       } catch (e) {
@@ -89,7 +93,7 @@ export function PassageBlock({ text, direction, targets }: {
       }
     }, TRANSLATE_DEBOUNCE_MS)
     return () => { clearTimeout(id); ctrl.abort() }
-  }, [trimmed, tooLong, from, to])
+  }, [trimmed, tooLong, to])
 
   // The word list is a different request to a different route, and it answers whether or
   // not Azure is configured, so it does not wait on the translation.
@@ -129,12 +133,24 @@ export function PassageBlock({ text, direction, targets }: {
           {(direction === 'vi' ? targets : (['vi'] as const)).map((l) => {
             const value = state.translations[l]
             if (!value) return null
+            // Azure answers a request whose target is the language it detected by echoing
+            // the text back. Saying so is the honest label; dropping the row would leave
+            // the block empty when that is the only target.
+            const untouched = state.from === l
             return (
               <div key={l} className="flex flex-col gap-0.5">
                 <dt className="text-xs uppercase tracking-wide text-black/40">
                   {l === 'vi' ? 'Tiếng Việt' : LANG_LABELS[l]}
+                  {untouched && <span className="ml-2 normal-case text-black/30">nguyên văn</span>}
                 </dt>
-                <dd className="m-0 whitespace-pre-wrap text-base">{value}</dd>
+                <dd className="m-0 whitespace-pre-wrap text-base">
+                  {/* Every word the dictionary holds is tappable, the same popover the
+                      example sentences on a word page use. Vietnamese has no headwords
+                      indexed, so that direction stays plain text. */}
+                  {l === 'vi' || untouched
+                    ? value
+                    : <TappableText text={value} lang={l} />}
+                </dd>
               </div>
             )
           })}

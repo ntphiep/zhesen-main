@@ -43,7 +43,9 @@ describe('LookupPanel', () => {
   it('the vi panel asks the route for dir=vi', async () => {
     const fetchMock = stubFetch({ entries: EMPTY, suggestions: [] })
     render(<LookupPanel direction="vi" label="VN" />)
-    await userEvent.type(screen.getByLabelText('VN'), 'con cho')
+    // One word, not two: two words is a passage now, and a passage renders the
+    // translation block instead of "Chưa tìm thấy từ nào."
+    await userEvent.type(screen.getByLabelText('VN'), 'cho')
     await screen.findByText('Chưa tìm thấy từ nào.')
     expect(String(fetchMock.mock.calls[0][0])).toContain('dir=vi')
   })

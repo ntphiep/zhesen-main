@@ -45,6 +45,11 @@ function cacheKey(from: string, to: TranslateLangCode, text: string): string {
   return `${from}:${to}:${text}`
 }
 
+/** The language Azure detected for a passage, so a request whose targets all hit the
+ *  cache still answers `from`. Without it a repeated passage lost the label that says the
+ *  text came back untouched. Same ceiling and eviction as the translation cache. */
+const detected = new Map<string, string>()
+
 function cacheSet(key: string, value: string): void {
   if (cache.size >= CACHE_LIMIT) {
     const oldest = cache.keys().next()
@@ -92,12 +97,19 @@ export async function POST(request: Request) {
     else missing.push(lang)
   }
 
-  let resolvedFrom: string = from ?? ''
+  let resolvedFrom: string = from ?? detected.get(normalized) ?? ''
 
   if (missing.length > 0) {
     try {
       const result = await translateText(cfg, normalized, from, missing, AbortSignal.timeout(TIMEOUT_MS))
       resolvedFrom = result.from
+      if (!from) {
+        if (detected.size >= CACHE_LIMIT) {
+          const oldest = detected.keys().next()
+          if (!oldest.done) detected.delete(oldest.value)
+        }
+        detected.set(normalized, result.from)
+      }
       Object.assign(translations, result.translations)
       for (const lang of missing) {
         const value = result.translations[lang]

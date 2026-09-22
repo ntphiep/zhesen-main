@@ -1,26 +1,46 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { PassageBlock, looksLikeAPassage } from '@/components/search/PassageBlock'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 
+// The translated output renders through TappableText, which resolves its words against
+// Supabase from the browser. Neither the client nor the resolution is what these cases are
+// about, so both are stubbed: `desk` resolves, everything else stays plain text.
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: () => ({
+    auth: {
+      getSession: async () => ({ data: { session: null } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+    },
+  }),
+}))
+vi.mock('@/lib/dictionary/resolveTokens', () => ({
+  getZhSegmentCandidates: async () => [],
+  resolveTokens: async () => new Map([['desk', {
+    id: 'en:desk', lang: 'en', headword: 'desk', traditional: null, level: null,
+    ipa: null, pos: null, glossVi: 'Cái bàn', glossEn: null, audioUrl: null,
+  }]]),
+}))
+
 describe('looksLikeAPassage', () => {
-  it('is three words or more for the foreign direction, Latin script', () => {
-    expect(looksLikeAPassage('one two', 'fw')).toBe(false)
-    expect(looksLikeAPassage('one two three', 'fw')).toBe(true)
+  it('is two words or more for the foreign direction, Latin script', () => {
+    expect(looksLikeAPassage('one', 'fw')).toBe(false)
+    expect(looksLikeAPassage('one two', 'fw')).toBe(true)
   })
 
-  // Han carries no spaces, so word count does not apply to it: six characters is the
-  // line, not three "words".
-  it('is six characters or more for the foreign direction, Han script', () => {
+  // Han carries no spaces, so word count does not apply to it: four characters is the
+  // line, not two "words".
+  it('is four characters or more for the foreign direction, Han script', () => {
     expect(looksLikeAPassage('我爱你', 'fw')).toBe(false)
-    expect(looksLikeAPassage('我爱你们大家', 'fw')).toBe(true)
+    expect(looksLikeAPassage('我爱你们', 'fw')).toBe(true)
   })
 
-  it('is three words or more for the Vietnamese direction, Han rule not applied', () => {
-    expect(looksLikeAPassage('con cá', 'vi')).toBe(false)
-    expect(looksLikeAPassage('con cá heo', 'vi')).toBe(true)
-    // Six Han characters would pass the fw rule; the vi direction only counts words.
-    expect(looksLikeAPassage('我爱你们大家', 'vi')).toBe(false)
+  it('is two words or more for the Vietnamese direction, Han rule not applied', () => {
+    expect(looksLikeAPassage('cá', 'vi')).toBe(false)
+    expect(looksLikeAPassage('con cá', 'vi')).toBe(true)
+    // Four Han characters would pass the fw rule; the vi direction only counts words.
+    expect(looksLikeAPassage('我爱你们', 'vi')).toBe(false)
   })
 })
 
@@ -30,7 +50,7 @@ describe('looksLikeAPassage', () => {
 // surface as its generic error state instead of failing the test, so the URL is
 // asserted from `fetchMock.mock.calls` after the fact, never inside the mock body.
 function stubTranslate(body: unknown, ok = true) {
-  const fetchMock = vi.fn(async () => ({ ok, json: async () => body }) as Response)
+  const fetchMock = vi.fn<typeof fetch>(async () => ({ ok, json: async () => body }) as Response)
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
 }
@@ -45,10 +65,35 @@ describe('PassageBlock translation states', () => {
   // failed to parse exactly this one-language answer.
   it('shows the translation once the route answers ok', async () => {
     const fetchMock = stubTranslate({ enabled: true, from: 'vi', translations: { en: 'I want a new desk' } })
-    render(<PassageBlock text="tôi muốn mua một cái bàn" direction="vi" targets={['en']} />)
-    expect(await screen.findByText('I want a new desk', {}, { timeout: 2000 })).toBeInTheDocument()
-    expect(screen.getByText('Tiếng Anh')).toBeInTheDocument()
+    const { container } = render(<PassageBlock text="tôi muốn mua một cái bàn" direction="vi" targets={['en']} />)
+    expect(await screen.findByText('Tiếng Anh', {}, { timeout: 2000 })).toBeInTheDocument()
+    expect(container.textContent).toContain('I want a new desk')
     expect(fetchMock).toHaveBeenCalledWith('/dictionary/translate', expect.objectContaining({ method: 'POST' }))
+  })
+
+  it('sends no source language, so Azure detects it', async () => {
+    const fetchMock = stubTranslate({ enabled: true, from: 'vi', translations: { en: 'x' } })
+    render(<PassageBlock text="tôi muốn mua một cái bàn" direction="vi" targets={['en']} />)
+    await screen.findByText('Tiếng Anh', {}, { timeout: 2000 })
+    const init = fetchMock.mock.calls[0][1]
+    const sent: unknown = JSON.parse(String(init?.body))
+    expect(sent).not.toHaveProperty('from')
+  })
+
+  it('makes a word of the translation tappable, with a link into its entry', async () => {
+    stubTranslate({ enabled: true, from: 'vi', translations: { en: 'I want a new desk' } })
+    render(<PassageBlock text="tôi muốn mua một cái bàn" direction="vi" targets={['en']} />)
+    const word = await screen.findByRole('button', { name: 'desk' }, { timeout: 2000 })
+    await userEvent.click(word)
+    expect(screen.getByText('Cái bàn')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Xem chi tiết/ })).toHaveAttribute('href', '/dictionary/en/desk')
+  })
+
+  it('marks the output as untouched when Azure detected the target language itself', async () => {
+    stubTranslate({ enabled: true, from: 'en', translations: { en: 'Hello world' } })
+    render(<PassageBlock text="Hello world" direction="vi" targets={['en']} />)
+    expect(await screen.findByText('nguyên văn', {}, { timeout: 2000 })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'desk' })).toBeNull()
   })
 
   it('says translation is off for this deployment when the route answers disabled', async () => {

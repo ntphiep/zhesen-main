@@ -36,6 +36,42 @@ export function writeRecent(list: string[]): void {
   }
 }
 
+/** One frozen empty list, because `useSyncExternalStore` compares snapshots by identity. */
+const NO_QUERIES: readonly string[] = Object.freeze([])
+
+let queries: readonly string[] | null = null
+const queryListeners = new Set<() => void>()
+
+/**
+ * The same list as an external store, which is what a component must read it through. The
+ * row of recent queries is drawn whenever the box is empty, so it is on screen during
+ * hydration, and a lazy `useState(readRecent)` renders storage on the first client pass
+ * while the server rendered nothing: React #418.
+ */
+export const recentQueries = {
+  subscribe(notify: () => void): () => void {
+    queryListeners.add(notify)
+    return () => { queryListeners.delete(notify) }
+  },
+  snapshot(): readonly string[] {
+    return (queries ??= Object.freeze(readRecent()))
+  },
+  serverSnapshot(): readonly string[] {
+    return NO_QUERIES
+  },
+  /** Prepend one query and persist. */
+  push(query: string): void {
+    const next = pushRecent([...recentQueries.snapshot()], query)
+    queries = Object.freeze(next)
+    writeRecent(next)
+    for (const notify of [...queryListeners]) notify()
+  },
+  /** Forget the cached answer. For tests, which reuse the module. */
+  reset(): void {
+    queries = null
+  },
+}
+
 /** One word actually opened, as opposed to one query typed. The strip under the boxes
  *  links straight back to the word page, so the id and the language travel with it. */
 export interface RecentEntry {

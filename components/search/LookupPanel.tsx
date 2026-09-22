@@ -7,7 +7,7 @@ import { LinkPending } from '@/components/ui/LinkPending'
 import { Ipa } from '@/components/ui/Ipa'
 import { PosTag } from '@/components/ui/PosTag'
 import { detectOrder, orderByBestMatch } from '@/lib/dictionary/detect'
-import { pushRecent, readRecent, recentEntries, writeRecent } from '@/lib/dictionary/recent'
+import { recentEntries, recentQueries } from '@/lib/dictionary/recent'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import { posGroups, splitPos, type PosGroup } from '@/lib/dictionary/pos'
 import { sourceLangs, targetLangs, toggleTarget } from '@/lib/dictionary/targetLangs'
@@ -43,6 +43,11 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
 }) {
   const [query, setQuery] = useState(initialQuery)
   const [data, setData] = useState<SearchResponse>(EMPTY_SEARCH_RESPONSE)
+  // Which request `data` answers. "Chưa tìm thấy từ nào" is a claim about the dictionary,
+  // so it may only be made once the answer on screen is the answer to what is in the box:
+  // without this it flashed during the debounce and whenever a cached shorter prefix with
+  // no hits was still on screen.
+  const [dataKey, setDataKey] = useState('')
   const [loading, setLoading] = useState(false)
   // The route answered with a status rather than a result set, so "không tìm thấy" would
   // be a claim about a dictionary that was never asked. Holds the route's own wording,
@@ -50,16 +55,16 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
   const [refusal, setRefusal] = useState<string | null>(null)
   const [levelFilter, setLevelFilter] = useState<string | null>(null)
   const [posFilter, setPosFilter] = useState<string | null>(null)
-  // readRecent must stay SSR-guarded: this lazy initializer also runs in the server pass.
-  const [recent, setRecent] = useState<string[]>(readRecent)
-  const [focused, setFocused] = useState(false)
   // One store per direction: the Vietnamese box picks what to translate into, the foreign
   // box picks what to search in, and a shared key would tie the two controls together.
-  // Read through useSyncExternalStore and not as lazy state the way `recent` is: a lazy
-  // value renders before hydration, and a stored choice differing from the server's pass
-  // is React #418 on the summary text.
+  // Read through useSyncExternalStore, like every other stored preference here: a lazy
+  // `useState` initializer renders storage on the first client pass while the server
+  // rendered nothing, which is React #418.
   const store = direction === 'vi' ? targetLangs : sourceLangs
   const stored = useSyncExternalStore(store.subscribe, store.snapshot, store.serverSnapshot)
+  const recent = useSyncExternalStore(
+    recentQueries.subscribe, recentQueries.snapshot, recentQueries.serverSnapshot,
+  )
   const cache = useRef(new Map<string, SearchResponse>())
   const router = useRouter()
 
@@ -72,7 +77,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     setPrevQuery(query)
     setLevelFilter(null)
     setPosFilter(null)
-    if (!query.trim()) { setData(EMPTY_SEARCH_RESPONSE); setLoading(false); setRefusal(null) }
+    if (!query.trim()) { setData(EMPTY_SEARCH_RESPONSE); setDataKey(''); setLoading(false); setRefusal(null) }
   }
 
   const trimmed = query.trim()
@@ -89,7 +94,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     // synchronous form, and a cache hit still answers within one microtask.
     async function run() {
       const cached = cache.current.get(key)
-      if (cached) { setData(cached); setLoading(false); return }
+      if (cached) { setData(cached); setDataKey(key); setLoading(false); return }
       setLoading(true)
       id = setTimeout(async () => {
         try {
@@ -99,6 +104,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
           if (outcome.status === 'refused') {
             setRefusal(outcome.message)
             setData(EMPTY_SEARCH_RESPONSE)
+            setDataKey(key)
             return
           }
           setRefusal(null)
@@ -109,8 +115,9 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
           }
           cache.current.set(key, outcome.data)
           setData(outcome.data)
+          setDataKey(key)
         } catch (e) {
-          if ((e as Error).name !== 'AbortError') setData(EMPTY_SEARCH_RESPONSE)
+          if ((e as Error).name !== 'AbortError') { setData(EMPTY_SEARCH_RESPONSE); setDataKey(key) }
         } finally {
           setLoading(false)
         }
@@ -153,9 +160,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
   const first = shown.flatMap(([, list]) => list)[0]
 
   function remember(e: DictEntryPreview) {
-    const next = pushRecent(recent, e.headword)
-    setRecent(next)
-    writeRecent(next)
+    recentQueries.push(e.headword)
     // The query goes in the box's own "Tìm gần đây" row; the word goes in the strip under
     // the boxes, which links back to the word page rather than refilling the box.
     recentEntries.record({ id: e.id, headword: e.headword, lang: e.lang, glossVi: e.glossVi ?? null })
@@ -183,11 +188,14 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     router.push(entryPath(first.id))
   }
 
-  const showRecent = focused && !trimmed && recent.length > 0
+  // Shown whenever the box is empty, not only while it holds focus. Tied to focus the row
+  // appeared and vanished on every click anywhere on the page, moving everything under it.
+  const showRecent = !trimmed && recent.length > 0
   // A whole sentence has no single headword, so neither a trigram suggestion nor the
   // assistant has anything to add to the translation PassageBlock already shows.
+  const answered = dataKey === searchQueryString(trimmed.toLowerCase(), { langs: targets, dir: direction })
   const showEmpty =
-    !loading && !refusal && !isPassage && trimmed.length > 0 && allShown.length === 0
+    answered && !loading && !refusal && !isPassage && trimmed.length > 0 && allShown.length === 0
   const showFilteredEmpty = !loading && allShown.length > 0 && total === 0
   const inputId = `lookup-${direction}`
 
@@ -252,8 +260,6 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={onKeyDown}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
         autoComplete="off"
         spellCheck={false}
         className="min-h-[13rem] w-full resize-y rounded-xl border border-black/15 px-4 py-3 text-base shadow-sm focus:border-black/40 focus:outline-none lg:min-h-[16rem]"

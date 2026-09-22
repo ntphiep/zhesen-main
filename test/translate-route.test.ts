@@ -11,9 +11,12 @@ function post(body: unknown) {
   }))
 }
 
-function azureReplies(text: string, to: string) {
+function azureReplies(text: string, to: string, detected?: string) {
   return vi.fn(async () => new Response(
-    JSON.stringify([{ translations: [{ text, to }] }]),
+    JSON.stringify([{
+      ...(detected ? { detectedLanguage: { language: detected, score: 1 } } : {}),
+      translations: [{ text, to }],
+    }]),
     { status: 200 },
   ))
 }
@@ -88,6 +91,24 @@ describe('POST /dictionary/translate', () => {
       await expect(second.json()).resolves.toEqual({
         enabled: true, from: 'vi', translations: { en: 'hello again' },
       })
+    })
+
+    // The detected language is what the panel labels a row "nguyên văn" with, so a
+    // cache hit that answered `from: ''` silently dropped the label on a repeat.
+    it('keeps answering the detected language when the passage is already cached', async () => {
+      const f = azureReplies('bonjour', 'en', 'fr')
+      globalThis.fetch = f
+      const body = { text: 'xin chào cache test ba', to: ['en'] } as const
+
+      await expect((await post(body)).json()).resolves.toEqual({
+        enabled: true, from: 'fr', translations: { en: 'bonjour' },
+      })
+      expect(f).toHaveBeenCalledTimes(1)
+
+      await expect((await post(body)).json()).resolves.toEqual({
+        enabled: true, from: 'fr', translations: { en: 'bonjour' },
+      })
+      expect(f).toHaveBeenCalledTimes(1)
     })
   })
 })

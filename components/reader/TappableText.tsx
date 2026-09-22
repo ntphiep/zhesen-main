@@ -24,18 +24,26 @@ export function TappableText({
   resolved?: ResolvedText
 }) {
   const supabase = useMemo(() => createClient(), [])
-  const [segments, setSegments] = useState<Segment[]>(() => resolved?.segments ?? [])
+  // Tokenised up front, not left empty until the effect below answers: the words are on
+  // screen from the first paint and only become tappable once the entries arrive. Starting
+  // empty blanked a freshly translated passage for as long as the resolution took.
+  const [segments, setSegments] = useState<Segment[]>(() => resolved?.segments ?? tokenize(lang, text))
   const [entries, setEntries] = useState<Map<string, DictEntryPreview>>(() => new Map(resolved?.entries))
   const [chars, setChars] = useState<Map<string, CharInfo>>(() => new Map(resolved?.chars))
   const [active, setActive] = useState<number | null>(null)
 
-  // Close any open popover as soon as the text changes, without waiting for the async
-  // resolution below. Adjust state during render: react.dev/learn/you-might-not-need-an-effect.
+  // Follow a change of text immediately rather than waiting for the async resolution
+  // below: close the popover, and show the new text as plain words at once instead of
+  // leaving the previous passage on screen. Adjust state during render:
+  // react.dev/learn/you-might-not-need-an-effect.
   const resetKey = `${lang}:${text}`
   const [prevResetKey, setPrevResetKey] = useState(resetKey)
   if (prevResetKey !== resetKey) {
     setPrevResetKey(resetKey)
     setActive(null)
+    setSegments(resolved?.segments ?? tokenize(lang, text))
+    setEntries(new Map(resolved?.entries))
+    setChars(new Map(resolved?.chars))
   }
 
   // Escape or a click outside dismisses, beside tapping the word again. The listeners
