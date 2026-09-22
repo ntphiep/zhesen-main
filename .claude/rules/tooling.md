@@ -51,13 +51,16 @@ JavaScript.
 
 ## Reading the database
 
-Production still runs on Supabase Cloud project `cvltsyoweddhpkomuevz`. The self-hosted
-stack in `infra/` is built but not cut over: on 2026-09-23 the Vercel project's
-`NEXT_PUBLIC_SUPABASE_URL` is still `https://cvltsyoweddhpkomuevz.supabase.co` and the anon
-key is still the `sb_publishable_` one, and `infra/README.md` names changing both as the
-cutover step. Check those two variables before claiming either database is live.
+Production runs on the self-hosted Supabase in `infra/` since 2026-09-23. The Vercel
+project's `NEXT_PUBLIC_SUPABASE_URL` is `https://dzt4vtlz9hm79.cloudfront.net` and the anon
+key is the legacy JWT. Check those two variables before claiming which database is live.
 
-Measure the Cloud project through composio: `SUPABASE_RUN_READ_ONLY_QUERY` with
-`ref: cvltsyoweddhpkomuevz`. There is no `psql` and no `supabase` CLI on this machine. The
-EC2 instance is reachable through `aws ssm start-session` or the Studio tunnel in
-`infra/README.md`.
+Measure production on the instance: `aws ssm start-session` or `aws ssm send-command`
+against the `instance_id` output of `infra/terraform`, then
+`docker exec supabase-db psql -U supabase_admin -d postgres`. The Studio tunnel in
+`infra/README.md` gives the same data with a UI. There is no `psql` and no `supabase` CLI on
+this machine.
+
+The Cloud project `cvltsyoweddhpkomuevz` is a frozen copy kept until 2026-10-23 for
+rollback. Composio's `SUPABASE_RUN_READ_ONLY_QUERY` with `ref: cvltsyoweddhpkomuevz` reads
+that copy, not production.

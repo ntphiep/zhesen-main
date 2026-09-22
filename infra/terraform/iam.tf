@@ -46,14 +46,6 @@ data "aws_iam_policy_document" "instance" {
     ]
   }
 
-  # The Cloud project's connection string, needed by bin/migrate.sh until cutover.
-  # Delete the parameter and this statement together afterwards.
-  statement {
-    sid       = "ReadMigrationSource"
-    actions   = ["ssm:GetParameter"]
-    resources = ["arn:aws:ssm:${var.region}:${local.account_id}:parameter/${local.name_prefix}/migration/cloud_db_url"]
-  }
-
   statement {
     sid       = "DecryptSecureStrings"
     actions   = ["kms:Decrypt"]

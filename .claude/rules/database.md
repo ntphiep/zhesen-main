@@ -11,11 +11,13 @@ paths:
 Every claim here was measured on this project's Postgres. Re-measure before contradicting
 one.
 
-Production runs on Supabase Cloud project `cvltsyoweddhpkomuevz`. The self-hosted stack in
-`infra/` is built but not cut over; `infra/README.md` lists the cutover steps and none of
-them has been applied to the Vercel environment yet. Measure the live database with
-composio's `SUPABASE_RUN_READ_ONLY_QUERY` against that ref. There is no `psql` on this
-machine.
+Production runs on the self-hosted Supabase in `infra/` since 2026-09-23: Vercel's
+`NEXT_PUBLIC_SUPABASE_URL` is the CloudFront domain and the anon key is the legacy JWT.
+The Cloud project `cvltsyoweddhpkomuevz` is a frozen copy kept until 2026-10-23, and
+composio's `SUPABASE_RUN_READ_ONLY_QUERY` against that ref reads that copy, not production.
+Measure production through `aws ssm send-command` or a Session Manager shell on the
+instance: `docker exec supabase-db psql -U supabase_admin -d postgres`. There is no `psql`
+on this machine.
 
 ## Writing SQL in the `lex` schema
 

@@ -85,8 +85,3 @@ data "aws_ssm_parameter" "service_role_key" {
   name            = "${local.ssm_prefix}/service_role_key"
   with_decryption = false
 }
-
-data "aws_ssm_parameter" "cloud_db_url" {
-  name            = "/${local.name_prefix}/migration/cloud_db_url"
-  with_decryption = false
-}

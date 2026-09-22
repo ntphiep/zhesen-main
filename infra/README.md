@@ -45,9 +45,9 @@ terraform -chdir=infra/terraform plan
 terraform -chdir=infra/terraform apply
 ```
 
-Four SSM parameters are read, not created: `/zhesen/prod/jwt_secret`,
-`/zhesen/prod/anon_key`, `/zhesen/prod/service_role_key` and
-`/zhesen/migration/cloud_db_url`. The apply fails if any is missing. Rewriting
+Three SSM parameters are read, not created: `/zhesen/prod/jwt_secret`,
+`/zhesen/prod/anon_key` and `/zhesen/prod/service_role_key`. The apply fails if any
+is missing. Rewriting
 `jwt_secret` would invalidate the anon key the app ships, so it stays out of
 Terraform.
 
@@ -149,15 +149,14 @@ is the pattern for that.
 
 ## Cutover
 
-1. `migrate.sh full`, then read the `verify` summary.
-2. Set `NEXT_PUBLIC_SUPABASE_URL` on Vercel to the `api_url` output, and
-   `NEXT_PUBLIC_SUPABASE_ANON_KEY` to the legacy anon JWT, not the
-   `sb_publishable_` key.
-3. Redeploy. The auth cookie name is pinned in `lib/supabase/env.ts`, so sessions
-   carry over.
-4. `migrate.sh resync-users --force` picks up anything written to Cloud between
-   the dump and the redeploy.
+Done on 2026-09-23. The order was `migrate.sh full`, a Vercel preview on the new URL,
+`migrate.sh resync-users --force`, then `NEXT_PUBLIC_SUPABASE_URL` set to the `api_url`
+output and `NEXT_PUBLIC_SUPABASE_ANON_KEY` set to the legacy anon JWT on Vercel and in the
+GitHub Actions secrets, then a production rebuild. The auth cookie name is pinned in
+`lib/supabase/env.ts`, so sessions carried over.
 
-Rollback is step 2 in reverse: point the two Vercel variables back at the Cloud
-project URL and the `sb_publishable_` key, and redeploy. Nothing on the instance
-has to be undone, and the Cloud project is untouched throughout.
+Rollback until 2026-10-23: point the two Vercel variables back at the Cloud project URL
+and the `sb_publishable_` key and redeploy. Rows written after the cutover stay on the
+instance; a `pg_dump` of `auth` and `public` from `supabase-db` is the way to carry them
+back. The migration role and `/zhesen/migration/cloud_db_url` were removed after the
+cutover, so `migrate.sh` cannot read Cloud any more without recreating both.
