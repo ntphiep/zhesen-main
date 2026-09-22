@@ -102,10 +102,13 @@ loosen or delete a test to make it pass.
   round trip to the auth server on every call, and `useAccount` only decides which link to
   draw. Authorisation stays with `requirePermanentAccount` on the server and with RLS.
 - The search route and `lib/dictionary/cached.ts` use `unstable_cache` with the tag
-  `['lex']`. Nothing calls `POST /api/revalidate` automatically, so the `revalidate: 3600`
-  window is the only freshness guarantee: newly loaded data can take an hour to appear. Call
-  `/api/revalidate` with `REVALIDATE_SECRET` by hand to see it sooner, and do not set
-  `revalidate: false` while no caller exists.
+  `['lex']`. Nothing calls `POST /api/revalidate` automatically, so the `revalidate` window
+  is the only freshness guarantee, and it is a week: `LEX_REVALIDATE` is 604800 and every
+  read in `cached.ts` carries it except `getCachedWordOfDay`, which keeps 3600 because the
+  day index changes. `/dictionary/search` keeps 3600 of its own. Newly loaded data can
+  therefore take a week to appear. Call `/api/revalidate` with `REVALIDATE_SECRET` by hand
+  after a load -- the secret goes in the `x-revalidate-secret` header, not the body -- and
+  do not set `revalidate: false` while no caller exists.
 - `react-hooks/purity` in React 19 forbids `Date.now()` in a component body. The chosen
   pattern is a data-layer function taking `now: number = Date.now()` and a caller that omits
   the argument. Do not silence the rule with `eslint-disable`.
@@ -173,6 +176,11 @@ loosen or delete a test to make it pass.
   line in `ERASED_TASKS`. The route needs no change.
 
 ## Removed, do not rebuild
+
+Verified to have no remaining callers before deletion on 2026-09-22:
+`app/dictionary/browse/[lang]/[letter]/page.tsx` and `lib/dictionary/browse.ts`. The A-Z
+index under the lookup boxes was their only caller, and it is replaced by the rotating
+common-words strip and the reader's own recent and saved words.
 
 Verified to have no remaining callers before deletion on 2026-09-21: `components/search/SearchBox.tsx`
 and `components/search/TextLookup.tsx` (both replaced by `LookupPanel`), the

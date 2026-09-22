@@ -40,7 +40,7 @@ export function SenseList({ senses }: { senses: DictSense[] }) {
                       <span className="ml-1 align-middle text-[10px] uppercase tracking-wide text-amber-700/70" title="Nghĩa suy ra qua tiếng Anh">qua tiếng Anh</span>
                     </span>
                   ) : (
-                    // 44.6% of English senses have no Vietnamese gloss. There the English
+                    // 25.3% of English senses have no Vietnamese gloss. There the English
                     // is the meaning, so it takes the meaning's place.
                     s.glossEn && <span className="text-black/80">{s.glossEn}</span>
                   )}
