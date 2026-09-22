@@ -77,14 +77,23 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     setPrevQuery(query)
     setLevelFilter(null)
     setPosFilter(null)
-    if (!query.trim()) { setData(EMPTY_SEARCH_RESPONSE); setDataKey(''); setLoading(false); setRefusal(null) }
+    // A passage is answered by PassageBlock, so the word search is cleared rather than
+    // left holding the hits for the last prefix that was still one word.
+    const next = query.trim()
+    if (!next || looksLikeAPassage(next, direction)) {
+      setData(EMPTY_SEARCH_RESPONSE); setDataKey(''); setLoading(false); setRefusal(null)
+    }
   }
 
   const trimmed = query.trim()
   const isPassage = trimmed.length > 0 && looksLikeAPassage(trimmed, direction)
 
+  // A whole sentence has no headword to look up: `lex.search_vi` scores every gloss term
+  // in it and answers unrelated words after seconds, and on production the route answered
+  // 503 for one. PassageBlock translates it, and in the foreign direction resolves each
+  // word through `POST /dictionary/text/lookup`.
   useEffect(() => {
-    if (!trimmed) return
+    if (!trimmed || isPassage) return
     const opts = { langs: targets, dir: direction } as const
     const key = searchQueryString(trimmed.toLowerCase(), opts)
     const ctrl = new AbortController()
@@ -125,7 +134,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     }
     void run()
     return () => { if (id) clearTimeout(id); ctrl.abort() }
-  }, [trimmed, targets, direction])
+  }, [trimmed, isPassage, targets, direction])
 
   const entries = data.entries
   // The Vietnamese direction keeps the fixed language order: its columns are read side by

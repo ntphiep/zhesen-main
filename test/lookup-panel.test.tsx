@@ -58,6 +58,21 @@ describe('LookupPanel', () => {
     expect(String(fetchMock.mock.calls[0][0])).not.toContain('dir=vi')
   })
 
+  it('asks the search route nothing once the text is a passage', async () => {
+    const fetchMock = stubFetch({ entries: EMPTY, suggestions: [] })
+    render(<LookupPanel direction="vi" label="VN" />)
+    const box = screen.getByLabelText('VN')
+    await userEvent.type(box, 'cho')
+    await screen.findByText('Chưa tìm thấy từ nào.')
+    const afterOneWord = fetchMock.mock.calls.length
+    expect(afterOneWord).toBeGreaterThan(0)
+
+    await userEvent.type(box, ' con meo')
+    expect(screen.queryByText('Chưa tìm thấy từ nào.')).toBeNull()
+    const searches = fetchMock.mock.calls.filter((c) => String(c[0]).includes('/dictionary/search'))
+    expect(searches).toHaveLength(afterOneWord)
+  })
+
   it('renders a result with its headword and Vietnamese gloss', async () => {
     stubFetch({ entries: { ...EMPTY, en: [entry({ glossVi: 'Con chó' })] }, suggestions: [] })
     render(<LookupPanel direction="fw" label="FW" />)
