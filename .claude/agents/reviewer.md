@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: Adversarial review of a diff before it is committed or merged, against this repository's rules and its known traps. Use on every non-trivial change, and whenever a change touches auth, the search path, migrations or the FSRS schedule. Reads and reports; never edits.
-disallowedTools: Edit, Write, NotebookEdit
+tools: Read, Grep, Glob, Bash, WebFetch, WebSearch, Skill, ToolSearch
 model: opus
 effort: high
 memory: project
