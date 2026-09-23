@@ -1,5 +1,5 @@
 'use client'
-import { Fragment, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addWord, addWords, listWords, updateWord, updateWordsStatus, deleteWord, deleteWords } from '@/lib/wordlist/store'
 import { mergeTags, tagCounts } from '@/lib/wordlist/tags'
@@ -8,7 +8,12 @@ import { PosTag } from '@/components/ui/PosTag'
 import { wordsToCsv, wordsToAnkiTsv } from '@/lib/wordlist/csv'
 import { downloadTextFile } from '@/lib/wordlist/download'
 import { useWordlistFilters } from '@/lib/hooks/useWordlistFilters'
+import { useWordlistColumns } from '@/lib/hooks/useWordlistColumns'
+import { usePagedList } from '@/lib/hooks/usePagedList'
 import { WordlistToolbar } from '@/components/wordlist/WordlistToolbar'
+import { WordTable } from '@/components/wordlist/WordTable'
+import { ColumnMenu } from '@/components/wordlist/ColumnMenu'
+import { Pagination } from '@/components/wordlist/Pagination'
 import { TagFilterBar } from '@/components/wordlist/TagFilterBar'
 import { BulkActionBar } from '@/components/wordlist/BulkActionBar'
 import { AddWordDialog } from '@/components/wordlist/AddWordDialog'
@@ -45,23 +50,23 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     sortKey, sortDir, toggleSort, view, toggleView, visible,
   } = useWordlistFilters(words)
 
-  const allVisibleIds = visible.map((w) => w.id)
-  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selected.has(id))
+  const { prefs, columns, toggleColumn, togglePin, reset: resetColumns } = useWordlistColumns()
 
-  // 400+ rows for a real learner, each mounting an audio button and a row-actions
-  // group. Selection and export still use the full filtered set, not what is on screen.
-  const PAGE_SIZE = 50
-  const [limit, setLimit] = useState(PAGE_SIZE)
   // tagFilter is a Set and must be spelled out: interpolated it gives "[object Set]"
-  // for every combination, so the page size would never reset.
+  // for every combination, so the reader would stay on page 7 of a filter that now
+  // returns one page.
   const filterSignature =
     `${query}|${langFilter}|${statusFilter}|${reviewFilter}|${levelFilter}|${posFilter}|${[...tagFilter].join(',')}|${sortKey}|${sortDir}`
-  const [prevSignature, setPrevSignature] = useState(filterSignature)
-  if (filterSignature !== prevSignature) {
-    setPrevSignature(filterSignature)
-    setLimit(PAGE_SIZE)
-  }
-  const shown = visible.slice(0, limit)
+  // 400+ rows for a real learner, each mounting an audio button and a row-actions group.
+  // Selection and export still use the full filtered set, not the page on screen.
+  const paged = usePagedList(visible, filterSignature)
+  const shown = paged.items
+
+  // Select-all takes the whole filtered list, not the page: the action that follows it
+  // is meant for everything the filter matched, and a learner who filtered by a tag and
+  // pressed it expects all of those rows tagged, not the first fifty.
+  const allVisibleIds = visible.map((w) => w.id)
+  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selected.has(id))
 
   // Lets the add dialog say "Đã có" instead of letting the insert fail against the
   // unique index from migration 0031.
@@ -291,6 +296,14 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         onExportCsv={handleExportCsv}
         onExportAnki={handleExportAnki}
         onImportClick={() => setImportOpen(true)}
+        columnControls={
+          <ColumnMenu
+            prefs={prefs}
+            onToggleColumn={toggleColumn}
+            onTogglePin={togglePin}
+            onReset={resetColumns}
+          />
+        }
       />
 
       <TagFilterBar words={words} activeTags={tagFilter} onToggle={toggleTagFilter} />
@@ -313,108 +326,22 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       )}
 
       {view === 'table' && shown.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0 text-sm">
-            <thead>
-              <tr className="text-left text-xs font-medium uppercase tracking-wide text-black/45 [&_th]:border-b [&_th]:border-black/10">
-                <th className="w-10 px-3 py-2.5">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={toggleSelectAll}
-                    aria-label="Chọn tất cả"
-                  />
-                </th>
-                <th className="whitespace-nowrap px-3 py-2.5">
-                  <button
-                    className="flex items-center gap-1 whitespace-nowrap uppercase tracking-wide hover:text-black"
-                    onClick={() => toggleSort('headword')}
-                  >
-                    Từ
-                    {sortKey === 'headword' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
-                  </button>
-                </th>
-                <th className="whitespace-nowrap px-3 py-2.5">IPA</th>
-                <th className="whitespace-nowrap px-3 py-2.5">
-                  <button
-                    className="flex items-center gap-1 whitespace-nowrap uppercase tracking-wide hover:text-black"
-                    onClick={() => toggleSort('pos')}
-                  >
-                    Từ loại
-                    {sortKey === 'pos' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
-                  </button>
-                </th>
-                <th className="whitespace-nowrap px-3 py-2.5">Nghĩa</th>
-                <th className="whitespace-nowrap px-3 py-2.5">
-                  <button
-                    className="flex items-center gap-1 whitespace-nowrap uppercase tracking-wide hover:text-black"
-                    onClick={() => toggleSort('level')}
-                  >
-                    Cấp độ
-                    {sortKey === 'level' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
-                  </button>
-                </th>
-                <th className="whitespace-nowrap px-3 py-2.5">Thẻ</th>
-                <th className="whitespace-nowrap px-3 py-2.5">
-                  <button
-                    className="flex items-center gap-1 whitespace-nowrap uppercase tracking-wide hover:text-black"
-                    onClick={() => toggleSort('createdAt')}
-                  >
-                    Ngày thêm
-                    {sortKey === 'createdAt' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
-                  </button>
-                </th>
-                <th className="whitespace-nowrap px-3 py-2.5">Audio</th>
-                <th className="whitespace-nowrap px-3 py-2.5 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {shown.map((w) => (
-                <Fragment key={w.id}>
-                  <tr className="hover:bg-black/2 [&_td]:border-b [&_td]:border-black/5">
-                    <td className="px-3 py-2.5 align-top">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(w.id)}
-                        onChange={() => toggleSelect(w.id)}
-                        aria-label={`Chọn từ ${w.headword}`}
-                      />
-                    </td>
-                    <td className="px-3 py-2.5 align-top font-medium">{w.headword}</td>
-                    <td className="px-3 py-2.5 align-top text-black/50"><Ipa value={w.ipa} lang={w.lang} /></td>
-                    <td className="px-3 py-2.5 align-top text-black/50"><PosTag value={w.pos} /></td>
-                    <td className="px-3 py-2.5 align-top">{w.meaningVi ?? ''}</td>
-                    <td className="px-3 py-2.5 align-top text-black/50">{w.level ?? ''}</td>
-                    <td className="px-3 py-2.5 align-top">
-                      <TagChips tags={w.tags} />
-                    </td>
-                    <td className="px-3 py-2.5 align-top whitespace-nowrap text-black/40">{formatWordDate(w.createdAt)}</td>
-                    <td className="px-3 py-2.5 align-top">
-                      <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
-                    </td>
-                    <td className="px-3 py-2.5 align-top text-right">
-                      <WordRowActions
-                        word={w}
-                        expanded={expandedId === w.id}
-                        onToggleDetail={() => setExpandedId(expandedId === w.id ? null : w.id)}
-                        onEdit={() => setEditWord(w)}
-                        onDelete={() => handleDelete(w.id, w.headword)}
-                        className="justify-end"
-                      />
-                    </td>
-                  </tr>
-                  {expandedId === w.id && (
-                    <tr className="bg-black/2">
-                      <td colSpan={10} className="px-4 py-3">
-                        <WordDetail word={w} />
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <WordTable
+          words={shown}
+          columns={columns}
+          pinned={prefs.pinned}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onToggleSort={toggleSort}
+          selected={selected}
+          allSelected={allSelected}
+          onToggleSelectAll={toggleSelectAll}
+          onToggleSelect={toggleSelect}
+          expandedId={expandedId}
+          onToggleDetail={(id) => setExpandedId(expandedId === id ? null : id)}
+          onEdit={setEditWord}
+          onDelete={handleDelete}
+        />
       )}
 
       {view === 'card' && shown.length > 0 && (
@@ -471,16 +398,17 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         </div>
       )}
 
-      {visible.length > shown.length && (
-        <div className="flex items-center justify-center gap-3 py-2 text-sm">
-          <span className="text-black/40">Đang xem {shown.length} / {visible.length} từ</span>
-          <button
-            className="rounded-lg border border-black/15 px-3 py-1.5 font-medium text-black/70 hover:bg-black/5"
-            onClick={() => setLimit((n) => n + PAGE_SIZE)}
-          >
-            Xem thêm
-          </button>
-        </div>
+      {visible.length > 0 && (
+        <Pagination
+          page={paged.page}
+          pageCount={paged.pageCount}
+          pageSize={paged.pageSize}
+          total={paged.total}
+          from={paged.from}
+          to={paged.to}
+          onPageChange={paged.setPage}
+          onPageSizeChange={paged.setPageSize}
+        />
       )}
 
       <AddWordDialog

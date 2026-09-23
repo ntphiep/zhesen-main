@@ -26,12 +26,16 @@ interface Props {
   onExportCsv: () => void
   onExportAnki: () => void
   onImportClick: () => void
+  /** The column menu. Passed in rather than built here: it belongs to the table, and
+   *  the card view has no columns to hide. */
+  columnControls?: React.ReactNode
 }
 
 export function WordlistToolbar({
   query, onQueryChange, langFilter, onLangFilterChange, statusFilter, onStatusFilterChange,
   reviewFilter, onReviewFilterChange,
   levelFilter, onLevelFilterChange, levelOptions, posFilter, onPosFilterChange, posOptions, view, onViewChange, onAddClick, onExportCsv, onExportAnki, onImportClick,
+  columnControls,
 }: Props) {
   const [exportOpen, setExportOpen] = useState(false)
 
@@ -128,6 +132,8 @@ export function WordlistToolbar({
           Thẻ
         </button>
       </div>
+
+      {view === 'table' && columnControls}
 
       <div className="relative">
         <button

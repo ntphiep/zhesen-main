@@ -4,10 +4,11 @@ import type { LangCode } from '@/lib/languages'
 import { isDueAt } from '@/lib/wordlist/format'
 import type { UserWord, WordStatus } from '@/lib/wordlist/types'
 import { posGroups, splitPos, type PosGroup } from '@/lib/dictionary/pos'
+import { columnValue, type SortKey } from '@/lib/wordlist/columns'
 import { useStoredView, type ViewMode } from './useStoredView'
 
 export type { ViewMode }
-export type SortKey = 'headword' | 'createdAt' | 'fsrsDueAt' | 'fsrsLapses' | 'level' | 'pos'
+export type { SortKey }
 /** Which words the review columns single out. '' is every word. */
 export type ReviewFilter = '' | 'due' | 'leech'
 
@@ -39,23 +40,25 @@ function haystack(w: UserWord): string {
 /** Rows with nothing in the sorted column stay at the end whichever way it is sorted: an
  *  ungraded word is not "before A1". Returns 0 when both sides have a value. */
 function emptyRank(a: UserWord, b: UserWord, key: SortKey): number {
-  if (key !== 'level' && key !== 'pos') return 0
-  const x = a[key], y = b[key]
-  if (!x === !y) return 0
-  return x ? -1 : 1
+  const aEmpty = columnValue(a, key) === ''
+  const bEmpty = columnValue(b, key) === ''
+  if (aEmpty === bEmpty) return 0
+  return aEmpty ? 1 : -1
 }
 
 function compare(a: UserWord, b: UserWord, key: SortKey): number {
-  switch (key) {
-    case 'headword': return a.headword.localeCompare(b.headword)
-    case 'fsrsDueAt': return a.fsrsDueAt.localeCompare(b.fsrsDueAt)
-    // Ties on lapses are common, so the due date breaks them and the order stays stable
-    // between renders.
-    case 'fsrsLapses': return a.fsrsLapses - b.fsrsLapses || a.fsrsDueAt.localeCompare(b.fsrsDueAt)
-    case 'level': return (a.level ?? '').localeCompare(b.level ?? '')
-    case 'pos': return (a.pos ?? '').localeCompare(b.pos ?? '')
-    default: return a.createdAt.localeCompare(b.createdAt)
-  }
+  const x = columnValue(a, key), y = columnValue(b, key)
+  return typeof x === 'number' && typeof y === 'number'
+    ? x - y
+    : String(x).localeCompare(String(y), 'vi')
+}
+
+/** Ties are common on a status, a level or a lapse count. The headword settles them, and
+ *  the id settles two words spelled the same, so the order does not shuffle between
+ *  renders. Never reversed: "mới nhất trước" should not also spell the same-day words
+ *  backwards. */
+function tieBreak(a: UserWord, b: UserWord): number {
+  return a.headword.localeCompare(b.headword, 'vi') || a.id.localeCompare(b.id)
 }
 
 /** Filter, sort and view-mode state for the wordlist table, plus the derived visible list.
@@ -96,7 +99,8 @@ export function useWordlistFilters(words: UserWord[]) {
       const empties = emptyRank(a, b, sortKey)
       if (empties !== 0) return empties
       const cmp = compare(a, b, sortKey)
-      return sortDir === 'asc' ? cmp : -cmp
+      if (cmp !== 0) return sortDir === 'asc' ? cmp : -cmp
+      return tieBreak(a, b)
     })
 
     return list

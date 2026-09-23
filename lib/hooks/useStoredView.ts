@@ -1,5 +1,6 @@
 'use client'
 import { useSyncExternalStore } from 'react'
+import { readStored, subscribe, writeStored } from './useStoredPref'
 
 export type ViewMode = 'table' | 'card'
 
@@ -13,27 +14,11 @@ const KEY = 'wordlist_view'
  * Table or cards, remembered per browser. Must go through `useSyncExternalStore`: reading
  * `localStorage` and `innerWidth` into `useState` makes the server send a table and the
  * first client render build cards, a hydration mismatch, and moving the read into an effect
- * trips `react-hooks/set-state-in-effect`. Storage can be full or blocked, so every access
- * is guarded; a lost view preference costs one click.
+ * trips `react-hooks/set-state-in-effect`. The store itself is `useStoredPref`'s, so a
+ * write here reaches a `useStoredPref` reader and storage is guarded in one place.
  */
-const listeners = new Set<() => void>()
-
-function subscribe(onChange: () => void): () => void {
-  listeners.add(onChange)
-  // Another tab changing the preference should not leave this one disagreeing.
-  window.addEventListener('storage', onChange)
-  return () => {
-    listeners.delete(onChange)
-    window.removeEventListener('storage', onChange)
-  }
-}
-
-function readStored(): string | null {
-  try { return window.localStorage.getItem(KEY) } catch { return null }
-}
-
 function getSnapshot(): ViewMode {
-  const saved = readStored()
+  const saved = readStored(KEY)
   if (saved === 'card' || saved === 'table') return saved
   // Without a stored choice, pick by what fits: on a phone the table clips its last
   // columns off the screen.
@@ -47,10 +32,5 @@ const getServerSnapshot = (): ViewMode => 'table'
 export function useStoredView(): [ViewMode, (v: ViewMode) => void] {
   const view = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
-  function setView(v: ViewMode) {
-    try { window.localStorage.setItem(KEY, v) } catch { /* see readStored */ }
-    for (const notify of listeners) notify()
-  }
-
-  return [view, setView]
+  return [view, (v: ViewMode) => writeStored(KEY, v)]
 }

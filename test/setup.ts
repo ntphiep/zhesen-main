@@ -20,9 +20,9 @@ if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = function scrollIntoView() {}
 }
 
-// jsdom has no window.matchMedia either. StrokeOrder reads the colour scheme
-// through it; the stub reports light and never fires change events, which is
-// the case a test under jsdom is in anyway.
+// jsdom has no window.matchMedia either. `ThemeToggle` and `useNarrowViewport` read it;
+// the stub answers no to every query and never fires a change, which is the case a test
+// under jsdom is in anyway.
 if (typeof window !== 'undefined' && !window.matchMedia) {
   window.matchMedia = function matchMedia(query: string): MediaQueryList {
     return {

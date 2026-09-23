@@ -1,0 +1,107 @@
+'use client'
+import { useEffect, useRef, useState } from 'react'
+import { COLUMNS, MAX_PINNED, type ColumnKey, type ColumnPrefs } from '@/lib/wordlist/columns'
+import { useNarrowViewport } from '@/lib/hooks/useNarrowViewport'
+
+interface Props {
+  prefs: ColumnPrefs
+  onToggleColumn: (key: ColumnKey) => void
+  onTogglePin: (key: ColumnKey) => void
+  onReset: () => void
+}
+
+/** Which columns the table shows, and which stay against the left edge while the rest
+ *  scroll sideways. */
+export function ColumnMenu({ prefs, onToggleColumn, onTogglePin, onReset }: Props) {
+  const [open, setOpen] = useState(false)
+  const hiddenCount = prefs.hidden.length
+  const pinsLeft = MAX_PINNED - prefs.pinned.length
+  const root = useRef<HTMLDivElement>(null)
+  // A phone holds one column at the left edge whatever is pinned, so offering the
+  // control there would spend the reader's three slots on nothing.
+  const narrow = useNarrowViewport()
+
+  // A dropdown that only closes by pressing its own button traps the reader on a phone,
+  // where it covers the table it is meant to configure.
+  useEffect(() => {
+    if (!open) return
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
+    function onDown(e: MouseEvent) {
+      if (!root.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onDown)
+    }
+  }, [open])
+
+  return (
+    <div className="relative" ref={root}>
+      <button
+        className="rounded-lg border border-black/15 px-3 py-2 text-sm hover:bg-black/5"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        Cột{hiddenCount > 0 ? ` (${COLUMNS.length - hiddenCount})` : ''} ▾
+      </button>
+      {open && (
+        <div
+          role="menu"
+          // Anchored to the button on a wide screen. On a phone the button sits far
+          // enough left that a 288px panel hangs off the edge, so there it is centred
+          // on the button and never wider than the screen.
+          className="absolute right-0 z-30 mt-1 w-72 rounded-lg border border-black/10 bg-white p-1 shadow-lg max-sm:left-1/2 max-sm:right-auto max-sm:w-[calc(100vw-3rem)] max-sm:-translate-x-1/2"
+        >
+          <div className="flex items-center justify-between px-3 py-1.5 text-xs uppercase tracking-wide text-black/40">
+            <span>Hiện</span>
+            {!narrow && <span>Ghim (tối đa {MAX_PINNED})</span>}
+          </div>
+          {COLUMNS.map((c) => {
+            const shown = c.required || !prefs.hidden.includes(c.key)
+            const isPinned = prefs.pinned.includes(c.key)
+            return (
+              <div key={c.key} className="flex items-center gap-2 rounded px-3 py-1.5 hover:bg-black/5">
+                <input
+                  type="checkbox"
+                  role="menuitemcheckbox"
+                  aria-checked={shown}
+                  id={`col-${c.key}`}
+                  checked={shown}
+                  disabled={c.required}
+                  onChange={() => onToggleColumn(c.key)}
+                  aria-label={`Hiện cột ${c.label}`}
+                />
+                <label htmlFor={`col-${c.key}`} className="flex-1 text-sm">
+                  {c.label}
+                </label>
+                {!narrow && (
+                  <button
+                    role="menuitemcheckbox"
+                    className={`rounded px-2 py-0.5 text-xs disabled:opacity-40 ${isPinned ? 'bg-black text-white' : 'border border-black/15 text-black/50 hover:bg-black/5'}`}
+                    onClick={() => onTogglePin(c.key)}
+                    aria-checked={isPinned}
+                    disabled={!isPinned && pinsLeft <= 0}
+                    title={!isPinned && pinsLeft <= 0 ? `Bỏ ghim một cột trước, tối đa ${MAX_PINNED} cột` : undefined}
+                    aria-label={`${isPinned ? 'Bỏ ghim' : 'Ghim'} cột ${c.label}`}
+                  >
+                    Ghim
+                  </button>
+                )}
+              </div>
+            )
+          })}
+          <button
+            role="menuitem"
+            className="mt-1 w-full rounded px-3 py-1.5 text-left text-sm text-black/60 hover:bg-black/5"
+            onClick={() => { onReset(); setOpen(false) }}
+          >
+            Đặt lại mặc định
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -17,6 +17,8 @@ const NEEDS_DOM = [
   'test/**/*.test.tsx',
   'test/dictionary-recent.test.ts',
   'test/wordlist-filters.test.ts',
+  'test/wordlist-paged-list.test.ts',
+  'test/theme.test.ts',
 ]
 
 export default defineConfig({

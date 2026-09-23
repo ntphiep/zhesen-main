@@ -41,6 +41,9 @@ export function BulkActionBar({ selectedWords, allTags, onBulkTag, onAiTag, onBu
         type="text"
         value={tagInput}
         onChange={(e) => setTagInput(e.target.value)}
+        // The bar is not a form, so Enter would otherwise do nothing in a box that
+        // reads as one.
+        onKeyDown={(e) => { if (e.key === 'Enter') applyTags() }}
         placeholder="Gắn thẻ (phân cách bằng dấu phẩy)"
         className="rounded-lg border border-black/15 px-3 py-1.5 text-sm"
       />

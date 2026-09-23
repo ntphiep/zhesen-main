@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { WordlistClient } from '@/components/wordlist/WordlistClient'
+import { resetStoredPrefCache } from '@/lib/hooks/useStoredPref'
 import type { UserWord } from '@/lib/wordlist/types'
 
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
@@ -34,8 +35,17 @@ function mk(id: string, over: Partial<UserWord> = {}): UserWord {
   }
 }
 
+afterEach(() => {
+  // A matchMedia stub set by one case must not decide the layout of the next.
+  vi.restoreAllMocks()
+})
+
 beforeEach(() => {
   vi.clearAllMocks()
+  // The page size and the column choice live in localStorage, so without this a case
+  // inherits whatever the case before it picked.
+  localStorage.clear()
+  resetStoredPrefCache()
   // Re-set default implementations after clearAllMocks
   addWord.mockImplementation(async (_c: unknown, d: { headword: string; meaningVi: string | null; entryId: string | null; lang: string }) =>
     ({ ...mk('new-id'), headword: d.headword, meaningVi: d.meaningVi, entryId: d.entryId, lang: d.lang }))
@@ -110,18 +120,75 @@ describe('WordlistClient', () => {
   // 400+ rows is a real wordlist, and every row mounts an audio button and a
   // row-actions group. Rendering all of them stalled visibly on each keystroke
   // in the filter box, so the table shows a page at a time.
-  it('shows one page of a long list, and more on request', async () => {
+  it('shows one page of a long list, and walks to the others', async () => {
     const many = Array.from({ length: 120 }, (_, i) =>
       mk(`w${i}`, { headword: `word${i}`, entryId: `en:word${i}` }))
     render(<WordlistClient initialWords={many} />)
 
     expect(screen.getByText('word0')).toBeInTheDocument()
     expect(screen.queryByText('word60')).toBeNull()
-    expect(screen.getByText(/Đang xem 50 \/ 120 từ/)).toBeInTheDocument()
+    expect(screen.getByText('1 tới 50 trên 120 từ')).toBeInTheDocument()
+    expect(screen.getByText('Trang 1 / 3')).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Xem thêm' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
     expect(screen.getByText('word60')).toBeInTheDocument()
-    expect(screen.queryByText('word110')).toBeNull()
+    expect(screen.queryByText('word0')).toBeNull()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Trang cuối' }))
+    expect(screen.getByText('101 tới 120 trên 120 từ')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Trang sau' })).toBeDisabled()
+  })
+
+  it('shows more rows per page on request', async () => {
+    const many = Array.from({ length: 120 }, (_, i) =>
+      mk(`w${i}`, { headword: `word${i}`, entryId: `en:word${i}` }))
+    render(<WordlistClient initialWords={many} />)
+
+    await userEvent.selectOptions(screen.getByLabelText('Số từ mỗi trang'), '100')
+    expect(screen.getByText('1 tới 100 trên 120 từ')).toBeInTheDocument()
+    // One row per word plus the header row.
+    expect(screen.getAllByRole('row')).toHaveLength(101)
+  })
+
+  // Hiding a column must take its cells with it, and the choice is remembered per browser.
+  it('hides a column the reader turned off', async () => {
+    render(<WordlistClient initialWords={[mk('w1', { headword: 'alpha', level: 'A1' })]} />)
+    expect(screen.getByRole('columnheader', { name: /Cấp độ/ })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /^Cột/ }))
+    await userEvent.click(screen.getByLabelText('Hiện cột Cấp độ'))
+    expect(screen.queryByRole('columnheader', { name: /Cấp độ/ })).toBeNull()
+  })
+
+  // A dropdown that covers the table it configures has to close the way every other
+  // dropdown does.
+  it('closes the column menu on Escape and on a click outside it', async () => {
+    render(<WordlistClient initialWords={[mk('w1', { headword: 'alpha' })]} />)
+    await userEvent.click(screen.getByRole('button', { name: /^Cột/ }))
+    expect(screen.getByRole('menu')).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('menu')).toBeNull()
+
+    await userEvent.click(screen.getByRole('button', { name: /^Cột/ }))
+    await userEvent.click(document.body)
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  // A phone holds one column at the left edge whatever is pinned, so a pin control
+  // there would spend the reader's three slots on nothing.
+  it('offers no pinning on a phone', async () => {
+    vi.spyOn(window, 'matchMedia').mockImplementation((media: string) => ({
+      matches: media.includes('max-width'), media, onchange: null,
+      addListener() {}, removeListener() {},
+      addEventListener() {}, removeEventListener() {}, dispatchEvent: () => false,
+    }) as MediaQueryList)
+    render(<WordlistClient initialWords={[mk('w1', { headword: 'alpha' })]} />)
+
+    await userEvent.click(screen.getByRole('button', { name: /^Cột/ }))
+    expect(screen.getByLabelText('Hiện cột Cấp độ')).toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Ghim cột/)).toBeNull()
+    expect(screen.queryByLabelText(/^Bỏ ghim cột/)).toBeNull()
   })
 
   // Selecting all then acting on the selection must cover the whole filtered
@@ -139,11 +206,11 @@ describe('WordlistClient', () => {
     const many = Array.from({ length: 120 }, (_, i) =>
       mk(`w${i}`, { headword: `word${i}`, entryId: `en:word${i}` }))
     render(<WordlistClient initialWords={many} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Xem thêm' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
     expect(screen.getByText('word60')).toBeInTheDocument()
 
     await userEvent.type(screen.getByPlaceholderText(/Tìm trong danh sách/i), 'word')
-    expect(screen.getByText(/Đang xem 50 \/ 120 từ/)).toBeInTheDocument()
+    expect(screen.getByText('1 tới 50 trên 120 từ')).toBeInTheDocument()
     expect(screen.queryByText('word60')).toBeNull()
   })
 
@@ -183,6 +250,19 @@ describe('WordlistClient', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Gắn thẻ' }))
 
     expect(await screen.findAllByText('toeic')).toHaveLength(2)
+  })
+
+  // The bar holds no form, so Enter in a box that looks like one used to do nothing.
+  it('applies a tag typed and confirmed with Enter', async () => {
+    const words = [mk('w1', { headword: 'alpha' })]
+    updateWord.mockImplementation(async (_c: unknown, id: string, patch: Partial<UserWord>) =>
+      ({ ...words.find((w) => w.id === id)!, ...patch }))
+    render(<WordlistClient initialWords={words} />)
+
+    await userEvent.click(screen.getByLabelText('Chọn tất cả'))
+    await userEvent.type(screen.getByPlaceholderText(/Gắn thẻ/i), 'toeic{Enter}')
+
+    expect(await screen.findAllByText('toeic')).toHaveLength(1)
   })
 
   it('does not send an update when the edit changed nothing', async () => {
