@@ -5,6 +5,7 @@ import { SiteHeader } from '@/components/layout/SiteHeader'
 import { AiChatPanel } from '@/components/ai/AiChatPanel'
 import { aiConfig } from '@/lib/ai/config'
 import { SITE_URL } from '@/lib/site'
+import { THEME_BOOT_SCRIPT } from '@/lib/theme'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -47,7 +48,15 @@ export default function RootLayout({
     <html
       lang="vi"
       className={`${geistSans.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* Applies the stored light/dark choice before the first paint. In <head> and
+            not in an effect: an effect runs after the page has already been painted in
+            the wrong scheme. It writes the attribute the server did not render, which
+            is what suppressHydrationWarning above covers. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <SiteHeader />
         <div className="flex-1">{children}</div>

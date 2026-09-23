@@ -4,6 +4,15 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { MIN_PASSWORD, setPassword, signOut } from '@/lib/auth/account'
 import { setDisplayName, type Profile } from '@/lib/auth/profile'
+import { listWords } from '@/lib/wordlist/store'
+import { wordsToCsv, wordsToAnkiTsv } from '@/lib/wordlist/csv'
+import { downloadTextFile } from '@/lib/wordlist/download'
+import { formatWordDate } from '@/lib/wordlist/format'
+import { WordlistStats } from '@/components/wordlist/WordlistStats'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { STATUS_OPTIONS } from '@/lib/wordlist/types'
+import { LANGUAGES } from '@/lib/languages'
+import type { WordlistStats as Stats } from '@/lib/wordlist/stats'
 
 type Feedback = { tone: 'ok' | 'bad'; text: string } | null
 
@@ -22,7 +31,15 @@ const ROLE_LABEL: Record<Profile['role'], string> = {
  * attached an email to the account holding their words arrives here from the emailed
  * link with a confirmed address and no password at all.
  */
-export function AccountSettings({ email, profile }: { email: string; profile: Profile | null }) {
+export function AccountSettings({
+  email, profile, stats, joinedAt,
+}: {
+  email: string
+  profile: Profile | null
+  stats: Stats
+  /** When the account was created, as `auth.users.created_at` holds it. */
+  joinedAt: string | null
+}) {
   const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
   const [name, setName] = useState(profile?.displayName ?? '')
@@ -30,6 +47,27 @@ export function AccountSettings({ email, profile }: { email: string; profile: Pr
   const [busy, setBusy] = useState(false)
   const [nameFeedback, setNameFeedback] = useState<Feedback>(null)
   const [passwordFeedback, setPasswordFeedback] = useState<Feedback>(null)
+  const [exporting, setExporting] = useState(false)
+  const [exportFeedback, setExportFeedback] = useState<Feedback>(null)
+
+  // The whole notebook, not the page the wordlist happens to be showing: an export is
+  // the copy a learner keeps, so a partial one would be worse than none.
+  async function exportAll(kind: 'csv' | 'anki') {
+    if (exporting) return
+    setExporting(true)
+    try {
+      const words = await listWords(supabase)
+      if (kind === 'csv') downloadTextFile('wordlist.csv', wordsToCsv(words), 'text/csv;charset=utf-8')
+      else downloadTextFile('wordlist-anki.tsv', wordsToAnkiTsv(words), 'text/tab-separated-values;charset=utf-8')
+      // The browser shows the download itself, so success needs no message -- but the
+      // failure left by an earlier attempt has to go.
+      setExportFeedback(null)
+    } catch {
+      setExportFeedback({ tone: 'bad', text: 'Không tải được dữ liệu. Vui lòng thử lại.' })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   async function saveName(e: React.FormEvent) {
     e.preventDefault()
@@ -79,6 +117,41 @@ export function AccountSettings({ email, profile }: { email: string; profile: Pr
           >
             Đăng xuất
           </button>
+        </div>
+        {joinedAt && (
+          <p className="mt-1 text-xs text-black/40">Tham gia {formatWordDate(joinedAt)}</p>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold">Tiến độ</h2>
+        {stats.total === 0 ? (
+          <p className="mt-1 text-sm text-black/60">
+            Sổ tay chưa có từ nào. Tra một từ rồi bấm Thêm vào sổ tay để bắt đầu.
+          </p>
+        ) : (
+          <WordlistStats stats={stats} />
+        )}
+        {stats.total > 0 && (
+          <div className="mt-3 flex flex-wrap gap-4 text-sm text-black/60">
+            <span>
+              {STATUS_OPTIONS.map(([key, label]) => `${label} ${stats.byStatus[key]}`).join(' · ')}
+            </span>
+            <span>
+              {LANGUAGES.filter((l) => stats.byLang[l.code] > 0)
+                .map((l) => `${l.name} ${stats.byLang[l.code]}`).join(' · ')}
+            </span>
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold">Giao diện</h2>
+        <p className="mt-1 text-sm text-black/60">
+          Áp dụng cho trình duyệt này. Mặc định đi theo cài đặt của hệ điều hành.
+        </p>
+        <div className="mt-2">
+          <ThemeToggle />
         </div>
       </section>
 
@@ -139,6 +212,35 @@ export function AccountSettings({ email, profile }: { email: string; profile: Pr
           </p>
         )}
       </section>
+
+      <section>
+        <h2 className="text-lg font-semibold">Dữ liệu</h2>
+        <p className="mt-1 text-sm text-black/60">
+          Tải toàn bộ sổ tay về máy. Tệp CSV mở được bằng Excel, tệp TSV nhập thẳng vào Anki.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button
+            onClick={() => void exportAll('csv')}
+            disabled={exporting || stats.total === 0}
+            className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-40"
+          >
+            Tải CSV
+          </button>
+          <button
+            onClick={() => void exportAll('anki')}
+            disabled={exporting || stats.total === 0}
+            className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-40"
+          >
+            Tải Anki (TSV)
+          </button>
+        </div>
+        {exportFeedback && (
+          <p className={`mt-2 text-sm ${exportFeedback.tone === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
+            {exportFeedback.text}
+          </p>
+        )}
+      </section>
     </div>
   )
 }
+

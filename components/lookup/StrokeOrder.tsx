@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { currentScheme, watchScheme } from '@/lib/theme'
 
 /**
  * Animated stroke order for a single Han character. hanzi-writer is loaded
@@ -17,8 +18,8 @@ export function StrokeOrder({ char }: { char: string }) {
     if (!el) return
     el.innerHTML = ''
     // hanzi-writer parses colours from strings and cannot take a CSS variable, so the
-    // palette is read from the scheme and rebuilt on a flip: #111 vanishes on dark.
-    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    // palette is read from the scheme in force and rebuilt on a flip: #111 vanishes on
+    // dark. The reader's choice, not the OS setting: they disagree whenever one is made.
     function build(dark: boolean) {
       import('hanzi-writer').then(({ default: HanziWriter }) => {
         if (cancelled || !ref.current) return
@@ -39,10 +40,9 @@ export function StrokeOrder({ char }: { char: string }) {
         writer.animateCharacter()
       }).catch(() => { if (!cancelled) setFailed(true) })
     }
-    build(media.matches)
-    const onScheme = (e: MediaQueryListEvent) => build(e.matches)
-    media.addEventListener('change', onScheme)
-    return () => { cancelled = true; media.removeEventListener('change', onScheme) }
+    build(currentScheme() === 'dark')
+    const unwatch = watchScheme((scheme) => build(scheme === 'dark'))
+    return () => { cancelled = true; unwatch() }
   }, [char])
 
   if (failed) return null
