@@ -37,3 +37,8 @@ output "studio_tunnel_command" {
   description = "Studio at http://localhost:8000 while this runs."
   value       = "aws ssm start-session --region ${var.region} --target ${aws_instance.supabase.id} --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"80\"],\"localPortNumber\":[\"8000\"]}'"
 }
+
+output "vercel_health_role_arn" {
+  description = "Value for AWS_ROLE_ARN on Vercel, read by lib/admin/aws.ts."
+  value       = aws_iam_role.vercel_health.arn
+}

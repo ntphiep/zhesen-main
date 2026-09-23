@@ -148,7 +148,12 @@ alter role anon set statement_timeout = '3s';
 alter role authenticated set statement_timeout = '8s';
 alter role authenticator set statement_timeout = '8s';
 alter role authenticator set lock_timeout = '8s';
-alter role authenticator set "pgrst.db_schemas" = 'public, graphql_public, lex';
+-- PostgREST 13+ refuses to load its schema cache when a listed schema is missing, and a
+-- Cloud dump carries no admin schema: 0056 creates it and adds it here itself.
+do $$ begin
+  execute format('alter role authenticator set "pgrst.db_schemas" = %L', 'public, graphql_public, lex'
+    || case when to_regnamespace('admin') is null then '' else ', admin' end);
+end $$;
 -- A list, not one quoted string: quoted, Postgres looks for a library named
 -- "supautils, safeupdate" and refuses every authenticator connection.
 alter role authenticator set session_preload_libraries = supautils, safeupdate;

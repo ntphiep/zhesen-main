@@ -220,7 +220,7 @@ services:
       retries: 3
     environment:
       PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-      # public,graphql_public,lex -- see env.template. The authenticator role also
+      # public,graphql_public,lex,admin -- see env.template. The authenticator role also
       # carries pgrst.db_schemas, replayed by bin/migrate.sh; the two must agree.
       PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
       PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS:-1000}

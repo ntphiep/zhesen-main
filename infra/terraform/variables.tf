@@ -67,3 +67,15 @@ variable "backup_retain_days" {
   type        = number
   default     = 30
 }
+
+variable "vercel_team_slug" {
+  description = "Vercel team slug, the path of the OIDC issuer in team issuer mode."
+  type        = string
+  default     = "zhesen"
+}
+
+variable "vercel_project" {
+  description = "Vercel project name, as it appears in the OIDC token's sub claim."
+  type        = string
+  default     = "zhesen-main"
+}

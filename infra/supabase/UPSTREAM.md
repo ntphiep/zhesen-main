@@ -51,6 +51,6 @@ Envoy in legacy API key mode. The browser holds the Cloud anon JWT; swapping to
 `sb_publishable_` keys would invalidate every session in flight, including the
 anonymous account that holds 410 of the 444 saved words.
 
-`PGRST_DB_SCHEMAS` is `public,graphql_public,lex` and `PGRST_DB_EXTRA_SEARCH_PATH`
-is `public,extensions`, matching the Cloud project. The `authenticator` role also
+`PGRST_DB_SCHEMAS` is `public,graphql_public,lex,admin` and `PGRST_DB_EXTRA_SEARCH_PATH`
+is `public,extensions`. The Cloud project had no `admin`; migration 0056 added it. The `authenticator` role also
 carries `pgrst.db_schemas`; `bin/migrate.sh` replays it and the two must agree.
