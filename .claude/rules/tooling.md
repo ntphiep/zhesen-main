@@ -24,6 +24,13 @@ in `infra/README.md`). Do not write a command around them without checking first
 configured with `--browserUrl http://127.0.0.1:9222`. It fails unless a Chrome is already
 listening on that port. Use the plugin one.
 
+Both browser servers hold one shared profile per machine, so a second agent running at the
+same time locks the first out. Playwright then answers `Browser is already in use for
+...mcp-chrome-<hash>, use --isolated`, and chrome-devtools answers the same for
+`...chrome-profile`. Do not retry a call that returned it. Try Playwright, then
+chrome-devtools with `new_page` and a named `isolatedContext`, which also gives a clean
+cookie jar per context.
+
 MCP tools are deferred: only their names are in context. Call `ToolSearch` with
 `select:<name>` to load a schema before calling it.
 
