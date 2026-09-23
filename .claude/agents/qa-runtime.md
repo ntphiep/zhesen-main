@@ -16,6 +16,10 @@ Follow the `verify-ui` skill's procedure rather than inventing one. This file's 
 field asks for it to be preloaded; if it is not already in your context, invoke it yourself
 before touching a browser.
 
+For a slow page invoke `chrome-devtools-mcp:debug-optimize-lcp`; for keyboard, focus or
+contrast work invoke `chrome-devtools-mcp:a11y-debugging`. Both outrank a generic browser
+skill, and both sit under `/verify-ui`, which owns the build-then-click order.
+
 Drive the browser with `mcp__plugin_playwright_playwright__browser_*`, which launches its
 own browser. Switch to `mcp__plugin_chrome-devtools-mcp_chrome-devtools__*` for a
 performance trace or a Lighthouse run. `mcp__chrome-devtools__*` without the `plugin_`

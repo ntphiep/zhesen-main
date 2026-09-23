@@ -14,8 +14,11 @@ Vietnamese-first dictionary and vocabulary trainer for Chinese, Spanish and Engl
 Product overview and setup are in `README.md`.
 
 This file holds only what cannot be derived by reading the code: commands, conventions
-that differ from tool defaults, and traps that have already cost time here. SQL and
-testing rules live in `.claude/rules/` and load when a matching file is opened.
+that differ from tool defaults, and traps that have already cost time here.
+
+`.claude/rules/` holds the rest. `tooling.md` loads every session and says what is
+installed and which MCP server to reach for. `frontend.md`, `database.md` and `testing.md`
+load only when a matching file is opened.
 
 This repository holds code. Documents live in the
 [wiki](https://github.com/ntphiep/zhesen-main/wiki) and work lives in
@@ -26,6 +29,14 @@ plan file or a backlog file to the tree.
 Six subagents in `.claude/agents/` cover planning, implementation, tests, review, runtime
 QA and the backlog. Delegate a step to the one that owns it rather than doing every step
 in one context.
+
+Three skills in `.claude/skills/` carry the workflows that repeat: `/fix-issue <number>`
+takes an issue from the board to a verified commit, `/verify-ui` proves a rendered change
+against the running app, and `/ship` pushes, watches CI and checks the deployment.
+
+Around 200 plugin skills are installed and most belong to other projects. The table in
+`.claude/rules/tooling.md` names the dozen that earn their context here; treat anything
+outside it as noise. A repository skill outranks a plugin skill covering the same ground.
 
 One identity owns this repository: `Harry Nguyen <ng.hiep0822@gmail.com>`, GitHub `ntphiep`.
 Never commit, push or open an issue under another account.
@@ -73,20 +84,8 @@ loosen or delete a test to make it pass.
 - The database is snake_case and TypeScript is camelCase. Convert explicitly in the parser
   layer (`lib/dictionary/`, `lib/wordlist/store.ts`) and nowhere else.
 
-## Framework traps
+## Routing and caching
 
-- Components are Server Components by default. `window`, `localStorage` and `document` are
-  only reachable after `'use client'`, and never at module top level, or SSR throws
-  `ReferenceError: window is not defined`.
-- `params` and `searchParams` in a dynamic route are Promises. Await them.
-- Supabase through `@supabase/ssr`: server components use `await createClient()` from
-  `lib/supabase/server`; client components use `useMemo(() => createClient(), [])` from
-  `lib/supabase/client`. Do not create a client per render.
-- Tailwind 4 is configured in `app/globals.css`. There is no `tailwind.config.js`.
-- Tailwind 4 preflight sets `margin: 0` on every element including `<dialog>`, which removes
-  the UA stylesheet's `margin: auto` that centres a modal. `components/ui/Modal.tsx` must
-  keep its `m-auto` class. jsdom applies no UA stylesheet, so a test can only assert the
-  class itself.
 - A dynamic route segment does not enter the route cache without `generateStaticParams`.
   Returning an empty array is enough; `dynamicParams` defaults to `true`. Measured on
   production: without it every visit to `/dictionary/en/hello` was a cache MISS at 258 to
@@ -97,35 +96,20 @@ loosen or delete a test to make it pass.
   files in `public/` (measured: `/robots.txt` cost 178 ms when matched against 115 ms when
   excluded) and can attach `Set-Cookie` to an otherwise cacheable response, which Vercel
   then refuses to cache.
-- `Link` prefetches as soon as it enters the viewport. The header is on every page, so a
-  link to a dynamic route that reads the session needs `prefetch={false}`.
-- In the browser use `auth.getSession()`; on the server use `auth.getUser()`. `getUser` is a
-  round trip to the auth server on every call, and `useAccount` only decides which link to
-  draw. Authorisation stays with `requirePermanentAccount` on the server and with RLS.
-- The search route and `lib/dictionary/cached.ts` use `unstable_cache` with the tag
-  `['lex']`. Nothing calls `POST /api/revalidate` automatically, so the `revalidate` window
-  is the only freshness guarantee, and it is a week: `LEX_REVALIDATE` is 604800 and every
-  read in `cached.ts` carries it except `getCachedWordOfDay`, which keeps 3600 because the
-  day index changes. `/dictionary/search` keeps 3600 of its own. Newly loaded data can
-  therefore take a week to appear. Call `/api/revalidate` with `REVALIDATE_SECRET` by hand
-  after a load -- the secret goes in the `x-revalidate-secret` header, not the body -- and
-  do not set `revalidate: false` while no caller exists.
-- `react-hooks/purity` in React 19 forbids `Date.now()` in a component body. The chosen
-  pattern is a data-layer function taking `now: number = Date.now()` and a caller that omits
-  the argument. Do not silence the rule with `eslint-disable`.
-- `showModal()` races React Strict Mode, whose effects run twice. Guard with
-  `if (open && !el.open)`.
+
+The Server Component, Tailwind 4, Supabase client and cache-window traps live in
+`.claude/rules/frontend.md` and load when you open a file under `app/`, `components/`,
+`lib/hooks/`, `lib/supabase/` or `lib/dictionary/`.
 
 ## Infrastructure
 
-The database is a self-hosted Supabase on one EC2 instance behind CloudFront, not
-Supabase Cloud. `infra/` is the source of truth for both the account and what the instance
-runs; see `infra/README.md`. The instance's `.env` is rendered from SSM Parameter Store by
-`bin/render-env.sh` and never committed; `.env.example` at the root is the app's, not the
-instance's. `NEXT_PUBLIC_SUPABASE_ANON_KEY` is the legacy anon JWT, because Envoy compares
-the `apikey` header to it by string equality. The auth cookie name is pinned in
-`lib/supabase/env.ts`: `@supabase/ssr` otherwise derives it from the host, and renaming it
-drops every session.
+The database is a self-hosted Supabase on one EC2 instance behind CloudFront, cut over on
+2026-09-23; the Cloud project is a frozen copy kept until 2026-10-23 for rollback. `infra/` is
+the source of truth for the account and for what the instance runs; see `infra/README.md`. The instance's `.env` is rendered from SSM Parameter Store by
+`bin/render-env.sh` and never committed; `.env.example` at the root is the app's, not the instance's.
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` is the legacy anon JWT, because Envoy compares the `apikey`
+header to it by string equality. The auth cookie name is pinned in `lib/supabase/env.ts`:
+`@supabase/ssr` otherwise derives it from the host, and renaming it drops every session.
 
 ## Product invariants
 
@@ -167,9 +151,6 @@ drops every session.
   even with no matching voice installed and plays silence. Chinese has no recordings at all
   (0 of 4,042), so `AudioButton` checks the voice list first and falls back to a muted icon
   with a reason.
-- `s-maxage` says nothing to a browser. Set alone, the browser invents its own freshness and
-  holds a stale copy that `revalidateTag` cannot reach. A cached API route sets
-  `Cache-Control` for the browser and `CDN-Cache-Control` for the CDN separately.
 - Check a licence before loading data, and read all of it. AllSet Learning's Chinese Grammar
   Wiki is CC BY-NC-SA 3.0 and its copyright page bars sites carrying advertising. CEFR-J is
   the same shape: the main A1-B2 list is not CC-BY-SA, only the Octanove C1/C2 part is.

@@ -8,6 +8,9 @@ color: yellow
 
 You write and run tests for zhesen.
 
+Invoke `superpowers:test-driven-development` before writing a test for a defect, so the
+failing test comes first and proves itself against the unfixed code.
+
 `.claude/rules/testing.md` holds the conventions and is already in your context. Read the
 existing test nearest the code under test and match its shape.
 

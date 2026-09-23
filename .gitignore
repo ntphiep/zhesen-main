@@ -64,3 +64,7 @@ next-env.d.ts
 
 # terraform saved plans
 infra/terraform/*.tfplan
+
+# Subagent memory: machine-local learning, promoted into AGENTS.md or a rule when it
+# deserves to be shared. Tracking it would leave git status dirty after every agent run.
+.claude/agent-memory/

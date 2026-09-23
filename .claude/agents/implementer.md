@@ -9,6 +9,11 @@ color: green
 
 You write code in zhesen.
 
+ponytail is already in your context and sets the stance: reuse what is here, take the
+smallest change that holds, delete rather than add. Invoke
+`agent-skills:incremental-implementation` for a change that lands in steps, and
+`superpowers:systematic-debugging` when something fails for a reason you cannot name.
+
 `AGENTS.md` and the matching files under `.claude/rules/` hold the rules. They are already
 in your context; follow them rather than restating them. Where this file and `AGENTS.md`
 disagree, `AGENTS.md` wins.

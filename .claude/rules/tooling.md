@@ -64,3 +64,31 @@ this machine.
 The Cloud project `cvltsyoweddhpkomuevz` is a frozen copy kept until 2026-10-23 for
 rollback. Composio's `SUPABASE_RUN_READ_ONLY_QUERY` with `ref: cvltsyoweddhpkomuevz` reads
 that copy, not production.
+
+## Which plugin skill to reach for
+
+Around 200 skills are installed, most of them for other projects. These are the ones that
+earn their context here. Invoke by the exact name; the rest are noise, so do not go
+shopping through the list.
+
+| Doing this | Invoke |
+| --- | --- |
+| Shaping a vague request before planning | `superpowers:brainstorming` |
+| Writing a plan or a spec | `superpowers:writing-plans`, `agent-skills:planning-and-task-breakdown` |
+| Carrying out an agreed plan | `superpowers:executing-plans`, `agent-skills:incremental-implementation` |
+| A bug whose cause is not obvious | `superpowers:systematic-debugging` |
+| Writing tests, or a failing test first | `superpowers:test-driven-development` |
+| Reviewing a diff | `agent-skills:code-review-and-quality` |
+| Anything touching auth, RLS or a token | `agent-skills:security-and-hardening` |
+| Writing SQL or a migration | `supabase:supabase-postgres-best-practices` |
+| A slow page or a Core Web Vitals question | `chrome-devtools-mcp:debug-optimize-lcp`, `agent-skills:performance-optimization` |
+| Keyboard, focus or contrast work | `chrome-devtools-mcp:a11y-debugging` |
+| Cutting code rather than adding it | `agent-skills:code-simplification` |
+| Before calling anything done | `superpowers:verification-before-completion` |
+
+ponytail arrives on its own through a `SubagentStart` hook, in every subagent as well as the
+main session. It is the house coding stance: reuse what is here, prefer the smallest change
+that holds, and delete rather than add. Nothing has to invoke it.
+
+Repository skills come first when both apply. `/verify-ui` outranks any general browser
+skill, because it carries this project's build-then-click order and its phone-width step.
