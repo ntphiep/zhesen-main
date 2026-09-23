@@ -49,7 +49,7 @@ resource "aws_instance" "supabase" {
     cpu_credits = "standard"
   }
 
-  user_data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
+  user_data = templatefile("${path.module}/templates/cloud-init.yaml.tftpl", {
     region        = var.region
     assets_bucket = local.assets_bucket
     backup_bucket = local.backup_bucket

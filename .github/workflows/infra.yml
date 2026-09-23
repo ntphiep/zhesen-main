@@ -1,0 +1,58 @@
+name: Infra
+
+# Static checks for infra/. Nothing here talks to AWS: a plan needs credentials and the
+# state, and both stay on the operator's machine (see infra/README.md, "Changing infra").
+on:
+  push:
+    branches: [master]
+    paths: ['infra/**', '.github/workflows/infra.yml']
+  pull_request:
+    paths: ['infra/**', '.github/workflows/infra.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: infra-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: Terraform format and validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          # Same as the laptop, so fmt agrees on both.
+          terraform_version: 1.16.2
+
+      - name: terraform fmt
+        run: terraform -chdir=infra/terraform fmt -check -recursive -diff
+
+      # -backend=false skips the S3 state; validate still downloads the providers and
+      # catches a bad reference, a missing argument or a wrong attribute name.
+      - name: terraform init
+        run: terraform -chdir=infra/terraform init -backend=false -input=false
+
+      - name: terraform validate
+        run: terraform -chdir=infra/terraform validate -no-color
+
+  stack:
+    name: Instance scripts and compose file
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      # ubuntu-latest ships shellcheck; the scripts run as root on the instance.
+      - name: shellcheck
+        run: shellcheck -S warning infra/supabase/bin/*.sh
+
+      # The .env is rendered on the instance, so every variable is unset here; compose
+      # warns about each one (noise, exit 0) and still exits 1 on a structural error.
+      - name: docker compose config
+        run: docker compose -f infra/supabase/docker-compose.yml config -q

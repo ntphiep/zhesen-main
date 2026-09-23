@@ -32,9 +32,9 @@ documented in `.env.example`; only the two Supabase values are required.
 ```
 app/          routes and layouts
 components/   UI, grouped by feature
-infra/        Terraform and the self-hosted Supabase stack
+infra/        AWS account (Terraform) and what the database instance runs
 lib/          logic with no UI dependency
-supabase/     migrations
+supabase/     database schema, one numbered migration per change
 test/         Vitest suites
 ```
 
