@@ -57,5 +57,8 @@ export async function proxy(request: NextRequest) {
 // The browser client refreshes its own token (lib/supabase/client.ts), so a reader
 // who never leaves the dictionary loses nothing by not being refreshed here.
 export const config = {
-  matcher: ['/account/:path*', '/wordlist/:path*', '/practice/:path*', '/login', '/register', '/auth/:path*'],
+  matcher: [
+    '/account/:path*', '/wordlist/:path*', '/practice/:path*', '/login', '/register', '/auth/:path*',
+    '/admin/:path*', '/api/admin/:path*',
+  ],
 }

@@ -16,8 +16,12 @@
     "verify": "npm run lint && npm run typecheck && npm run test"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.1138.0",
+    "@aws-sdk/client-ec2": "^3.1138.0",
+    "@aws-sdk/client-s3": "^3.1138.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.108.2",
+    "@vercel/oidc-aws-credentials-provider": "^3.3.9",
     "hanzi-writer": "^3.7.3",
     "next": "16.3.5",
     "react": "19.3.0",
