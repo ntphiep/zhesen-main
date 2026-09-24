@@ -118,17 +118,18 @@ header to it by string equality. The auth cookie name is pinned in `lib/supabase
   practice deliberately never reports a failure, because speech recognition misfires on
   noise and microphones and recording `again` would erase real progress over a hardware
   fault.
-- An anonymous account lives in one browser's cookie. Clearing browsing data loses it: 407
-  saved words once ended up in an account with no way back. `lib/auth/account.ts` is the way
-  out. `attachEmail` attaches an email to the account already in hand, keeping the user id
-  and every row under it. `signInByEmail` is only for a browser holding no words, and
-  refuses when the current session has data, because signing in swaps accounts and would
-  abandon exactly what needed rescuing.
-- Middleware does not create anonymous sessions. Lookup needs no account, so an account is
-  created at the first write through `ensureSession` (`lib/supabase/session.ts`). The earlier
-  behaviour created an `auth.users` row per cookieless request: 122 accounts of which 1 held
-  data, and hitting Supabase's sign-in ceiling cost real users their sessions. Any new write
-  path must call `ensureSession`.
+- An anonymous account lives in one browser's cookie, so clearing browsing data loses it:
+  407 saved words once ended up in an account with no way back. `signInByEmail`
+  (`lib/auth/account.ts`) therefore refuses when the current session holds data, because
+  signing in swaps accounts and would abandon exactly what needed rescuing. `attachEmail` is
+  the way out, keeping the user id and every row under it.
+- Middleware does not create anonymous sessions. The earlier behaviour created an
+  `auth.users` row per cookieless request: 122 accounts of which 1 held data, and hitting
+  the sign-in ceiling cost real users their sessions. Any new write path must therefore call
+  `ensureSession` (`lib/supabase/session.ts`) rather than assume a session exists. This is a
+  rule for the data layer and says nothing about which buttons the UI offers: today
+  `AddToWordlistButton` requires a permanent account, so no screen reaches the anonymous
+  path.
 - The lookup has one box per direction and detects nothing. Vietnamese cannot be told from
   English or Spanish by its text: "an", "ban" and "con" are real headwords in both and
   score 4.01 to 4.12 in `lex.search`, above any threshold, so a single box answered "cá"
