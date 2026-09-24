@@ -194,7 +194,21 @@ export async function getHistory(cfg: AwsHealthConfig, range: Range, now: number
   }))
   return HISTORY.map((m) => {
     const r = out.MetricDataResults?.find((x) => x.Id === m.id)
-    const points = (r?.Timestamps ?? []).map((t, i) => ({ t: new Date(t).toISOString(), v: r?.Values?.[i] ?? 0 }))
+    // Measured on production: the points came back newest first despite ScanBy.
+    const points = (r?.Timestamps ?? [])
+      .map((t, i) => ({ t: new Date(t).toISOString(), v: r?.Values?.[i] ?? 0 }))
+      .sort((x, y) => x.t.localeCompare(y.t))
     return { id: m.id, label: m.label, unit: m.unit, points }
   })
+}
+
+/** Dumps in the backup bucket, newest first, for the restore picker on /admin/console. */
+export async function listDumps(cfg: AwsHealthConfig): Promise<{ key: string; at: string; bytes: number }[]> {
+  const credentials = awsCredentialsProvider({ roleArn: cfg.roleArn, clientConfig: { region: REGION } })
+  const s3 = new S3Client({ region: REGION, credentials })
+  const out = await s3.send(new ListObjectsV2Command({ Bucket: `${NAME_PREFIX}-db-backups-${cfg.accountId}`, Prefix: DUMP_PREFIX }))
+  return z.array(objectSchema).parse(out.Contents ?? [])
+    .filter((o) => o.Key.endsWith('.dump'))
+    .map((o) => ({ key: o.Key, at: o.LastModified.toISOString(), bytes: o.Size }))
+    .sort((a, b) => b.at.localeCompare(a.at))
 }

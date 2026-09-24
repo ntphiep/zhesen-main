@@ -36,7 +36,7 @@ export function Chart({ s, range }: { s: Series; range: Range }) {
   const line = xy.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
   const peak = s.points.reduce((a, b) => (b.v > a.v ? b : a))
   const per = s.unit === 'bytes' ? (range === '24h' ? ' mỗi 5 phút' : ' mỗi 30 phút') : ''
-  const edge = range === '24h' ? clock : when
+  const edge = range === '24h' ? (t: string) => clock(t).slice(0, 5) : when
 
   return (
     <figure className="min-w-0 rounded-lg border border-black/10 px-4 py-3">

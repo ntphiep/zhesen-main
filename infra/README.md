@@ -48,7 +48,8 @@ infra/
       backup/                S3 bucket for the pg_dump files, 30-day expiry
       alerts/                SNS topic, email subscription, monthly budget
       settings/              SSM parameters carrying the API URL and bucket names
-      vercel/                OIDC provider and the read-only role /admin/health uses
+      vercel/                OIDC provider and the role the admin console uses: read
+                             health, power the instance, SSM commands, rescue secret
   supabase/                  what runs on the instance, synced to /opt/zhesen/supabase
     docker-compose.yml       upstream compose trimmed to db, auth, rest, api-gw, studio, meta
     env.template             .env with ${SSM:/path} placeholders

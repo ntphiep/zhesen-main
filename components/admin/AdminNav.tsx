@@ -18,6 +18,8 @@ export const NAV_GROUPS: { label: string; links: { href: string; label: string }
   {
     label: 'Quản lý',
     links: [
+      { href: '/admin/infra', label: 'Hạ tầng' },
+      { href: '/admin/console', label: 'Console' },
       { href: '/admin/users', label: 'Tài khoản' },
       { href: '/admin/content', label: 'Nội dung' },
       { href: '/admin/audit', label: 'Nhật ký' },

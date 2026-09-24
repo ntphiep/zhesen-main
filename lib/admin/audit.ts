@@ -41,4 +41,12 @@ export const ACTION_LABELS: Record<string, string> = {
   update_sense: 'Sửa nghĩa',
   flag_entry: 'Đánh dấu mục từ',
   unflag_entry: 'Bỏ đánh dấu mục từ',
+  'infra.start': 'Bật máy chủ',
+  'infra.stop': 'Tắt máy chủ',
+  'infra.reboot': 'Khởi động lại máy chủ',
+  'infra.restart': 'Khởi động lại container',
+  'infra.backup': 'Sao lưu ngay',
+  'console.sql': 'Chạy SQL được ghi',
+  'console.shell': 'Chạy lệnh shell',
+  'console.restore': 'Khôi phục bản dump',
 }
