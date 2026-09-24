@@ -5,6 +5,7 @@ import { accountKind } from '@/lib/auth/account'
 import { getProfile } from '@/lib/auth/profile'
 import { getWordlistStats } from '@/lib/wordlist/stats'
 import { AccountSettings } from '@/components/account/AccountSettings'
+import { AdminEntry } from '@/components/account/AdminEntry'
 
 export const metadata = { title: 'Tài khoản' }
 
@@ -30,6 +31,7 @@ export default async function AccountPage() {
       <p className="mt-1 text-sm text-black/60">
         Sổ tay gắn với tài khoản này chứ không phải với trình duyệt.
       </p>
+      {profile?.role === 'admin' && <div className="mt-8"><AdminEntry /></div>}
       <div className="mt-8">
         <AccountSettings
           email={user.email}

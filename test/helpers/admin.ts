@@ -9,6 +9,9 @@ export const METRICS_PAYLOAD = {
   relation_bytes: 301293568,
   pgroonga_indexes: 2,
   pgroonga_surplus: 0,
-  accounts: { total: 7, permanent: 5 },
+  accounts: { total: 7, permanent: 5, new_7d: 4 },
   lex_updated_at: '2026-09-12T07:22:39.815249+00:00',
+  active_7d: 1,
+  entries_by_lang: { en: 21004, es: 11312, zh: 4045 },
+  postgres: { version: '17.6', started_at: '2026-09-23T01:10:22.114+00:00', connections: 17, max_connections: 100 },
 }

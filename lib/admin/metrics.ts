@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from '@/lib/zod'
 
-/** `admin.metrics()` (supabase/migrations/0056_admin_metrics_rpc.sql). */
+/** `admin.metrics()` (supabase/migrations/0061_data_dictionary.sql, first written in 0056). */
 const metricsRow = z.object({
   tables: z.array(z.object({
     schema: z.string(),
@@ -13,8 +13,16 @@ const metricsRow = z.object({
   relation_bytes: z.number(),
   pgroonga_indexes: z.number(),
   pgroonga_surplus: z.number(),
-  accounts: z.object({ total: z.number(), permanent: z.number() }),
+  accounts: z.object({ total: z.number(), permanent: z.number(), new_7d: z.number() }),
   lex_updated_at: z.string().nullable(),
+  active_7d: z.number(),
+  entries_by_lang: z.record(z.string(), z.number()),
+  postgres: z.object({
+    version: z.string(),
+    started_at: z.string(),
+    connections: z.number(),
+    max_connections: z.number(),
+  }),
 })
 
 export interface TableStat {
@@ -32,7 +40,11 @@ export interface Metrics {
   pgroongaBytes: number
   pgroongaIndexes: number
   pgroongaSurplus: number
-  accounts: { total: number; permanent: number; anonymous: number }
+  accounts: { total: number; permanent: number; anonymous: number; new7d: number }
+  /** Accounts with a `review_log` day in the last 7 days. */
+  active7d: number
+  entriesByLang: Record<string, number>
+  postgres: { version: string; startedAt: string; connections: number; maxConnections: number }
   lexUpdatedAt: string | null
 }
 
@@ -49,6 +61,15 @@ export function parseMetrics(raw: unknown): Metrics {
       total: x.accounts.total,
       permanent: x.accounts.permanent,
       anonymous: x.accounts.total - x.accounts.permanent,
+      new7d: x.accounts.new_7d,
+    },
+    active7d: x.active_7d,
+    entriesByLang: x.entries_by_lang,
+    postgres: {
+      version: x.postgres.version,
+      startedAt: x.postgres.started_at,
+      connections: x.postgres.connections,
+      maxConnections: x.postgres.max_connections,
     },
     lexUpdatedAt: x.lex_updated_at,
   }

@@ -1,36 +1,37 @@
 import { ACTION_LABELS, type AuditEntry } from '@/lib/admin/audit'
-import { STUDY_TIMEZONE } from '@/lib/wordlist/activity'
+import { when } from '@/components/admin/Page'
 
-const when = (iso: string) =>
-  new Date(iso).toLocaleString('vi-VN', { timeZone: STUDY_TIMEZONE, dateStyle: 'short', timeStyle: 'short' })
+const show = (v: unknown) => (typeof v === 'string' ? v : JSON.stringify(v))
 
-/** The latest admin writes, newest first, from `public.admin_audit`. */
+/** Admin writes, newest first, from `public.admin_audit`. The detail is printed as
+ *  field and value, because it holds the values before and after the change. */
 export function AuditLog({ entries }: { entries: AuditEntry[] }) {
   if (entries.length === 0) {
     return <p className="text-sm text-black/60">Chưa có thao tác quản trị nào.</p>
   }
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-black/10 text-left text-xs font-medium uppercase tracking-wide text-black/45">
-            <th className="py-2 pr-4">Thời điểm</th>
-            <th className="py-2 pr-4">Thao tác</th>
-            <th className="py-2 pr-4">Đối tượng</th>
-            <th className="py-2">Chi tiết</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((e) => (
-            <tr key={e.id} className="border-b border-black/5 align-top">
-              <td className="whitespace-nowrap py-1.5 pr-4 tabular-nums">{when(e.at)}</td>
-              <td className="whitespace-nowrap py-1.5 pr-4">{ACTION_LABELS[e.action] ?? e.action}</td>
-              <td className="py-1.5 pr-4 font-mono text-xs break-all">{e.target ?? ''}</td>
-              <td className="py-1.5 font-mono text-xs break-all text-black/60">{JSON.stringify(e.detail)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <ol className="divide-y divide-black/5 rounded-lg border border-black/10">
+      {entries.map((e) => (
+        <li key={e.id} className="grid gap-x-4 gap-y-1 px-4 py-2.5 text-sm sm:grid-cols-[8.5rem_1fr]">
+          <time dateTime={e.at} className="text-black/50 tabular-nums">{when(e.at)}</time>
+          <div className="min-w-0">
+            <div>
+              <span className="font-medium">{ACTION_LABELS[e.action] ?? e.action}</span>
+              {e.target && <span className="ml-2 font-mono text-xs break-all text-black/55">{e.target}</span>}
+            </div>
+            {Object.keys(e.detail).length > 0 && (
+              <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs">
+                {Object.entries(e.detail).map(([k, v]) => (
+                  <div key={k} className="flex min-w-0 gap-1">
+                    <dt className="text-black/45">{k}</dt>
+                    <dd className="min-w-0 font-mono break-all text-black/70">{show(v)}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </div>
+        </li>
+      ))}
+    </ol>
   )
 }

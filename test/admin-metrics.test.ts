@@ -8,7 +8,9 @@ describe('parseMetrics', () => {
     const m = parseMetrics(METRICS_PAYLOAD)
     expect(m.databaseBytes).toBe(472063123)
     expect(m.pgroongaBytes).toBe(472063123 - 301293568)
-    expect(m.accounts).toEqual({ total: 7, permanent: 5, anonymous: 2 })
+    expect(m.accounts).toEqual({ total: 7, permanent: 5, anonymous: 2, new7d: 4 })
+    expect(m.entriesByLang).toEqual({ en: 21004, es: 11312, zh: 4045 })
+    expect(m.postgres).toMatchObject({ version: '17.6', connections: 17, maxConnections: 100 })
     expect(m.lexUpdatedAt).toBe('2026-09-12T07:22:39.815249+00:00')
   })
 

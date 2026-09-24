@@ -3,8 +3,8 @@ import { formatBytes } from '@/lib/admin/metrics'
 import { STUDY_TIMEZONE } from '@/lib/wordlist/activity'
 
 const STATE: Record<Health['alarms'][number]['state'], { label: string; tone: string }> = {
-  OK: { label: 'Bình thường', tone: 'bg-green-600/10 text-green-700' },
-  ALARM: { label: 'Đang báo động', tone: 'bg-red-600/10 text-red-700' },
+  OK: { label: 'Bình thường', tone: 'bg-emerald-50 text-emerald-800' },
+  ALARM: { label: 'Đang báo động', tone: 'bg-rose-50 text-rose-800' },
   INSUFFICIENT_DATA: { label: 'Thiếu dữ liệu', tone: 'bg-black/5 text-black/60' },
 }
 

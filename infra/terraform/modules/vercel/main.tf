@@ -1,4 +1,4 @@
-# Read-only AWS access for /admin/health (issue #58, phase 6). A Vercel function
+# AWS access for the admin console (issues #58, #63 to #65). A Vercel function
 # exchanges its OIDC token for this role through STS, so no long-lived key exists.
 # The project uses team issuer mode: the token's `iss` is oidc.vercel.com/<team>.
 # https://vercel.com/docs/oidc/aws
@@ -58,4 +58,50 @@ resource "aws_iam_role_policy" "health" {
   name   = "${var.name_prefix}-vercel-health"
   role   = aws_iam_role.health.id
   policy = data.aws_iam_policy_document.health.json
+}
+
+# The admin console's writes (issues #63 to #65), on the same role so AWS_ROLE_ARN in
+# Vercel stays as it is. Everything that changes the instance is scoped to it; the reads
+# AWS only grants on "*" are kept in their own statement.
+data "aws_iam_policy_document" "operate" {
+  statement {
+    sid       = "DescribeAnywhere"
+    actions   = ["ec2:DescribeInstances", "ec2:DescribeInstanceStatus", "ssm:GetCommandInvocation", "ce:GetCostAndUsage", "ce:GetCostForecast"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "PowerTheInstance"
+    actions   = ["ec2:StartInstances", "ec2:StopInstances", "ec2:RebootInstances"]
+    resources = [var.instance_arn]
+  }
+
+  statement {
+    sid     = "RunShellOnTheInstance"
+    actions = ["ssm:SendCommand"]
+    resources = [
+      var.instance_arn,
+      "arn:aws:ssm:${var.region}::document/AWS-RunShellScript",
+    ]
+  }
+
+  # SecureString under the account's aws/ssm key, which any principal in the account may
+  # decrypt through SSM, so no kms statement is needed.
+  statement {
+    sid       = "ReadRescueSecret"
+    actions   = ["ssm:GetParameter"]
+    resources = ["arn:aws:ssm:${var.region}:${var.account_id}:parameter${var.ssm_prefix}/admin_rescue_secret"]
+  }
+
+  statement {
+    sid       = "AlertTheOwner"
+    actions   = ["sns:Publish"]
+    resources = [var.alerts_topic_arn]
+  }
+}
+
+resource "aws_iam_role_policy" "operate" {
+  name   = "${var.name_prefix}-vercel-operate"
+  role   = aws_iam_role.health.id
+  policy = data.aws_iam_policy_document.operate.json
 }

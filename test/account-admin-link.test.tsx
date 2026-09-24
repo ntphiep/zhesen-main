@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { AccountLink } from '@/components/account/AccountLink'
+import { AdminEntry } from '@/components/account/AdminEntry'
 
 const { getSession, rpc } = vi.hoisted(() => ({ getSession: vi.fn(), rpc: vi.fn() }))
 vi.mock('@/lib/supabase/client', () => ({
@@ -16,37 +17,21 @@ vi.mock('@/lib/supabase/client', () => ({
 beforeEach(() => {
   vi.clearAllMocks()
   getSession.mockResolvedValue({ data: { session: { user: { id: 'u1', email: 'a@b.com' } } } })
+  rpc.mockResolvedValue({ data: true, error: null })
 })
 
-describe('AccountLink, admin link', () => {
-  it('shows the way to /admin, unprefetched, when the profile is an admin', async () => {
-    rpc.mockResolvedValue({ data: true, error: null })
-    render(<AccountLink />)
-    const link = await screen.findByRole('link', { name: 'Quản trị' })
-    expect(link).toHaveAttribute('href', '/admin')
-    expect(rpc).toHaveBeenCalledWith('is_admin')
-  })
-
-  it('shows nothing extra to a learner', async () => {
-    rpc.mockResolvedValue({ data: false, error: null })
+describe('the site header', () => {
+  it('carries no way to /admin, even for an admin, and does not ask', async () => {
     render(<AccountLink />)
     await screen.findByRole('link', { name: 'a@b.com' })
-    await vi.waitFor(() => expect(rpc).toHaveBeenCalled())
-    expect(screen.queryByRole('link', { name: 'Quản trị' })).toBeNull()
-  })
-
-  it('shows nothing when the check fails', async () => {
-    rpc.mockRejectedValue(new Error('offline'))
-    render(<AccountLink />)
-    await screen.findByRole('link', { name: 'a@b.com' })
-    await vi.waitFor(() => expect(rpc).toHaveBeenCalled())
-    expect(screen.queryByRole('link', { name: 'Quản trị' })).toBeNull()
-  })
-
-  it('does not ask for a visitor without an account', async () => {
-    getSession.mockResolvedValue({ data: { session: null } })
-    render(<AccountLink />)
-    await screen.findByRole('link', { name: /Đăng nhập/i })
+    expect(screen.queryByRole('link', { name: /Quản trị/ })).toBeNull()
     expect(rpc).not.toHaveBeenCalled()
+  })
+})
+
+describe('AdminEntry', () => {
+  it('links to the console', () => {
+    render(<AdminEntry />)
+    expect(screen.getByRole('link', { name: 'Mở bảng điều khiển' })).toHaveAttribute('href', '/admin')
   })
 })

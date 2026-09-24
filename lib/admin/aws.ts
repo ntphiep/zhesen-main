@@ -4,8 +4,8 @@ import { awsCredentialsProvider } from '@vercel/oidc-aws-credentials-provider'
 import { z } from '@/lib/zod'
 
 /**
- * Instance and backup health for /admin/health, read with the role in
- * infra/terraform/vercel-oidc.tf. The Vercel function trades its OIDC token for that role,
+ * Instance and backup health for /admin and /admin/monitor, read with the role in
+ * infra/terraform/modules/vercel/main.tf. The Vercel function trades its OIDC token for that role,
  * so no AWS key exists anywhere. `awsHealthConfig()` returning null is a valid state, like
  * `aiConfig()`: a deployment without AWS_ROLE_ARN shows the panel as not configured.
  *
@@ -150,4 +150,51 @@ export async function getHealth(cfg: AwsHealthConfig, now: number = Date.now()):
     latest,
     objects: objectOut.Contents ?? [],
   }, now)
+}
+
+/* ---------- History for /admin/monitor ---------- */
+
+export type Range = '24h' | '7d'
+
+export interface Series {
+  id: string
+  label: string
+  unit: '%' | 'credits' | 'bytes'
+  points: { t: string; v: number }[]
+}
+
+/** infra/terraform output `instance_id`. */
+const INSTANCE = [{ Name: 'InstanceId', Value: 'i-0d914b6eceb4d9350' }]
+
+/** Dimensions as `aws cloudwatch list-metrics` returns them; a metric only matches its
+ *  exact dimension set. */
+const HISTORY = [
+  { id: 'cpu', label: 'CPU', unit: '%', ns: 'AWS/EC2', name: 'CPUUtilization', dims: INSTANCE, stat: 'Average' },
+  { id: 'credits', label: 'CPU credit còn lại', unit: 'credits', ns: 'AWS/EC2', name: 'CPUCreditBalance', dims: INSTANCE, stat: 'Average' },
+  { id: 'mem', label: 'Bộ nhớ đã dùng', unit: '%', ns: 'CWAgent', name: 'mem_used_percent', dims: INSTANCE, stat: 'Average' },
+  { id: 'disk', label: 'Ổ đĩa đã dùng', unit: '%', ns: 'CWAgent', name: 'disk_used_percent', dims: [{ Name: 'path', Value: '/' }, ...INSTANCE], stat: 'Average' },
+  { id: 'netin', label: 'Mạng vào', unit: 'bytes', ns: 'AWS/EC2', name: 'NetworkIn', dims: INSTANCE, stat: 'Sum' },
+  { id: 'netout', label: 'Mạng ra', unit: 'bytes', ns: 'AWS/EC2', name: 'NetworkOut', dims: INSTANCE, stat: 'Sum' },
+] as const
+
+/** Five-minute points over a day, 30-minute points over a week: 288 and 336 per series. */
+export async function getHistory(cfg: AwsHealthConfig, range: Range, now: number = Date.now()): Promise<Series[]> {
+  const credentials = awsCredentialsProvider({ roleArn: cfg.roleArn, clientConfig: { region: REGION } })
+  const cloudwatch = new CloudWatchClient({ region: REGION, credentials })
+  const hours = range === '24h' ? 24 : 168
+  const period = range === '24h' ? 300 : 1800
+  const out = await cloudwatch.send(new GetMetricDataCommand({
+    StartTime: new Date(now - hours * 3_600_000),
+    EndTime: new Date(now),
+    ScanBy: 'TimestampAscending',
+    MetricDataQueries: HISTORY.map((m) => ({
+      Id: m.id,
+      MetricStat: { Metric: { Namespace: m.ns, MetricName: m.name, Dimensions: [...m.dims] }, Period: period, Stat: m.stat },
+    })),
+  }))
+  return HISTORY.map((m) => {
+    const r = out.MetricDataResults?.find((x) => x.Id === m.id)
+    const points = (r?.Timestamps ?? []).map((t, i) => ({ t: new Date(t).toISOString(), v: r?.Values?.[i] ?? 0 }))
+    return { id: m.id, label: m.label, unit: m.unit, points }
+  })
 }

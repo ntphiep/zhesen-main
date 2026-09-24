@@ -89,4 +89,9 @@ module "vercel" {
   team_slug         = var.vercel_team_slug
   project           = var.vercel_project
   backup_bucket_arn = module.backup.bucket_arn
+  region            = var.region
+  account_id        = local.account_id
+  ssm_prefix        = local.ssm_prefix
+  instance_arn      = module.instance.instance_arn
+  alerts_topic_arn  = module.alerts.topic_arn
 }
