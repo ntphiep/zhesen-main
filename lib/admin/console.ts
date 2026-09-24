@@ -78,6 +78,8 @@ export function parseRestoreStatus(stdout: string): RestoreStatus {
   return { state: 'running', entries: null, warnings: 0, tail: stdout }
 }
 
+const COMMAND_TAG = /^(CREATE|INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|GRANT|REVOKE|COMMENT|BEGIN|COMMIT|ROLLBACK|SET|DO|COPY|VACUUM|ANALYZE|REFRESH|NOTIFY)( [A-Z]+)*( \d+)*$/
+
 /** RFC 4180 CSV as psql --csv writes it. Null when the text is not one rectangular table,
  *  as when several statements or a command tag are mixed in; the page then shows it raw. */
 export function parseCsv(text: string): string[][] | null {
@@ -99,5 +101,7 @@ export function parseCsv(text: string): string[][] | null {
   if (quoted) return null
   if (cell || row.length) { row.push(cell); rows.push(row) }
   if (rows.length === 0 || rows.some((r) => r.length !== rows[0].length)) return null
+  // A command tag followed by a one-column result is rectangular too.
+  if (rows[0].length === 1 && COMMAND_TAG.test(rows[0][0])) return null
   return rows
 }

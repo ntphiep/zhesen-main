@@ -46,8 +46,9 @@ export function restartScript(service: Service): string {
   return `docker restart supabase-${service} >/dev/null && docker inspect --format '{{.State.StartedAt}}' supabase-${service}`
 }
 
-/** The nightly job itself (cloud-init cron line), logged where the cron run logs. */
-export const BACKUP_SCRIPT = 'set -o pipefail; /opt/zhesen/supabase/bin/backup.sh 2>&1 | tee -a /var/log/zhesen-backup.log | tail -5'
+/** The nightly job itself (cloud-init cron line), logged where the cron run logs. SSM runs
+ *  scripts with /bin/sh, which on Ubuntu is dash and has no pipefail. */
+export const BACKUP_SCRIPT = "bash -o pipefail -c '/opt/zhesen/supabase/bin/backup.sh 2>&1 | tee -a /var/log/zhesen-backup.log | tail -5'"
 
 export interface Costs {
   /** First day of the month and the day after today, as Cost Explorer reads them. */

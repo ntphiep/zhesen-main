@@ -85,7 +85,7 @@ describe('console scripts', () => {
   })
 
   it('keeps the backup script exit code through its pipe', () => {
-    expect(BACKUP_SCRIPT.startsWith('set -o pipefail;')).toBe(true)
+    expect(BACKUP_SCRIPT.startsWith('bash -o pipefail -c ')).toBe(true)
   })
 
   it('reads the last line of a restore log', () => {
@@ -105,6 +105,7 @@ describe('parseCsv', () => {
 
   it('gives up on text that is not one table, so the page shows it raw', () => {
     expect(parseCsv('UPDATE 3\na,b\n1,2\n')).toBeNull()
+    expect(parseCsv('CREATE TABLE\nINSERT 0 2\ncount\n2\n')).toBeNull()
     expect(parseCsv('"open')).toBeNull()
     expect(parseCsv('')).toBeNull()
   })
