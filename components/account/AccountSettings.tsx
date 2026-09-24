@@ -27,9 +27,8 @@ const ROLE_LABEL: Record<Profile['role'], string> = {
  * The role is shown and not editable: RLS refuses an update that changes it, so a
  * control here would be a button that always fails. It is granted in the database.
  *
- * The password box is also the second half of the anonymous upgrade: a learner who
- * attached an email to the account holding their words arrives here from the emailed
- * link with a confirmed address and no password at all.
+ * No mail is sent by this deployment, so a forgotten password is replaced here while
+ * still signed in; there is no reset link.
  */
 export function AccountSettings({
   email, profile, stats, joinedAt,
@@ -184,7 +183,7 @@ export function AccountSettings({
       <section>
         <h2 className="text-lg font-semibold">Mật khẩu</h2>
         <p className="mt-1 text-sm text-black/60">
-          Đặt mật khẩu để lần sau đăng nhập không cần chờ email.
+          Đổi mật khẩu dùng để đăng nhập.
         </p>
         <form onSubmit={savePassword} className="mt-2 flex flex-wrap items-center gap-2">
           <input

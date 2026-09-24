@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import {
   accountKind, attachEmail, passwordProblem, registerWithPassword, setPassword,
-  signInByEmail, signInWithPassword, MIN_PASSWORD,
+  signInWithPassword, MIN_PASSWORD,
 } from '@/lib/auth/account'
 import { safeNext } from '@/lib/auth/redirect'
 
@@ -34,49 +34,26 @@ describe('attachEmail', () => {
   // the streak all hang off it, so nothing has to be copied and nothing can be
   // lost in the copying.
   it('updates the current user rather than signing in as someone else', async () => {
-    const { client, updateUser, signInWithOtp } = fakeAuth()
-    await expect(attachEmail(client, 'a@b.com')).resolves.toEqual({ status: 'sent' })
-    expect(updateUser).toHaveBeenCalledWith(
-      { email: 'a@b.com' },
-      // Lands on /account, not /wordlist: Supabase refuses a password until the
-      // address is confirmed, so the link has to arrive where the password can
-      // finally be set. https://supabase.com/docs/guides/auth/auth-anonymous
-      { emailRedirectTo: 'https://zhesen.test/auth/callback?next=%2Faccount' },
-    )
-    expect(signInWithOtp).not.toHaveBeenCalled()
+    const { client, updateUser, signUp } = fakeAuth()
+    await expect(attachEmail(client, 'a@b.com', 'longenough1')).resolves.toEqual({ status: 'active' })
+    // Email and password in one call: GoTrue confirms the address at once, and an
+    // anonymous user may set a password in the same request as its email.
+    expect(updateUser).toHaveBeenCalledWith({ email: 'a@b.com', password: 'longenough1' })
+    expect(signUp).not.toHaveBeenCalled()
   })
 
-  it('escapes the destination so a path with a query survives the round trip', async () => {
+  it('does not send a too-short password to Supabase at all', async () => {
     const { client, updateUser } = fakeAuth()
-    await attachEmail(client, 'a@b.com', '/wordlist?added=1')
-    expect(updateUser).toHaveBeenCalledWith(
-      { email: 'a@b.com' },
-      { emailRedirectTo: 'https://zhesen.test/auth/callback?next=%2Fwordlist%3Fadded%3D1' },
-    )
+    const outcome = await attachEmail(client, 'a@b.com', 'short')
+    expect(outcome.status).toBe('error')
+    expect(updateUser).not.toHaveBeenCalled()
   })
 
   it('reports the message Supabase itself gave when it refuses', async () => {
     const { client, updateUser } = fakeAuth()
     updateUser.mockResolvedValue({ error: { message: 'Email rate limit exceeded' } } as never)
-    await expect(attachEmail(client, 'a@b.com'))
+    await expect(attachEmail(client, 'a@b.com', 'longenough1'))
       .resolves.toEqual({ status: 'error', message: 'Email rate limit exceeded' })
-  })
-})
-
-describe('signInByEmail', () => {
-  it('signs in when the browser holds no words', async () => {
-    const { client, signInWithOtp } = fakeAuth()
-    await expect(signInByEmail(client, 'a@b.com', 0)).resolves.toEqual({ status: 'sent' })
-    expect(signInWithOtp).toHaveBeenCalled()
-  })
-
-  // Signing in swaps the account underneath the session; any word saved against
-  // the anonymous one would be stranded exactly the way 407 words already were.
-  it('refuses when the browser holds words, rather than stranding them', async () => {
-    const { client, signInWithOtp } = fakeAuth()
-    const outcome = await signInByEmail(client, 'a@b.com', 12)
-    expect(outcome.status).toBe('error')
-    expect(signInWithOtp).not.toHaveBeenCalled()
   })
 })
 
@@ -93,19 +70,18 @@ describe('passwords', () => {
     expect(signUp).not.toHaveBeenCalled()
   })
 
-  // Whether a new account is live at once or waits on a confirmation email is a
-  // project setting, so the answer has to come from the response.
   it('reports an active session when Supabase returns one', async () => {
     const { client } = fakeAuth()
     await expect(registerWithPassword(client, 'a@b.com', 'longenough1'))
       .resolves.toEqual({ status: 'active' })
   })
 
-  it('reports a pending email when Supabase returns no session', async () => {
+  // No mail is sent, so a sign-up that returns no session has nothing to wait for.
+  it('reports an error when Supabase returns no session', async () => {
     const { client, signUp } = fakeAuth()
     signUp.mockResolvedValue({ data: { session: null }, error: null } as never)
-    await expect(registerWithPassword(client, 'a@b.com', 'longenough1'))
-      .resolves.toEqual({ status: 'sent' })
+    const outcome = await registerWithPassword(client, 'a@b.com', 'longenough1')
+    expect(outcome.status).toBe('error')
   })
 
   it('sets a password on the account already signed in', async () => {

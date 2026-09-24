@@ -1,11 +1,11 @@
 output "instance_id" {
   description = "EC2 instance running the Supabase stack."
-  value       = aws_instance.supabase.id
+  value       = module.instance.instance_id
 }
 
 output "cloudfront_domain" {
   description = "Distribution domain name."
-  value       = aws_cloudfront_distribution.api.domain_name
+  value       = module.edge.domain_name
 }
 
 output "api_url" {
@@ -25,20 +25,20 @@ output "backup_bucket" {
 
 output "sns_topic_arn" {
   description = "Alarm topic."
-  value       = aws_sns_topic.alerts.arn
+  value       = module.alerts.topic_arn
 }
 
 output "ssm_session_command" {
   description = "Shell on the instance. No SSH key and no inbound port."
-  value       = "aws ssm start-session --region ${var.region} --target ${aws_instance.supabase.id}"
+  value       = "aws ssm start-session --region ${var.region} --target ${module.instance.instance_id}"
 }
 
 output "studio_tunnel_command" {
   description = "Studio at http://localhost:8000 while this runs."
-  value       = "aws ssm start-session --region ${var.region} --target ${aws_instance.supabase.id} --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"80\"],\"localPortNumber\":[\"8000\"]}'"
+  value       = "aws ssm start-session --region ${var.region} --target ${module.instance.instance_id} --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"80\"],\"localPortNumber\":[\"8000\"]}'"
 }
 
 output "vercel_health_role_arn" {
   description = "Value for AWS_ROLE_ARN on Vercel, read by lib/admin/aws.ts."
-  value       = aws_iam_role.vercel_health.arn
+  value       = module.vercel.role_arn
 }

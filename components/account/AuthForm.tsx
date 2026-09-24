@@ -8,8 +8,6 @@ import {
   MIN_PASSWORD,
   attachEmail,
   registerWithPassword,
-  requestPasswordReset,
-  signInByEmail,
   signInWithPassword,
   type AuthOutcome,
 } from '@/lib/auth/account'
@@ -22,9 +20,8 @@ type Feedback = { tone: 'ok' | 'bad'; text: string } | null
  *
  * On a browser still holding a legacy anonymous session with saved words,
  * registering must NOT create a second account: the words hang off the anonymous
- * one and nothing would move them, so the email is attached to the account already
- * present. Supabase accepts a password only once that address is confirmed, so the
- * password step waits for `/account`.
+ * one and nothing would move them, so the email and password are attached to the
+ * account already present.
  * https://supabase.com/docs/guides/auth/auth-anonymous
  *
  * `localWordCount` is read on the server: the guard must hold before the form is
@@ -44,8 +41,8 @@ export function AuthForm({
   hasAnonymousSession?: boolean
   /** Where the browser goes once the session is live. */
   next?: string
-  /** Why the visitor was sent here, such as an expired emailed link. Rendered above
-   *  the form, apart from `feedback`, which belongs to this form's own submissions. */
+  /** Why the visitor was sent here. Rendered above the form, apart from `feedback`,
+   *  which belongs to this form's own submissions. */
   notice?: string
 }) {
   const supabase = useMemo(() => createClient(), [])
@@ -77,11 +74,7 @@ export function AuthForm({
       router.refresh()
       return
     }
-    setFeedback(
-      outcome.status === 'sent'
-        ? { tone: 'ok', text: `Đã gửi liên kết tới ${email.trim()}. Mở email và bấm vào liên kết đó.` }
-        : { tone: 'bad', text: outcome.message },
-    )
+    setFeedback({ tone: 'bad', text: outcome.message })
     setBusy(false)
   }
 
@@ -89,8 +82,8 @@ export function AuthForm({
     e.preventDefault()
     const address = email.trim()
     if (!address) return
-    if (upgrading) return run(() => attachEmail(supabase, address, '/account'))
-    if (mode === 'register') return run(() => registerWithPassword(supabase, address, password, next))
+    if (upgrading) return run(() => attachEmail(supabase, address, password))
+    if (mode === 'register') return run(() => registerWithPassword(supabase, address, password))
     return run(() => signInWithPassword(supabase, address, password, localWordCount))
   }
 
@@ -128,37 +121,33 @@ export function AuthForm({
           />
         </label>
 
-        {/* Hidden while upgrading: Supabase refuses a password until the address
-            is confirmed, so a box here would take a password it cannot store. */}
-        {!upgrading && (
-          <div className="flex flex-col gap-1 text-sm">
-            {/* The hint sits outside the label: inside it, the field's accessible name
-                becomes "Mật khẩu" plus the hint. */}
-            <label className="flex flex-col gap-1">
-              <span className="font-medium">Mật khẩu</span>
-              <input
-                type="password"
-                required
-                minLength={mode === 'register' ? MIN_PASSWORD : undefined}
-                autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-                aria-describedby={mode === 'register' ? 'password-hint' : undefined}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="rounded-lg border border-black/15 px-3 py-2"
-              />
-            </label>
-            {mode === 'register' && (
-              <p id="password-hint" className="text-xs text-black/50">Ít nhất {MIN_PASSWORD} ký tự.</p>
-            )}
-          </div>
-        )}
+        <div className="flex flex-col gap-1 text-sm">
+          {/* The hint sits outside the label: inside it, the field's accessible name
+              becomes "Mật khẩu" plus the hint. */}
+          <label className="flex flex-col gap-1">
+            <span className="font-medium">Mật khẩu</span>
+            <input
+              type="password"
+              required
+              minLength={mode === 'register' ? MIN_PASSWORD : undefined}
+              autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+              aria-describedby={mode === 'register' ? 'password-hint' : undefined}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="rounded-lg border border-black/15 px-3 py-2"
+            />
+          </label>
+          {mode === 'register' && (
+            <p id="password-hint" className="text-xs text-black/50">Ít nhất {MIN_PASSWORD} ký tự.</p>
+          )}
+        </div>
 
         <button
           type="submit"
           disabled={busy}
           className="mt-1 rounded-lg bg-black px-4 py-2 font-medium text-white disabled:opacity-40"
         >
-          {busy ? 'Đang xử lý…' : upgrading ? 'Gửi liên kết xác nhận' : mode === 'register' ? 'Tạo tài khoản' : 'Đăng nhập'}
+          {busy ? 'Đang xử lý…' : upgrading ? 'Hoàn tất tài khoản' : mode === 'register' ? 'Tạo tài khoản' : 'Đăng nhập'}
         </button>
       </form>
 
@@ -166,27 +155,6 @@ export function AuthForm({
         <p className={`mt-3 text-sm ${feedback.tone === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
           {feedback.text}
         </p>
-      )}
-
-      {mode === 'login' && (
-        <div className="mt-4 flex flex-col gap-2 text-sm">
-          <button
-            type="button"
-            disabled={busy || !email.trim()}
-            onClick={() => run(() => signInByEmail(supabase, email.trim(), localWordCount, next))}
-            className="text-left text-black/60 hover:text-black hover:underline disabled:opacity-40"
-          >
-            Gửi liên kết đăng nhập, không cần mật khẩu
-          </button>
-          <button
-            type="button"
-            disabled={busy || !email.trim()}
-            onClick={() => run(() => requestPasswordReset(supabase, email.trim()))}
-            className="text-left text-black/60 hover:text-black hover:underline disabled:opacity-40"
-          >
-            Quên mật khẩu
-          </button>
-        </div>
       )}
 
       <p className="mt-6 text-sm text-black/60">

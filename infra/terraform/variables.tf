@@ -27,17 +27,6 @@ variable "alert_email" {
   type        = string
 }
 
-variable "ses_sender_email" {
-  description = "Sender identity for auth email. SES sends a verification mail here on apply."
-  type        = string
-}
-
-variable "ses_sender_name" {
-  description = "Display name on outgoing auth email."
-  type        = string
-  default     = "zhesen"
-}
-
 variable "site_url" {
   description = "GOTRUE_SITE_URL: where auth links land."
   type        = string
@@ -54,12 +43,6 @@ variable "budget_usd" {
   description = "Monthly budget for the Seoul region."
   type        = number
   default     = 45
-}
-
-variable "snapshot_retain_days" {
-  description = "Number of daily EBS snapshots DLM keeps."
-  type        = number
-  default     = 7
 }
 
 variable "backup_retain_days" {

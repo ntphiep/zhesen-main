@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Daily logical backup, run from /etc/cron.d/zhesen-backup at 03:30 UTC, half an
-# hour after the DLM volume snapshot. The two are independent: a snapshot brings
-# back the host, a dump brings one database into any other Postgres 17.
+# Daily logical backup, run from /etc/cron.d/zhesen-backup at 03:30 UTC. The
+# dump restores one database into any other Postgres 17; it is the only backup.
 set -euo pipefail
 # Dumps carry password hashes and refresh tokens: root-only files.
 umask 077

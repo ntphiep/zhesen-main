@@ -1,15 +1,12 @@
-# Copy to terraform.tfvars, which is git-ignored, and fill in the two addresses.
+# Copy to terraform.tfvars, which is git-ignored, and fill in the address.
 # Everything else has a default in variables.tf.
 
-alert_email      = "you@example.com"
-ses_sender_email = "you@example.com"
+alert_email = "you@example.com"
 
-# ses_sender_name         = "zhesen"
 # region                  = "ap-northeast-2"
 # availability_zone       = "ap-northeast-2a"
 # instance_type           = "t4g.medium"
 # root_volume_gb          = 30
 # budget_usd              = 45
-# snapshot_retain_days    = 7
 # backup_retain_days      = 30
 # site_url                = "https://zhesen-main.vercel.app"

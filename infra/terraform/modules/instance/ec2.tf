@@ -8,6 +8,11 @@ data "aws_ami" "ubuntu" {
   }
 }
 
+locals {
+  # Where cloud-init unpacks infra/supabase on the instance.
+  compose_dir = "/opt/zhesen/supabase"
+}
+
 resource "aws_instance" "supabase" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
@@ -16,8 +21,8 @@ resource "aws_instance" "supabase" {
   iam_instance_profile   = aws_iam_instance_profile.instance.name
   ebs_optimized          = true
 
-  # Egress only: Docker Hub, SSM, S3 and SES, with no NAT gateway in the default
-  # VPC. Nothing inbound reaches it; CloudFront arrives through the VPC origin ENI.
+  # Egress only: Docker Hub, SSM and S3, with no NAT gateway in the default VPC.
+  # Nothing inbound reaches it; CloudFront arrives through the VPC origin ENI.
   associate_public_ip_address = true
 
   metadata_options {
@@ -34,25 +39,24 @@ resource "aws_instance" "supabase" {
     volume_size = var.root_volume_gb
     encrypted   = true
 
-    # The volume holds the only copy of the database between backups, so it
-    # outlives the instance. Backup=zhesen is what the DLM policy targets.
+    # The volume holds the only copy of the database between nightly dumps, so
+    # it outlives the instance.
     delete_on_termination = false
 
     tags = {
-      Name   = "${local.name_prefix}-supabase-root"
-      Backup = "zhesen"
+      Name = "${var.name_prefix}-supabase-root"
     }
   }
 
-  # `unlimited` would let a CPU spike bill without a ceiling.
+  # "unlimited" would let a CPU spike bill without a ceiling.
   credit_specification {
     cpu_credits = "standard"
   }
 
   user_data = templatefile("${path.module}/templates/cloud-init.yaml.tftpl", {
     region        = var.region
-    assets_bucket = local.assets_bucket
-    backup_bucket = local.backup_bucket
+    assets_bucket = var.assets_bucket
+    backup_bucket = var.backup_bucket
     compose_dir   = local.compose_dir
   })
 
@@ -63,7 +67,7 @@ resource "aws_instance" "supabase" {
   }
 
   tags = {
-    Name = "${local.name_prefix}-supabase"
+    Name = "${var.name_prefix}-supabase"
   }
 
   # cloud-init syncs the bucket and renders .env from SSM on first boot. The URL
@@ -72,7 +76,5 @@ resource "aws_instance" "supabase" {
   depends_on = [
     aws_s3_object.assets,
     aws_ssm_parameter.generated,
-    aws_ssm_parameter.smtp,
-    aws_ssm_parameter.smtp_config,
   ]
 }

@@ -12,8 +12,8 @@ data "aws_cloudfront_origin_request_policy" "all_viewer_except_host" {
 # address answers nothing. Deploying one takes up to 15 minutes.
 resource "aws_cloudfront_vpc_origin" "supabase" {
   vpc_origin_endpoint_config {
-    name                   = "${local.name_prefix}-supabase"
-    arn                    = aws_instance.supabase.arn
+    name                   = "${var.name_prefix}-supabase"
+    arn                    = var.instance_arn
     http_port              = 80
     https_port             = 443
     origin_protocol_policy = "http-only"
@@ -25,15 +25,40 @@ resource "aws_cloudfront_vpc_origin" "supabase" {
   }
 
   tags = {
-    Name = "${local.name_prefix}-supabase"
+    Name = "${var.name_prefix}-supabase"
   }
+}
+
+# CloudFront creates this group when the VPC origin is created and owns it. A
+# rule that references it admits only this account's distributions, where the
+# origin-facing prefix list would admit any CloudFront customer's.
+# https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-vpc-origins.html
+data "aws_security_group" "cloudfront_vpc_origins" {
+  vpc_id = var.vpc_id
+
+  filter {
+    name   = "group-name"
+    values = ["CloudFront-VPCOrigins-Service-SG*"]
+  }
+
+  depends_on = [aws_cloudfront_vpc_origin.supabase]
+}
+
+# The only way into the instance.
+resource "aws_vpc_security_group_ingress_rule" "cloudfront_http" {
+  security_group_id            = var.security_group_id
+  description                  = "Envoy, from the CloudFront VPC origin only"
+  ip_protocol                  = "tcp"
+  from_port                    = 80
+  to_port                      = 80
+  referenced_security_group_id = data.aws_security_group.cloudfront_vpc_origins.id
 }
 
 # Studio, the Envoy admin port and the unused Realtime, Storage and Functions
 # prefixes are all reachable from the origin. The edge answers only the two
 # prefixes the app uses, so nothing else is exposed to the internet.
 resource "aws_cloudfront_function" "api_paths" {
-  name    = "${local.name_prefix}-api-paths"
+  name    = "${var.name_prefix}-api-paths"
   runtime = "cloudfront-js-2.0"
   publish = true
   comment = "Allow only /auth/v1/ and /rest/v1/"
@@ -65,7 +90,7 @@ resource "aws_cloudfront_distribution" "api" {
     origin_id = "ec2"
 
     # A VPC origin is addressed by the instance's private DNS name.
-    domain_name = aws_instance.supabase.private_dns
+    domain_name = var.instance_private_dns
 
     vpc_origin_config {
       vpc_origin_id            = aws_cloudfront_vpc_origin.supabase.id

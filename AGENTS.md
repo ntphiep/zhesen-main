@@ -119,10 +119,12 @@ header to it by string equality. The auth cookie name is pinned in `lib/supabase
   noise and microphones and recording `again` would erase real progress over a hardware
   fault.
 - An anonymous account lives in one browser's cookie, so clearing browsing data loses it:
-  407 saved words once ended up in an account with no way back. `signInByEmail`
+  407 saved words once ended up in an account with no way back. `signInWithPassword`
   (`lib/auth/account.ts`) therefore refuses when the current session holds data, because
   signing in swaps accounts and would abandon exactly what needed rescuing. `attachEmail` is
-  the way out, keeping the user id and every row under it.
+  the way out, keeping the user id and every row under it. GoTrue runs with
+  `GOTRUE_MAILER_AUTOCONFIRM=true` and no SMTP, so accounts are email plus password only:
+  no confirmation mail, no magic link, no password reset. Revisit with real users.
 - Middleware does not create anonymous sessions. The earlier behaviour created an
   `auth.users` row per cookieless request: 122 accounts of which 1 held data, and hitting
   the sign-in ceiling cost real users their sessions. Any new write path must therefore call

@@ -27,7 +27,7 @@ function Backup({ title, item, empty }: { title: string; item: BackupStatus | nu
       {item ? (
         <div className="mt-1 text-sm">
           <div className="text-2xl font-semibold">{item.ageHours.toLocaleString('vi-VN')} giờ trước</div>
-          <div className="text-black/60">{when(item.at)}{item.bytes !== undefined ? ` · ${formatBytes(item.bytes)}` : ''}{item.state ? ` · ${item.state}` : ''}</div>
+          <div className="text-black/60">{when(item.at)}{item.bytes !== undefined ? ` · ${formatBytes(item.bytes)}` : ''}</div>
           <div className="mt-0.5 font-mono text-xs break-all text-black/40">{item.id}</div>
         </div>
       ) : (
@@ -37,14 +37,11 @@ function Backup({ title, item, empty }: { title: string; item: BackupStatus | nu
   )
 }
 
-/** CloudWatch alarms with their latest datapoint, and the age of each kind of backup. */
+/** CloudWatch alarms with their latest datapoint, and the age of the newest dump. */
 export function HealthPanel({ health }: { health: Health }) {
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Backup title="Snapshot ổ đĩa" item={health.snapshot} empty="Chưa có snapshot nào. DLM chụp lúc 03:00 UTC mỗi ngày." />
-        <Backup title="Bản dump database" item={health.dump} empty="Chưa có bản dump nào. bin/backup.sh chạy lúc 03:30 UTC mỗi ngày." />
-      </div>
+      <Backup title="Bản dump database" item={health.dump} empty="Chưa có bản dump nào. bin/backup.sh chạy lúc 03:30 UTC mỗi ngày." />
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>

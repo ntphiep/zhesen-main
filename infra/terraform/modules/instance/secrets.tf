@@ -21,7 +21,7 @@ resource "random_password" "secret_key_base" {
   special = false
 }
 
-# Supavisor's documented rule: exactly 32 characters.
+# Supavisor documents exactly 32 characters.
 resource "random_password" "vault_enc_key" {
   length  = 32
   special = false
@@ -38,7 +38,7 @@ resource "aws_ssm_parameter" "generated" {
     vault_enc_key      = random_password.vault_enc_key.result
   }
 
-  name  = "${local.ssm_prefix}/${each.key}"
+  name  = "${var.ssm_prefix}/${each.key}"
   type  = "SecureString"
   value = each.value
 
@@ -47,41 +47,20 @@ resource "aws_ssm_parameter" "generated" {
   }
 }
 
-resource "aws_ssm_parameter" "config" {
-  for_each = {
-    site_url                 = var.site_url
-    additional_redirect_urls = var.additional_redirect_urls
-    api_external_url         = "${local.api_url}/auth/v1"
-    public_url               = local.api_url
-    dashboard_username       = local.name_prefix
-
-    # bin/backup.sh reads backup_bucket; a re-sync of infra/supabase reads assets_bucket.
-    assets_bucket = local.assets_bucket
-    backup_bucket = local.backup_bucket
-
-    # bin/backup.sh publishes here when a dump fails.
-    alerts_topic_arn = aws_sns_topic.alerts.arn
-  }
-
-  name  = "${local.ssm_prefix}/${each.key}"
-  type  = "String"
-  value = each.value
-}
-
 # Created by hand and deliberately not managed here: rewriting jwt_secret would
 # invalidate the anon and service_role keys the app and Envoy compare literally.
-# These reads only assert the four exist before an apply builds anything.
+# These reads only assert the three exist before an apply builds anything.
 data "aws_ssm_parameter" "jwt_secret" {
-  name            = "${local.ssm_prefix}/jwt_secret"
+  name            = "${var.ssm_prefix}/jwt_secret"
   with_decryption = false
 }
 
 data "aws_ssm_parameter" "anon_key" {
-  name            = "${local.ssm_prefix}/anon_key"
+  name            = "${var.ssm_prefix}/anon_key"
   with_decryption = false
 }
 
 data "aws_ssm_parameter" "service_role_key" {
-  name            = "${local.ssm_prefix}/service_role_key"
+  name            = "${var.ssm_prefix}/service_role_key"
   with_decryption = false
 }

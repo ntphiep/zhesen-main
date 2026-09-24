@@ -40,6 +40,7 @@ means an upstream bump is a straight copy.
 | `db` `command` gains `shared_buffers=1GB`, `effective_cache_size=2560MB`, `maintenance_work_mem=256MB`, `work_mem=8MB`, `max_connections=100`, `random_page_cost=1.1`, `wal_compression=on`, `log_min_duration_statement=1000ms` | Upstream ships defaults sized for a laptop. These are sized for t4g.medium, 2 vCPU and 4 GB, on a gp3 volume. |
 | `db` `log_min_messages=warning` replaces upstream's `fatal` | Upstream silences the log to hide Realtime's polling queries. Realtime is not run here. |
 | `auth` gains twelve `GOTRUE_*` variables | Mirrors the Cloud project's auth settings, which are otherwise lost in the move. Each name is cited with its `CONFIG.md` line in the compose file. `GOTRUE_RATE_LIMIT_EMAIL_SENT` is set to the documented default of 30; Cloud had 2, which is issue #6. |
+| `auth` has no `GOTRUE_SMTP_*` variables, and `env.template` sets `ENABLE_EMAIL_AUTOCONFIRM=true` | No mail is sent: sign-up and attaching an email to an anonymous account confirm at once, and the app offers no magic link or password reset. Revisit with real users. |
 | `deploy.resources.limits.memory` on `studio` (512m), `meta`, `auth`, `rest`, `api-gw` (256m each) | Leaves the remainder of the 4 GB to Postgres. `db` has no limit, because a cgroup ceiling below what its own settings allocate means the OOM killer rather than a slower query. |
 | `.env` is not committed | Rendered on the instance by `bin/render-env.sh` from SSM Parameter Store, mode 0600. `env.template` is the committed shape. |
 

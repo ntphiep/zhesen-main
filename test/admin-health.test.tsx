@@ -18,7 +18,7 @@ const NOW = Date.parse('2026-09-24T06:00:00Z')
 
 describe('summarizeHealth', () => {
   it('pairs each alarm with its latest datapoint', () => {
-    const h = summarizeHealth({ alarms: ALARMS, latest: [96.4, null], snapshots: [], objects: [] }, NOW)
+    const h = summarizeHealth({ alarms: ALARMS, latest: [96.4, null], objects: [] }, NOW)
     expect(h.alarms.map((a) => [a.name, a.state, a.latest])).toEqual([
       ['zhesen-cpu-credits-low', 'OK', 96.4],
       ['zhesen-disk-high', 'OK', null],
@@ -26,28 +26,22 @@ describe('summarizeHealth', () => {
     expect(h.alarms[0].updatedAt).toBe('2026-09-22T20:21:03.001Z')
   })
 
-  // What describe-snapshots and list-objects-v2 returned on 2026-09-23, before the first run.
-  it('reads empty snapshot and dump listings as none yet', () => {
-    const h = summarizeHealth({ alarms: [], latest: [], snapshots: [], objects: [] }, NOW)
-    expect(h.snapshot).toBeNull()
+  // What list-objects-v2 returned on 2026-09-23, before the first run.
+  it('reads an empty dump listing as none yet', () => {
+    const h = summarizeHealth({ alarms: [], latest: [], objects: [] }, NOW)
     expect(h.dump).toBeNull()
   })
 
-  it('takes the newest snapshot and the newest .dump, with their age in hours', () => {
+  it('takes the newest .dump, with its age in hours', () => {
     const h = summarizeHealth({
       alarms: [],
       latest: [],
-      snapshots: [
-        { SnapshotId: 'snap-old', StartTime: '2026-09-23T03:00:12Z', State: 'completed' },
-        { SnapshotId: 'snap-new', StartTime: '2026-09-24T03:00:09Z', State: 'completed' },
-      ],
       objects: [
         { Key: 'postgres/postgres-20260924T033001Z.dump', LastModified: '2026-09-24T03:30:40Z', Size: 61_000_000 },
         { Key: 'postgres/globals-20260924T033001Z.sql', LastModified: '2026-09-24T03:30:41Z', Size: 9_000 },
         { Key: 'postgres/postgres-20260923T033001Z.dump', LastModified: '2026-09-23T03:30:38Z', Size: 60_000_000 },
       ],
     }, NOW)
-    expect(h.snapshot).toMatchObject({ id: 'snap-new', ageHours: 3, state: 'completed' })
     expect(h.dump).toMatchObject({ id: 'postgres/postgres-20260924T033001Z.dump', ageHours: 2.5, bytes: 61_000_000 })
   })
 })
@@ -74,19 +68,17 @@ describe('awsHealthConfig', () => {
 
 describe('HealthPanel', () => {
   it('shows each alarm state and says when no backup exists yet', () => {
-    render(<HealthPanel health={summarizeHealth({ alarms: ALARMS, latest: [96.4, 41.2], snapshots: [], objects: [] }, NOW)} />)
+    render(<HealthPanel health={summarizeHealth({ alarms: ALARMS, latest: [96.4, 41.2], objects: [] }, NOW)} />)
     expect(screen.getByText('zhesen-disk-high').closest('tr')).toHaveTextContent('Bình thường')
-    expect(screen.getByText(/Chưa có snapshot nào/)).toBeInTheDocument()
     expect(screen.getByText(/Chưa có bản dump nào/)).toBeInTheDocument()
   })
 
-  it('prints the snapshot age', () => {
+  it('prints the dump age', () => {
     render(<HealthPanel health={summarizeHealth({
       alarms: [], latest: [],
-      snapshots: [{ SnapshotId: 'snap-new', StartTime: '2026-09-24T03:00:09Z', State: 'completed' }],
-      objects: [],
+      objects: [{ Key: 'postgres/postgres-20260924T033001Z.dump', LastModified: '2026-09-24T03:00:09Z', Size: 61_000_000 }],
     }, NOW)} />)
     expect(screen.getByText('3 giờ trước')).toBeInTheDocument()
-    expect(screen.getByText('snap-new')).toBeInTheDocument()
+    expect(screen.getByText('postgres/postgres-20260924T033001Z.dump')).toBeInTheDocument()
   })
 })

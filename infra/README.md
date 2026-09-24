@@ -18,7 +18,6 @@ flowchart LR
   end
   SSM[SSM Parameter Store] -.->|render-env.sh| EC2
   EC2 -.->|pg_dump, nightly| BK[(S3 backups)]
-  EC2 -.->|SES SMTP| Mail[auth email]
 ```
 
 The instance has no open inbound port. CloudFront reaches Envoy through a VPC origin,
@@ -26,42 +25,46 @@ the security group admits port 80 from that origin's own security group and noth
 else, and the shell is SSM Session Manager. Secrets live in SSM Parameter Store and are
 rendered into the instance's `.env` at boot.
 
+Four AWS services carry the product: EC2 for the database host, S3 for the stack files
+and the nightly dumps, CloudFront for the HTTPS edge, and SSM for parameters and the
+shell. CloudWatch, SNS and Budgets only watch it. GoTrue sends no mail: accounts are email
+plus password, confirmed at once, with no magic link and no password reset until there
+are real users to serve.
+
 ## Layout
 
 ```
 infra/
-  terraform/            the AWS account, one root module, one environment
-    versions.tf         Terraform and provider versions
-    backend.tf          state in S3, locked
-    variables.tf        inputs; values in terraform.tfvars (git-ignored)
-    locals.tf           names and the file list synced to the instance
-    network.tf          security group
-    ec2.tf              the instance and its root volume
-    templates/          cloud-init: install Docker, sync the stack, render .env, start
-    iam.tf              instance role (SSM, CloudWatch, read own parameters)
-    secrets.tf          generated passwords and config, written to SSM
-    ses.tf              email identity and SMTP credentials for auth mail
-    cloudfront.tf       distribution, VPC origin, path-allowlist function
-    storage.tf          S3: stack files for the instance, database dumps
-    backup.tf           daily EBS snapshots
-    monitoring.tf       CloudWatch alarms, SNS topic, budget
-    outputs.tf          instance id, API URL, bucket names, tunnel commands
-  supabase/             what runs on the instance, synced to /opt/zhesen/supabase
-    docker-compose.yml  upstream compose trimmed to db, auth, rest, api-gw, studio, meta
-    env.template        .env with ${SSM:/path} placeholders
-    volumes/            Envoy config and Postgres init scripts, copied from upstream
-    bin/                render-env.sh, backup.sh, migrate.sh, studio-tunnel.ps1
-    UPSTREAM.md         upstream commit and every deviation from it
+  terraform/                 the AWS account, one environment
+    main.tf                  names, and the six module calls
+    variables.tf             inputs; values in terraform.tfvars (git-ignored)
+    outputs.tf               instance id, API URL, bucket names, tunnel commands
+    versions.tf, backend.tf  Terraform and provider versions; state in S3, locked
+    modules/
+      instance/              the host: security group, EC2, IAM role, generated
+                             secrets, the assets bucket, CloudWatch alarms, cloud-init
+      edge/                  CloudFront: VPC origin, path-allowlist function,
+                             distribution, and the one ingress rule it needs
+      backup/                S3 bucket for the pg_dump files, 30-day expiry
+      alerts/                SNS topic, email subscription, monthly budget
+      settings/              SSM parameters carrying the API URL and bucket names
+      vercel/                OIDC provider and the read-only role /admin/health uses
+  supabase/                  what runs on the instance, synced to /opt/zhesen/supabase
+    docker-compose.yml       upstream compose trimmed to db, auth, rest, api-gw, studio, meta
+    env.template             .env with ${SSM:/path} placeholders
+    volumes/                 Envoy config and Postgres init scripts, copied from upstream
+    bin/                     render-env.sh, backup.sh, migrate.sh, studio-tunnel.ps1
+    UPSTREAM.md              upstream commit and every deviation from it
 ```
+
+Each module has `main.tf` (or one file per concern in `instance/`), `variables.tf`,
+`outputs.tf` and `versions.tf`, the layout HashiCorp documents for modules.
+https://developer.hashicorp.com/terraform/language/modules/develop/structure
 
 Two folders are named `supabase` on purpose. `supabase/` at the repository root is the
 database schema: numbered SQL migrations that the app depends on, in the layout the
 Supabase CLI uses. `infra/supabase/` is the server software that hosts that schema. The
 first changes with the product, the second with the platform.
-
-Terraform stays one flat root module by concern, which is HashiCorp's standard layout
-for a single environment; modules earn their place only when a piece is instantiated
-twice. https://developer.hashicorp.com/terraform/language/modules/develop/structure
 
 ## Changing infra
 
@@ -75,13 +78,15 @@ twice. https://developer.hashicorp.com/terraform/language/modules/develop/struct
    instance only picks it up after a sync there:
 
 ```bash
-aws s3 sync s3://zhesen-infra-assets-<account>/supabase /opt/zhesen/supabase --delete \
+cd /opt/zhesen/supabase
+aws s3 sync s3://zhesen-infra-assets-<account>/supabase . --delete \
   --exclude '.env' --exclude 'volumes/db/data/*'
-docker compose -f /opt/zhesen/supabase/docker-compose.yml --env-file /opt/zhesen/supabase/.env up -d
+bin/render-env.sh   # only when env.template or an SSM parameter changed
+docker compose -f docker-compose.yml --env-file .env up -d
 ```
 
-Snapshot the root volume before an image tag bump. A Postgres major version is not an
-image bump; upstream's `utils/upgrade-pg17.sh` is the pattern for that.
+Take a dump before an image tag bump. A Postgres major version is not an image bump;
+upstream's `utils/upgrade-pg17.sh` is the pattern for that.
 
 ## Operating it
 
@@ -91,11 +96,10 @@ Shell: `aws ssm start-session --region ap-northeast-2 --target <instance_id>`, t
 Studio: `pwsh infra/supabase/bin/studio-tunnel.ps1`, then `http://localhost:8000`, user
 `zhesen`, password in SSM `/zhesen/prod/dashboard_password`.
 
-Backups, two independent copies:
-
-- DLM snapshots the root volume daily at 03:00 UTC and keeps seven.
-- `bin/backup.sh` at 03:30 UTC writes `pg_dump -Fc` plus `pg_dumpall --globals-only` to
-  `s3://zhesen-db-backups-<account>/postgres/`, kept 30 days; a failure posts to SNS.
+Backup: `bin/backup.sh` at 03:30 UTC writes `pg_dump -Fc` plus `pg_dumpall --globals-only`
+to `s3://zhesen-db-backups-<account>/postgres/`, kept 30 days; a failure posts to SNS.
+The root volume outlives the instance (`delete_on_termination = false`), so a dead host
+is rebuilt around the same volume; there is no volume snapshot.
 
 Restore a dump into the running database:
 
@@ -105,20 +109,18 @@ docker cp /tmp/postgres-<stamp>.dump supabase-db:/tmp/restore.dump
 docker exec -i supabase-db pg_restore -U supabase_admin -d postgres --clean --if-exists /tmp/restore.dump
 ```
 
-Restore the host: create a volume from a snapshot, attach it as the root device of a
-replacement instance, re-apply so the VPC origin points at it.
-
 Resize: `docker compose down` on the instance, stop it, change `instance_type` in
 `terraform.tfvars`, apply, start. Volume, private IP and instance id survive. More
 memory means raising `shared_buffers` and `effective_cache_size` in `docker-compose.yml`.
 
 Alarms (CPU, CPU credits, memory, disk, status checks) and the 45 USD budget email
-`alert_email` through SNS topic `zhesen-alerts`, once the subscription is confirmed.
+`alert_email` through SNS topic `zhesen-alerts`, once the subscription is confirmed. An
+unconfirmed subscription expires after three days and the next apply sends a new mail.
 
 ## Rebuilding from nothing
 
 ```bash
-cp infra/terraform/terraform.tfvars.example infra/terraform/terraform.tfvars   # two emails
+cp infra/terraform/terraform.tfvars.example infra/terraform/terraform.tfvars   # one email
 terraform -chdir=infra/terraform init && terraform -chdir=infra/terraform apply
 ```
 
@@ -128,7 +130,8 @@ invalidate the anon key the app ships, so it stays out of Terraform. If the firs
 stops with "no matching EC2 Security Group found", CloudFront had not yet created the VPC
 origin's group: apply again. Cloud-init is done when `/var/lib/cloud/zhesen-ready`
 exists (about 5 minutes, plus up to 20 for the CloudFront URL on a first apply); its log
-is `/var/log/zhesen-cloud-init.log`. Then confirm the SNS and SES emails.
+is `/var/log/zhesen-cloud-init.log`. Then confirm the SNS email and restore the latest
+dump.
 
 ## Migration and cutover, 2026-09-23
 
@@ -152,6 +155,5 @@ instance. The migration role and `/zhesen/migration/cloud_db_url` were removed, 
 | t4g.medium | 30.37 |
 | gp3, 30 GB | 2.74 |
 | Public IPv4 address | 3.65 |
-| EBS snapshots | about 1.50 |
-| CloudFront, S3, SNS, SES | under 1.00 |
-| Total | about 38, paid from AWS credits |
+| CloudFront, S3, SNS | under 1.00 |
+| Total | about 37, paid from AWS credits |
