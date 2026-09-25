@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title: `${detail.headword} · ${language?.name ?? lang}`,
     description: glosses
       ? `${detail.headword} nghĩa là ${glosses}.`
-      : `Nghĩa, phát âm và ví dụ của ${detail.headword}.`,
+      : `Xem nghĩa, phát âm và ví dụ của ${detail.headword}.`,
     canonical: entryPath(detail.id),
   })
 }

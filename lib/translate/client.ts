@@ -36,7 +36,7 @@ export type TranslateOutcome =
   | { status: 'disabled' }
   | { status: 'refused'; message: string }
 
-const REFUSED_MESSAGE = 'Chưa dịch được đoạn này. Vui lòng thử lại sau ít giây.'
+const REFUSED_MESSAGE = 'Chưa dịch được đoạn này. Thử lại sau ít giây.'
 
 /** `from` is optional on purpose. Asserting it was measured wrong on real input: Chinese
  *  pasted into the Vietnamese box and sent as `from: 'vi'` came back untranslated, and

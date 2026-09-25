@@ -20,7 +20,7 @@ export interface FamilyForm {
 /** Ordered: the first pattern that matches the label names the form. Participle
  *  rules come before the bare "past" rule, which would otherwise swallow them. */
 const FORM_NAMES: [RegExp, string][] = [
-  [/simple past and past participle/, 'Quá khứ & phân từ II'],
+  [/simple past and past participle/, 'Quá khứ và phân từ II'],
   [/third-person singular|present singular third-person/, 'Ngôi thứ ba số ít'],
   [/second-person singular/, 'Ngôi thứ hai số ít'],
   [/participle past|past participle/, 'Phân từ II (quá khứ)'],

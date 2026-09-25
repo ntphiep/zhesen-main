@@ -10,11 +10,11 @@ import type { LangCode } from '@/lib/languages'
 const SECTIONS: { key: keyof ClassifiedRelations; label: string; hint: string }[] = [
   { key: 'synonyms', label: 'Cận nghĩa', hint: 'Dùng thay được trong một số ngữ cảnh' },
   { key: 'antonyms', label: 'Trái nghĩa', hint: 'Nghĩa ngược lại' },
-  { key: 'derived', label: 'Phái sinh', hint: 'Từ tạo ra từ từ này' },
-  { key: 'compounds', label: 'Từ ghép & cụm từ', hint: 'Cụm cố định chứa từ này' },
+  { key: 'derived', label: 'Phái sinh', hint: 'Từ tạo ra từ gốc này' },
+  { key: 'compounds', label: 'Từ ghép và cụm từ', hint: 'Cụm cố định chứa từ này' },
   // Wiktionary's "Related terms" share an etymological root and are not idioms:
   // "holy" lists halibut, halidom, hallow and holiday.
-  { key: 'related', label: 'Cùng gốc từ', hint: 'Chung nguồn gốc, nghĩa nay có thể đã khác xa' },
+  { key: 'related', label: 'Cùng gốc từ', hint: 'Chung nguồn gốc, nghĩa có thể đã khác' },
 ]
 
 // Some entries (Spanish verbs especially) carry dozens of idioms; cap each group
@@ -51,7 +51,7 @@ export function RelatedWords({ relations, previews, lang }: {
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold">Từ phái sinh &amp; cụm từ</h2>
+      <h2 className="text-lg font-semibold">Từ phái sinh và cụm từ</h2>
       {groups.map((s) => {
         const items = c[s.key]
         const shown = expanded ? items : items.slice(0, CAP)

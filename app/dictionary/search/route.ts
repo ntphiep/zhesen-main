@@ -90,7 +90,7 @@ function truncate(q: string): string {
 
 function tooFast(retryAfterSeconds: number): Response {
   return Response.json(
-    { error: 'Đang có quá nhiều lượt dịch. Vui lòng thử lại sau ít giây.' },
+    { error: 'Quá nhiều lượt dịch. Thử lại sau ít giây.' },
     { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } },
   )
 }
@@ -110,7 +110,7 @@ function isStatementTimeout(e: unknown): boolean {
 }
 function tooSlow(): Response {
   return Response.json(
-    { error: 'Từ điển đang khởi động chậm. Vui lòng thử lại sau vài giây.' },
+    { error: 'Từ điển đang khởi động. Thử lại sau vài giây.' },
     { status: 503, headers: { 'Retry-After': '3' } },
   )
 }

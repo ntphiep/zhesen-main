@@ -43,7 +43,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
 }) {
   const [query, setQuery] = useState(initialQuery)
   const [data, setData] = useState<SearchResponse>(EMPTY_SEARCH_RESPONSE)
-  // Which request `data` answers. "Chưa tìm thấy từ nào" is a claim about the dictionary,
+  // Which request `data` answers. "Không tìm thấy từ nào" is a claim about the dictionary,
   // so it may only be made once the answer on screen is the answer to what is in the box:
   // without this it flashed during the debounce and whenever a cached shorter prefix with
   // no hits was still on screen.
@@ -170,7 +170,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
 
   function remember(e: DictEntryPreview) {
     recentQueries.push(e.headword)
-    // The query goes in the box's own "Tìm gần đây" row; the word goes in the strip under
+    // The query goes in the box's own "Tra gần đây" row; the word goes in the strip under
     // the boxes, which links back to the word page rather than refilling the box.
     recentEntries.record({ id: e.id, headword: e.headword, lang: e.lang, glossVi: e.glossVi ?? null })
   }
@@ -315,7 +315,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
 
       {showRecent && (
         <div className="flex flex-wrap gap-2">
-          <span className="text-xs uppercase tracking-wide text-black/40">Tìm gần đây</span>
+          <span className="text-xs uppercase tracking-wide text-black/40">Tra gần đây</span>
           {recent.map((r) => (
             <button
               key={r}
@@ -337,13 +337,13 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
       {total > 0 && (
         <div className="flex flex-col gap-3">{shown.map(([l, list]) => renderCard(l, list))}</div>
       )}
-      {showFilteredEmpty && <p className="text-sm text-black/40">Không còn kết quả nào khớp bộ lọc.</p>}
+      {showFilteredEmpty && <p className="text-sm text-black/40">Không có từ nào khớp bộ lọc.</p>}
 
       {showEmpty && (
         data.suggestions.length > 0
           ? (
             <div className="flex flex-col gap-2">
-              <span className="text-xs uppercase tracking-wide text-black/40">Có phải bạn tìm</span>
+              <span className="text-xs uppercase tracking-wide text-black/40">Có phải là</span>
               <div className="flex flex-wrap gap-2">
                 {data.suggestions.map((s) => (
                   <Link
@@ -360,7 +360,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
               </div>
             </div>
           )
-          : <p className="text-sm text-black/40">Chưa tìm thấy từ nào.</p>
+          : <p className="text-sm text-black/40">Không tìm thấy từ nào.</p>
       )}
       {/* Renders nothing where `aiConfig()` is null, which is every deployment that
           cannot reach the router. */}

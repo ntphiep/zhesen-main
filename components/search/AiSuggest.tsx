@@ -47,7 +47,7 @@ export function AiSuggest({ query }: { query: string }) {
     } catch {
       // `callAi` handles fetch failures, but its dynamic task-module import rejects
       // after a redeploy, which would leave this stuck on the loading state.
-      setState({ kind: 'error', message: 'Không hỏi được trợ lý. Vui lòng thử lại.' })
+      setState({ kind: 'error', message: 'Chưa hỏi được trợ lý. Thử lại.' })
     }
   }
 

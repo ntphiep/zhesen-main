@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     const perCaller = rateLimit(caller)
     if (!perCaller.allowed) {
       return Response.json(
-        { error: 'Đang có quá nhiều lượt dịch. Vui lòng thử lại sau ít giây.' },
+        { error: 'Quá nhiều lượt dịch. Thử lại sau ít giây.' },
         { status: 429, headers: { 'Retry-After': String(perCaller.retryAfterSeconds) } },
       )
     }
@@ -117,10 +117,10 @@ export async function POST(request: Request) {
       }
     } catch (e) {
       if (e instanceof AzureTranslateError) {
-        return Response.json({ error: 'Dịch vụ dịch không phản hồi được lúc này.' }, { status: 502 })
+        return Response.json({ error: 'Chưa dịch được đoạn này. Thử lại sau ít giây.' }, { status: 502 })
       }
       if (e instanceof DOMException && e.name === 'TimeoutError') {
-        return Response.json({ error: 'Dịch vụ dịch phản hồi quá chậm.' }, { status: 504 })
+        return Response.json({ error: 'Chưa dịch được đoạn này. Thử lại sau ít giây.' }, { status: 504 })
       }
       throw e
     }

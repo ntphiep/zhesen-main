@@ -44,9 +44,9 @@ describe('LookupPanel', () => {
     const fetchMock = stubFetch({ entries: EMPTY, suggestions: [] })
     render(<LookupPanel direction="vi" label="VN" />)
     // One word, not two: two words is a passage now, and a passage renders the
-    // translation block instead of "Chưa tìm thấy từ nào."
+    // translation block instead of "Không tìm thấy từ nào."
     await userEvent.type(screen.getByLabelText('VN'), 'cho')
-    await screen.findByText('Chưa tìm thấy từ nào.')
+    await screen.findByText('Không tìm thấy từ nào.')
     expect(String(fetchMock.mock.calls[0][0])).toContain('dir=vi')
   })
 
@@ -54,7 +54,7 @@ describe('LookupPanel', () => {
     const fetchMock = stubFetch({ entries: EMPTY, suggestions: [] })
     render(<LookupPanel direction="fw" label="FW" />)
     await userEvent.type(screen.getByLabelText('FW'), 'dog')
-    await screen.findByText('Chưa tìm thấy từ nào.')
+    await screen.findByText('Không tìm thấy từ nào.')
     expect(String(fetchMock.mock.calls[0][0])).not.toContain('dir=vi')
   })
 
@@ -63,12 +63,12 @@ describe('LookupPanel', () => {
     render(<LookupPanel direction="vi" label="VN" />)
     const box = screen.getByLabelText('VN')
     await userEvent.type(box, 'cho')
-    await screen.findByText('Chưa tìm thấy từ nào.')
+    await screen.findByText('Không tìm thấy từ nào.')
     const afterOneWord = fetchMock.mock.calls.length
     expect(afterOneWord).toBeGreaterThan(0)
 
     await userEvent.type(box, ' con meo')
-    expect(screen.queryByText('Chưa tìm thấy từ nào.')).toBeNull()
+    expect(screen.queryByText('Không tìm thấy từ nào.')).toBeNull()
     const searches = fetchMock.mock.calls.filter((c) => String(c[0]).includes('/dictionary/search'))
     expect(searches).toHaveLength(afterOneWord)
   })
@@ -99,7 +99,7 @@ describe('LookupPanel', () => {
     render(<LookupPanel direction="fw" label="FW" />)
     await userEvent.type(screen.getByLabelText('FW'), 'dog')
     expect(await screen.findByText('Đang có quá nhiều lượt tra cứu. Vui lòng thử lại sau ít giây.')).toBeInTheDocument()
-    expect(screen.queryByText('Chưa tìm thấy từ nào.')).toBeNull()
+    expect(screen.queryByText('Không tìm thấy từ nào.')).toBeNull()
   })
 
   it('shows language chips on both panels, naming the question each one answers', () => {
@@ -146,7 +146,7 @@ describe('LookupPanel', () => {
     render(<LookupPanel direction="fw" label="FW" />)
     const input = screen.getByLabelText('FW')
     await userEvent.type(input, 'zzzz')
-    await screen.findByText('Chưa tìm thấy từ nào.')
+    await screen.findByText('Không tìm thấy từ nào.')
     await userEvent.type(input, '{Enter}')
     expect(push).not.toHaveBeenCalled()
   })

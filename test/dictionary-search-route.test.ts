@@ -66,7 +66,7 @@ describe('GET /dictionary/search', () => {
     const res = await get('q=%C4%83n')
     expect(res.status).toBe(503)
     expect(res.headers.get('Retry-After')).toBe('3')
-    expect((await res.json()).error).toMatch(/khởi động chậm/)
+    expect((await res.json()).error).toMatch(/đang khởi động/)
   })
 
   it('lets any other failure through', async () => {

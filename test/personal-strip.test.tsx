@@ -26,7 +26,7 @@ beforeEach(() => {
 describe('PersonalStrip', () => {
   it('invites the reader to save a word while the notebook is empty', async () => {
     render(<PersonalStrip />)
-    expect(await screen.findByText(/lưu vào sổ tay/i)).toBeInTheDocument()
+    expect(await screen.findByText(/Tra một từ để lưu/i)).toBeInTheDocument()
     expect(screen.queryByText('Tra gần đây')).toBeNull()
   })
 
@@ -49,6 +49,6 @@ describe('PersonalStrip', () => {
     render(<PersonalStrip />)
     expect(await screen.findByText('12 từ đến hạn ôn')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'hedgehog' })).toHaveAttribute('href', '/dictionary/en/hedgehog')
-    expect(screen.getByRole('link', { name: 'Luyện tập ngay' })).toHaveAttribute('href', '/practice')
+    expect(screen.getByRole('link', { name: 'Luyện tập' })).toHaveAttribute('href', '/practice')
   })
 })

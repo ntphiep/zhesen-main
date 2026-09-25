@@ -88,7 +88,7 @@ export function PassageBlock({ text, direction, targets }: {
         else setState({ kind: 'error', message: outcome.message })
       } catch (e) {
         if ((e as Error).name !== 'AbortError') {
-          setState({ kind: 'error', message: 'Chưa dịch được đoạn này. Vui lòng thử lại.' })
+          setState({ kind: 'error', message: 'Chưa dịch được đoạn này. Thử lại.' })
         }
       }
     }, TRANSLATE_DEBOUNCE_MS)
@@ -121,10 +121,10 @@ export function PassageBlock({ text, direction, targets }: {
         </span>
       )}
 
-      {tooLong && <p className="text-sm text-red-600">Đoạn này dài quá giới hạn dịch.</p>}
+      {tooLong && <p className="text-sm text-red-600">Đoạn này quá dài để dịch.</p>}
       {state.kind === 'loading' && <p className="text-sm text-black/40">Đang dịch…</p>}
       {state.kind === 'disabled' && (
-        <p className="text-sm text-black/40">Bản triển khai này chưa bật dịch cả đoạn.</p>
+        <p className="text-sm text-black/40">Chưa hỗ trợ dịch cả đoạn.</p>
       )}
       {state.kind === 'error' && <p className="text-sm text-red-600">{state.message}</p>}
 

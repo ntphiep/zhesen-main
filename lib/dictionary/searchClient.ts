@@ -12,7 +12,7 @@ export type SearchOutcome =
 
 /** Shown when the route answers a status with no body to explain it, which is what a
  *  proxy or an edge failure looks like from here. */
-export const REFUSED_MESSAGE = 'Chưa dịch được. Vui lòng thử lại sau ít giây.'
+export const REFUSED_MESSAGE = 'Chưa dịch được. Thử lại sau ít giây.'
 
 export interface SearchOptions {
   /** Which languages to translate into. Omitted means all three. */

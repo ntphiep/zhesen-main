@@ -8,6 +8,7 @@ const CHECKED = [
   'app/practice', 'components/practice', 'lib/practice',
   'app/account', 'app/login', 'app/register', 'components/account', 'lib/auth',
   'components/ai', 'lib/ai',
+  'app/dictionary', 'components/search', 'components/lookup', 'lib/dictionary', 'lib/translate',
 ]
 
 /** Content rather than interface copy, left to a later round of #68. */
@@ -21,7 +22,8 @@ const REGEX_LITERAL = /(?<=(?:[(,=:[!&|?{;]|\breturn)\s*)\/(?![/*])(?:\\.|\[(?:\
 
 /** The measurable rules of `.claude/rules/copy.md`, by the name a failure reports. */
 const RULES: [string, RegExp][] = [
-  ['form of address or politeness particle', /(?<!\p{L})(bạn|vui lòng|hãy|xin|nhé|nha)(?!\p{L})/iu],
+  // "Tây Ban Nha" is Spanish, not the particle.
+  ['form of address or politeness particle', /(?<!\p{L})(bạn|vui lòng|hãy|xin|nhé|(?<!ban )nha)(?!\p{L})/iu],
   ['semicolon', /;/],
   ['comma before và or hoặc', /,\s+(và|hoặc)(?!\p{L})/u],
   ['ampersand', /\s&\s|&amp;/],

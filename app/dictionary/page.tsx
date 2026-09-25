@@ -5,7 +5,7 @@ import { pageMetadata } from '@/lib/site'
 
 export const metadata = pageMetadata({
   title: 'Dịch',
-  description: 'Dịch tiếng Việt sang Anh, Trung, Tây Ban Nha, và ngược lại. Một từ hay cả đoạn.',
+  description: 'Dịch một từ hay cả đoạn giữa tiếng Việt và tiếng Anh, Trung, Tây Ban Nha.',
 })
 
 /**

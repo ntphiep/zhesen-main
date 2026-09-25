@@ -75,7 +75,7 @@ export function PersonalStrip() {
 
       <div>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-black/40">Sổ tay của bạn</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-black/40">Sổ tay</h2>
           {saved && book.due > 0 && (
             <span className="text-xs text-black/50">{book.due} từ đến hạn ôn</span>
           )}
@@ -98,12 +98,12 @@ export function PersonalStrip() {
               prefetch={false}
               className="rounded-full bg-black px-3 py-1 text-sm font-medium text-white hover:bg-black/85"
             >
-              Luyện tập ngay
+              Luyện tập
             </Link>
           </div>
         ) : (
           <p className="mt-3 text-sm text-black/45">
-            Mở một từ rồi lưu vào sổ tay, những từ đã lưu sẽ hiện ở đây kèm lịch ôn.
+            Chưa có từ. Tra một từ để lưu.
           </p>
         )}
       </div>

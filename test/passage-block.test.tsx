@@ -99,7 +99,7 @@ describe('PassageBlock translation states', () => {
   it('says translation is off for this deployment when the route answers disabled', async () => {
     stubTranslate({ enabled: false })
     render(<PassageBlock text="con chó này rất đẹp" direction="vi" targets={['en']} />)
-    expect(await screen.findByText('Bản triển khai này chưa bật dịch cả đoạn.', {}, { timeout: 2000 })).toBeInTheDocument()
+    expect(await screen.findByText('Chưa hỗ trợ dịch cả đoạn.', {}, { timeout: 2000 })).toBeInTheDocument()
   })
 
   it('shows the route refusal message on a non-ok response', async () => {
