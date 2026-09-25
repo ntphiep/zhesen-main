@@ -9,6 +9,8 @@ const CHECKED = [
   'app/account', 'app/login', 'app/register', 'components/account', 'lib/auth',
   'components/ai', 'lib/ai',
   'app/dictionary', 'components/search', 'components/lookup', 'lib/dictionary', 'lib/translate',
+  'app/page.tsx', 'app/layout.tsx', 'app/error.tsx', 'app/global-error.tsx', 'app/not-found.tsx',
+  'app/api/ai', 'components/home', 'components/layout', 'components/ui', 'lib/languages.ts', 'lib/theme.ts',
 ]
 
 /** Content rather than interface copy, left to a later round of #68. */

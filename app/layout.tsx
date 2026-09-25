@@ -14,7 +14,7 @@ const geistSans = Geist({
 
 const DESCRIPTION =
   'Từ điển và sổ tay từ vựng cho người Việt học tiếng Trung, Tây Ban Nha và Anh. ' +
-  'Tra xuôi hoặc tra ngược từ tiếng Việt, lưu từ vào sổ tay và ôn lại theo lịch FSRS.'
+  'Tra từ hai chiều với tiếng Việt, lưu vào sổ tay rồi ôn lại.'
 
 export const metadata: Metadata = {
   // Without it every relative URL in a metadata field is a build error, and the

@@ -26,7 +26,7 @@ export default function GlobalError({
         <main className="mx-auto flex min-h-dvh max-w-xl flex-col items-center justify-center px-6 py-12 text-center">
           <h1 className="text-3xl font-bold">Zhesen đang gặp sự cố</h1>
           <p className="mt-3 text-black/60">
-            Trang không dựng được. Tải lại giúp trong phần lớn trường hợp.
+            Chưa mở được trang. Tải lại trang.
           </p>
           <button
             type="button"

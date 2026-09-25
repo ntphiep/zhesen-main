@@ -34,7 +34,7 @@ export default function Error({
     <main className="mx-auto flex min-h-[calc(100dvh-8rem)] max-w-xl flex-col items-center justify-center px-6 py-12 text-center">
       <h1 className="text-3xl font-bold">Có lỗi xảy ra</h1>
       <p className="mt-3 text-black/60">
-        Trang này không tải được. Thử lại sau vài giây; nếu vẫn vậy thì lỗi nằm ở phía máy chủ.
+        Chưa tải được trang. Thử lại sau vài giây.
       </p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         <button

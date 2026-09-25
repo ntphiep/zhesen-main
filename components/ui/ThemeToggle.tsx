@@ -8,9 +8,9 @@ import {
 const serialize = (c: ThemeChoice) => c
 
 /**
- * Sáng, Tối or Theo hệ thống. The boot script in `app/layout.tsx` applies the stored
+ * Sáng, Tối or Theo máy. The boot script in `app/layout.tsx` applies the stored
  * choice on every page load; this control applies a change immediately, and follows the
- * operating system while the choice is "Theo hệ thống".
+ * operating system while the choice is "Theo máy".
  */
 export function ThemeToggle() {
   const [choice, setChoice] = useStoredPref<ThemeChoice>(THEME_KEY, parseTheme, serialize)
@@ -21,7 +21,7 @@ export function ThemeToggle() {
       document.documentElement.dataset.theme = resolveTheme(choice, media.matches)
     }
     apply()
-    // Only "Theo hệ thống" tracks the system, but the listener is cheap and attaching it
+    // Only "Theo máy" tracks the system, but the listener is cheap and attaching it
     // conditionally would need a second effect.
     media.addEventListener('change', apply)
     return () => media.removeEventListener('change', apply)

@@ -7,12 +7,12 @@ export type Scheme = 'light' | 'dark'
 
 export const THEME_KEY = 'zhesen_theme'
 
-/** In the order they are offered. "Theo hệ thống" is the default and comes last, where a
+/** In the order they are offered. "Theo máy" is the default and comes last, where a
  *  segmented control puts the fallback. */
 export const THEME_OPTIONS: [ThemeChoice, string][] = [
   ['light', 'Sáng'],
   ['dark', 'Tối'],
-  ['system', 'Theo hệ thống'],
+  ['system', 'Theo máy'],
 ]
 
 export function parseTheme(raw: string | null): ThemeChoice {

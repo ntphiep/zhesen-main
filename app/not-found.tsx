@@ -14,7 +14,7 @@ export default function NotFound() {
       <p className="text-sm font-medium tracking-wide text-black/40">404</p>
       <h1 className="mt-2 text-3xl font-bold">Không có trang này</h1>
       <p className="mt-3 text-black/60">
-        Địa chỉ bạn mở không tồn tại, hoặc mục từ đã bị gỡ khỏi từ điển.
+        Địa chỉ sai hoặc trang không còn.
       </p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         <Link

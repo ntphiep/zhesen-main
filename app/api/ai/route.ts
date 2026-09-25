@@ -53,7 +53,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const cfg = aiConfig()
-  if (!cfg) return Response.json({ error: 'Trợ lý AI chưa được cấu hình.' }, { status: 503 })
+  if (!cfg) return Response.json({ error: 'Chưa bật trợ lý.' }, { status: 503 })
 
   let body: unknown
   try {
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
   const allowance = caller ? rateLimit(caller) : globalBudget('all')
   if (!allowance.allowed) {
     return Response.json(
-      { error: 'Bạn đang dùng trợ lý quá nhanh. Thử lại sau ít giây.' },
+      { error: 'Quá nhiều câu hỏi. Thử lại sau ít giây.' },
       { status: 429, headers: { 'Retry-After': String(allowance.retryAfterSeconds) } },
     )
   }
@@ -105,10 +105,10 @@ export async function POST(request: Request) {
     return Response.json({ data })
   } catch (e) {
     if (e instanceof AiUnavailableError) {
-      return Response.json({ error: 'Trợ lý không trả lời được lúc này.' }, { status: 502 })
+      return Response.json({ error: 'Trợ lý chưa trả lời được. Thử lại sau.' }, { status: 502 })
     }
     if (e instanceof DOMException && e.name === 'TimeoutError') {
-      return Response.json({ error: 'Trợ lý phản hồi quá chậm.' }, { status: 504 })
+      return Response.json({ error: 'Trợ lý trả lời quá lâu. Thử lại sau.' }, { status: 504 })
     }
     throw e
   }
