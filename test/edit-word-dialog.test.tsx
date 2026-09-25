@@ -41,7 +41,7 @@ describe('EditWordDialog', () => {
     // remove the existing tag
     await userEvent.click(screen.getByLabelText(/Bỏ thẻ animal/i))
     // add a new one
-    await userEvent.type(screen.getByPlaceholderText(/Thêm thẻ/i), 'pet')
+    await userEvent.type(screen.getByPlaceholderText(/Thẻ, cách nhau/i), 'pet')
     await userEvent.click(screen.getByRole('button', { name: /^Thêm thẻ$/i }))
     await userEvent.click(screen.getByRole('button', { name: /Lưu/i }))
     expect(onSave).toHaveBeenCalledWith('id1', expect.objectContaining({ tags: ['pet'] }))

@@ -70,7 +70,7 @@ export function WordDetail({ word }: { word: UserWord }) {
   }
 
   if (state.status === 'error') {
-    return <p className="text-sm text-red-500">Không tải được chi tiết.</p>
+    return <p className="text-sm text-red-500">Chưa tải được chi tiết. Thử lại.</p>
   }
 
   const { detail } = state

@@ -84,7 +84,7 @@ export function ColumnMenu({ prefs, onToggleColumn, onTogglePin, onReset }: Prop
                     onClick={() => onTogglePin(c.key)}
                     aria-checked={isPinned}
                     disabled={!isPinned && pinsLeft <= 0}
-                    title={!isPinned && pinsLeft <= 0 ? `Bỏ ghim một cột trước, tối đa ${MAX_PINNED} cột` : undefined}
+                    title={!isPinned && pinsLeft <= 0 ? `Chỉ ghim được ${MAX_PINNED} cột. Bỏ ghim một cột trước.` : undefined}
                     aria-label={`${isPinned ? 'Bỏ ghim' : 'Ghim'} cột ${c.label}`}
                   >
                     Ghim

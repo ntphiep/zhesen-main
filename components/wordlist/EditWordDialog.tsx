@@ -78,7 +78,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
 
     if (JSON.stringify(tags) !== JSON.stringify(word.tags)) patch.tags = tags
 
-    // An empty PATCH either fails with "Không lưu được thay đổi" for a save with
+    // An empty PATCH either fails with "Chưa lưu được" for a save with
     // nothing to save, or succeeds and lets the updated_at trigger record when the
     // word was last read rather than last edited.
     if (Object.keys(patch).length === 0) { onClose(); return }
@@ -87,12 +87,12 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Chỉnh sửa từ" titleId="edit-word-title" widthClass="max-w-lg">
+    <Modal open={open} onClose={onClose} title="Sửa từ" titleId="edit-word-title" widthClass="max-w-lg">
 
       {word && (
         <div className="p-5 flex flex-col gap-3">
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/50">Nghĩa (VI)</span>
+            <span className="text-xs text-black/50">Nghĩa tiếng Việt</span>
             <input
               type="text"
               value={meaningVi}
@@ -130,7 +130,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
             </label>
           </div>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/50">Cấp độ</span>
+            <span className="text-xs text-black/50">Trình độ</span>
             <input
               type="text"
               value={level}
@@ -178,7 +178,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/50">Thẻ phân loại</span>
+            <span className="text-xs text-black/50">Thẻ</span>
             <TagEditor tags={tags} onChange={setTags} />
           </label>
 

@@ -51,6 +51,6 @@ describe('an unterminated quote', () => {
     const rows = parseImportCsv(broken, [])
     expect(rows).toHaveLength(1)
     expect(rows[0].kind).toBe('error')
-    expect(rows[0].kind === 'error' && rows[0].message).toMatch(/không được đóng/)
+    expect(rows[0].kind === 'error' && rows[0].message).toMatch(/thiếu dấu nháy kép đóng/)
   })
 })

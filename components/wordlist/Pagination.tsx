@@ -23,7 +23,7 @@ export function Pagination({
   return (
     <nav className="flex flex-wrap items-center justify-between gap-3 py-2 text-sm" aria-label="Phân trang">
       <span className="text-black/50">
-        {total === 0 ? 'Không có từ nào' : `${from} tới ${to} trên ${total} từ`}
+        {total === 0 ? 'Không có từ nào' : `${from}-${to} trong ${total} từ`}
       </span>
 
       <div className="flex items-center gap-2">

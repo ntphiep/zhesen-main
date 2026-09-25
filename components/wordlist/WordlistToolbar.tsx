@@ -47,7 +47,7 @@ export function WordlistToolbar({
 
       <input
         type="text"
-        placeholder="Tìm trong danh sách..."
+        placeholder="Tìm trong sổ tay…"
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
         className="rounded-lg border border-black/15 px-3 py-2 text-sm flex-1 min-w-40"
@@ -82,9 +82,9 @@ export function WordlistToolbar({
           value={levelFilter}
           onChange={(e) => onLevelFilterChange(e.target.value)}
           className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
-          aria-label="Lọc cấp độ"
+          aria-label="Lọc trình độ"
         >
-          <option value="">Tất cả cấp độ</option>
+          <option value="">Tất cả trình độ</option>
           {levelOptions.map((l) => <option key={l} value={l}>{l}</option>)}
         </select>
       )}
@@ -109,7 +109,7 @@ export function WordlistToolbar({
         value={reviewFilter}
         onChange={(e) => onReviewFilterChange(e.target.value as ReviewFilter)}
         className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
-        aria-label="Lọc ôn tập"
+        aria-label="Lọc từ cần ôn"
       >
         <option value="">Tất cả từ</option>
         <option value="due">Cần ôn</option>
@@ -120,16 +120,16 @@ export function WordlistToolbar({
         <button
           className={`px-3 py-2 text-sm ${view === 'table' ? 'bg-black text-white' : 'bg-white text-black/60'}`}
           onClick={() => onViewChange('table')}
-          aria-label="Chế độ bảng"
+          aria-label="Xem dạng bảng"
         >
           Bảng
         </button>
         <button
           className={`px-3 py-2 text-sm ${view === 'card' ? 'bg-black text-white' : 'bg-white text-black/60'}`}
           onClick={() => onViewChange('card')}
-          aria-label="Chế độ thẻ"
+          aria-label="Xem dạng lưới"
         >
-          Thẻ
+          Lưới
         </button>
       </div>
 

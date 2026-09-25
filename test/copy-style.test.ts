@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 /** Folders whose copy follows `.claude/rules/copy.md`. Each area of #68 adds its own. */
-const CHECKED: string[] = []
+const CHECKED = ['app/wordlist', 'components/wordlist', 'lib/wordlist']
 
 /** Content rather than interface copy, left to a later round of #68. */
 const SKIPPED = ['lib/ai/tasks.ts', 'lib/dictionary/radicals.ts', 'lib/theory/']

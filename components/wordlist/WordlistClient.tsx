@@ -125,7 +125,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       setWords((prev) => prev.map((w) => (w.id === tempId ? real : w)))
     } catch {
       setWords((prev) => prev.filter((w) => w.id !== tempId))
-      notify('Không thêm được từ. Vui lòng thử lại.')
+      notify('Chưa thêm được từ. Thử lại.')
     }
   }
 
@@ -135,7 +135,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     try {
       const added = await addWords(supabase, drafts)
       const skipped = drafts.length - added.length
-      if (skipped > 0) notify(`Đã bỏ qua ${skipped} từ vì đã có trong sổ tay.`, 'info')
+      if (skipped > 0) notify(`Bỏ qua ${skipped} từ đã có trong sổ tay.`, 'info')
     } finally {
       // An import is chunked, so a failure part way through leaves earlier chunks
       // written. Show what the database now holds, whatever happened.
@@ -147,7 +147,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   function handleDelete(id: string, headword: string) {
     setConfirming({
       title: 'Xóa từ',
-      message: `Xóa "${headword}" khỏi sổ tay? Tiến độ ôn tập của từ này mất theo.`,
+      message: `Xóa "${headword}" khỏi sổ tay? Tiến độ ôn của từ này cũng mất.`,
       confirmLabel: 'Xóa',
       run: () => void deleteOne(id),
     })
@@ -167,7 +167,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       await deleteWord(supabase, id)
     } catch {
       setWords(snapshot)
-      notify('Không xóa được từ. Vui lòng thử lại.')
+      notify('Chưa xóa được từ. Thử lại.')
     }
   }
 
@@ -176,7 +176,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     if (ids.length === 0) return
     setConfirming({
       title: 'Xóa nhiều từ',
-      message: `Xóa ${ids.length} từ đã chọn khỏi sổ tay? Tiến độ ôn tập của những từ này mất theo.`,
+      message: `Xóa ${ids.length} từ đã chọn khỏi sổ tay? Tiến độ ôn của các từ này cũng mất.`,
       confirmLabel: `Xóa ${ids.length} từ`,
       run: () => void deleteMany(ids),
     })
@@ -191,7 +191,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     } catch {
       setWords(snapshot)
       setSelected(new Set(ids))
-      notify('Không xóa được từ. Vui lòng thử lại.')
+      notify('Chưa xóa được từ. Thử lại.')
     }
   }
 
@@ -222,7 +222,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       else lost.set(targets[i].id, targets[i])
     })
     setWords((prev) => prev.map((w) => saved.get(w.id) ?? lost.get(w.id) ?? w))
-    if (lost.size > 0) notify(`Không gắn thẻ được cho ${lost.size} từ. Vui lòng thử lại.`)
+    if (lost.size > 0) notify(`Chưa gắn thẻ được cho ${lost.size} từ. Thử lại.`)
   }
 
   const handleBulkTag = (tagsToAdd: string[]) => applyTags(() => tagsToAdd)
@@ -241,7 +241,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       await updateWordsStatus(supabase, ids, status)
     } catch {
       setWords(snapshot)
-      notify('Không đổi được trạng thái. Vui lòng thử lại.')
+      notify('Chưa đổi được trạng thái. Thử lại.')
     }
   }
 
@@ -258,7 +258,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       setWords((prev) => prev.map((w) => (w.id === id ? updated : w)))
     } catch {
       setWords((prev) => prev.map((w) => (w.id === id ? original : w)))
-      notify('Không lưu được thay đổi. Vui lòng thử lại.')
+      notify('Chưa lưu được. Thử lại.')
     }
   }
 
@@ -320,8 +320,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       {visible.length === 0 && (
         <p className="text-center text-sm text-black/40 py-12">
           {words.length === 0
-            ? 'Chưa có từ nào. Bấm Thêm từ để bắt đầu.'
-            : 'Chưa có từ nào khớp với bộ lọc.'}
+            ? 'Chưa có từ. Tra một từ để lưu.'
+            : 'Không có từ nào khớp bộ lọc.'}
         </p>
       )}
 

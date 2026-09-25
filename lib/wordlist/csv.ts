@@ -64,7 +64,7 @@ export function wordsToAnkiTsv(words: UserWord[]): string {
 /** Raised when a quoted field is never closed, which silently swallows the rest of the file. */
 export class UnterminatedQuoteError extends Error {
   constructor(public readonly line: number) {
-    super(`Dấu nháy kép mở ở dòng ${line} không được đóng.`)
+    super(`Dòng ${line} thiếu dấu nháy kép đóng.`)
     this.name = 'UnterminatedQuoteError'
   }
 }
@@ -170,7 +170,7 @@ export function parseImportCsv(text: string, existing: UserWord[]): ImportPrevie
 
     const langRaw = (idx('lang') >= 0 ? cols[idx('lang')] : '')?.trim() || 'en'
     if (!isLangCode(langRaw)) {
-      out.push({ kind: 'error', line, message: `Ngôn ngữ không hợp lệ: "${langRaw}".` })
+      out.push({ kind: 'error', line, message: `Không nhận ra ngôn ngữ "${langRaw}".` })
       continue
     }
     const lang = langRaw

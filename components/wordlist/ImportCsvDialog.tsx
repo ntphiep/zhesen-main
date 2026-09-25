@@ -45,7 +45,7 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
       // An unreadable file, or a parse error that is not the quote case the parser
       // reports as a preview row. Without this the dialog gives a file name and no reason.
       setRows([])
-      setError('Không đọc được file này. Kiểm tra lại rồi chọn file khác.')
+      setError('Không đọc được file này. Chọn file khác.')
     }
   }
 
@@ -63,7 +63,7 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
     } catch {
       // Shown in the dialog rather than over it: the file name and the preview
       // are the context for the failure, and both are on this screen.
-      setError('Không nhập được. Vui lòng thử lại.')
+      setError('Chưa nhập được. Thử lại.')
     } finally {
       setImporting(false)
     }
@@ -74,8 +74,7 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
 
       <div className="p-5 flex flex-col gap-3">
         <p className="text-sm text-black/60">
-          Chọn file CSV (cùng định dạng với file xuất ra từ sổ tay: cột đầu là <code>headword</code>).
-          Từ đã có trong sổ tay (cùng ngôn ngữ, cùng từ) sẽ được bỏ qua.
+          Chọn file CSV có cột đầu là <code>headword</code>, như file xuất từ sổ tay. Không nhập lại từ đã có trong sổ tay ở cùng ngôn ngữ.
         </p>
 
         <label className="flex flex-col gap-1">
@@ -121,7 +120,7 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
         )}
 
         {fileName && rows.length === 0 && (
-          <p className="text-sm text-black/40">File không có dữ liệu.</p>
+          <p className="text-sm text-black/40">File trống.</p>
         )}
 
         {error && (

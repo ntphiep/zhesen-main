@@ -48,7 +48,7 @@ export function TagEditor({ tags, onChange }: Props) {
           onKeyDown={(e) => {
             if (e.key === 'Enter') { e.preventDefault(); addFromInput() }
           }}
-          placeholder="Thêm thẻ, phân cách bằng dấu phẩy"
+          placeholder="Thẻ, cách nhau bằng dấu phẩy"
           className="flex-1 rounded-lg border border-black/15 px-3 py-2 text-sm"
         />
         <button

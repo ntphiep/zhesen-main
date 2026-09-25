@@ -145,7 +145,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Thêm từ mới" titleId="add-word-title" widthClass="max-w-lg">
+    <Modal open={open} onClose={onClose} title="Thêm từ" titleId="add-word-title" widthClass="max-w-lg">
 
       {/* Tab bar */}
       <div role="tablist" className="flex gap-1 px-5 pt-3 pb-0 border-b border-black/10">
@@ -182,7 +182,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
               </select>
               <input
                 type="text"
-                placeholder="Tìm từ..."
+                placeholder="Tìm từ…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="flex-1 rounded-lg border border-black/15 px-3 py-2 text-sm"
@@ -226,7 +226,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
             )}
 
             {query.trim() && results.length === 0 && (
-              <p className="text-sm text-black/40">Không tìm thấy kết quả.</p>
+              <p className="text-sm text-black/40">Không tìm thấy từ này.</p>
             )}
           </div>
         )}
@@ -287,10 +287,10 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                   disabled={!headword.trim() || filling}
                   className="rounded-lg border border-black/15 px-3 py-1.5 text-xs font-medium text-black/70 hover:bg-black/5 disabled:opacity-40"
                 >
-                  {filling ? 'Đang điền…' : 'Điền bằng AI'}
+                  {filling ? 'Đang điền…' : 'Điền bằng trợ lý'}
                 </button>
                 <span className="text-xs text-black/40">
-                  {fillError ?? 'Chỉ điền vào ô còn trống.'}
+                  {fillError ?? 'Chỉ điền ô còn trống.'}
                 </span>
               </div>
             )}

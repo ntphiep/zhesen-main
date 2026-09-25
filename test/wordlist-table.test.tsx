@@ -65,7 +65,7 @@ describe('WordTable', () => {
 
   it('asks for a different sort when a header is clicked', async () => {
     const { props } = show()
-    await userEvent.click(screen.getByRole('button', { name: /Cấp độ/ }))
+    await userEvent.click(screen.getByRole('button', { name: /Trình độ/ }))
     expect(props.onToggleSort).toHaveBeenCalledWith('level')
   })
 

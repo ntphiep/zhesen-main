@@ -44,7 +44,7 @@ export function BulkActionBar({ selectedWords, allTags, onBulkTag, onAiTag, onBu
         // The bar is not a form, so Enter would otherwise do nothing in a box that
         // reads as one.
         onKeyDown={(e) => { if (e.key === 'Enter') applyTags() }}
-        placeholder="Gắn thẻ (phân cách bằng dấu phẩy)"
+        placeholder="Thẻ, cách nhau bằng dấu phẩy"
         className="rounded-lg border border-black/15 px-3 py-1.5 text-sm"
       />
       <button
@@ -60,7 +60,7 @@ export function BulkActionBar({ selectedWords, allTags, onBulkTag, onAiTag, onBu
         value={bulkStatus}
         onChange={(e) => setBulkStatus(e.target.value as WordStatus)}
         className="rounded-lg border border-black/15 bg-white px-3 py-1.5 text-sm"
-        aria-label="Trạng thái hàng loạt"
+        aria-label="Trạng thái cho các từ đã chọn"
       >
         {STATUS_OPTIONS.map(([value, label]) => (
           <option key={value} value={value}>{label}</option>

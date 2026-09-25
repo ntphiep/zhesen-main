@@ -78,7 +78,7 @@ describe('AddWordDialog', () => {
   it('hides the assistant when the deployment has no model configured', async () => {
     render(<AddWordDialog open onClose={() => {}} onAdd={vi.fn()} />)
     await userEvent.click(screen.getByRole('tab', { name: /Thủ công/i }))
-    expect(screen.queryByRole('button', { name: /Điền bằng AI/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Điền bằng trợ lý/i })).toBeNull()
   })
 
   it('fills the empty manual fields from the assistant and leaves typed ones alone', async () => {
@@ -93,7 +93,7 @@ describe('AddWordDialog', () => {
     await userEvent.type(screen.getByPlaceholderText('Ví dụ: dog'), 'dog')
     await userEvent.type(screen.getByPlaceholderText('con chó'), 'chó nhà')
 
-    await userEvent.click(await screen.findByRole('button', { name: /Điền bằng AI/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Điền bằng trợ lý/i }))
     await screen.findByDisplayValue('The dog barked.')
 
     // The learner's own wording outranks the model's.
@@ -112,7 +112,7 @@ describe('AddWordDialog', () => {
     render(<AddWordDialog open onClose={() => {}} onAdd={vi.fn()} />)
     await userEvent.click(screen.getByRole('tab', { name: /Thủ công/i }))
     await userEvent.type(screen.getByPlaceholderText('Ví dụ: dog'), 'dog')
-    await userEvent.click(await screen.findByRole('button', { name: /Điền bằng AI/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Điền bằng trợ lý/i }))
     expect(await screen.findByText('Trợ lý gặp lỗi.')).toBeInTheDocument()
   })
 })

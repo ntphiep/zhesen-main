@@ -63,7 +63,7 @@ describe('WordlistClient', () => {
 
   it('filters by search query', async () => {
     render(<WordlistClient initialWords={[mk('a', { headword: 'forward' }), mk('b', { headword: 'recipient' })]} />)
-    await userEvent.type(screen.getByPlaceholderText(/Tìm trong danh sách/i), 'forward')
+    await userEvent.type(screen.getByPlaceholderText(/Tìm trong sổ tay/i), 'forward')
     expect(screen.getByText('forward')).toBeInTheDocument()
     expect(screen.queryByText('recipient')).not.toBeInTheDocument()
   })
@@ -89,7 +89,7 @@ describe('WordlistClient', () => {
 
   it('shows empty state', () => {
     render(<WordlistClient initialWords={[]} />)
-    expect(screen.getByText(/Chưa có từ nào/i)).toBeInTheDocument()
+    expect(screen.getByText(/Chưa có từ\./i)).toBeInTheDocument()
   })
 
   it('optimistic add: new row appears immediately and addWord is called', async () => {
@@ -127,7 +127,7 @@ describe('WordlistClient', () => {
 
     expect(screen.getByText('word0')).toBeInTheDocument()
     expect(screen.queryByText('word60')).toBeNull()
-    expect(screen.getByText('1 tới 50 trên 120 từ')).toBeInTheDocument()
+    expect(screen.getByText('1-50 trong 120 từ')).toBeInTheDocument()
     expect(screen.getByText('Trang 1 / 3')).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
@@ -135,7 +135,7 @@ describe('WordlistClient', () => {
     expect(screen.queryByText('word0')).toBeNull()
 
     await userEvent.click(screen.getByRole('button', { name: 'Trang cuối' }))
-    expect(screen.getByText('101 tới 120 trên 120 từ')).toBeInTheDocument()
+    expect(screen.getByText('101-120 trong 120 từ')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Trang sau' })).toBeDisabled()
   })
 
@@ -145,7 +145,7 @@ describe('WordlistClient', () => {
     render(<WordlistClient initialWords={many} />)
 
     await userEvent.selectOptions(screen.getByLabelText('Số từ mỗi trang'), '100')
-    expect(screen.getByText('1 tới 100 trên 120 từ')).toBeInTheDocument()
+    expect(screen.getByText('1-100 trong 120 từ')).toBeInTheDocument()
     // One row per word plus the header row.
     expect(screen.getAllByRole('row')).toHaveLength(101)
   })
@@ -153,11 +153,11 @@ describe('WordlistClient', () => {
   // Hiding a column must take its cells with it, and the choice is remembered per browser.
   it('hides a column the reader turned off', async () => {
     render(<WordlistClient initialWords={[mk('w1', { headword: 'alpha', level: 'A1' })]} />)
-    expect(screen.getByRole('columnheader', { name: /Cấp độ/ })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: /Trình độ/ })).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: /^Cột/ }))
-    await userEvent.click(screen.getByLabelText('Hiện cột Cấp độ'))
-    expect(screen.queryByRole('columnheader', { name: /Cấp độ/ })).toBeNull()
+    await userEvent.click(screen.getByLabelText('Hiện cột Trình độ'))
+    expect(screen.queryByRole('columnheader', { name: /Trình độ/ })).toBeNull()
   })
 
   // A dropdown that covers the table it configures has to close the way every other
@@ -186,7 +186,7 @@ describe('WordlistClient', () => {
     render(<WordlistClient initialWords={[mk('w1', { headword: 'alpha' })]} />)
 
     await userEvent.click(screen.getByRole('button', { name: /^Cột/ }))
-    expect(screen.getByLabelText('Hiện cột Cấp độ')).toBeInTheDocument()
+    expect(screen.getByLabelText('Hiện cột Trình độ')).toBeInTheDocument()
     expect(screen.queryByLabelText(/^Ghim cột/)).toBeNull()
     expect(screen.queryByLabelText(/^Bỏ ghim cột/)).toBeNull()
   })
@@ -209,8 +209,8 @@ describe('WordlistClient', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Trang sau' }))
     expect(screen.getByText('word60')).toBeInTheDocument()
 
-    await userEvent.type(screen.getByPlaceholderText(/Tìm trong danh sách/i), 'word')
-    expect(screen.getByText('1 tới 50 trên 120 từ')).toBeInTheDocument()
+    await userEvent.type(screen.getByPlaceholderText(/Tìm trong sổ tay/i), 'word')
+    expect(screen.getByText('1-50 trong 120 từ')).toBeInTheDocument()
     expect(screen.queryByText('word60')).toBeNull()
   })
 
@@ -231,7 +231,7 @@ describe('WordlistClient', () => {
     render(<WordlistClient initialWords={words} />)
 
     await userEvent.click(screen.getByLabelText('Chọn tất cả'))
-    await userEvent.type(screen.getByPlaceholderText(/Gắn thẻ/i), 'toeic')
+    await userEvent.type(screen.getByPlaceholderText(/Thẻ, cách nhau/i), 'toeic')
     await userEvent.click(screen.getByRole('button', { name: 'Gắn thẻ' }))
 
     // The two that saved keep the tag; only the one that failed goes back.
@@ -246,7 +246,7 @@ describe('WordlistClient', () => {
     render(<WordlistClient initialWords={words} />)
 
     await userEvent.click(screen.getByLabelText('Chọn tất cả'))
-    await userEvent.type(screen.getByPlaceholderText(/Gắn thẻ/i), 'toeic')
+    await userEvent.type(screen.getByPlaceholderText(/Thẻ, cách nhau/i), 'toeic')
     await userEvent.click(screen.getByRole('button', { name: 'Gắn thẻ' }))
 
     expect(await screen.findAllByText('toeic')).toHaveLength(2)
@@ -260,7 +260,7 @@ describe('WordlistClient', () => {
     render(<WordlistClient initialWords={words} />)
 
     await userEvent.click(screen.getByLabelText('Chọn tất cả'))
-    await userEvent.type(screen.getByPlaceholderText(/Gắn thẻ/i), 'toeic{Enter}')
+    await userEvent.type(screen.getByPlaceholderText(/Thẻ, cách nhau/i), 'toeic{Enter}')
 
     expect(await screen.findAllByText('toeic')).toHaveLength(1)
   })

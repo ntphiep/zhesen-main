@@ -59,7 +59,7 @@ describe('WordDetail', () => {
   it('shows error message when the request fails', async () => {
     vi.mocked(fetchEntryDetail).mockRejectedValueOnce(new Error('network error'))
     render(<WordDetail word={base} />)
-    expect(await screen.findByText(/Không tải được/i)).toBeInTheDocument()
+    expect(await screen.findByText(/Chưa tải được/i)).toBeInTheDocument()
   })
 
   // A refused request is not an entry with nothing in it. Caching the refusal would
@@ -67,7 +67,7 @@ describe('WordDetail', () => {
   it('shows an error and remembers nothing when the route refuses', async () => {
     vi.mocked(fetchEntryDetail).mockResolvedValueOnce({ status: 'refused' })
     const { unmount } = render(<WordDetail word={base} />)
-    expect(await screen.findByText(/Không tải được/i)).toBeInTheDocument()
+    expect(await screen.findByText(/Chưa tải được/i)).toBeInTheDocument()
     unmount()
     render(<WordDetail word={base} />)
     expect(await screen.findByText('Con chó sủa.')).toBeInTheDocument()
