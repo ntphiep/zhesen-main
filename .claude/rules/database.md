@@ -60,6 +60,13 @@ on this machine.
   And match the classifier-stripped form only for equality, never as a prefix: stripping
   "con cá" to "cá" and prefix-searching that pulled 5,921 candidate rows and 1,771 heap
   blocks, against 24 and 24 without it (`0052`).
+- A data-modifying CTE and its main statement run on one snapshot, so a delete in the CTE
+  never sees what the insert wrote, and the insert never sees what the delete removed.
+  `lex.gloss_terms_reload` kept its delete in such a
+  CTE from `0048` to `0067`, so the insert skipped every existing term through ON CONFLICT
+  and the delete then removed it: en:cat went 47, 0, 47 on three calls. Put the delete in
+  its own statement first.
+  https://www.postgresql.org/docs/17/queries-with.html#QUERIES-WITH-MODIFYING
 - A `language sql` function's body is not planned through the plan cache, so
   `plan_cache_mode = 'force_custom_plan'` does nothing on one; `0050` set it on
   `lex.search_vi` and changed no timing until `0051` rewrote the body in plpgsql. Both
