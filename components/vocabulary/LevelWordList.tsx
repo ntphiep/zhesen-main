@@ -75,7 +75,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
 
       {levelIsEstimated && (
         <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Cấp độ ước lượng bởi hệ thống, không phải phân loại CEFR chính thức.
+          Trình độ do Zhesen ước lượng, không theo phân loại CEFR chính thức.
         </p>
       )}
 

@@ -46,7 +46,7 @@ export default async function TheoryLangPage({ params }: { params: Promise<{ lan
 
   const counts: Partial<Record<TheoryBlockKey, string>> = {
     grammar: `${points.length} điểm`,
-    vocabulary: `${levels.length} cấp độ`,
+    vocabulary: `${levels.length} trình độ`,
   }
   if (content) {
     counts.pronunciation = `${content.phonemes.length} âm`

@@ -36,7 +36,7 @@ export const THEORY_BLOCKS: readonly TheoryBlock[] = [
   {
     key: 'grammar',
     titleVi: 'Ngữ pháp',
-    blurbVi: 'Điểm ngữ pháp theo cấp độ, có công thức, ví dụ và lỗi hay mắc.',
+    blurbVi: 'Điểm ngữ pháp theo trình độ, có công thức, ví dụ và lỗi hay mắc.',
   },
   {
     key: 'collocation',
@@ -46,7 +46,7 @@ export const THEORY_BLOCKS: readonly TheoryBlock[] = [
   {
     key: 'vocabulary',
     titleVi: 'Từ vựng',
-    blurbVi: 'Từ thông dụng và danh sách từ theo từng cấp độ, mở thẳng sang sổ tay.',
+    blurbVi: 'Từ thông dụng và danh sách từ theo từng trình độ, mở thẳng sang sổ tay.',
   },
 ]
 

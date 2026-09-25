@@ -21,11 +21,11 @@ export function VocabularyHub({ language, common, levels }: {
       language={language}
       block="vocabulary"
       titleVi={`Từ vựng ${language.name}`}
-      leadVi="Chọn một cấp độ để xem danh sách từ, hoặc lưu thẳng cả danh sách vào sổ tay."
+      leadVi="Chọn một trình độ để xem danh sách từ, hoặc lưu thẳng cả danh sách vào sổ tay."
     >
       {levels.length > 0 && (
         <section className="mt-8">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black/40">Duyệt theo cấp độ</h2>
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black/40">Duyệt theo trình độ</h2>
           <div className="flex flex-wrap gap-2">
             {levels.map((l) => (
               <Link
@@ -39,7 +39,7 @@ export function VocabularyHub({ language, common, levels }: {
             ))}
           </div>
           {levels.some((l) => l.levelIsEstimated) && (
-            <p className="mt-2 text-xs text-black/40">Cấp độ ước lượng bởi hệ thống, không phải phân loại chính thức.</p>
+            <p className="mt-2 text-xs text-black/40">Trình độ do Zhesen ước lượng, không theo phân loại chính thức.</p>
           )}
         </section>
       )}
