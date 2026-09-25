@@ -17,8 +17,9 @@ This file holds only what cannot be derived by reading the code: commands, conve
 that differ from tool defaults, and traps that have already cost time here.
 
 `.claude/rules/` holds the rest. `tooling.md` loads every session and says what is
-installed and which MCP server to reach for. `frontend.md`, `database.md` and `testing.md`
-load only when a matching file is opened.
+installed and which MCP server to reach for. `frontend.md`, `database.md`, `testing.md` and
+`copy.md` load only when a matching file is opened; `copy.md` is the voice for Vietnamese
+interface copy.
 
 This repository holds code. Documents live in the
 [wiki](https://github.com/ntphiep/zhesen-main/wiki) and work lives in
