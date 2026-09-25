@@ -42,7 +42,7 @@ export function PronunciationView({ language, phonemes, notes }: {
         return (
           <section key={kind} className="mt-10">
             <h2 className="text-xl font-semibold">
-              {KIND_TITLE[kind]} <span className="text-base font-normal text-black/40">{ofKind.length}</span>
+              {KIND_TITLE[kind]} <span className="text-base font-normal text-black/40">{ofKind.length} âm</span>
             </h2>
             <div className="mt-4 flex flex-col gap-3">
               {ofKind.map((p) => <PhonemeCard key={p.symbol} phoneme={p} lang={language.code} />)}

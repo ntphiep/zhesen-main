@@ -84,12 +84,12 @@ describe('LookupHero', () => {
 
 describe('SenseList', () => {
   it('groups senses by part of speech', () => {
-    render(<SenseList senses={detail.senses} />)
+    render(<SenseList senses={detail.senses} lang="zh" />)
     expect(screen.getByText('con chó')).toBeInTheDocument()
     expect(screen.getByText('theo dõi')).toBeInTheDocument()
   })
   it('renders nothing when empty', () => {
-    const { container } = render(<SenseList senses={[]} />)
+    const { container } = render(<SenseList senses={[]} lang="zh" />)
     expect(container).toBeEmptyDOMElement()
   })
 })

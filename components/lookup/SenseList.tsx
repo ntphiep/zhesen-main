@@ -3,8 +3,9 @@ import { useState } from 'react'
 import { pickSenses, isClassifierGloss, parseClassifiers } from '@/lib/dictionary/textQuality'
 import { PosTag } from '@/components/ui/PosTag'
 import type { DictSense } from '@/lib/dictionary/types'
+import type { LangCode } from '@/lib/languages'
 
-export function SenseList({ senses }: { senses: DictSense[] }) {
+export function SenseList({ senses, lang }: { senses: DictSense[]; lang: LangCode }) {
   const [expanded, setExpanded] = useState(false)
 
   // Chinese entries carry CC-CEDICT "CL:" rows that are classifier notes, not
@@ -28,7 +29,7 @@ export function SenseList({ senses }: { senses: DictSense[] }) {
       <h2 className="text-lg font-semibold">Nghĩa</h2>
       {groups.map((g, gi) => (
         <div key={gi} className="flex flex-col gap-1.5">
-          {g.pos && <PosTag value={g.pos} className="text-xs font-semibold tracking-wide text-black/55" />}
+          {g.pos && <PosTag value={g.pos} linkLang={lang} className="text-xs font-semibold tracking-wide text-black/55" />}
           <ol className="flex list-inside list-decimal flex-col gap-1">
             {g.items.map((s, i) => (
               <li key={i}>

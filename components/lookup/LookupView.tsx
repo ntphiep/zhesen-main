@@ -68,7 +68,7 @@ export function LookupView({
           them, which also stops the rail stranding content in a short column. */}
       <div className={hasSideRail ? 'grid gap-x-10 gap-y-8 lg:grid-cols-3' : 'flex flex-col gap-8'}>
         <div className="flex flex-col gap-8 lg:col-span-2">
-          <SenseList senses={detail.senses} />
+          <SenseList senses={detail.senses} lang={detail.lang} />
           {/* Characters are the substance of a Chinese entry, not an appendix: radicals,
               stroke counts and writing practice do not fit a 299px rail. */}
           {showChars && <CharacterPanel characters={characters} />}
