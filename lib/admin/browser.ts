@@ -18,7 +18,7 @@ export async function postAdmin(path: string, body?: unknown): Promise<AdminOutc
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch {
-    return { ok: false, message: 'Không kết nối được tới máy chủ.' }
+    return { ok: false, message: 'Không kết nối được tới server.' }
   }
   const data: unknown = await res.json().catch(() => null)
   if (res.ok) return { ok: true, data }

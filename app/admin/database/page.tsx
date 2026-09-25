@@ -1,0 +1,53 @@
+import { notFound } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/auth/admin'
+import { getDictionary } from '@/lib/admin/dictionary'
+import { awsHealthConfig, listDumps } from '@/lib/admin/aws'
+import { PageHeader, Section } from '@/components/admin/Page'
+import { TableDetail, TableIndex } from '@/components/admin/DataDictionary'
+import { RestorePanel, SqlConsole } from '@/components/admin/Console'
+
+export const metadata = { title: 'Database · Admin' }
+
+type Dumps = Awaited<ReturnType<typeof listDumps>>
+
+async function readDumps(): Promise<Dumps | null | 'error'> {
+  const cfg = awsHealthConfig()
+  if (!cfg) return null
+  try {
+    return await listDumps(cfg)
+  } catch {
+    return 'error'
+  }
+}
+
+const NO_AWS = <p className="text-sm text-black/60">Chưa cấu hình quyền AWS cho bản triển khai này (AWS_ROLE_ARN).</p>
+
+export default async function AdminDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const supabase = await createClient()
+  await requireAdmin(supabase)
+  const sp = await searchParams
+
+  if (typeof sp.table === 'string') {
+    const dict = await getDictionary(supabase)
+    const table = dict.tables.find((t) => t.id === sp.table)
+    if (!table) notFound()
+    return <TableDetail t={table} />
+  }
+
+  const [dict, dumps] = await Promise.all([getDictionary(supabase), readDumps()])
+  return (
+    <div>
+      <PageHeader title="Database" readAt={new Date()} />
+      <div className="mt-6"><TableIndex dict={dict} /></div>
+      <Section title="SQL">
+        {dumps === null ? NO_AWS : <SqlConsole />}
+      </Section>
+      <Section title="Restore">
+        {dumps === null ? NO_AWS
+          : dumps === 'error' ? <p className="text-sm text-rose-700">Không đọc được danh sách bản dump từ S3.</p>
+            : <RestorePanel dumps={dumps.slice(0, 14)} />}
+      </Section>
+    </div>
+  )
+}

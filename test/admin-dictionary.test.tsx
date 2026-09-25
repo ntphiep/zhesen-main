@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { getDictionary, parseDictionary } from '@/lib/admin/dictionary'
 import { TableDetail, TableIndex, purpose } from '@/components/admin/DataDictionary'
 import { rpcClientReturning } from './helpers/supabase'
@@ -51,12 +51,34 @@ describe('getDictionary', () => {
 })
 
 describe('TableIndex', () => {
-  it('lists each table with its purpose and exact row count, linked to its detail', () => {
+  it('lists each table with its purpose and exact row count', () => {
     render(<TableIndex dict={parseDictionary(PAYLOAD)} />)
-    const link = screen.getByText('senses').closest('a')!
-    expect(link).toHaveAttribute('href', '/admin/data?table=lex.senses')
-    expect(link).toHaveTextContent('The meanings of an entry.')
-    expect(link).toHaveTextContent(`${(183526).toLocaleString('vi-VN')} dòng`)
+    const row = screen.getByRole('button', { name: /senses/ }).closest('tr')!
+    expect(row).toHaveTextContent('The meanings of an entry.')
+    expect(row).toHaveTextContent('183,526')
+    expect(screen.getByText('2 tables')).toBeInTheDocument()
+  })
+
+  it('opens a row in place to its columns and a link to its detail, and closes it again', () => {
+    render(<TableIndex dict={parseDictionary(PAYLOAD)} />)
+    const toggle = screen.getByRole('button', { name: /senses/ })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByText('About entry_id.')).toBeNull()
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(document.getElementById(toggle.getAttribute('aria-controls')!)).toHaveTextContent('entry_id')
+    expect(screen.getByText('About entry_id.')).toBeInTheDocument()
+    expect(screen.getByText('FK')).toHaveAttribute('title', 'lex.entries.id')
+    expect(screen.getByRole('link', { name: 'Open table' })).toHaveAttribute('href', '/admin/database?table=lex.senses')
+    fireEvent.click(toggle)
+    expect(screen.queryByText('About entry_id.')).toBeNull()
+  })
+
+  it('links each box of the diagram to its table, but not a table outside the project', () => {
+    render(<TableIndex dict={parseDictionary(PAYLOAD)} />)
+    expect(screen.getByRole('link', { name: 'lex.senses' })).toHaveAttribute('href', '/admin/database?table=lex.senses')
+    expect(screen.queryByRole('link', { name: 'public.languages' })).toBeNull()
+    expect(screen.getByText('public.languages')).toBeInTheDocument()
   })
 })
 
@@ -65,11 +87,11 @@ describe('TableDetail', () => {
     const d = parseDictionary(PAYLOAD)
     render(<TableDetail t={d.tables[1]} />)
     expect(screen.getByText('About entry_id.')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'lex.entries.id' })).toHaveAttribute('href', '/admin/data?table=lex.entries')
-    expect(screen.getByText(/xoá dòng kia thì dòng này bị xoá theo/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'lex.entries.id' })).toHaveAttribute('href', '/admin/database?table=lex.entries')
+    expect(screen.getByRole('link', { name: 'lex.entries.id' }).parentElement).toHaveTextContent('on delete cascade')
   })
 
-  // /admin/data answers 404 for a table outside lex, public and admin.
+  // /admin/database?table= answers 404 for a table outside lex, public and admin.
   it('names a Supabase table such as auth.users without linking to a page that does not exist', () => {
     const d = parseDictionary({ ...PAYLOAD, tables: [{
       ...PAYLOAD.tables[1], schema: 'public', name: 'user_words',
@@ -87,18 +109,18 @@ describe('TableDetail', () => {
     }] }] })
     render(<TableDetail t={d.tables[0]} />)
     expect(screen.queryByText('0 B')).toBeNull()
-    expect(screen.getByText(/nằm ngoài Postgres/)).toBeInTheDocument()
+    expect(screen.getByText('stored outside Postgres')).toBeInTheDocument()
   })
 
   it('marks the key and the generated columns', () => {
     render(<TableDetail t={parseDictionary(PAYLOAD).tables[0]} />)
-    expect(screen.getByText('khoá chính')).toBeInTheDocument()
-    expect(screen.getByText('tính từ cột khác')).toBeInTheDocument()
-    expect(screen.getByText('Các bảng trỏ vào bảng này').parentElement).toHaveTextContent('lex.senses')
+    expect(screen.getByText('PK')).toBeInTheDocument()
+    expect(screen.getByText('generated')).toBeInTheDocument()
+    expect(screen.getByText('Referenced by').parentElement).toHaveTextContent('lex.senses')
   })
 
   it('drops the ownership prefix from a comment', () => {
     expect(purpose('zhesen: dictionary content.')).toBe('Dictionary content.')
-    expect(purpose(null)).toBe('Chưa có mô tả.')
+    expect(purpose(null)).toBe('No description.')
   })
 })

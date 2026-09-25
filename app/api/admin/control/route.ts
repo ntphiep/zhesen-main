@@ -1,11 +1,14 @@
 import type { User } from '@supabase/supabase-js'
+import { unstable_cache } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { adminUser } from '@/lib/auth/admin'
 import { z } from '@/lib/zod'
 import { awsHealthConfig, type AwsHealthConfig } from '@/lib/admin/aws'
 import { clients, runShell, type ShellResult } from '@/lib/admin/ssm'
 import { LOG_SERVICES } from '@/lib/admin/monitor'
-import { BACKUP_SCRIPT, INSTANCE_NAME, instanceState, power, restartScript } from '@/lib/admin/control'
+import {
+  BACKUP_SCRIPT, INSTANCE_NAME, INSTANCE_TYPES, instanceState, power, resize, restartScript, typeOptions, typePrices,
+} from '@/lib/admin/control'
 import {
   DUMP_KEY, parseCsv, parseRestoreStatus, restoreName, restoreScript, restoreStatusScript, shellScript, sqlScript,
 } from '@/lib/admin/console'
@@ -24,6 +27,7 @@ const DATABASE_NAME = 'postgres'
 const body = z.discriminatedUnion('action', [
   z.object({ action: z.literal('power'), op: z.enum(['start', 'stop', 'reboot']), confirm: z.string().optional() }),
   z.object({ action: z.literal('restart'), service: z.enum(LOG_SERVICES), confirm: z.string() }),
+  z.object({ action: z.literal('resize'), type: z.enum(INSTANCE_TYPES), confirm: z.string().optional() }),
   z.object({ action: z.literal('backup') }),
   z.object({ action: z.literal('sql'), mode: z.enum(['read', 'write']), sql: z.string().min(1).max(20_000), confirm: z.string().optional() }),
   z.object({ action: z.literal('shell'), command: z.string().min(1).max(10_000), confirm: z.string(), timeout: z.number().int().min(5).max(240).default(60) }),
@@ -42,7 +46,10 @@ const shellBody = (r: ShellResult) => ({
   status: r.status, exitCode: r.exitCode, stdout: r.stdout, stderr: r.stderr, truncated: r.truncated, ms: r.ms,
 })
 
-/** Instance state for the console's polling, and a restore's progress. */
+/** Prices change a few times a year; a failed read throws and is not kept. */
+const cachedPrices = unstable_cache(async (cfg: AwsHealthConfig) => typePrices(cfg), ['admin-ec2-prices'], { revalidate: 86_400 })
+
+/** Instance state for the console's polling, the type catalogue, and a restore's progress. */
 export async function GET(request: Request): Promise<Response> {
   const supabase = await createClient()
   if (!(await adminUser(supabase))) return notFoundJson()
@@ -52,6 +59,7 @@ export async function GET(request: Request): Promise<Response> {
   try {
     const { ec2, ssm } = clients(cfg)
     if (url.searchParams.get('part') === 'state') return json(await instanceState(ec2))
+    if (url.searchParams.get('part') === 'types') return json(await typeOptions(ec2, await cachedPrices(cfg).catch(() => null)))
     const db = url.searchParams.get('restore')
     if (db && /^restore_\w+$/.test(db)) {
       const out = await runShell(ssm, restoreStatusScript(db), 20)
@@ -68,6 +76,7 @@ export async function GET(request: Request): Promise<Response> {
  *  not use it either. */
 function guardOf(b: Body): { target: string | null } | null {
   if (b.action === 'power') return b.op === 'start' ? null : { target: INSTANCE_NAME }
+  if (b.action === 'resize') return { target: INSTANCE_NAME }
   if (b.action === 'restart') return { target: `supabase-${b.service}` }
   if (b.action === 'sql') return { target: b.mode === 'write' ? DATABASE_NAME : null }
   if (b.action === 'shell') return { target: INSTANCE_NAME }
@@ -79,9 +88,10 @@ function guardOf(b: Body): { target: string | null } | null {
  *  database container that no audit row would describe. The shell box is the way to that. */
 const PSQL_META = /^\s*\\/m
 
-function auditOf(b: Body): { action: string; target: string; detail: Record<string, unknown> } | null {
+function auditOf(b: Body, from: string | null): { action: string; target: string; detail: Record<string, unknown> } | null {
   switch (b.action) {
     case 'power': return { action: `infra.${b.op}`, target: INSTANCE_NAME, detail: {} }
+    case 'resize': return { action: 'infra.resize', target: INSTANCE_NAME, detail: { from, to: b.type } }
     case 'restart': return { action: 'infra.restart', target: `supabase-${b.service}`, detail: {} }
     case 'backup': return { action: 'infra.backup', target: INSTANCE_NAME, detail: {} }
     case 'sql': return b.mode === 'write' ? { action: 'console.sql', target: DATABASE_NAME, detail: { sql: b.sql } } : null
@@ -90,12 +100,16 @@ function auditOf(b: Body): { action: string; target: string; detail: Record<stri
   }
 }
 
-async function act(cfg: AwsHealthConfig, b: Body): Promise<{ result: Record<string, unknown>; summary: string[] }> {
+async function act(cfg: AwsHealthConfig, b: Body, from: string | null): Promise<{ result: Record<string, unknown>; summary: string[] }> {
   const { ec2, ssm } = clients(cfg)
   switch (b.action) {
     case 'power': {
       await power(ec2, b.op)
       return { result: { requested: b.op }, summary: [`EC2 ${b.op} requested for ${INSTANCE_NAME}.`] }
+    }
+    case 'resize': {
+      const ms = await resize(ec2, b.type, from)
+      return { result: { from, to: b.type, ms }, summary: [`Changed ${INSTANCE_NAME} from ${from} to ${b.type} in ${Math.round(ms / 1000)} s.`] }
     }
     case 'restart': {
       const r = await runShell(ssm, restartScript(b.service), 90)
@@ -123,7 +137,7 @@ async function act(cfg: AwsHealthConfig, b: Body): Promise<{ result: Record<stri
 }
 
 /** Only the actions that change or read the server beyond its metrics email the owner. */
-const EMAILED = new Set(['power', 'restart', 'backup', 'shell', 'restore'])
+const EMAILED = new Set(['power', 'resize', 'restart', 'backup', 'shell', 'restore'])
 
 export async function POST(request: Request): Promise<Response> {
   const supabase = await createClient()
@@ -146,8 +160,19 @@ export async function POST(request: Request): Promise<Response> {
     if (refusal) return json(refusal.body, refusal.status)
   }
 
+  // Read before the audit row, so a change to the type it already has records nothing.
+  let from: string | null = null
+  if (b.action === 'resize') {
+    try {
+      from = (await instanceState(clients(cfg).ec2)).type
+    } catch (e) {
+      return awsFailure(e)
+    }
+    if (from === b.type) return json({ error: `Instance đang là ${b.type}.` }, 409)
+  }
+
   // With the database down adminUser has already answered 404; /rescue starts the instance then.
-  const audit = auditOf(b)
+  const audit = auditOf(b, from)
   if (audit) {
     try {
       await record(supabase, audit.action, audit.target, audit.detail)
@@ -157,12 +182,16 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const { result, summary } = await act(cfg, b)
+    const { result, summary } = await act(cfg, b, from)
     if (EMAILED.has(b.action) || (b.action === 'sql' && b.mode === 'write')) {
       await notify(cfg, user, audit?.action ?? b.action, summary)
     }
     return json(result)
   } catch (e) {
+    // A resize that fails halfway can leave the instance stopped, so it emails either way.
+    if (b.action === 'resize') {
+      await notify(cfg, user, 'infra.resize failed', [`Changing ${INSTANCE_NAME} from ${from} to ${b.type} failed: ${e instanceof Error ? e.name : 'Error'}. Check its state.`])
+    }
     return awsFailure(e)
   }
 }

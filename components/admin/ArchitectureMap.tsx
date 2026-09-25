@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { CONTAINERS, PLACEMENT, STACK } from '@/lib/admin/architecture'
-import { Status, type Tone } from '@/components/admin/Page'
+import type { Tone } from '@/components/admin/Page'
 
 export interface Live {
   tone: Tone
@@ -20,24 +20,44 @@ export interface MapState {
   bucket: string | null
 }
 
-function Node({ place, name, children, live }: { place: string; name: string; children: ReactNode; live?: Live }) {
+const DOT: Record<Tone, string> = { ok: 'bg-emerald-700', warn: 'bg-amber-700', bad: 'bg-rose-700', idle: 'bg-black/25' }
+
+function Dot({ tone, label }: { tone: Tone; label: string }) {
+  return <span role="img" aria-label={label} className={`inline-block size-2 shrink-0 rounded-full ${DOT[tone]}`} />
+}
+
+/** A dashed boundary with its name on the edge: a provider, a region or a network. */
+function Boundary({ name, tone, className = '', children }: { name: string; tone: 'ink' | 'aws' | 'vpc'; className?: string; children: ReactNode }) {
+  const colour = { ink: 'border-black/30 text-black/60', aws: 'border-amber-700/50 text-amber-800', vpc: 'border-sky-700/45 text-sky-800' }[tone]
   return (
-    <div className="flex min-w-0 flex-col rounded-lg border border-black/10 bg-white px-4 py-3">
-      <div className="text-xs text-black/45">{place}</div>
-      <div className="mt-0.5 font-semibold">{name}</div>
-      <div className="mt-1 flex-1 text-sm text-black/60">{children}</div>
-      {live && <div className="mt-2 text-sm"><Status tone={live.tone}>{live.text}</Status></div>}
+    <div className={`relative rounded-xl border border-dashed px-3 pt-6 pb-3 ${colour} ${className}`}>
+      <span className="absolute top-1.5 left-3 text-[11px] font-semibold tracking-wide uppercase">{name}</span>
+      <div className="text-black">{children}</div>
     </div>
   )
 }
 
-/** A line between two stages: vertical on a phone, horizontal once the stages sit in a row. */
+function Box({ name, meta, live, children }: { name: string; meta?: string; live?: Live; children?: ReactNode }) {
+  return (
+    <div className="min-w-0 rounded-lg border border-black/10 bg-white px-3 py-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold">{name}</span>
+        {live && <Dot tone={live.tone} label={live.text} />}
+      </div>
+      {meta && <div className="mt-0.5 font-mono text-[11px] break-all text-black/50">{meta}</div>}
+      {live && <div className="mt-1 text-xs text-black/60">{live.text}</div>}
+      {children}
+    </div>
+  )
+}
+
+/** The line between two stages: down on a phone, right once the stages sit in a row. */
 function Wire({ label }: { label: string }) {
   return (
-    <div aria-hidden className="flex items-center justify-center gap-2 py-1 lg:mt-16 lg:flex-col lg:gap-1 lg:py-0">
-      <span className="h-5 w-px bg-black/25 lg:h-px lg:w-full" />
-      <span className="text-[11px] text-black/40 lg:whitespace-nowrap">{label}</span>
-      <span className="h-5 w-px bg-black/25 lg:hidden" />
+    <div aria-hidden className="flex shrink-0 items-center justify-center py-1 lg:w-16 lg:flex-col lg:self-center lg:py-0">
+      <span className="text-[10px] text-black/45 lg:order-first lg:mb-1">{label}</span>
+      <svg viewBox="0 0 10 24" className="mx-2 h-6 w-2.5 text-black/35 lg:hidden"><path d="M5 0v20M1 16l4 6 4-6" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
+      <svg viewBox="0 0 48 10" className="hidden h-2.5 w-full text-black/35 lg:block" preserveAspectRatio="none"><path d="M0 5h44M40 1l6 4-6 4" fill="none" stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" /></svg>
     </div>
   )
 }
@@ -45,152 +65,140 @@ function Wire({ label }: { label: string }) {
 function containerLive(service: string, s: MapState): Live {
   if (service === 'db' || service === 'rest') return s.database
   if (service === 'auth' || service === 'api-gw') return s.auth
-  return { tone: 'idle', text: 'Không đo được từ đây' }
+  return { tone: 'idle', text: 'Not probed from here' }
 }
 
 /**
- * The path a request takes, left to right, with the live state of each stage as this page
- * measured it, and the services around the path underneath.
+ * Nested boundaries, as the AWS Architecture Center draws them: Vercel, then the AWS region,
+ * then the VPC and the one instance inside it. The database has no public address; only
+ * CloudFront reaches it, through a VPC origin.
  */
 export function ArchitectureMap({ s }: { s: MapState }) {
   const d = s.deployment
   return (
-    <div>
-      <div className="grid lg:grid-cols-[minmax(0,0.8fr)_3.5rem_minmax(0,1fr)_3.5rem_minmax(0,1fr)_3.5rem_minmax(0,1.6fr)] lg:items-start">
-        <Node place="Máy của người học" name="Trình duyệt">
-          Tải trang từ Vercel. Phiên đăng nhập nằm trong cookie của trình duyệt.
-        </Node>
+    <div className="rounded-xl border border-black/10 bg-black/[0.015] p-3 sm:p-4">
+      <div className="flex flex-col lg:flex-row lg:items-stretch">
+        <div className="lg:w-28 lg:self-center"><Box name="Browser" meta="session cookie" /></div>
         <Wire label="HTTPS" />
-        <Node
-          place={`Vercel · ${PLACEMENT.vercelRegion} (${PLACEMENT.awsRegionName})`}
-          name="Ứng dụng Next.js"
-          live={{ tone: 'ok', text: `Đang phục vụ${d.commit ? `, commit ${d.commit}` : ''}` }}
-        >
-          Dựng trang, gọi API và giữ cache từ điển 7 ngày. Môi trường {d.env}{d.region ? `, function chạy ở ${d.region}` : ''}.
-        </Node>
-        <Wire label="API" />
-        <Node place="AWS CloudFront" name="Cổng vào database" live={s.auth}>
-          <span className="font-mono text-xs break-all">{s.edgeHost}</span>
-          <br />Chỉ cho qua /auth/v1 và /rest/v1, còn lại bị chặn.
-        </Node>
-        <Wire label="HTTP" />
-        <div className="min-w-0 rounded-lg border border-black/25 px-4 py-3">
-          <div className="text-xs text-black/45">AWS EC2 · {PLACEMENT.awsRegion} ({PLACEMENT.awsRegionName})</div>
-          <div className="mt-0.5 font-semibold">Supabase tự vận hành</div>
-          <p className="mt-1 text-sm text-black/60">Một máy {PLACEMENT.instanceType} (2 vCPU, 4 GB) chạy 6 container Docker.</p>
-          <ul className="mt-2 divide-y divide-black/5 border-t border-black/10">
-            {CONTAINERS.map((c) => {
-              const live = containerLive(c.service, s)
-              return (
-                <li key={c.container} className="py-2">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                    <span className="font-mono text-xs font-medium">{c.container}</span>
-                    <span className="text-xs"><Status tone={live.tone}>{live.tone === 'idle' ? live.text : live.tone === 'ok' ? 'Đang chạy' : 'Lỗi'}</Status></span>
-                  </div>
-                  <div className="text-xs text-black/55">{c.role}</div>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
+        <Boundary name={`Vercel · ${PLACEMENT.vercelRegion}`} tone="ink" className="lg:w-48 lg:self-center">
+          <Box name="Next.js" meta={d.commit ? `${d.env} · ${d.commit}` : d.env} live={{ tone: 'ok', text: 'Serving this page' }} />
+        </Boundary>
+        <Wire label="/auth · /rest" />
+        <Boundary name={`AWS · ${PLACEMENT.awsRegion} (${PLACEMENT.awsRegionName})`} tone="aws" className="min-w-0 flex-1">
+          <div className="flex flex-col lg:flex-row lg:items-stretch">
+            <div className="lg:w-40 lg:self-center"><Box name="CloudFront" meta={s.edgeHost} live={s.auth} /></div>
+            <Wire label="VPC origin" />
+            <Boundary name="VPC · private subnet" tone="vpc" className="min-w-0 flex-1">
+              <div className="rounded-lg border border-black/10 bg-white px-3 py-2.5">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                  <span className="text-sm font-semibold">EC2</span>
+                  <span className="font-mono text-[11px] text-black/50">{PLACEMENT.instanceType} · Docker</span>
+                </div>
+                <ul className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                  {CONTAINERS.map((c) => {
+                    const live = containerLive(c.service, s)
+                    return (
+                      <li key={c.container} title={c.role} className={`flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1.5 ${c.service === 'db' ? 'bg-sky-700/10' : 'bg-black/[0.04]'}`}>
+                        <Dot tone={live.tone} label={live.text} />
+                        <span className="truncate font-mono text-xs">{c.container.replace('supabase-', '')}</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            </Boundary>
+            <div className="mt-3 grid grid-cols-2 gap-2 lg:mt-0 lg:ml-3 lg:w-40 lg:grid-cols-1 lg:content-center">
+              <Box name="S3" meta="daily pg_dump" live={s.backups} />
+              <Box name="CloudWatch · SNS" live={s.alarms} />
+            </div>
+          </div>
+        </Boundary>
       </div>
 
-      <h2 className="mt-10 mb-3 text-base font-semibold">Dịch vụ quanh hệ thống</h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <Node place={`AWS S3 · ${PLACEMENT.awsRegion}`} name="Bản dump database" live={s.backups}>
-          pg_dump chạy lúc 03:30 UTC mỗi ngày từ máy EC2.
-          {s.bucket && <><br /><span className="font-mono text-xs break-all">{s.bucket}</span></>}
-        </Node>
-        <Node place="AWS CloudWatch và SNS" name="Cảnh báo" live={s.alarms}>
-          Theo dõi CPU, bộ nhớ, ổ đĩa và trạng thái máy; gửi email khi vượt ngưỡng.
-        </Node>
-        <Node
-          place="Supabase Cloud"
-          name="Bản sao đóng băng"
-          live={{ tone: 'idle', text: `Giữ đến ${new Date(`${PLACEMENT.cloudCopyUntil}T12:00:00Z`).toLocaleDateString('vi-VN')}` }}
-        >
-          Dự án <span className="font-mono text-xs">{PLACEMENT.cloudCopyRef}</span>, dữ liệu trước ngày chuyển sang EC2. Chỉ dùng để quay lại nếu cần.
-        </Node>
+      <ul className="mt-3 flex flex-wrap gap-2 text-xs">
         {s.integrations.map((i) => (
-          <Node
-            key={i.label}
-            place="Dịch vụ ngoài"
-            name={i.label}
-            live={{ tone: i.enabled ? 'ok' : 'idle', text: i.enabled ? 'Đã cấu hình' : 'Chưa cấu hình' }}
-          >
-            {INTEGRATION_ROLE[i.label] ?? ''}
-          </Node>
+          <li key={i.label} className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-2.5 py-1">
+            <Dot tone={i.enabled ? 'ok' : 'idle'} label={i.enabled ? 'configured' : 'not configured'} />
+            {i.label}
+          </li>
         ))}
-        <Node place="GitHub Actions" name="CI và deploy">
-          Mỗi lần push lên master: lint, typecheck, test, rồi deploy lên Vercel.
-        </Node>
-      </div>
+        <li className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-2.5 py-1 text-black/60">
+          <Dot tone="idle" label="frozen" />
+          Supabase Cloud copy, kept until {PLACEMENT.cloudCopyUntil}
+        </li>
+      </ul>
     </div>
   )
-}
-
-const INTEGRATION_ROLE: Record<string, string> = {
-  'Trợ lý AI': 'Giải thích từ và câu qua POST /api/ai; khoá chỉ nằm trên server.',
-  'Azure AI Translator': 'Dịch đoạn văn trong ô tra cứu, một request cho mọi ngôn ngữ đích.',
-  'Khoá làm mới cache cho pipeline': 'Cho pipeline nạp dữ liệu gọi /api/revalidate sau mỗi lần nạp.',
 }
 
 export interface VersionRow {
   component: string
   place: string
   version: string
-  source: string
 }
 
 export function versionRows(s: MapState): VersionRow[] {
   const image = (service: string) => CONTAINERS.find((c) => c.service === service)?.image.split(':')[1] ?? ''
   return [
-    { component: 'Node.js', place: `Vercel ${PLACEMENT.vercelRegion}`, version: s.deployment.node, source: 'Đọc trực tiếp' },
-    ...STACK.map((x) => ({ component: x.name, place: 'Ứng dụng', version: x.version, source: 'package.json, khoảng cho phép' })),
-    { component: 'Postgres', place: 'EC2', version: s.database.version ?? image('db'), source: s.database.version ? 'Đọc trực tiếp' : 'docker-compose.yml' },
-    { component: 'GoTrue', place: 'EC2', version: s.auth.version ?? image('auth'), source: s.auth.version ? 'Đọc trực tiếp' : 'docker-compose.yml' },
-    { component: 'PostgREST', place: 'EC2', version: image('rest'), source: 'docker-compose.yml' },
-    { component: 'Envoy', place: 'EC2', version: image('api-gw'), source: 'docker-compose.yml' },
-    { component: 'postgres-meta', place: 'EC2', version: image('meta'), source: 'docker-compose.yml' },
-    { component: 'Studio', place: 'EC2', version: image('studio'), source: 'docker-compose.yml' },
+    { component: 'Node.js', place: `Vercel ${PLACEMENT.vercelRegion}`, version: s.deployment.node },
+    ...STACK.map((x) => ({ component: x.name, place: 'App', version: x.version })),
+    { component: 'Postgres', place: 'EC2', version: s.database.version ?? image('db') },
+    { component: 'GoTrue', place: 'EC2', version: s.auth.version ?? image('auth') },
+    { component: 'PostgREST', place: 'EC2', version: image('rest') },
+    { component: 'Envoy', place: 'EC2', version: image('api-gw') },
+    { component: 'postgres-meta', place: 'EC2', version: image('meta') },
+    { component: 'Studio', place: 'EC2', version: image('studio') },
   ]
 }
 
+const th = 'px-3 py-2 text-left text-[11px] font-semibold tracking-wide text-black/50 uppercase'
+
 export function VersionTable({ rows }: { rows: VersionRow[] }) {
   return (
-    <ul className="divide-y divide-black/5 rounded-lg border border-black/10 text-sm">
-      {rows.map((r) => (
-        <li key={r.component} className="grid grid-cols-[1fr_auto] gap-x-4 px-4 py-2 sm:grid-cols-[12rem_8rem_1fr_9rem]">
-          <span className="font-medium">{r.component}</span>
-          <span className="text-black/55 sm:order-none">{r.place}</span>
-          <span className="font-mono text-xs break-all text-black/80 sm:text-sm">{r.version}</span>
-          <span className="text-right text-xs text-black/45 sm:text-left sm:text-sm">{r.source}</span>
-        </li>
-      ))}
-    </ul>
+    <div className="overflow-x-auto rounded-lg border border-black/10">
+      <table className="w-full text-sm">
+        <thead className="border-b border-black/10 bg-black/[0.025]">
+          <tr><th className={th}>Component</th><th className={th}>Runs on</th><th className={th}>Version</th></tr>
+        </thead>
+        <tbody className="divide-y divide-black/5">
+          {rows.map((r) => (
+            <tr key={r.component} className="hover:bg-black/[0.02]">
+              <td className="px-3 py-1.5 font-medium">{r.component}</td>
+              <td className="px-3 py-1.5 text-black/60">{r.place}</td>
+              <td className="px-3 py-1.5 font-mono text-xs break-all">{r.version}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
 /** Where each kind of data is kept, for the question "if this machine goes, what is lost". */
 export function DataPlaces({ bucket }: { bucket: string | null }) {
   const places = [
-    { what: 'Database chính', where: `Postgres trong container supabase-db, trên ổ gp3 30 GB của máy EC2 ở ${PLACEMENT.awsRegionName}`, holds: 'Từ điển (schema lex), tài khoản (auth), sổ tay và lịch ôn (public)' },
-    { what: 'Bản dump hằng ngày', where: bucket ? `S3, bucket ${bucket}` : 'S3', holds: 'Toàn bộ database, đủ để dựng lại trên một Postgres 17 khác' },
-    { what: 'Bản sao cũ', where: `Supabase Cloud, dự án ${PLACEMENT.cloudCopyRef}`, holds: 'Dữ liệu tới ngày chuyển sang EC2, không nhận ghi mới' },
-    { what: 'Cache từ điển', where: 'Vercel Data Cache, tag lex', holds: 'Kết quả tra cứu và trang mục từ, tối đa 7 ngày' },
-    { what: 'Phiên đăng nhập', where: 'Cookie trong trình duyệt của người học', holds: 'Tài khoản ẩn danh chỉ tồn tại trong cookie này' },
+    { what: 'Database', where: `EC2 ${PLACEMENT.awsRegion}, supabase-db on a 30 GB gp3 volume`, holds: 'lex, auth, public' },
+    { what: 'Daily dump', where: bucket ? `S3 ${bucket}` : 'S3', holds: 'Whole database' },
+    { what: 'Old copy', where: `Supabase Cloud ${PLACEMENT.cloudCopyRef}`, holds: 'Read-only, until the cut-over' },
+    { what: 'Dictionary cache', where: 'Vercel Data Cache, tag lex', holds: 'Lookups and entry pages, 7 days' },
+    { what: 'Sessions', where: 'Browser cookie', holds: 'Anonymous accounts live only here' },
   ]
   return (
-    <ul className="divide-y divide-black/5 rounded-lg border border-black/10 text-sm">
-      {places.map((p) => (
-        <li key={p.what} className="grid gap-x-4 gap-y-0.5 px-4 py-2.5 sm:grid-cols-[10rem_1fr]">
-          <span className="font-medium">{p.what}</span>
-          <div className="min-w-0">
-            <div className="break-words">{p.where}</div>
-            <div className="text-black/55">{p.holds}</div>
-          </div>
-        </li>
-      ))}
-    </ul>
+    <div className="overflow-x-auto rounded-lg border border-black/10">
+      <table className="w-full text-sm">
+        <thead className="border-b border-black/10 bg-black/[0.025]">
+          <tr><th className={th}>Data</th><th className={th}>Where</th><th className={th}>Holds</th></tr>
+        </thead>
+        <tbody className="divide-y divide-black/5">
+          {places.map((p) => (
+            <tr key={p.what}>
+              <td className="px-3 py-1.5 font-medium whitespace-nowrap">{p.what}</td>
+              <td className="px-3 py-1.5 break-all text-black/70">{p.where}</td>
+              <td className="px-3 py-1.5 text-black/60">{p.holds}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }

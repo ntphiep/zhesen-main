@@ -170,11 +170,11 @@ const INSTANCE = [{ Name: 'InstanceId', Value: 'i-0d914b6eceb4d9350' }]
  *  exact dimension set. */
 const HISTORY = [
   { id: 'cpu', label: 'CPU', unit: '%', ns: 'AWS/EC2', name: 'CPUUtilization', dims: INSTANCE, stat: 'Average' },
-  { id: 'credits', label: 'CPU credit còn lại', unit: 'credits', ns: 'AWS/EC2', name: 'CPUCreditBalance', dims: INSTANCE, stat: 'Average' },
-  { id: 'mem', label: 'Bộ nhớ đã dùng', unit: '%', ns: 'CWAgent', name: 'mem_used_percent', dims: INSTANCE, stat: 'Average' },
-  { id: 'disk', label: 'Ổ đĩa đã dùng', unit: '%', ns: 'CWAgent', name: 'disk_used_percent', dims: [{ Name: 'path', Value: '/' }, ...INSTANCE], stat: 'Average' },
-  { id: 'netin', label: 'Mạng vào', unit: 'bytes', ns: 'AWS/EC2', name: 'NetworkIn', dims: INSTANCE, stat: 'Sum' },
-  { id: 'netout', label: 'Mạng ra', unit: 'bytes', ns: 'AWS/EC2', name: 'NetworkOut', dims: INSTANCE, stat: 'Sum' },
+  { id: 'credits', label: 'CPU credits', unit: 'credits', ns: 'AWS/EC2', name: 'CPUCreditBalance', dims: INSTANCE, stat: 'Average' },
+  { id: 'mem', label: 'Memory used', unit: '%', ns: 'CWAgent', name: 'mem_used_percent', dims: INSTANCE, stat: 'Average' },
+  { id: 'disk', label: 'Disk used', unit: '%', ns: 'CWAgent', name: 'disk_used_percent', dims: [{ Name: 'path', Value: '/' }, ...INSTANCE], stat: 'Average' },
+  { id: 'netin', label: 'Network in', unit: 'bytes', ns: 'AWS/EC2', name: 'NetworkIn', dims: INSTANCE, stat: 'Sum' },
+  { id: 'netout', label: 'Network out', unit: 'bytes', ns: 'AWS/EC2', name: 'NetworkOut', dims: INSTANCE, stat: 'Sum' },
 ] as const
 
 /** Five-minute points over a day, 30-minute points over a week: 288 and 336 per series. */
@@ -202,7 +202,7 @@ export async function getHistory(cfg: AwsHealthConfig, range: Range, now: number
   })
 }
 
-/** Dumps in the backup bucket, newest first, for the restore picker on /admin/console. */
+/** Dumps in the backup bucket, newest first, for the restore picker on /admin/database. */
 export async function listDumps(cfg: AwsHealthConfig): Promise<{ key: string; at: string; bytes: number }[]> {
   const credentials = awsCredentialsProvider({ roleArn: cfg.roleArn, clientConfig: { region: REGION } })
   const s3 = new S3Client({ region: REGION, credentials })

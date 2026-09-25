@@ -3,11 +3,12 @@ import { parseCsv, parseRestoreStatus, restoreName, restoreScript, shellScript, 
 import { secretMatches, signRescue, verifyRescue, RESCUE_TTL_MS } from '@/lib/admin/rescue'
 import { BACKUP_SCRIPT, restartScript } from '@/lib/admin/control'
 
-const { adminUser, rpc, getClaims, power, runShell, alertOwner, readRescueSecret, instanceState, jar } = vi.hoisted(() => ({
+const { adminUser, rpc, getClaims, power, resize, runShell, alertOwner, readRescueSecret, instanceState, jar } = vi.hoisted(() => ({
   adminUser: vi.fn(),
   rpc: vi.fn(),
   getClaims: vi.fn(),
   power: vi.fn(),
+  resize: vi.fn(),
   runShell: vi.fn(),
   alertOwner: vi.fn(),
   readRescueSecret: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock('@/lib/admin/ssm', async (orig) => ({
 vi.mock('@/lib/admin/control', async (orig) => ({
   ...(await orig<typeof import('@/lib/admin/control')>()),
   power,
+  resize,
   instanceState,
 }))
 vi.mock('next/headers', () => ({
@@ -146,6 +148,8 @@ describe('POST /api/admin/control', () => {
     power.mockReset().mockResolvedValue(undefined)
     runShell.mockReset().mockResolvedValue({ status: 'Success', exitCode: 0, stdout: 'count\n36361\n', stderr: '', truncated: false, ms: 900 })
     alertOwner.mockReset().mockResolvedValue(true)
+    resize.mockReset().mockResolvedValue(150_000)
+    instanceState.mockReset().mockResolvedValue({ state: 'running', type: 't4g.medium' })
   })
   afterEach(() => {
     if (original === undefined) delete process.env.AWS_ROLE_ARN
@@ -222,6 +226,56 @@ describe('POST /api/admin/control', () => {
     const res = await post(control, { action: 'sql', mode: 'read', sql: 'select 1;\n  \\! reboot' })
     expect(res.status).toBe(400)
     expect(runShell).not.toHaveBeenCalled()
+  })
+
+  describe('resize', () => {
+    const change = { action: 'resize', type: 't4g.large', confirm: 'zhesen-supabase' }
+
+    it('does not change the type without the typed name', async () => {
+      expect((await post(control, { ...change, confirm: 'zhesen' })).status).toBe(409)
+      expect(rpc).not.toHaveBeenCalled()
+      expect(resize).not.toHaveBeenCalled()
+    })
+
+    it('asks for a fresh sign-in when the last one is over 10 minutes old', async () => {
+      getClaims.mockResolvedValue({ data: { claims: { amr: [{ method: 'password', timestamp: NOW_S - 601 }] } }, error: null })
+      const res = await post(control, change)
+      expect(res.status).toBe(401)
+      await expect(res.json()).resolves.toMatchObject({ reauth: true })
+      expect(resize).not.toHaveBeenCalled()
+    })
+
+    it('refuses a type outside the list and the type it already has, recording nothing', async () => {
+      expect((await post(control, { ...change, type: 'm7g.16xlarge' })).status).toBe(400)
+      expect((await post(control, { ...change, type: 't4g.medium' })).status).toBe(409)
+      expect(rpc).not.toHaveBeenCalled()
+      expect(resize).not.toHaveBeenCalled()
+    })
+
+    it('writes the audit row before it changes the type, then emails and answers from, to and ms', async () => {
+      const order: string[] = []
+      rpc.mockImplementation(async () => { order.push('audit'); return { data: null, error: null } })
+      resize.mockImplementation(async () => { order.push('resize'); return 150_000 })
+      alertOwner.mockImplementation(async () => { order.push('email'); return true })
+      const res = await post(control, change)
+      expect(res.status).toBe(200)
+      await expect(res.json()).resolves.toEqual({ from: 't4g.medium', to: 't4g.large', ms: 150_000 })
+      expect(rpc).toHaveBeenCalledWith('record', { p_action: 'infra.resize', p_target: 'zhesen-supabase', p_detail: { from: 't4g.medium', to: 't4g.large' } })
+      expect(resize).toHaveBeenCalledWith({}, 't4g.large', 't4g.medium')
+      expect(order).toEqual(['audit', 'resize', 'email'])
+    })
+
+    it('does nothing when the audit row cannot be written', async () => {
+      rpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'admin only' } })
+      expect((await post(control, change)).status).toBe(502)
+      expect(resize).not.toHaveBeenCalled()
+    })
+
+    it('emails when the change fails halfway, since the instance may be left stopped', async () => {
+      resize.mockRejectedValue(Object.assign(new Error('timed out'), { name: 'TimeoutError' }))
+      expect((await post(control, change)).status).toBe(502)
+      expect(alertOwner).toHaveBeenCalledTimes(1)
+    })
   })
 
   it('keeps the SQL text in the audit row of a write', async () => {

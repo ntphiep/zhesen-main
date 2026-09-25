@@ -19,8 +19,8 @@ export interface Integration {
 /** Whether each outside service is configured, never its values. */
 export function integrations(): Integration[] {
   return [
-    { label: 'Trợ lý AI', enabled: aiConfig() !== null },
+    { label: 'AI assistant', enabled: aiConfig() !== null },
     { label: 'Azure AI Translator', enabled: azureTranslatorConfig() !== null },
-    { label: 'Khoá làm mới cache cho pipeline', enabled: Boolean(process.env.REVALIDATE_SECRET) },
+    { label: 'Revalidate secret', enabled: Boolean(process.env.REVALIDATE_SECRET) },
   ]
 }

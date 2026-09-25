@@ -31,12 +31,12 @@ beforeEach(() => {
 })
 afterEach(() => vi.unstubAllGlobals())
 
-const viBoxes = () => screen.getAllByRole('textbox', { name: 'Nghĩa tiếng Việt' })
+const viBoxes = () => screen.getAllByRole('textbox', { name: 'Vietnamese gloss' })
 
 describe('EntryEditor', () => {
   it('links to the entry page the edit will change', () => {
     render(<EntryEditor entry={ENTRY} />)
-    expect(screen.getByRole('link', { name: 'Xem trang từ điển' })).toHaveAttribute('href', '/dictionary/en/hello')
+    expect(screen.getByRole('link', { name: 'Open entry page' })).toHaveAttribute('href', '/dictionary/en/hello')
   })
 
   it('warns while a Vietnamese gloss is over 80 characters, before anything is saved', async () => {
@@ -51,7 +51,7 @@ describe('EntryEditor', () => {
     render(<EntryEditor entry={ENTRY} />)
     await userEvent.clear(viBoxes()[0])
     await userEvent.type(viBoxes()[0], 'xin chào')
-    await userEvent.click(screen.getAllByRole('button', { name: 'Lưu' })[0])
+    await userEvent.click(screen.getAllByRole('button', { name: 'Save' })[0])
 
     expect(fetchMock).toHaveBeenCalledWith('/api/admin/content', expect.objectContaining({ method: 'POST' }))
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
@@ -63,20 +63,20 @@ describe('EntryEditor', () => {
 
   it('lets a machine-translated gloss be approved unchanged', async () => {
     render(<EntryEditor entry={ENTRY} />)
-    expect(screen.getByText('Dịch máy, chưa rà soát')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Đánh dấu đã rà soát' }))
+    expect(screen.getByText('Machine-translated, not reviewed')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Mark reviewed' }))
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({ senseId: 'en:hello#2', glossVi: 'lời chào' })
   })
 
   it('does not offer to save a reviewed sense nobody changed', () => {
     render(<EntryEditor entry={ENTRY} />)
-    expect(screen.getAllByRole('button', { name: 'Lưu' })[0]).toBeDisabled()
+    expect(screen.getAllByRole('button', { name: 'Save' })[0]).toBeDisabled()
   })
 
   it('flags the entry with a reason', async () => {
     render(<EntryEditor entry={ENTRY} />)
-    await userEvent.type(screen.getByRole('textbox', { name: 'Lý do đánh dấu' }), 'nghĩa 2 sai')
-    await userEvent.click(screen.getByRole('button', { name: 'Đánh dấu' }))
+    await userEvent.type(screen.getByRole('textbox', { name: 'Flag reason' }), 'nghĩa 2 sai')
+    await userEvent.click(screen.getByRole('button', { name: 'Flag' }))
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
       action: 'flag', entryId: 'en:hello', reason: 'nghĩa 2 sai',
     })
@@ -84,8 +84,8 @@ describe('EntryEditor', () => {
 
   it('clears a flag with a null reason', async () => {
     render(<EntryEditor entry={{ ...ENTRY, flag: { reason: 'nghĩa 2 sai', flaggedAt: '2026-09-23T02:12:47Z' } }} />)
-    expect(screen.getByText('Đang được đánh dấu: nghĩa 2 sai')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Bỏ đánh dấu' }))
+    expect(screen.getByText('Flagged: nghĩa 2 sai')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Remove flag' }))
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ action: 'flag', entryId: 'en:hello', reason: null })
   })
 
@@ -93,7 +93,7 @@ describe('EntryEditor', () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ error: 'Không còn nghĩa này.' }), { status: 409 }))
     render(<EntryEditor entry={ENTRY} />)
     await userEvent.type(viBoxes()[0], '!')
-    await userEvent.click(screen.getAllByRole('button', { name: 'Lưu' })[0])
+    await userEvent.click(screen.getAllByRole('button', { name: 'Save' })[0])
     expect(await screen.findByText('Không còn nghĩa này.')).toBeInTheDocument()
     expect(refresh).not.toHaveBeenCalled()
   })

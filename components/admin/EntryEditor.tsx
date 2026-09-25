@@ -25,21 +25,21 @@ function SenseForm({ sense, onSaved, notify }: { sense: AdminSense; onSaved: () 
     })
     setBusy(false)
     if (!outcome.ok) return notify(outcome.message)
-    notify(`Đã lưu nghĩa ${sense.senseOrder}.`, 'info')
+    notify(`Saved sense ${sense.senseOrder}.`, 'info')
     onSaved()
   }
 
   return (
     <form onSubmit={save} className="rounded-xl border border-black/10 px-4 py-3">
       <div className="flex flex-wrap items-center gap-2 text-xs text-black/50">
-        <span className="font-medium text-black/70">Nghĩa {sense.senseOrder}</span>
+        <span className="font-medium text-black/70">Sense {sense.senseOrder}</span>
         {sense.pos && <span>{sense.pos}</span>}
         {sense.glossViIsMt && (
-          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-800">Dịch máy, chưa rà soát</span>
+          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-800">Machine-translated, not reviewed</span>
         )}
       </div>
       <label className="mt-2 block text-sm">
-        Nghĩa tiếng Việt
+        Vietnamese gloss
         <textarea
           value={glossVi}
           onChange={(e) => setGlossVi(e.target.value)}
@@ -49,7 +49,7 @@ function SenseForm({ sense, onSaved, notify }: { sense: AdminSense; onSaved: () 
       </label>
       {warning && <p className="mt-1 text-sm text-amber-700">{warning}</p>}
       <label className="mt-2 block text-sm">
-        Nghĩa tiếng Anh
+        English gloss
         <textarea
           value={glossEn}
           onChange={(e) => setGlossEn(e.target.value)}
@@ -63,7 +63,7 @@ function SenseForm({ sense, onSaved, notify }: { sense: AdminSense; onSaved: () 
           disabled={busy || (!changed && !sense.glossViIsMt)}
           className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
         >
-          {changed || !sense.glossViIsMt ? 'Lưu' : 'Đánh dấu đã rà soát'}
+          {changed || !sense.glossViIsMt ? 'Save' : 'Mark reviewed'}
         </button>
       </div>
     </form>
@@ -81,7 +81,7 @@ function FlagForm({ entry, onSaved, notify }: { entry: AdminEntry; onSaved: () =
     setBusy(false)
     if (!outcome.ok) return notify(outcome.message)
     if (next === null) setReason('')
-    notify(next === null ? 'Đã bỏ đánh dấu.' : 'Đã đánh dấu mục từ.', 'info')
+    notify(next === null ? 'Flag removed.' : 'Entry flagged.', 'info')
     onSaved()
   }
 
@@ -94,8 +94,8 @@ function FlagForm({ entry, onSaved, notify }: { entry: AdminEntry; onSaved: () =
         value={reason}
         onChange={(e) => setReason(e.target.value)}
         maxLength={500}
-        placeholder="Lý do cần xem lại"
-        aria-label="Lý do đánh dấu"
+        placeholder="Why it needs a look"
+        aria-label="Flag reason"
         className="min-w-56 flex-1 rounded-lg border border-black/15 px-3 py-2 text-sm"
       />
       <button
@@ -103,7 +103,7 @@ function FlagForm({ entry, onSaved, notify }: { entry: AdminEntry; onSaved: () =
         disabled={busy || !reason.trim()}
         className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-40"
       >
-        {entry.flag ? 'Cập nhật đánh dấu' : 'Đánh dấu'}
+        {entry.flag ? 'Update flag' : 'Flag'}
       </button>
       {entry.flag && (
         <button
@@ -112,7 +112,7 @@ function FlagForm({ entry, onSaved, notify }: { entry: AdminEntry; onSaved: () =
           disabled={busy}
           className="rounded-lg px-3 py-2 text-sm text-black/60 hover:bg-black/5 disabled:opacity-40"
         >
-          Bỏ đánh dấu
+          Remove flag
         </button>
       )}
     </form>
@@ -135,17 +135,17 @@ export function EntryEditor({ entry }: { entry: AdminEntry }) {
         <h3 className="text-2xl font-semibold">{entry.headword}</h3>
         <span className="font-mono text-xs text-black/50">{entry.id}</span>
         <Link href={entryPath(entry.id)} prefetch={false} className="text-sm text-black/60 hover:underline">
-          Xem trang từ điển
+          Open entry page
         </Link>
       </div>
       {entry.flag && (
-        <p className="mt-1 text-sm text-amber-700">Đang được đánh dấu: {entry.flag.reason}</p>
+        <p className="mt-1 text-sm text-amber-700">Flagged: {entry.flag.reason}</p>
       )}
       <div className="mt-3">
         <FlagForm key={entry.flag?.reason ?? ''} entry={entry} onSaved={refresh} notify={notify} />
       </div>
       <div className="mt-4 flex flex-col gap-3">
-        {entry.senses.length === 0 && <p className="text-sm text-black/60">Mục từ này chưa có nghĩa nào.</p>}
+        {entry.senses.length === 0 && <p className="text-sm text-black/60">No senses yet.</p>}
         {entry.senses.map((s) => (
           <SenseForm
             key={`${s.id}:${s.glossVi}:${s.glossEn}:${s.glossViIsMt}`}

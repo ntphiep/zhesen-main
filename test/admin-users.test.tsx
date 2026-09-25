@@ -40,21 +40,21 @@ describe('AccountTable', () => {
   it('shows each account with its saved words, and a total that is their sum', () => {
     render(<AccountTable accounts={ACCOUNTS} />)
     expect(rowOf('owner@example.com')).toHaveTextContent('35')
-    expect(rowOf('Ẩn danh f5849087')).toHaveTextContent('410')
-    expect(screen.getByText('3 tài khoản').closest('tr')).toHaveTextContent('445')
+    expect(rowOf('Anonymous f5849087')).toHaveTextContent('410')
+    expect(screen.getByText('3 accounts').closest('tr')).toHaveTextContent('445')
   })
 
   it('offers no delete on an admin account', () => {
     render(<AccountTable accounts={ACCOUNTS} />)
-    expect(within(rowOf('owner@example.com')).getByRole('button', { name: 'Xoá' })).toBeDisabled()
+    expect(within(rowOf('owner@example.com')).getByRole('button', { name: 'Delete' })).toBeDisabled()
   })
 
   it('deletes only once the email is typed, and sends the typed text for the database to check', async () => {
     fetchMock.mockResolvedValue(ok({ deleted: ACCOUNTS[2].id, words: 0 }))
     render(<AccountTable accounts={ACCOUNTS} />)
-    await userEvent.click(within(rowOf('qa@example.com')).getByRole('button', { name: 'Xoá' }))
+    await userEvent.click(within(rowOf('qa@example.com')).getByRole('button', { name: 'Delete' }))
 
-    const confirm = screen.getByRole('button', { name: 'Xoá vĩnh viễn' })
+    const confirm = screen.getByRole('button', { name: 'Delete permanently' })
     expect(confirm).toBeDisabled()
     await userEvent.type(screen.getByRole('textbox'), 'qa@example')
     expect(confirm).toBeDisabled()
@@ -71,32 +71,32 @@ describe('AccountTable', () => {
 
   it('asks for the id when the account has no email', async () => {
     render(<AccountTable accounts={ACCOUNTS} />)
-    await userEvent.click(within(rowOf('Ẩn danh f5849087')).getByRole('button', { name: 'Xoá' }))
+    await userEvent.click(within(rowOf('Anonymous f5849087')).getByRole('button', { name: 'Delete' }))
     expect(screen.getByText(ACCOUNTS[0].id)).toBeInTheDocument()
   })
 
   it('merges into the chosen account and reports what moved', async () => {
     fetchMock.mockResolvedValue(ok({ moved: 410, kept: 0, days: 3 }))
     render(<AccountTable accounts={ACCOUNTS} />)
-    await userEvent.click(within(rowOf('Ẩn danh f5849087')).getByRole('button', { name: 'Gộp vào…' }))
+    await userEvent.click(within(rowOf('Anonymous f5849087')).getByRole('button', { name: 'Merge into…' }))
     await userEvent.selectOptions(screen.getByRole('combobox'), ACCOUNTS[1].id)
-    await userEvent.click(screen.getByRole('button', { name: 'Gộp' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Merge' }))
 
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
       action: 'merge', from: ACCOUNTS[0].id, into: ACCOUNTS[1].id,
     })
-    expect(await screen.findByText('Đã chuyển 410 từ, giữ lại 0 từ trùng, gộp 3 ngày luyện tập.')).toBeInTheDocument()
+    expect(await screen.findByText('Moved 410 words, kept 0 duplicates, merged 3 practice days.')).toBeInTheDocument()
   })
 
   it('shows the refusal the server gives and keeps the dialog open', async () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ error: 'Chuỗi xác nhận không khớp.' }), { status: 409 }))
     render(<AccountTable accounts={ACCOUNTS} />)
-    await userEvent.click(within(rowOf('qa@example.com')).getByRole('button', { name: 'Xoá' }))
+    await userEvent.click(within(rowOf('qa@example.com')).getByRole('button', { name: 'Delete' }))
     await userEvent.type(screen.getByRole('textbox'), 'qa@example.com')
-    await userEvent.click(screen.getByRole('button', { name: 'Xoá vĩnh viễn' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Delete permanently' }))
 
     expect(await screen.findByText('Chuỗi xác nhận không khớp.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Xoá vĩnh viễn' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Delete permanently' })).toBeInTheDocument()
     expect(refresh).not.toHaveBeenCalled()
   })
 })

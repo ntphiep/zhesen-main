@@ -7,27 +7,25 @@ import { LinkPending } from '@/components/ui/LinkPending'
  *  yet is left out rather than shown with dead links. */
 export const NAV_GROUPS: { label: string; links: { href: string; label: string }[] }[] = [
   {
-    label: 'Theo dõi',
+    label: 'Observe',
     links: [
-      { href: '/admin', label: 'Tổng quan' },
-      { href: '/admin/architecture', label: 'Kiến trúc' },
-      { href: '/admin/data', label: 'Dữ liệu' },
-      { href: '/admin/monitor', label: 'Giám sát' },
+      { href: '/admin', label: 'Overview' },
+      { href: '/admin/monitor', label: 'Monitor' },
+      { href: '/admin/database', label: 'Database' },
     ],
   },
   {
-    label: 'Quản lý',
+    label: 'Operate',
     links: [
-      { href: '/admin/infra', label: 'Hạ tầng' },
-      { href: '/admin/console', label: 'Console' },
-      { href: '/admin/users', label: 'Tài khoản' },
-      { href: '/admin/content', label: 'Nội dung' },
-      { href: '/admin/audit', label: 'Nhật ký' },
+      { href: '/admin/infra', label: 'Infrastructure' },
+      { href: '/admin/users', label: 'Users' },
+      { href: '/admin/content', label: 'Content' },
+      { href: '/admin/audit', label: 'Audit log' },
     ],
   },
 ]
 
-/** Longest matching prefix, so /admin/data?table=x marks Dữ liệu and not Tổng quan. */
+/** Longest matching prefix, so /admin/database?table=x marks Database and not Overview. */
 function current(path: string): string | undefined {
   return NAV_GROUPS.flatMap((g) => g.links.map((l) => l.href))
     .filter((h) => path === h || path.startsWith(h + '/'))
@@ -38,7 +36,7 @@ function current(path: string): string | undefined {
 export function AdminNav() {
   const active = current(usePathname() || '/admin')
   return (
-    <nav aria-label="Quản trị" className="-mx-4 overflow-x-auto px-4 lg:mx-0 lg:overflow-visible lg:px-0">
+    <nav aria-label="Admin" className="-mx-4 overflow-x-auto px-4 lg:mx-0 lg:overflow-visible lg:px-0">
       <div className="flex gap-1 lg:flex-col lg:gap-6">
         {NAV_GROUPS.map((g) => (
           <div key={g.label} className="flex shrink-0 gap-1 lg:flex-col lg:gap-0.5">

@@ -42,14 +42,14 @@ export function usePoll<T>(url: string, everyMs: number, parse: (raw: unknown) =
           try {
             data = parseRef.current(body)
           } catch {
-            fail('Máy chủ trả về dữ liệu không đúng dạng.')
+            fail('Server trả về dữ liệu không đúng dạng.')
             return
           }
           onDataRef.current?.(data)
           setPoll({ state: 'ok', data, at: Date.now() })
         }
       } catch {
-        if (alive) fail('Mất kết nối tới máy chủ.')
+        if (alive) fail('Mất kết nối tới server.')
       } finally {
         inFlight = false
         if (alive) timer = setTimeout(() => void tick(), everyMs)

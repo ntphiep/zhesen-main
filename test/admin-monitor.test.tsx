@@ -131,12 +131,12 @@ describe('Chart', () => {
       { t: '2026-09-25T00:00:00Z', v: 4 }, { t: '2026-09-25T00:05:00Z', v: 31.2 }, { t: '2026-09-25T00:10:00Z', v: 6 },
     ] }} />)
     expect(screen.getByText('6%')).toBeTruthy()
-    expect(screen.getByText(/cao nhất 31,2%/)).toBeTruthy()
+    expect(screen.getByText(/peak 31.2%/)).toBeTruthy()
   })
 
   it('says so when CloudWatch has no points', () => {
-    render(<Chart range="7d" s={{ id: 'mem', label: 'Bộ nhớ đã dùng', unit: '%', points: [] }} />)
-    expect(screen.getByText(/không có điểm dữ liệu/)).toBeTruthy()
+    render(<Chart range="7d" s={{ id: 'mem', label: 'Memory used', unit: '%', points: [] }} />)
+    expect(screen.getByText(/No CloudWatch datapoints/)).toBeTruthy()
   })
 })
 
@@ -149,9 +149,9 @@ describe('SlowQueries', () => {
 
   it('reads the total in seconds and the call count', () => {
     render(<SlowQueries rows={rows} />)
-    expect(screen.getByText('708 giây tổng')).toBeTruthy()
-    expect(screen.getByText('34.204 lần gọi')).toBeTruthy()
-    expect(screen.getByText('vai trò anon')).toBeTruthy()
+    expect(screen.getByText('708 s total')).toBeTruthy()
+    expect(screen.getByText('34,204 calls')).toBeTruthy()
+    expect(screen.getByText('role anon')).toBeTruthy()
   })
 })
 

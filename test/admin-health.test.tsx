@@ -69,8 +69,8 @@ describe('awsHealthConfig', () => {
 describe('HealthPanel', () => {
   it('shows each alarm state and says when no backup exists yet', () => {
     render(<HealthPanel health={summarizeHealth({ alarms: ALARMS, latest: [96.4, 41.2], objects: [] }, NOW)} />)
-    expect(screen.getByText('zhesen-disk-high').closest('tr')).toHaveTextContent('Bình thường')
-    expect(screen.getByText(/Chưa có bản dump nào/)).toBeInTheDocument()
+    expect(screen.getByText('zhesen-disk-high').closest('tr')).toHaveTextContent('OK')
+    expect(screen.getByText(/No dump yet/)).toBeInTheDocument()
   })
 
   it('prints the dump age', () => {
@@ -78,7 +78,7 @@ describe('HealthPanel', () => {
       alarms: [], latest: [],
       objects: [{ Key: 'postgres/postgres-20260924T033001Z.dump', LastModified: '2026-09-24T03:00:09Z', Size: 61_000_000 }],
     }, NOW)} />)
-    expect(screen.getByText('3 giờ trước')).toBeInTheDocument()
+    expect(screen.getByText('3 h ago')).toBeInTheDocument()
     expect(screen.getByText('postgres/postgres-20260924T033001Z.dump')).toBeInTheDocument()
   })
 })

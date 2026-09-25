@@ -7,7 +7,7 @@ const show = (v: unknown) => (typeof v === 'string' ? v : JSON.stringify(v))
  *  field and value, because it holds the values before and after the change. */
 export function AuditLog({ entries }: { entries: AuditEntry[] }) {
   if (entries.length === 0) {
-    return <p className="text-sm text-black/60">Chưa có thao tác quản trị nào.</p>
+    return <p className="text-sm text-black/60">No admin actions yet.</p>
   }
   return (
     <ol className="divide-y divide-black/5 rounded-lg border border-black/10">

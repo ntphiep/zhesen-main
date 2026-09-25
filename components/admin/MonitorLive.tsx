@@ -13,17 +13,17 @@ const HOST_MS = 30_000
 /** Ten minutes of 10-second samples. */
 const KEEP = 60
 
-const rate = (n: number) => n.toLocaleString('vi-VN', { maximumFractionDigits: n < 10 ? 1 : 0 })
-const pct = (n: number) => `${n.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%`
+const rate = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: n < 10 ? 1 : 0 })
+const pct = (n: number) => `${n.toLocaleString('en-US', { maximumFractionDigits: 1 })}%`
 
 /** When the last poll landed, or why it did not. */
 function Freshness({ poll, everyMs }: { poll: Poll<unknown>; everyMs: number }) {
-  const every = `mỗi ${everyMs / 1000} giây`
-  if (poll.state === 'loading') return <Status tone="idle">Đang đọc lần đầu</Status>
+  const every = `every ${everyMs / 1000} s`
+  if (poll.state === 'loading') return <Status tone="idle">Loading</Status>
   if (poll.state === 'error') {
-    return <Status tone="bad">{poll.message}{poll.at ? ` Số liệu dưới đây từ ${clock(new Date(poll.at))}.` : ''}</Status>
+    return <Status tone="bad">{poll.message}{poll.at ? ` Showing data from ${clock(new Date(poll.at))}.` : ''}</Status>
   }
-  return <Status tone="ok">Cập nhật {every}, lần cuối {clock(new Date(poll.at))}</Status>
+  return <Status tone="ok">Updated {every} · last {clock(new Date(poll.at))}</Status>
 }
 
 /** The last ten minutes of one number, drawn without axes: its shape is the point. */
@@ -46,16 +46,16 @@ function Reading({ label, value, note, trail }: { label: string; value: string; 
       <div className="text-2xl font-semibold tabular-nums">{value}</div>
       <div className="text-sm text-black/60">{label}</div>
       {note && <div className="text-xs text-black/45">{note}</div>}
-      {trail && <div className="mt-1"><Trail values={trail} label={`${label}, 10 phút gần nhất`} /></div>}
+      {trail && <div className="mt-1"><Trail values={trail} label={`${label}, last 10 minutes`} /></div>}
     </div>
   )
 }
 
 const CONNECTION_STATE: Record<string, string> = {
-  active: 'đang chạy',
-  idle: 'rảnh',
-  'idle in transaction': 'giữ giao dịch',
-  'idle in transaction (aborted)': 'giao dịch lỗi',
+  active: 'active',
+  idle: 'idle',
+  'idle in transaction': 'idle in tx',
+  'idle in transaction (aborted)': 'aborted tx',
 }
 
 /** Postgres every 10 seconds: connections, throughput and what is running right now. */
@@ -79,46 +79,46 @@ export function LivePanel() {
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Reading
-              label="Kết nối"
+              label="Connections"
               value={`${total} / ${live.maxConnections}`}
               note={Object.entries(live.connections).map(([s, n]) => `${n} ${CONNECTION_STATE[s] ?? s}`).join(', ')}
               trail={trail.map((t) => t.connections)}
             />
             <Reading
-              label="Giao dịch mỗi giây"
+              label="Commits / s"
               value={last ? rate(last.commitsPerSec) : '…'}
-              note={last && last.rollbacksPerSec > 0 ? `${rate(last.rollbacksPerSec)} bị huỷ mỗi giây` : 'Không có giao dịch bị huỷ'}
+              note={last && last.rollbacksPerSec > 0 ? `${rate(last.rollbacksPerSec)} rollbacks / s` : 'No rollbacks'}
               trail={trail.map((t) => t.r.commitsPerSec)}
             />
             <Reading
-              label="Dòng đọc mỗi giây"
+              label="Rows read / s"
               value={last ? rate(last.rowsReadPerSec) : '…'}
               note={last?.hitRatio == null ? undefined
-                : last.hitRatio >= 0.9995 ? 'Mọi khối đều có sẵn trong bộ nhớ'
-                  : `${pct((1 - last.hitRatio) * 100)} khối phải đọc từ ổ đĩa`}
+                : last.hitRatio >= 0.9995 ? 'Cache hit 100%'
+                  : `Cache hit ${pct(last.hitRatio * 100)}`}
               trail={trail.map((t) => t.r.rowsReadPerSec)}
             />
             <Reading
-              label="Dòng ghi mỗi giây"
+              label="Rows written / s"
               value={last ? rate(last.rowsWrittenPerSec) : '…'}
-              note={live.lockWaits > 0 ? `${live.lockWaits} truy vấn đang chờ khoá` : 'Không truy vấn nào chờ khoá'}
+              note={live.lockWaits > 0 ? `${live.lockWaits} waiting on locks` : 'No lock waits'}
               trail={trail.map((t) => t.r.rowsWrittenPerSec)}
             />
           </div>
-          {!last && <p className="mt-2 text-xs text-black/45">Tốc độ cần 2 lần đọc, có sau 10 giây.</p>}
+          {!last && <p className="mt-2 text-xs text-black/45">Rates appear after the second sample, in 10 s.</p>}
 
-          <h3 className="mt-5 mb-2 text-sm font-medium">Đang chạy ({live.running.length})</h3>
+          <h3 className="mt-5 mb-2 text-sm font-medium">Running queries ({live.running.length})</h3>
           {live.running.length === 0 ? (
-            <p className="text-sm text-black/55">Không có truy vấn nào đang chạy ngoài lần đọc này.</p>
+            <p className="text-sm text-black/55">None besides this read.</p>
           ) : (
             <ul className="divide-y divide-black/5 rounded-lg border border-black/10">
               {live.running.map((q) => (
                 <li key={q.pid} className="px-4 py-2.5">
                   <div className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-xs text-black/55 tabular-nums">
-                    <span className="font-medium text-black/80">{q.seconds !== null ? `${rate(q.seconds)} giây` : '–'}</span>
-                    <span>{q.user ?? 'không rõ'}{q.application ? ` qua ${q.application}` : ''}</span>
+                    <span className="font-medium text-black/80">{q.seconds !== null ? `${rate(q.seconds)} s` : '–'}</span>
+                    <span>{q.user ?? 'unknown'}{q.application ? ` via ${q.application}` : ''}</span>
                     <span>{CONNECTION_STATE[q.state ?? ''] ?? q.state}</span>
-                    {q.wait && <span className="text-amber-800">chờ {q.wait}</span>}
+                    {q.wait && <span className="text-amber-800">waiting {q.wait}</span>}
                     <span>pid {q.pid}</span>
                   </div>
                   <code className="mt-1 block font-mono text-xs break-all text-black/70">{q.query}</code>
@@ -144,7 +144,7 @@ function Meter({ label, used, total, format }: { label: string; used: number; to
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/[0.06]" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)}>
         <div className={`h-full ${tone}`} style={{ width: `${Math.min(100, share * 100)}%` }} />
       </div>
-      <div className="mt-1.5 text-xs text-black/50 tabular-nums">{format(used)} trên {format(total)}</div>
+      <div className="mt-1.5 text-xs text-black/50 tabular-nums">{format(used)} of {format(total)}</div>
     </div>
   )
 }
@@ -152,7 +152,7 @@ function Meter({ label, used, total, format }: { label: string; used: number; to
 function duration(seconds: number): string {
   const days = Math.floor(seconds / 86_400)
   const hours = Math.floor((seconds % 86_400) / 3600)
-  return days > 0 ? `${days} ngày ${hours} giờ` : `${hours} giờ ${Math.floor((seconds % 3600) / 60)} phút`
+  return days > 0 ? `${days} d ${hours} h` : `${hours} h ${Math.floor((seconds % 3600) / 60)} min`
 }
 
 function containerTone(status: string, health: string | null): Tone {
@@ -162,14 +162,14 @@ function containerTone(status: string, health: string | null): Tone {
   return 'ok'
 }
 
-const HEALTH: Record<string, string> = { healthy: 'khoẻ', unhealthy: 'không khoẻ', starting: 'đang khởi động' }
+const HEALTH: Record<string, string> = { healthy: 'healthy', unhealthy: 'unhealthy', starting: 'starting' }
 
 /** The instance and each container every 30 seconds, through one SSM command. */
 export function HostPanel() {
   const poll = usePoll<HostResponse>('/api/admin/monitor?part=host', HOST_MS, parseHostResponse)
   const host = poll.state === 'loading' ? undefined : poll.data
   if (host && 'enabled' in host) {
-    return <p className="text-sm text-black/60">Chưa cấu hình quyền AWS cho bản triển khai này (AWS_ROLE_ARN), nên không đọc được máy chủ.</p>
+    return <p className="text-sm text-black/60">AWS read not configured (AWS_ROLE_ARN).</p>
   }
   const now = host ? Date.parse(host.at) : 0
 
@@ -179,23 +179,22 @@ export function HostPanel() {
       {host && (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {host.memory && <Meter label="Bộ nhớ" used={host.memory.total - host.memory.available} total={host.memory.total} format={formatBytes} />}
-            {host.disk && <Meter label="Ổ đĩa" used={host.disk.used} total={host.disk.size} format={formatBytes} />}
+            {host.memory && <Meter label="Memory" used={host.memory.total - host.memory.available} total={host.memory.total} format={formatBytes} />}
+            {host.disk && <Meter label="Disk" used={host.disk.used} total={host.disk.size} format={formatBytes} />}
             {host.load && (
               <div className="min-w-0 rounded-lg border border-black/10 px-4 py-3">
-                <div className="text-2xl font-semibold tabular-nums">{host.load[0].toLocaleString('vi-VN')}</div>
-                <div className="text-sm text-black/60">Tải CPU trung bình 1 phút</div>
+                <div className="text-2xl font-semibold tabular-nums">{host.load[0].toLocaleString('en-US')}</div>
+                <div className="text-sm text-black/60">Load average, 1 min</div>
                 <div className="text-xs text-black/45 tabular-nums">
-                  5 phút {host.load[1].toLocaleString('vi-VN')}, 15 phút {host.load[2].toLocaleString('vi-VN')}
-                  {host.cpus ? `; máy có ${host.cpus} nhân, tải bằng ${host.cpus} là dùng hết` : ''}
+                  5 min {host.load[1].toLocaleString('en-US')} · 15 min {host.load[2].toLocaleString('en-US')}
+                  {host.cpus ? ` · ${host.cpus} vCPU` : ''}
                 </div>
               </div>
             )}
             {host.uptimeSeconds !== null && (
               <div className="min-w-0 rounded-lg border border-black/10 px-4 py-3">
                 <div className="text-2xl font-semibold tabular-nums">{duration(host.uptimeSeconds)}</div>
-                <div className="text-sm text-black/60">Máy chạy liên tục</div>
-                <div className="text-xs text-black/45">Tính từ lần khởi động gần nhất</div>
+                <div className="text-sm text-black/60">Uptime</div>
               </div>
             )}
           </div>
@@ -205,10 +204,10 @@ export function HostPanel() {
               <thead>
                 <tr className="border-b border-black/10 text-left text-xs text-black/50">
                   <th className="px-4 py-2 font-medium">Container</th>
-                  <th className="px-4 py-2 font-medium">Trạng thái</th>
+                  <th className="px-4 py-2 font-medium">Status</th>
                   <th className="px-4 py-2 text-right font-medium">CPU</th>
-                  <th className="px-4 py-2 text-right font-medium">Bộ nhớ</th>
-                  <th className="px-4 py-2 font-medium">Chạy từ</th>
+                  <th className="px-4 py-2 text-right font-medium">Memory</th>
+                  <th className="px-4 py-2 font-medium">Up for</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5">
@@ -220,14 +219,14 @@ export function HostPanel() {
                     </td>
                     <td className="px-4 py-2">
                       <Status tone={containerTone(c.status, c.health)}>
-                        {c.status === 'running' ? (c.health ? HEALTH[c.health] ?? c.health : 'đang chạy') : c.status}
+                        {c.status === 'running' ? (c.health ? HEALTH[c.health] ?? c.health : 'running') : c.status}
                       </Status>
-                      {c.restarts > 0 && <div className="text-xs text-amber-800">khởi động lại {c.restarts} lần</div>}
+                      {c.restarts > 0 && <div className="text-xs text-amber-800">{c.restarts} restarts</div>}
                     </td>
                     <td className="px-4 py-2 text-right tabular-nums">{c.cpuPercent !== null ? pct(c.cpuPercent) : '–'}</td>
                     <td className="px-4 py-2 text-right tabular-nums">
                       {c.memBytes !== null ? formatBytes(c.memBytes) : '–'}
-                      {c.memLimitBytes !== null && <div className="text-xs text-black/45">giới hạn {formatBytes(c.memLimitBytes)}</div>}
+                      {c.memLimitBytes !== null && <div className="text-xs text-black/45">limit {formatBytes(c.memLimitBytes)}</div>}
                     </td>
                     <td className="px-4 py-2 text-black/70 tabular-nums">{c.startedAt ? duration(Math.max(0, (now - Date.parse(c.startedAt)) / 1000)) : '–'}</td>
                   </tr>
@@ -259,13 +258,13 @@ export function LogViewer() {
       const res = await fetch(`/api/admin/monitor?part=logs&service=${service}`, { cache: 'no-store' })
       const body: unknown = await res.json()
       if (!res.ok) {
-        const message = typeof body === 'object' && body && 'error' in body && typeof body.error === 'string' ? body.error : `Lỗi ${res.status}`
+        const message = typeof body === 'object' && body && 'error' in body && typeof body.error === 'string' ? body.error : `HTTP ${res.status}`
         setLogs({ state: 'error', message })
       } else {
         setLogs({ state: 'ok', data: parseLogsResponse(body) })
       }
     } catch {
-      setLogs({ state: 'error', message: 'Mất kết nối tới máy chủ.' })
+      setLogs({ state: 'error', message: 'Mất kết nối tới server.' })
     }
   }
 
@@ -293,20 +292,20 @@ export function LogViewer() {
           disabled={logs.state === 'busy'}
           className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/[0.04] disabled:opacity-40"
         >
-          {logs.state === 'busy' ? 'Đang đọc log' : `Đọc log 15 phút gần nhất của ${service}`}
+          {logs.state === 'busy' ? 'Reading' : 'Read last 15 min'}
         </button>
       </div>
 
       {logs.state === 'error' && <p role="status" className="mt-3 text-sm text-rose-700">{logs.message}</p>}
-      {data && 'enabled' in data && <p className="mt-3 text-sm text-black/60">Chưa cấu hình quyền AWS cho bản triển khai này (AWS_ROLE_ARN).</p>}
+      {data && 'enabled' in data && <p className="mt-3 text-sm text-black/60">AWS read not configured (AWS_ROLE_ARN).</p>}
       {data && !('enabled' in data) && (
         <div className="mt-3">
           <p className="mb-1.5 text-xs text-black/50">
-            supabase-{data.service}, {num(data.lines.length)} dòng, đọc lúc {clock(data.at)}, mới nhất ở cuối.
-            {data.truncated && ' Log dài hơn giới hạn của SSM nên các dòng cũ nhất bị bỏ.'}
+            supabase-{data.service} · {num(data.lines.length)} lines · read {clock(data.at)} · newest last
+            {data.truncated && ' · oldest lines cut at the SSM limit'}
           </p>
           {data.lines.length === 0 ? (
-            <p className="text-sm text-black/55">Container không ghi dòng nào trong 15 phút qua.</p>
+            <p className="text-sm text-black/55">No log lines in the last 15 minutes.</p>
           ) : (
             <pre ref={box} className="max-h-[28rem] overflow-auto rounded-lg border border-black/10 bg-black/[0.03] p-3 font-mono text-xs leading-relaxed">
               {data.lines.map((l, i) => (

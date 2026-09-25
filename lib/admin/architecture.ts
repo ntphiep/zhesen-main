@@ -3,17 +3,17 @@ import { supabaseEnv } from '@/lib/supabase/env'
 import { z } from '@/lib/zod'
 
 /**
- * What runs where, for /admin/architecture. The containers mirror
+ * What runs where, for the architecture map on /admin. The containers mirror
  * infra/supabase/docker-compose.yml, and test/admin-architecture.test.ts fails when the two
  * disagree, so an image bump there cannot leave this page stale.
  */
 export const CONTAINERS = [
-  { service: 'api-gw', container: 'supabase-envoy', image: 'envoyproxy/envoy:v1.39.1', role: 'Cổng API: kiểm tra apikey, chuyển /auth và /rest vào trong' },
-  { service: 'auth', container: 'supabase-auth', image: 'supabase/gotrue:v2.197.0', role: 'Đăng nhập, phiên và tài khoản (GoTrue)' },
-  { service: 'rest', container: 'supabase-rest', image: 'postgrest/postgrest:v14.17', role: 'REST API sinh từ schema (PostgREST)' },
-  { service: 'db', container: 'supabase-db', image: 'supabase/postgres:17.6.1.136', role: 'Postgres 17 với PGroonga và pg_trgm' },
-  { service: 'meta', container: 'supabase-meta', image: 'supabase/postgres-meta:v0.99.0', role: 'API đọc schema cho Studio' },
-  { service: 'studio', container: 'supabase-studio', image: 'supabase/studio:2026.09.07-sha-7996410', role: 'Giao diện quản trị database, chỉ mở qua SSM tunnel' },
+  { service: 'api-gw', container: 'supabase-envoy', image: 'envoyproxy/envoy:v1.39.1', role: 'API gateway: checks the apikey, routes /auth and /rest' },
+  { service: 'auth', container: 'supabase-auth', image: 'supabase/gotrue:v2.197.0', role: 'Auth, sessions and accounts (GoTrue)' },
+  { service: 'rest', container: 'supabase-rest', image: 'postgrest/postgrest:v14.17', role: 'REST API generated from the schema (PostgREST)' },
+  { service: 'db', container: 'supabase-db', image: 'supabase/postgres:17.6.1.136', role: 'Postgres 17 with PGroonga and pg_trgm' },
+  { service: 'meta', container: 'supabase-meta', image: 'supabase/postgres-meta:v0.99.0', role: 'Schema API for Studio' },
+  { service: 'studio', container: 'supabase-studio', image: 'supabase/studio:2026.09.07-sha-7996410', role: 'Database UI, reachable only through an SSM tunnel' },
 ] as const
 
 /** infra/terraform/variables.tf `region` and `instance_type`; vercel.json `regions`. */

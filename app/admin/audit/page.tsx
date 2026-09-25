@@ -4,7 +4,7 @@ import { listAudit } from '@/lib/admin/audit'
 import { PageHeader } from '@/components/admin/Page'
 import { AuditLog } from '@/components/admin/AuditLog'
 
-export const metadata = { title: 'Nhật ký · Quản trị' }
+export const metadata = { title: 'Audit log · Admin' }
 
 const LIMIT = 200
 
@@ -14,10 +14,7 @@ export default async function AdminAuditPage() {
   const entries = await listAudit(supabase, LIMIT)
   return (
     <div>
-      <PageHeader
-        title="Nhật ký"
-        lead={`Mọi thao tác ghi của quản trị viên, mới nhất trước, tối đa ${LIMIT} dòng. Mỗi dòng giữ giá trị trước và sau khi đổi.`}
-      />
+      <PageHeader title="Audit log" />
       <div className="mt-6"><AuditLog entries={entries} /></div>
     </div>
   )

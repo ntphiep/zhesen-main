@@ -33,7 +33,7 @@ export async function GET(request: Request): Promise<Response> {
     const { ssm } = clients(cfg)
     const out = await runShell(ssm, part === 'host' ? HOST_SCRIPT : logScript(service ?? ''), 20)
     if (out.status !== 'Success') {
-      return Response.json({ error: `Lệnh trên máy chủ kết thúc với trạng thái ${out.status}.` }, { status: 502, headers: NO_STORE })
+      return Response.json({ error: `Lệnh trên instance kết thúc với trạng thái ${out.status}.` }, { status: 502, headers: NO_STORE })
     }
     const at = new Date().toISOString()
     if (part === 'host') return Response.json({ at, ...parseHost(out.stdout) }, { headers: NO_STORE })

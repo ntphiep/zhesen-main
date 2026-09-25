@@ -22,7 +22,7 @@ export function rpcError(
   if (error.code === '22023') {
     return Response.json({ error: refusals[error.message] ?? 'Thao tác bị từ chối.' }, { status: 409 })
   }
-  return Response.json({ error: 'Máy chủ dữ liệu gặp lỗi.' }, { status: 502 })
+  return Response.json({ error: 'Database server gặp lỗi.' }, { status: 502 })
 }
 
 /** The body as JSON, or undefined when it is not JSON. The content-type check keeps a

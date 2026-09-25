@@ -63,7 +63,8 @@ resource "aws_instance" "supabase" {
   # A new AMI or an edited user_data must never recreate the database host.
   # Both are applied by rebuilding deliberately, not by an apply.
   lifecycle {
-    ignore_changes = [ami, user_data]
+    # The type is changed from /admin/infra (lib/admin/control.ts resize).
+    ignore_changes = [ami, user_data, instance_type]
   }
 
   tags = {

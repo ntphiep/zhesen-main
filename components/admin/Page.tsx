@@ -27,15 +27,15 @@ export function when(d: Date | string): string {
   return new Date(d).toLocaleString('vi-VN', { timeZone: STUDY_TIMEZONE, dateStyle: 'short', timeStyle: 'short' })
 }
 
-export const num = (n: number) => n.toLocaleString('vi-VN')
+export const num = (n: number) => n.toLocaleString('en-US')
 
-/** Hours or days since `iso`, the way a person says it. */
+/** Minutes, hours or days since `iso`. */
 export function ago(iso: string, now: number = Date.now()): string {
   const minutes = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60_000))
-  if (minutes < 60) return `${minutes} phút trước`
+  if (minutes < 60) return `${minutes} min ago`
   const hours = Math.round(minutes / 60)
-  if (hours < 48) return `${hours} giờ trước`
-  return `${Math.round(hours / 24)} ngày trước`
+  if (hours < 48) return `${hours} h ago`
+  return `${Math.round(hours / 24)} d ago`
 }
 
 /** A status dot with its words beside it; the colour never carries meaning alone. */
@@ -48,16 +48,16 @@ export function Status({ tone, children }: { tone: Tone; children: ReactNode }) 
   )
 }
 
-/** Title, one line of purpose, and when the numbers on the page were read. */
-export function PageHeader({ title, lead, readAt }: { title: string; lead: string; readAt?: Date }) {
+/** Title, an optional line of purpose, and when the numbers on the page were read. */
+export function PageHeader({ title, lead, readAt }: { title: string; lead?: string; readAt?: Date }) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1 border-b border-black/10 pb-4">
       <div className="min-w-0">
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="mt-1 max-w-2xl text-sm text-black/60">{lead}</p>
+        {lead && <p className="mt-1 max-w-2xl text-sm text-black/60">{lead}</p>}
       </div>
       {readAt && (
-        <p className="text-xs text-black/45 tabular-nums">Số liệu đọc lúc {clock(readAt)}</p>
+        <p className="text-xs text-black/45 tabular-nums">Read at {clock(readAt)}</p>
       )}
     </header>
   )

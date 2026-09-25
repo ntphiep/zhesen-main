@@ -33,6 +33,7 @@ export function GuardDialog({
   const [error, setError] = useState<string | null>(null)
 
   function close() {
+    if (busy) return
     setTyped(''); setPassword(''); setReauth(false); setError(null)
     onClose()
   }
@@ -72,7 +73,7 @@ export function GuardDialog({
         <div className="text-sm text-black/70">{children}</div>
         {target && (
           <label className="flex flex-col gap-1 text-sm">
-            <span>Gõ <code className="rounded bg-black/[0.06] px-1 font-mono">{target}</code> để xác nhận</span>
+            <span>Type <code className="rounded bg-black/[0.06] px-1 font-mono">{target}</code> to confirm</span>
             <input
               value={typed}
               onChange={(e) => setTyped(e.target.value)}
@@ -84,7 +85,7 @@ export function GuardDialog({
         )}
         {reauth && (
           <label className="flex flex-col gap-1 text-sm">
-            <span>Lần đăng nhập gần nhất đã quá 10 phút. Nhập lại mật khẩu để tiếp tục.</span>
+            <span>Password <span className="text-black/50">· lần đăng nhập gần nhất đã quá 10 phút</span></span>
             <input
               type="password"
               value={password}
@@ -96,15 +97,15 @@ export function GuardDialog({
         )}
         {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={close} className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5">
-            Huỷ
+          <button type="button" onClick={close} disabled={busy} className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-40">
+            Cancel
           </button>
           <button
             type="submit"
             disabled={!ready || busy}
             className="rounded-lg bg-rose-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
           >
-            {busy ? 'Đang chạy' : actionLabel}
+            {busy ? 'Running…' : actionLabel}
           </button>
         </div>
       </form>

@@ -110,9 +110,11 @@ docker cp /tmp/postgres-<stamp>.dump supabase-db:/tmp/restore.dump
 docker exec -i supabase-db pg_restore -U supabase_admin -d postgres --clean --if-exists /tmp/restore.dump
 ```
 
-Resize: `docker compose down` on the instance, stop it, change `instance_type` in
-`terraform.tfvars`, apply, start. Volume, private IP and instance id survive. More
-memory means raising `shared_buffers` and `effective_cache_size` in `docker-compose.yml`.
+Resize: Change type on `/admin/infra` stops the instance, sets the type and starts it,
+about 2 to 3 minutes down. Terraform ignores `instance_type`, so an apply does not revert it;
+`instance_type` in `terraform.tfvars` only applies to a rebuilt instance. Volume, private IP and
+instance id survive. More memory means raising `shared_buffers` and `effective_cache_size` in
+`docker-compose.yml`.
 
 Alarms (CPU, CPU credits, memory, disk, status checks) and the 45 USD budget email
 `alert_email` through SNS topic `zhesen-alerts`, once the subscription is confirmed. An

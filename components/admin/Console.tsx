@@ -8,7 +8,7 @@ import { GuardDialog } from '@/components/admin/GuardDialog'
 
 const INSTANCE_NAME = 'zhesen-supabase'
 /** SSM keeps only the first 24,000 characters of each stream. */
-const LIMIT_NOTE = 'Kết quả dài hơn 24.000 ký tự bị cắt, vì SSM chỉ trả về chừng đó.'
+const LIMIT_NOTE = 'Output cut at 24,000 characters, the SSM limit.'
 
 const runSchema = z.object({
   status: z.string(), exitCode: z.number(), stdout: z.string(), stderr: z.string(), truncated: z.boolean(), ms: z.number(),
@@ -26,8 +26,8 @@ function Output({ run, at }: { run: Run; at: Date }) {
   return (
     <div className="mt-3">
       <p className={`text-xs tabular-nums ${ok ? 'text-black/55' : 'text-rose-700'}`}>
-        {ok ? 'Chạy xong' : `Lỗi, mã thoát ${run.exitCode}`} lúc {clock(at)}, mất {num(Math.round(run.ms / 100) / 10)} giây
-        {rows ? `, ${num(rows.length - 1)} dòng` : ''}.{run.truncated ? ` ${LIMIT_NOTE}` : ''}
+        {ok ? `Done in ${num(Math.round(run.ms / 100) / 10)} s` : `Failed · exit ${run.exitCode}`}
+        {rows ? ` · ${num(rows.length - 1)} rows` : ''} · {clock(at)}{run.truncated ? ` · ${LIMIT_NOTE}` : ''}
       </p>
       {rows ? (
         <div className="mt-1.5 max-h-[28rem] overflow-auto rounded-lg border border-black/10">
@@ -59,7 +59,7 @@ function useRun() {
   const [error, setError] = useState<string | null>(null)
   const take = (data: unknown) => {
     const r = runSchema.safeParse(data)
-    if (r.success) { setRun({ run: r.data, at: new Date() }); setError(null) } else setError('Máy chủ trả về dữ liệu không đúng dạng.')
+    if (r.success) { setRun({ run: r.data, at: new Date() }); setError(null) } else setError('Server trả về dữ liệu không đúng dạng.')
   }
   return { run, error, setError, take }
 }
@@ -84,14 +84,14 @@ export function SqlConsole() {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3">
-        <div role="radiogroup" aria-label="Chế độ" className="inline-flex gap-1 rounded-lg border border-black/10 p-1">
-          <button type="button" role="radio" aria-checked={mode === 'read'} className={tab(mode === 'read')} onClick={() => setMode('read')}>Chỉ đọc</button>
-          <button type="button" role="radio" aria-checked={mode === 'write'} className={tab(mode === 'write')} onClick={() => setMode('write')}>Được ghi</button>
+        <div role="radiogroup" aria-label="Mode" className="inline-flex gap-1 rounded-lg border border-black/10 p-1">
+          <button type="button" role="radio" aria-checked={mode === 'read'} className={tab(mode === 'read')} onClick={() => setMode('read')}>Read only</button>
+          <button type="button" role="radio" aria-checked={mode === 'write'} className={tab(mode === 'write')} onClick={() => setMode('write')}>Write</button>
         </div>
-        <p className="text-sm text-black/60">
+        <p className={`text-sm ${mode === 'read' ? 'text-black/55' : 'text-amber-800'}`}>
           {mode === 'read'
-            ? 'Mọi giao dịch ở chế độ chỉ đọc, dừng sau 30 giây. Lệnh ghi bị Postgres từ chối. Lệnh psql bắt đầu bằng dấu \\ không chạy ở đây.'
-            : 'Chạy đúng như gõ, dừng sau 2 phút. Cần gõ lại tên database và được ghi cả câu lệnh vào nhật ký.'}
+            ? 'Read-only transaction, 30 s timeout. psql \\ commands do not run.'
+            : 'Chạy đúng như gõ trên production và không hoàn tác được; dừng sau 2 phút.'}
         </p>
       </div>
       <textarea
@@ -99,14 +99,14 @@ export function SqlConsole() {
         onChange={(e) => setSql(e.target.value)}
         rows={6}
         spellCheck={false}
-        aria-label="Câu lệnh SQL"
+        aria-label="SQL"
         className="mt-3 w-full rounded-lg border border-black/15 px-3 py-2 font-mono text-sm"
       />
       <div className="mt-2 flex items-center gap-3">
         <button type="button" className={button} disabled={busy || !sql.trim()} onClick={() => (mode === 'read' ? void runRead() : setGuard({ reauthFirst: false }))}>
-          {busy ? 'Đang chạy' : mode === 'read' ? 'Chạy' : 'Chạy và ghi'}
+          {busy ? 'Running' : mode === 'read' ? 'Run' : 'Run write'}
         </button>
-        <span className="text-xs text-black/45">Chạy với vai trò supabase_admin trên database postgres.</span>
+        <span className="font-mono text-xs text-black/45">supabase_admin · postgres</span>
       </div>
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
       {run && <Output run={run.run} at={run.at} />}
@@ -114,17 +114,17 @@ export function SqlConsole() {
         <GuardDialog
           open
           reauthFirst={guard.reauthFirst}
-          title={mode === 'write' ? 'Chạy SQL được ghi' : 'Chạy SQL chỉ đọc'}
+          title={mode === 'write' ? 'Run SQL · Write' : 'Run SQL · Read only'}
           target={mode === 'write' ? 'postgres' : null}
-          actionLabel="Chạy"
+          actionLabel="Run"
           run={(confirm) => postAdmin('/api/admin/control', { action: 'sql', mode, sql, confirm })}
           onClose={() => setGuard(null)}
           onDone={take}
         >
           <p>
             {mode === 'write'
-              ? 'Câu lệnh chạy trên database production với quyền supabase_admin và không hoàn tác được. Nên chạy sao lưu trước ở trang Hạ tầng.'
-              : 'SQL đọc được mọi dòng của database, kể cả bảng tài khoản, nên cũng cần một lần đăng nhập trong 10 phút gần nhất.'}
+              ? 'Chạy bằng supabase_admin trên production, không hoàn tác được; nên Backup now ở Infrastructure trước.'
+              : 'SQL đọc được mọi bảng, kể cả tài khoản, nên cần đăng nhập trong 10 phút gần nhất.'}
           </p>
           <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/[0.04] p-2 font-mono text-xs whitespace-pre-wrap">{sql}</pre>
         </GuardDialog>
@@ -146,31 +146,31 @@ export function ShellConsole() {
         onChange={(e) => setCommand(e.target.value)}
         rows={3}
         spellCheck={false}
-        aria-label="Lệnh shell"
+        aria-label="Shell command"
         className="w-full rounded-lg border border-black/15 px-3 py-2 font-mono text-sm"
       />
       <div className="mt-2 flex flex-wrap items-center gap-3">
-        <button type="button" className={button} disabled={!command.trim()} onClick={() => setGuard(true)}>Chạy lệnh</button>
+        <button type="button" className={button} disabled={!command.trim()} onClick={() => setGuard(true)}>Run</button>
         <label className="flex items-center gap-2 text-sm text-black/60">
-          Dừng sau
+          Timeout
           <input type="number" min={5} max={240} value={timeout} onChange={(e) => setTimeoutSeconds(Number(e.target.value))}
             className="w-20 rounded-lg border border-black/15 px-2 py-1 tabular-nums" />
-          giây
+          s
         </label>
-        <span className="text-xs text-black/45">Chạy bằng root qua SSM. Phiên tương tác vẫn dùng aws ssm start-session.</span>
+        <span className="text-xs text-black/45">root via SSM</span>
       </div>
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
       {run && <Output run={run.run} at={run.at} />}
       <GuardDialog
         open={guard}
-        title="Chạy lệnh trên máy chủ"
+        title="Run on the instance"
         target={INSTANCE_NAME}
-        actionLabel="Chạy"
+        actionLabel="Run"
         run={(confirm) => postAdmin('/api/admin/control', { action: 'shell', command, confirm, timeout: Math.min(240, Math.max(5, timeout || 60)) })}
         onClose={() => setGuard(false)}
         onDone={take}
       >
-        <p>Lệnh chạy bằng root trên máy chủ production. Nó được ghi vào nhật ký và gửi email.</p>
+        <p>Chạy bằng root trên server production, có ghi audit log và gửi email.</p>
         <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/[0.04] p-2 font-mono text-xs whitespace-pre-wrap">{command}</pre>
       </GuardDialog>
     </div>
@@ -202,42 +202,43 @@ export function RestorePanel({ dumps }: { dumps: { key: string; at: string; byte
     return () => clearInterval(t)
   }, [db, status?.state])
 
-  if (dumps.length === 0) return <p className="text-sm text-black/60">Chưa có bản dump nào trong bucket sao lưu.</p>
+  if (dumps.length === 0) return <p className="text-sm text-black/60">No dumps in the backup bucket.</p>
   return (
     <div>
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-sm">
-          <span>Bản dump</span>
+          <span>Dump</span>
           <select value={key} onChange={(e) => setKey(e.target.value)} className="rounded-lg border border-black/15 px-3 py-2 font-mono text-sm">
             {dumps.map((d) => <option key={d.key} value={d.key}>{when(d.at)}, {formatBytes(d.bytes)}</option>)}
           </select>
         </label>
-        <button type="button" className={button} disabled={!key || (status?.state === 'running')} onClick={() => setGuard(true)}>Khôi phục ra database riêng</button>
+        <button type="button" className={button} disabled={!key || (status?.state === 'running')} onClick={() => setGuard(true)}>Restore</button>
       </div>
+      <p className="mt-2 text-sm text-black/55">Khôi phục vào một database mới; database production không bị động tới.</p>
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
       {db && (
         <div role="status" className="mt-3 rounded-lg border border-black/10 px-4 py-3 text-sm">
           <div>
             Database <code className="font-mono">{db}</code>:{' '}
-            {!status || status.state === 'running' ? 'đang khôi phục, tiến độ đọc lại mỗi 10 giây'
-              : status.state === 'done' ? `xong, lex.entries có ${num(status.entries ?? 0)} dòng${status.warnings ? `; pg_restore bỏ qua một số lỗi (mã ${status.warnings}), xem log dưới đây` : ''}`
-                : status.state === 'failed' ? 'thất bại' : 'chưa thấy log'}
+            {!status || status.state === 'running' ? 'Restoring · checked every 10 s'
+              : status.state === 'done' ? `Done · lex.entries ${num(status.entries ?? 0)} rows${status.warnings ? ` · pg_restore exit ${status.warnings}, see log` : ''}`
+                : status.state === 'failed' ? 'Failed' : 'No log yet'}
           </div>
           {status?.tail && <pre className="mt-1.5 max-h-48 overflow-auto font-mono text-xs whitespace-pre-wrap text-black/60">{status.tail}</pre>}
           {status?.state === 'done' && (
             <p className="mt-1.5 text-xs text-black/55">
-              Đọc bằng lệnh shell{' '}
-              <code className="font-mono">docker exec supabase-db psql -U supabase_admin -d {db} -c &quot;...&quot;</code>. Xoá khi xong bằng SQL được ghi{' '}
-              <code className="font-mono">drop database {db};</code>
+              Read: <code className="font-mono">docker exec supabase-db psql -U supabase_admin -d {db} -c &quot;...&quot;</code>
+              <br />
+              Drop when done (Write): <code className="font-mono">drop database {db};</code>
             </p>
           )}
         </div>
       )}
       <GuardDialog
         open={guard}
-        title="Khôi phục bản dump"
+        title="Restore dump"
         target={null}
-        actionLabel="Khôi phục"
+        actionLabel="Restore"
         run={() => postAdmin('/api/admin/control', { action: 'restore', key })}
         onClose={() => setGuard(false)}
         onDone={(data) => {
@@ -246,8 +247,7 @@ export function RestorePanel({ dumps }: { dumps: { key: string; at: string; byte
         }}
       >
         <p>
-          Bản dump được tải từ S3 và khôi phục vào một database mới tên <code className="font-mono">restore_…</code> trên cùng máy chủ.
-          Database production không bị động tới. Việc này mất vài phút và dùng thêm ổ đĩa cỡ bằng database hiện tại; tối đa 2 bản cùng lúc.
+          Khôi phục vào database mới <code className="font-mono">restore_…</code>, không đụng production; tốn ổ đĩa bằng database hiện tại, tối đa 2 bản.
         </p>
       </GuardDialog>
     </div>

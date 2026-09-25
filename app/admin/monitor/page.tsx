@@ -7,7 +7,7 @@ import { HostPanel, LivePanel, LogViewer } from '@/components/admin/MonitorLive'
 import { Chart, RangeSwitch, SlowQueries } from '@/components/admin/History'
 import { HealthPanel } from '@/components/admin/HealthPanel'
 
-export const metadata = { title: 'Giám sát · Quản trị' }
+export const metadata = { title: 'Monitor · Admin' }
 
 type Aws = { state: 'off' } | { state: 'error'; name: string } | { state: 'ok'; health: Health; history: Series[] }
 
@@ -33,8 +33,8 @@ async function readSlow(supabase: Awaited<ReturnType<typeof createClient>>): Pro
 
 function AwsMissing({ aws }: { aws: Exclude<Aws, { state: 'ok' }> }) {
   return aws.state === 'off'
-    ? <p className="text-sm text-black/60">Chưa cấu hình quyền đọc AWS cho bản triển khai này (AWS_ROLE_ARN).</p>
-    : <p className="text-sm text-rose-700">Không đọc được từ AWS ({aws.name}).</p>
+    ? <p className="text-sm text-black/60">AWS read not configured (AWS_ROLE_ARN).</p>
+    : <p className="text-sm text-rose-700">AWS unreadable ({aws.name}).</p>
 }
 
 export default async function AdminMonitorPage({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
@@ -46,21 +46,17 @@ export default async function AdminMonitorPage({ searchParams }: { searchParams:
 
   return (
     <div>
-      <PageHeader
-        title="Giám sát"
-        lead="Database và máy chủ cập nhật liên tục khi trang đang mở; lịch sử, cảnh báo và truy vấn chậm đọc lúc tải trang."
-        readAt={readAt}
-      />
+      <PageHeader title="Monitor" readAt={readAt} />
 
-      <Section title="Database lúc này">
+      <Section title="Postgres · live">
         <LivePanel />
       </Section>
 
-      <Section title="Máy chủ và container">
+      <Section title="Host and containers · live">
         <HostPanel />
       </Section>
 
-      <Section title="Lịch sử máy chủ" aside={<RangeSwitch range={range} />}>
+      <Section title="History" aside={<RangeSwitch range={range} />}>
         {aws.state === 'ok' ? (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {aws.history.map((s) => <Chart key={s.id} s={s} range={range} />)}
@@ -68,15 +64,15 @@ export default async function AdminMonitorPage({ searchParams }: { searchParams:
         ) : <AwsMissing aws={aws} />}
       </Section>
 
-      <Section title="Truy vấn tốn nhiều thời gian nhất" aside="Cộng dồn từ lần đặt lại thống kê gần nhất">
-        {slow ? <SlowQueries rows={slow} /> : <p className="text-sm text-rose-700">Không đọc được pg_stat_statements.</p>}
+      <Section title="Top queries by total time" aside="since the last pg_stat_statements reset">
+        {slow ? <SlowQueries rows={slow} /> : <p className="text-sm text-rose-700">pg_stat_statements unreadable.</p>}
       </Section>
 
-      <Section title="Cảnh báo và sao lưu">
+      <Section title="Alarms and backups">
         {aws.state === 'ok' ? <HealthPanel health={aws.health} /> : <AwsMissing aws={aws} />}
       </Section>
 
-      <Section title="Log container">
+      <Section title="Container logs">
         <LogViewer />
       </Section>
     </div>

@@ -65,14 +65,17 @@ resource "aws_iam_role_policy" "health" {
 # AWS only grants on "*" are kept in their own statement.
 data "aws_iam_policy_document" "operate" {
   statement {
-    sid       = "DescribeAnywhere"
-    actions   = ["ec2:DescribeInstances", "ec2:DescribeInstanceStatus", "ssm:GetCommandInvocation", "ce:GetCostAndUsage", "ce:GetCostForecast"]
+    sid = "DescribeAnywhere"
+    actions = [
+      "ec2:DescribeInstances", "ec2:DescribeInstanceStatus", "ec2:DescribeImages", "ec2:DescribeVolumes", "ec2:DescribeInstanceTypes",
+      "ssm:GetCommandInvocation", "ce:GetCostAndUsage", "ce:GetCostForecast", "pricing:GetProducts",
+    ]
     resources = ["*"]
   }
 
   statement {
     sid       = "PowerTheInstance"
-    actions   = ["ec2:StartInstances", "ec2:StopInstances", "ec2:RebootInstances"]
+    actions   = ["ec2:StartInstances", "ec2:StopInstances", "ec2:RebootInstances", "ec2:ModifyInstanceAttribute"]
     resources = [var.instance_arn]
   }
 

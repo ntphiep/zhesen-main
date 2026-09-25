@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/admin'
+import { PageHeader } from '@/components/admin/Page'
 import { getAdminEntry, getCoverage } from '@/lib/admin/content'
 import { searchOneDirection } from '@/lib/dictionary/search'
 import { LANGUAGES } from '@/lib/languages'
 import { EntryEditor } from '@/components/admin/EntryEditor'
 
-export const metadata = { title: 'Nội dung · Quản trị' }
+export const metadata = { title: 'Content · Admin' }
 
 const LANG_NAME = new Map(LANGUAGES.map((l) => [l.code, l.name]))
 const count = (n: number) => n.toLocaleString('vi-VN')
@@ -32,19 +33,21 @@ export default async function AdminContentPage({
   const results = found ? LANGUAGES.flatMap((l) => found.entries[l.code]) : []
 
   return (
-    <div className="flex flex-col gap-10">
+    <div>
+      <PageHeader title="Content" />
+      <div className="mt-6 flex flex-col gap-10">
       <section>
-        <h2 className="mb-3 text-lg font-semibold">Độ phủ</h2>
+        <h2 className="mb-3 text-base font-semibold">Coverage</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-black/10 text-left text-xs font-medium uppercase tracking-wide text-black/45">
-                <th className="py-2 pr-4">Ngôn ngữ</th>
-                <th className="py-2 pr-4 text-right">Mục từ</th>
-                <th className="py-2 pr-4 text-right">Nghĩa</th>
-                <th className="py-2 pr-4 text-right">Có nghĩa tiếng Việt</th>
-                <th className="py-2 pr-4 text-right">Trong đó dịch máy</th>
-                <th className="py-2 text-right">Đang đánh dấu</th>
+                <th className="py-2 pr-4">Language</th>
+                <th className="py-2 pr-4 text-right">Entries</th>
+                <th className="py-2 pr-4 text-right">Senses</th>
+                <th className="py-2 pr-4 text-right">With Vietnamese</th>
+                <th className="py-2 pr-4 text-right">Machine-translated</th>
+                <th className="py-2 text-right">Flagged</th>
               </tr>
             </thead>
             <tbody>
@@ -76,29 +79,29 @@ export default async function AdminContentPage({
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold">Tìm mục từ</h2>
+        <h2 className="mb-3 text-base font-semibold">Find an entry</h2>
         <form action="/admin/content" className="flex flex-wrap items-center gap-2">
           <input
             name="q"
             defaultValue={q}
-            placeholder="Từ cần sửa"
-            aria-label="Từ cần tìm"
+            placeholder="Headword or gloss"
+            aria-label="Search"
             className="min-w-56 flex-1 rounded-lg border border-black/15 px-3 py-2 text-sm"
           />
           <select
             name="dir"
             defaultValue={dir}
-            aria-label="Chiều tra"
+            aria-label="Direction"
             className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm"
           >
-            <option value="fw">Theo từ gốc</option>
-            <option value="vi">Theo nghĩa tiếng Việt</option>
+            <option value="fw">By headword</option>
+            <option value="vi">By Vietnamese gloss</option>
           </select>
           <button type="submit" className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white">
-            Tìm
+            Search
           </button>
         </form>
-        {q && results.length === 0 && <p className="mt-3 text-sm text-black/60">Không có mục từ nào khớp.</p>}
+        {q && results.length === 0 && <p className="mt-3 text-sm text-black/60">No match.</p>}
         {results.length > 0 && (
           <ul className="mt-3 flex flex-col gap-1 text-sm">
             {results.map((r) => (
@@ -115,12 +118,13 @@ export default async function AdminContentPage({
 
       {entryId && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Sửa mục từ</h2>
+          <h2 className="mb-3 text-base font-semibold">Edit entry</h2>
           {entry ? <EntryEditor key={entry.id} entry={entry} /> : (
-            <p className="text-sm text-black/60">Không có mục từ {entryId}.</p>
+            <p className="text-sm text-black/60">No entry {entryId}.</p>
           )}
         </section>
       )}
+      </div>
     </div>
   )
 }

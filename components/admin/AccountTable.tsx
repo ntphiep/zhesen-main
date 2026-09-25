@@ -15,7 +15,7 @@ type Pending =
   | { kind: 'merge'; account: AdminAccount }
   | null
 
-const name = (a: AdminAccount) => a.email ?? `Ẩn danh ${a.id.slice(0, 8)}`
+const name = (a: AdminAccount) => a.email ?? `Anonymous ${a.id.slice(0, 8)}`
 
 /**
  * Every account, with its saved words and last activity, and the two writes an admin
@@ -44,7 +44,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
     setBusy(false)
     if (!outcome.ok) return notify(outcome.message)
     setPending(null)
-    notify(`Đã xoá ${name(a)}.`, 'info')
+    notify(`Deleted ${name(a)}.`, 'info')
     router.refresh()
   }
 
@@ -55,7 +55,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
     if (!outcome.ok) return notify(outcome.message)
     const r = merged.parse(outcome.data)
     setPending(null)
-    notify(`Đã chuyển ${r.moved} từ, giữ lại ${r.kept} từ trùng, gộp ${r.days} ngày luyện tập.`, 'info')
+    notify(`Moved ${r.moved} words, kept ${r.kept} duplicates, merged ${r.days} practice days.`, 'info')
     router.refresh()
   }
 
@@ -68,12 +68,12 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-black/10 text-left text-xs font-medium uppercase tracking-wide text-black/45">
-              <th className="py-2 pr-4">Tài khoản</th>
-              <th className="py-2 pr-4">Loại</th>
-              <th className="py-2 pr-4 text-right">Từ đã lưu</th>
-              <th className="py-2 pr-4">Hoạt động gần nhất</th>
-              <th className="py-2 pr-4">Tạo ngày</th>
-              <th className="py-2"><span className="sr-only">Thao tác</span></th>
+              <th className="py-2 pr-4">Account</th>
+              <th className="py-2 pr-4">Kind</th>
+              <th className="py-2 pr-4 text-right">Saved words</th>
+              <th className="py-2 pr-4">Last active</th>
+              <th className="py-2 pr-4">Created</th>
+              <th className="py-2"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
@@ -84,9 +84,9 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
                   {a.displayName && <div className="text-xs text-black/50">{a.displayName}</div>}
                 </td>
                 <td className="whitespace-nowrap py-2 pr-4">
-                  {a.kind === 'permanent' ? 'Có email' : 'Ẩn danh'}
+                  {a.kind === 'permanent' ? 'Email' : 'Anonymous'}
                   {a.role === 'admin' && (
-                    <span className="ml-2 rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/60">Quản trị</span>
+                    <span className="ml-2 rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/60">Admin</span>
                   )}
                 </td>
                 <td className="py-2 pr-4 text-right tabular-nums">{a.words.toLocaleString('vi-VN')}</td>
@@ -99,7 +99,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
                     disabled={a.words === 0}
                     className="rounded-lg px-2 py-1 text-black/60 hover:bg-black/5 disabled:opacity-30"
                   >
-                    Gộp vào…
+                    Merge into…
                   </button>
                   <button
                     type="button"
@@ -107,7 +107,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
                     disabled={a.role === 'admin'}
                     className="rounded-lg px-2 py-1 text-red-600 hover:bg-red-600/10 disabled:opacity-30"
                   >
-                    Xoá
+                    Delete
                   </button>
                 </td>
               </tr>
@@ -115,7 +115,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
           </tbody>
           <tfoot>
             <tr className="text-sm text-black/60">
-              <td className="py-2 pr-4">{accounts.length} tài khoản</td>
+              <td className="py-2 pr-4">{accounts.length} accounts</td>
               <td />
               <td className="py-2 pr-4 text-right tabular-nums">{total.toLocaleString('vi-VN')}</td>
               <td colSpan={3} />
@@ -127,7 +127,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
       <Modal
         open={pending?.kind === 'delete'}
         onClose={() => setPending(null)}
-        title="Xoá tài khoản"
+        title="Delete account"
         titleId="admin-delete-title"
         widthClass="max-w-md"
       >
@@ -137,11 +137,10 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
             onSubmit={(e) => { e.preventDefault(); void confirmDelete(target) }}
           >
             <p className="text-sm text-black/70">
-              Xoá {name(target)} cùng {target.words} từ đã lưu và lịch sử luyện tập. Chỉ khôi phục được
-              từ bản sao lưu hằng đêm.
+              Xoá {name(target)}, {target.words} từ đã lưu và lịch sử luyện tập; chỉ khôi phục được từ backup.
             </p>
             <label className="mt-4 block text-sm">
-              Gõ <span className="font-mono">{confirmationFor(target)}</span> để xác nhận
+              Type <span className="font-mono">{confirmationFor(target)}</span> to confirm
               <input
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
@@ -155,14 +154,14 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
                 onClick={() => setPending(null)}
                 className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5"
               >
-                Hủy
+                Cancel
               </button>
               <button
                 type="submit"
                 disabled={busy || typed.trim().toLowerCase() !== confirmationFor(target).toLowerCase()}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-40"
               >
-                Xoá vĩnh viễn
+                Delete permanently
               </button>
             </div>
           </form>
@@ -172,7 +171,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
       <Modal
         open={pending?.kind === 'merge'}
         onClose={() => setPending(null)}
-        title="Gộp tài khoản"
+        title="Merge accounts"
         titleId="admin-merge-title"
         widthClass="max-w-md"
       >
@@ -182,19 +181,18 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
             onSubmit={(e) => { e.preventDefault(); void confirmMerge(target) }}
           >
             <p className="text-sm text-black/70">
-              Chuyển {target.words} từ đã lưu của {name(target)} sang tài khoản được chọn. Từ mà tài khoản
-              đích đã có thì giữ nguyên ở tài khoản nguồn. Tài khoản nguồn không bị xoá.
+              Chuyển {target.words} từ của {name(target)} sang tài khoản đích; từ trùng giữ lại ở nguồn, nguồn không bị xoá.
             </p>
             <label className="mt-4 block text-sm">
-              Tài khoản đích
+              Target account
               <select
                 value={into}
                 onChange={(e) => setInto(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm"
               >
-                <option value="">Chọn tài khoản</option>
+                <option value="">Choose an account</option>
                 {others.map((a) => (
-                  <option key={a.id} value={a.id}>{name(a)} ({a.words} từ)</option>
+                  <option key={a.id} value={a.id}>{name(a)} ({a.words} words)</option>
                 ))}
               </select>
             </label>
@@ -204,14 +202,14 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
                 onClick={() => setPending(null)}
                 className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5"
               >
-                Hủy
+                Cancel
               </button>
               <button
                 type="submit"
                 disabled={busy || !into}
                 className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
               >
-                Gộp
+                Merge
               </button>
             </div>
           </form>

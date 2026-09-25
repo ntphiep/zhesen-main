@@ -76,7 +76,10 @@ loosen or delete a test to make it pass.
 - Comments state a constraint or a measured fact in one or two lines. No narration, no
   history, no rationale essays. If the comment is longer than the code, delete it.
 - Source, comments, commit messages and documentation are English. UI labels are
-  Vietnamese, because the product is written for Vietnamese learners.
+  Vietnamese, because the product is written for Vietnamese learners. The admin area under
+  `/admin`, with `/rescue`, is the exception: its one reader is the owner, so headings,
+  buttons, labels and units are English, and only its one-line explanations, warnings and
+  errors are Vietnamese.
 - `app/` holds routes, layouts and `globals.css` only. Components live in
   `components/<group>/`; React hooks live in `lib/hooks/`.
 - camelCase for modules, PascalCase for components, tests in `test/` named `*.test.ts(x)`.
