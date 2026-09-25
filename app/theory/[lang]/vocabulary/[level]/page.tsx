@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getLanguage, isLangCode } from '@/lib/languages'
 import { getCachedLevelsForLanguage, getCachedEntriesByLevel } from '@/lib/dictionary/cached'
-import { LevelWordList } from '@/components/learn/LevelWordList'
+import { LevelWordList } from '@/components/vocabulary/LevelWordList'
 
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'

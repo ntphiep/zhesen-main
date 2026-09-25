@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { LANG_CODES, getLanguage, isLangCode } from '@/lib/languages'
 import { getCachedCommonWords, getCachedLevelsForLanguage } from '@/lib/dictionary/cached'
-import { LanguageHub } from '@/components/learn/LanguageHub'
+import { VocabularyHub } from '@/components/vocabulary/VocabularyHub'
 
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
@@ -49,5 +49,5 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
     getCachedCommonWords(language.code),
     getCachedLevelsForLanguage(language.code),
   ])
-  return <LanguageHub language={language} common={common} levels={levels} />
+  return <VocabularyHub language={language} common={common} levels={levels} />
 }

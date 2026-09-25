@@ -1,4 +1,6 @@
+import Link from 'next/link'
 import { AudioButton } from '@/components/ui/AudioButton'
+import { searchPath } from '@/lib/dictionary/entryId'
 import { BlockPage } from './BlockPage'
 import type { Phoneme, PhonemeKind, PronunciationNote } from '@/lib/theory/types'
 import type { Language } from '@/lib/languages'
@@ -93,7 +95,9 @@ function PhonemeCard({ phoneme: p, lang }: { phoneme: Phoneme; lang: Language['c
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         {p.examples.map((e) => (
           <span key={e.word} className="flex items-baseline gap-1.5">
-            <span className="font-medium">{e.word}</span>
+            {/* The lookup rather than the entry: an example is chosen for its sound, and
+                a word the dictionary happens not to hold would otherwise 404. */}
+            <Link href={searchPath(lang, e.word)} className="font-medium hover:underline">{e.word}</Link>
             <span className="ipa text-sm text-black/45">{e.ipa}</span>
             <AudioButton text={e.word} lang={lang} />
           </span>

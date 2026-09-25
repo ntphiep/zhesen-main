@@ -1,37 +1,27 @@
 import Link from 'next/link'
 import { Ipa } from '@/components/ui/Ipa'
-import { LookupPair } from '@/components/search/LookupPair'
+import { BlockPage } from '@/components/theory/BlockPage'
 import { entryPath } from '@/lib/dictionary/entryId'
-import { grammarLangPath } from '@/lib/grammar/path'
 import { vocabularyLevelPath } from '@/lib/theory/path'
 import { LinkPending } from '@/components/ui/LinkPending'
 import type { Language } from '@/lib/languages'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { LevelSummary } from '@/lib/dictionary/levels'
 
-/** Per-language hub: a search scoped to this language, the practice entry point, a
- * chip row to browse vocabulary by level, and a list of common words to study. */
-export function LanguageHub({ language, common, levels }: { language: Language; common: DictEntryPreview[]; levels: LevelSummary[] }) {
+/** `/theory/[lang]/vocabulary`: the words themselves, by level, plus the ones worth
+ *  knowing first. The lookup box and the grammar button that stood here belong to the
+ *  header and to the hub above this page. */
+export function VocabularyHub({ language, common, levels }: {
+  language: Language
+  common: DictEntryPreview[]
+  levels: LevelSummary[]
+}) {
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>
-      <div className="mt-3 flex items-center gap-3">
-        <span className="text-xl font-medium text-black/70">{language.nativeName}</span>
-        <h1 className="text-3xl font-bold">{language.name}</h1>
-      </div>
-
-      <div className="mt-6">
-        <LookupPair lang={language.code} />
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Link href="/practice" className="inline-block rounded-lg bg-black px-4 py-2 text-sm font-medium text-white">
-          Luyện tập từ đã lưu →
-        </Link>
-        <Link href={grammarLangPath(language.code)} className="inline-block rounded-lg border border-black/15 px-4 py-2 text-sm font-medium text-black/70 hover:bg-black/5">
-          Ngữ pháp {language.name} →
-        </Link>
-      </div>
-
+    <BlockPage
+      language={language}
+      titleVi={`Từ vựng ${language.name}`}
+      leadVi="Chọn một cấp độ để xem danh sách từ, hoặc lưu thẳng cả danh sách vào sổ tay."
+    >
       {levels.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black/40">Duyệt theo cấp độ</h2>
@@ -71,6 +61,13 @@ export function LanguageHub({ language, common, levels }: { language: Language; 
           </div>
         </section>
       )}
-    </main>
+
+      <Link
+        href="/practice"
+        className="mt-8 inline-block rounded-lg bg-black px-4 py-2 text-sm font-medium text-white"
+      >
+        Luyện tập từ đã lưu →
+      </Link>
+    </BlockPage>
   )
 }

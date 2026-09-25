@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { LevelWordList } from '@/components/learn/LevelWordList'
+import { LevelWordList } from '@/components/vocabulary/LevelWordList'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { Language } from '@/lib/languages'
 
