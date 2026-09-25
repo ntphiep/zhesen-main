@@ -193,7 +193,7 @@ export function DataPlaces({ bucket }: { bucket: string | null }) {
           {places.map((p) => (
             <tr key={p.what}>
               <td className="px-3 py-1.5 font-medium whitespace-nowrap">{p.what}</td>
-              <td className="px-3 py-1.5 break-all text-black/70">{p.where}</td>
+              <td className="px-3 py-1.5 break-words text-black/70">{p.where}</td>
               <td className="px-3 py-1.5 text-black/60">{p.holds}</td>
             </tr>
           ))}

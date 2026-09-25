@@ -130,7 +130,8 @@ export async function typePrices(cfg: AwsHealthConfig): Promise<Record<string, n
   }))))
   const prices: Record<string, number> = {}
   for (const out of lists) {
-    for (const entry of z.array(z.string()).parse(out.PriceList ?? [])) {
+    // The SDK hands each entry over as a String object, not a primitive string.
+    for (const entry of z.array(z.union([z.string(), z.instanceof(String)]).transform(String)).parse(out.PriceList ?? [])) {
       const p = parsePrice(entry)
       if (p) prices[p.type] = p.usdPerHour
     }

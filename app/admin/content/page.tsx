@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/admin'
-import { PageHeader } from '@/components/admin/Page'
+import { num as count, PageHeader } from '@/components/admin/Page'
 import { getAdminEntry, getCoverage } from '@/lib/admin/content'
 import { searchOneDirection } from '@/lib/dictionary/search'
 import { LANGUAGES } from '@/lib/languages'
@@ -9,8 +9,6 @@ import { EntryEditor } from '@/components/admin/EntryEditor'
 
 export const metadata = { title: 'Content · Admin' }
 
-const LANG_NAME = new Map(LANGUAGES.map((l) => [l.code, l.name]))
-const count = (n: number) => n.toLocaleString('vi-VN')
 const editHref = (id: string) => `/admin/content?entry=${encodeURIComponent(id)}`
 
 export default async function AdminContentPage({
@@ -53,7 +51,7 @@ export default async function AdminContentPage({
             <tbody>
               {coverage.languages.map((l) => (
                 <tr key={l.lang} className="border-b border-black/5">
-                  <td className="py-1.5 pr-4">{LANG_NAME.get(l.lang)}</td>
+                  <td className="py-1.5 pr-4 font-mono">{l.lang}</td>
                   <td className="py-1.5 pr-4 text-right tabular-nums">{count(l.entries)}</td>
                   <td className="py-1.5 pr-4 text-right tabular-nums">{count(l.senses)}</td>
                   <td className="py-1.5 pr-4 text-right tabular-nums">{count(l.sensesVi)}</td>
@@ -71,7 +69,7 @@ export default async function AdminContentPage({
                 <Link href={editHref(f.entryId)} prefetch={false} className="font-medium hover:underline">
                   {f.headword}
                 </Link>
-                <span className="text-black/50"> · {LANG_NAME.get(f.lang)} · {f.reason}</span>
+                <span className="text-black/50"> · {f.lang} · {f.reason}</span>
               </li>
             ))}
           </ul>
@@ -109,7 +107,7 @@ export default async function AdminContentPage({
                 <Link href={editHref(r.id)} prefetch={false} className="font-medium hover:underline">
                   {r.headword}
                 </Link>
-                <span className="text-black/50"> · {LANG_NAME.get(r.lang)}{r.glossVi ? ` · ${r.glossVi}` : ''}</span>
+                <span className="text-black/50"> · {r.lang}{r.glossVi ? ` · ${r.glossVi}` : ''}</span>
               </li>
             ))}
           </ul>
