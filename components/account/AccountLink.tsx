@@ -22,7 +22,7 @@ export function AccountLink() {
       <Link
         href="/account"
         prefetch={false}
-        className="ml-2 max-w-40 truncate rounded-lg px-3 py-1.5 text-sm text-black/60 hover:bg-black/5"
+        className="relative ml-2 max-w-40 truncate rounded-lg px-3 py-1.5 text-sm text-black/60 hover:bg-black/5"
         title={email ?? undefined}
       >
         {email}
@@ -36,7 +36,7 @@ export function AccountLink() {
       <Link
         href="/login"
         prefetch={false}
-        className="rounded-lg px-3 py-1.5 text-sm text-black/60 hover:bg-black/5"
+        className="relative rounded-lg px-3 py-1.5 text-sm text-black/60 hover:bg-black/5"
       >
         Đăng nhập
         <LinkPending />
@@ -44,7 +44,7 @@ export function AccountLink() {
       <Link
         href="/register"
         prefetch={false}
-        className="rounded-lg bg-black px-3 py-1.5 text-sm font-medium text-white hover:bg-black/85"
+        className="relative rounded-lg bg-black px-3 py-1.5 text-sm font-medium text-white hover:bg-black/85"
       >
         Đăng ký
         <LinkPending />

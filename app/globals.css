@@ -212,6 +212,17 @@ dialog::backdrop {
 .link-pending.is-pending {
   animation: link-pending-pulse 1s ease-in-out 120ms infinite;
 }
+/* In the header only two of the four nav items carry a dot, and the 0.8em it holds
+   pushed their labels 5.6px off the centre of their own pill: the blank space between
+   labels measured 27px, 39px, 27px instead of one figure. Taken out of flow there, so
+   every item keeps the same shape whether or not it has one. */
+header nav .link-pending {
+  position: absolute;
+  right: 0.2rem;
+  top: 50%;
+  margin: 0;
+  transform: translateY(-50%);
+}
 @keyframes link-pending-pulse {
   0%, 100% { opacity: 0.6; }
   50% { opacity: 0.15; }
