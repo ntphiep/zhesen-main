@@ -32,6 +32,6 @@ describe('the site header', () => {
 describe('AdminEntry', () => {
   it('links to the console', () => {
     render(<AdminEntry />)
-    expect(screen.getByRole('link', { name: 'Mở bảng điều khiển' })).toHaveAttribute('href', '/admin')
+    expect(screen.getByRole('link', { name: 'Mở trang quản trị' })).toHaveAttribute('href', '/admin')
   })
 })

@@ -10,8 +10,8 @@ export const metadata = { title: 'Đăng nhập' }
 /** Why `app/auth/callback/route.ts` sent the reader here instead of on to the
  *  page they asked for. Without these the redirect landed on a blank form. */
 const AUTH_NOTICE: Record<string, string> = {
-  missing: 'Liên kết không hợp lệ. Xin đăng nhập lại để nhận liên kết mới.',
-  failed: 'Liên kết xác nhận đã hết hạn hoặc đã được dùng rồi. Xin đăng nhập lại để nhận liên kết mới.',
+  missing: 'Liên kết không hợp lệ. Đăng nhập lại.',
+  failed: 'Liên kết đã hết hạn hoặc đã dùng. Đăng nhập lại.',
 }
 
 export default async function LoginPage({

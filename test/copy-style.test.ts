@@ -6,6 +6,7 @@ import { join } from 'node:path'
 const CHECKED = [
   'app/wordlist', 'components/wordlist', 'lib/wordlist',
   'app/practice', 'components/practice', 'lib/practice',
+  'app/account', 'app/login', 'app/register', 'components/account', 'lib/auth',
 ]
 
 /** Content rather than interface copy, left to a later round of #68. */

@@ -29,7 +29,7 @@ export function passwordProblem(password: string): string | null {
 }
 
 const SWITCH_WOULD_STRAND =
-  'Trình duyệt này đang có từ chưa gắn email. Hãy lưu email cho sổ tay hiện tại trước.'
+  'Trình duyệt này còn từ chưa gắn email. Gắn email cho sổ tay này trước.'
 
 /**
  * Put an email and a password on the anonymous account holding this browser's words.
@@ -60,7 +60,7 @@ export async function registerWithPassword(
 
   const { data, error } = await supabase.auth.signUp({ email, password })
   if (error) return { status: 'error', message: error.message }
-  if (!data.session) return { status: 'error', message: 'Tài khoản chưa sẵn sàng. Vui lòng đăng nhập.' }
+  if (!data.session) return { status: 'error', message: 'Tài khoản chưa sẵn sàng. Đăng nhập để tiếp tục.' }
   return { status: 'active' }
 }
 

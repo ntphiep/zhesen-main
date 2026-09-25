@@ -62,7 +62,7 @@ export function AccountSettings({
       // failure left by an earlier attempt has to go.
       setExportFeedback(null)
     } catch {
-      setExportFeedback({ tone: 'bad', text: 'Không tải được dữ liệu. Vui lòng thử lại.' })
+      setExportFeedback({ tone: 'bad', text: 'Chưa tải được sổ tay. Thử lại.' })
     } finally {
       setExporting(false)
     }
@@ -91,7 +91,7 @@ export function AccountSettings({
     } else {
       // `setPassword` returns only 'active' or 'error' today, but an `else if` on
       // 'error' would leave the form silent if that ever changes.
-      const text = outcome.status === 'error' ? outcome.message : 'Không đặt được mật khẩu. Vui lòng thử lại.'
+      const text = outcome.status === 'error' ? outcome.message : 'Chưa đặt được mật khẩu. Thử lại.'
       setPasswordFeedback({ tone: 'bad', text })
     }
     setBusy(false)
@@ -101,7 +101,7 @@ export function AccountSettings({
     <div className="flex flex-col gap-8">
       <section className="rounded-xl border border-black/10 px-4 py-3 text-sm">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-black/60">Đang đăng nhập</span>
+          <span className="text-black/60">Đã đăng nhập bằng</span>
           <span className="font-medium">{email}</span>
           <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/60">
             {ROLE_LABEL[profile?.role ?? 'learner']}
@@ -126,7 +126,7 @@ export function AccountSettings({
         <h2 className="text-lg font-semibold">Tiến độ</h2>
         {stats.total === 0 ? (
           <p className="mt-1 text-sm text-black/60">
-            Sổ tay chưa có từ nào. Tra một từ rồi bấm Thêm vào sổ tay để bắt đầu.
+            Chưa có từ. Tra một từ để lưu.
           </p>
         ) : (
           <WordlistStats stats={stats} />
@@ -147,7 +147,7 @@ export function AccountSettings({
       <section>
         <h2 className="text-lg font-semibold">Giao diện</h2>
         <p className="mt-1 text-sm text-black/60">
-          Áp dụng cho trình duyệt này. Mặc định đi theo cài đặt của hệ điều hành.
+          Chỉ áp dụng trên trình duyệt này. Mặc định theo cài đặt của máy.
         </p>
         <div className="mt-2">
           <ThemeToggle />
@@ -161,7 +161,7 @@ export function AccountSettings({
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={60}
-            placeholder="Để trống cũng được"
+            placeholder="Không bắt buộc"
             aria-label="Tên hiển thị"
             className="min-w-56 flex-1 rounded-lg border border-black/15 px-3 py-2 text-sm"
           />
@@ -183,7 +183,7 @@ export function AccountSettings({
       <section>
         <h2 className="text-lg font-semibold">Mật khẩu</h2>
         <p className="mt-1 text-sm text-black/60">
-          Đổi mật khẩu dùng để đăng nhập.
+          Đổi mật khẩu đăng nhập.
         </p>
         <form onSubmit={savePassword} className="mt-2 flex flex-wrap items-center gap-2">
           <input
@@ -215,7 +215,7 @@ export function AccountSettings({
       <section>
         <h2 className="text-lg font-semibold">Dữ liệu</h2>
         <p className="mt-1 text-sm text-black/60">
-          Tải toàn bộ sổ tay về máy. Tệp CSV mở được bằng Excel, tệp TSV nhập thẳng vào Anki.
+          Tải cả sổ tay về máy. File CSV mở bằng Excel, file TSV nhập vào Anki.
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           <button

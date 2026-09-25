@@ -115,7 +115,7 @@ describe('AccountSettings', () => {
 
   it('says what to do instead of showing an empty progress panel', () => {
     show({ stats: empty })
-    expect(screen.getByText(/Sổ tay chưa có từ nào/)).toBeInTheDocument()
+    expect(screen.getByText(/Chưa có từ\./)).toBeInTheDocument()
     expect(screen.queryByText('Chuỗi ngày')).toBeNull()
   })
 
@@ -146,7 +146,7 @@ describe('AccountSettings', () => {
     vi.mocked(listWords).mockRejectedValue(new Error('offline'))
     show()
     await userEvent.click(screen.getByRole('button', { name: 'Tải Anki (TSV)' }))
-    expect(await screen.findByText(/Không tải được dữ liệu/)).toBeInTheDocument()
+    expect(await screen.findByText(/Chưa tải được sổ tay/)).toBeInTheDocument()
     expect(downloadTextFile).not.toHaveBeenCalled()
   })
 
@@ -156,11 +156,11 @@ describe('AccountSettings', () => {
     vi.mocked(listWords).mockRejectedValueOnce(new Error('offline'))
     show()
     await userEvent.click(screen.getByRole('button', { name: 'Tải CSV' }))
-    expect(await screen.findByText(/Không tải được dữ liệu/)).toBeInTheDocument()
+    expect(await screen.findByText(/Chưa tải được sổ tay/)).toBeInTheDocument()
 
     vi.mocked(listWords).mockResolvedValue([])
     await userEvent.click(screen.getByRole('button', { name: 'Tải CSV' }))
-    expect(screen.queryByText(/Không tải được dữ liệu/)).toBeNull()
+    expect(screen.queryByText(/Chưa tải được sổ tay/)).toBeNull()
   })
 
   it('offers no export while the notebook is empty', () => {

@@ -65,7 +65,7 @@ export function AuthForm({
       outcome = await action()
     } catch {
       // Without this every button stays disabled until a reload, with nothing to say why.
-      setFeedback({ tone: 'bad', text: 'Không kết nối được. Vui lòng thử lại.' })
+      setFeedback({ tone: 'bad', text: 'Chưa kết nối được. Thử lại.' })
       setBusy(false)
       return
     }
@@ -95,10 +95,10 @@ export function AuthForm({
 
       <p className="mt-2 text-sm text-black/60">
         {upgrading
-          ? `${localWordCount} từ đã lưu trên trình duyệt này sẽ được gắn vào tài khoản của bạn, không có từ nào bị chuyển đi.`
+          ? `Tài khoản mới giữ nguyên ${localWordCount} từ đã lưu trên trình duyệt này.`
           : mode === 'register'
-            ? 'Miễn phí, và chỉ mất một phút.'
-            : 'Chào mừng bạn quay lại.'}
+            ? 'Miễn phí.'
+            : 'Đăng nhập để mở sổ tay.'}
       </p>
 
       {notice && (
