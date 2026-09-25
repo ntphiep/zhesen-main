@@ -15,9 +15,9 @@ export function buildGrammarPointId(lang: LangCode, key: string): string {
 
 export function grammarPointPath(id: string): string {
   const { lang, key } = splitGrammarPointId(id)
-  return `/grammar/${lang}/${encodeURIComponent(key)}`
+  return `/theory/${lang}/grammar/${encodeURIComponent(key)}`
 }
 
 export function grammarLangPath(lang: LangCode): string {
-  return `/grammar/${lang}`
+  return `/theory/${lang}/grammar`
 }

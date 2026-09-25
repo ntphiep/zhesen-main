@@ -12,12 +12,12 @@ describe('splitGrammarPointId / buildGrammarPointId', () => {
 
 describe('grammarPointPath', () => {
   it('encodes the colon-bearing key into the URL segment', () => {
-    expect(grammarPointPath('zh:hsk3:cau-chu-ba-co-ban')).toBe('/grammar/zh/hsk3%3Acau-chu-ba-co-ban')
+    expect(grammarPointPath('zh:hsk3:cau-chu-ba-co-ban')).toBe('/theory/zh/grammar/hsk3%3Acau-chu-ba-co-ban')
   })
 })
 
 describe('grammarLangPath', () => {
   it('builds the per-language grammar overview path', () => {
-    expect(grammarLangPath('en')).toBe('/grammar/en')
+    expect(grammarLangPath('en')).toBe('/theory/en/grammar')
   })
 })

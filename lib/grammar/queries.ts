@@ -7,7 +7,7 @@ const grammarPointEntryRow = z.object({ grammar_points: grammarPointRow })
 
 const POINT_SELECT = 'id, lang, level_scheme, level, category_vi, title_vi, pattern, explanation_vi, common_mistake_vi, sort_order'
 
-/** All grammar points for one language, ordered for the `/grammar/[lang]` overview
+/** All grammar points for one language, ordered for the `/theory/[lang]/grammar` overview
  * (by level, then the curated sort_order within a level). Small table (currently
  * <50 rows per language) so no pagination. */
 export async function listGrammarPointsByLang(supabase: SupabaseClient, lang: LangCode): Promise<GrammarPoint[]> {

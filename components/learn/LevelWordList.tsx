@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { getEntriesByLevel, getAllEntriesByLevel } from '@/lib/dictionary/levels'
 import { addWords, draftFromDictEntry, listSavedEntryIds } from '@/lib/wordlist/store'
 import { entryPath } from '@/lib/dictionary/entryId'
+import { theoryBlockPath, vocabularyLevelPath } from '@/lib/theory/path'
 import { signInHref, useAccount } from '@/lib/hooks/useAccount'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { Language } from '@/lib/languages'
@@ -13,7 +14,7 @@ import { Ipa } from '@/components/ui/Ipa'
 
 type AddAllState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'done'; added: number; skipped: number } | { kind: 'error' }
 
-/** `/learn/[lang]/[level]`: a paginated list of every word at one level, plus a
+/** `/theory/[lang]/vocabulary/[level]`: a paginated list of every word at one level, plus a
  * one-click bulk import into the wordlist. Browsing is public; the import needs an
  * account, so without one the button is a sign-in prompt carrying this page in `next`. */
 export function LevelWordList({ language, level, levelIsEstimated, initialItems, total, pageSize }: {
@@ -57,7 +58,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
     }
   }
 
-  const here = `/learn/${language.code}/${level}`
+  const here = vocabularyLevelPath(language.code, level)
   const addAllLabel = addAll.kind === 'busy' ? 'Đang thêm…'
     : addAll.kind === 'done' ? `Đã thêm ${addAll.added} từ${addAll.skipped > 0 ? ` (bỏ qua ${addAll.skipped} từ đã có)` : ''}`
     : addAll.kind === 'error' ? 'Lỗi, thử lại'
@@ -65,7 +66,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <Link href={`/learn/${language.code}`} className="text-sm text-black/50 hover:underline">← {language.name}</Link>
+      <Link href={theoryBlockPath(language.code, 'vocabulary')} className="text-sm text-black/50 hover:underline">← Từ vựng {language.name}</Link>
       <div className="mt-3 flex items-center gap-3">
         <span className="text-xl font-medium text-black/70">{language.nativeName}</span>
         <h1 className="text-3xl font-bold">{level}</h1>

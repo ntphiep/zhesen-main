@@ -1,10 +1,11 @@
 import Link from 'next/link'
+import { theoryLangPath } from '@/lib/theory/path'
 import type { Language } from '@/lib/languages'
 
 export function LanguageCard({ language }: { language: Language }) {
   return (
     <Link
-      href={`/learn/${language.code}`}
+      href={theoryLangPath(language.code)}
       className="group flex flex-col rounded-2xl border border-black/10 p-6 transition hover:border-black/30 hover:shadow-lg hover:-translate-y-0.5"
     >
       <div className="text-3xl font-semibold">{language.nativeName}</div>

@@ -5,7 +5,7 @@ import { grammarLangPath } from '@/lib/grammar/path'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
 import type { GrammarPointDetail } from '@/lib/grammar/types'
 
-/** `/grammar/[lang]/[id]`: one grammar point, its formula, explanation, common
+/** `/theory/[lang]/grammar/[id]`: one grammar point, its formula, explanation, common
  * mistake, and worked examples with reading (pinyin, for zh) and translation. */
 export function GrammarPointDetailView({ point, resolved = [] }: {
   point: GrammarPointDetail

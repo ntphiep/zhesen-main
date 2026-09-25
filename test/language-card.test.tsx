@@ -7,6 +7,6 @@ describe('LanguageCard', () => {
     render(<LanguageCard language={{ code: 'zh', name: 'Tiếng Trung', nativeName: '中文', script: 'han' }} />)
     expect(screen.getByText('Tiếng Trung')).toBeInTheDocument()
     expect(screen.getByText('中文')).toBeInTheDocument()
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/learn/zh')
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/theory/zh')
   })
 })

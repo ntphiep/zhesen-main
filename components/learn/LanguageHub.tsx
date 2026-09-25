@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { Ipa } from '@/components/ui/Ipa'
 import { LookupPair } from '@/components/search/LookupPair'
 import { entryPath } from '@/lib/dictionary/entryId'
+import { grammarLangPath } from '@/lib/grammar/path'
+import { vocabularyLevelPath } from '@/lib/theory/path'
 import { LinkPending } from '@/components/ui/LinkPending'
 import type { Language } from '@/lib/languages'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
@@ -25,7 +27,7 @@ export function LanguageHub({ language, common, levels }: { language: Language; 
         <Link href="/practice" className="inline-block rounded-lg bg-black px-4 py-2 text-sm font-medium text-white">
           Luyện tập từ đã lưu →
         </Link>
-        <Link href={`/grammar/${language.code}`} className="inline-block rounded-lg border border-black/15 px-4 py-2 text-sm font-medium text-black/70 hover:bg-black/5">
+        <Link href={grammarLangPath(language.code)} className="inline-block rounded-lg border border-black/15 px-4 py-2 text-sm font-medium text-black/70 hover:bg-black/5">
           Ngữ pháp {language.name} →
         </Link>
       </div>
@@ -37,7 +39,7 @@ export function LanguageHub({ language, common, levels }: { language: Language; 
             {levels.map((l) => (
               <Link
                 key={l.level}
-                href={`/learn/${language.code}/${encodeURIComponent(l.level)}`}
+                href={vocabularyLevelPath(language.code, l.level)}
                 className="rounded-full border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5"
               >
                 {l.level} <span className="text-black/40">({l.count})</span>

@@ -108,7 +108,7 @@ on this machine.
 
 - The `anon` role is capped at `statement_timeout = 3s` and `authenticated` at 8 s. A cold
   query over 3 s returns `SQLSTATE 57014` rather than merely running slowly, and it takes the
-  build with it because `/learn/[lang]` is prerendered: `/learn/en` has failed with
+  build with it because `/theory/[lang]/vocabulary` is prerendered: it has failed with
   `canceling statement due to statement timeout` and passed on a rerun. The Free plan runs
   compute Nano with `shared_buffers` at 224 MB against 455 MB of data measured 2026-09-23, so
   the long tail is disk reads rather than query shape. The EC2 target sets `shared_buffers`

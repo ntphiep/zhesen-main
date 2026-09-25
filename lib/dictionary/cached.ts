@@ -103,7 +103,7 @@ export const getCachedLevelsForLanguage = unstable_cache(
 )
 
 /** First page of a level's word list, for the initial server render of
- *  `/learn/[lang]/[level]`. "Load more" beyond it calls the uncached query from the client. */
+ *  `/theory/[lang]/vocabulary/[level]`. "Load more" beyond it calls the uncached query from the client. */
 export const getCachedEntriesByLevel = unstable_cache(
   (lang: LangCode, level: string, offset: number, limit: number): Promise<LevelPage> =>
     getEntriesByLevel(createContentClient(), lang, level, offset, limit),

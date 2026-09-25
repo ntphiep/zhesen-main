@@ -8,11 +8,11 @@ import { LinkPending } from '@/components/ui/LinkPending'
  * `prefetch` is off for the two routes that read the session. A Link prefetches as
  * soon as it enters the viewport and this header is on every page, so otherwise each
  * page load also fetches /practice and /wordlist, two renders that query Supabase.
- * The dictionary and grammar routes stay on: the edge cache answers them.
+ * The dictionary and theory routes stay on: the edge cache answers them.
  */
 const NAV = [
   { href: '/dictionary', label: 'Dịch', prefetch: true },
-  { href: '/grammar', label: 'Ngữ pháp', prefetch: true },
+  { href: '/theory', label: 'Lý thuyết', prefetch: true },
   { href: '/practice', label: 'Luyện tập', prefetch: false },
   { href: '/wordlist', label: 'Sổ tay', prefetch: false },
 ]

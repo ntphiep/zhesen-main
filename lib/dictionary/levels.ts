@@ -6,7 +6,7 @@ import { entryPreviewRow, toPreview } from './rows'
 import { PREVIEW_SELECT } from './entrySelect'
 
 /**
- * "Browse by level" data for `/learn/[lang]`. Grouped counts must go through the
+ * "Browse by level" data for `/theory/[lang]/vocabulary`. Grouped counts must go through the
  * `lex.count_entries_by_level` RPC (supabase/migrations/0021_level_counts.sql): supabase-js
  * has no GROUP BY, and PostgREST's 1000-row cap rules out counting client-side.
  */

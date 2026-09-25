@@ -1,13 +1,14 @@
 import Link from 'next/link'
 import { grammarPointPath } from '@/lib/grammar/path'
+import { theoryLangPath } from '@/lib/theory/path'
 import type { GrammarLevelGroup } from '@/lib/grammar/group'
 import type { Language } from '@/lib/languages'
 
-/** `/grammar/[lang]`: grammar points grouped by level, then by category_vi. */
+/** `/theory/[lang]/grammar`: grammar points grouped by level, then by category_vi. */
 export function GrammarPointList({ language, levels }: { language: Language; levels: GrammarLevelGroup[] }) {
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <Link href="/grammar" className="text-sm text-black/50 hover:underline">← Ngữ pháp</Link>
+      <Link href={theoryLangPath(language.code)} className="text-sm text-black/50 hover:underline">← Lý thuyết {language.name}</Link>
       <div className="mt-3 flex items-center gap-3">
         <span className="text-xl font-medium text-black/70">{language.nativeName}</span>
         <h1 className="text-3xl font-bold">Ngữ pháp {language.name}</h1>

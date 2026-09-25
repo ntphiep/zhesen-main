@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { LANG_CODES } from '@/lib/languages'
+import { BLOCKS_BY_LANG } from '@/lib/theory/blocks'
+import { theoryBlockPath, theoryLangPath } from '@/lib/theory/path'
 import { SITE_URL } from '@/lib/site'
 
 /**
@@ -12,10 +14,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const paths = [
     '/',
     '/dictionary',
-    '/grammar',
+    '/theory',
     '/practice',
-    ...LANG_CODES.map((lang) => `/grammar/${lang}`),
-    ...LANG_CODES.map((lang) => `/learn/${lang}`),
+    ...LANG_CODES.map((lang) => theoryLangPath(lang)),
+    ...LANG_CODES.flatMap((lang) => BLOCKS_BY_LANG[lang].map((b) => theoryBlockPath(lang, b.key))),
   ]
   return paths.map((path) => ({
     url: `${SITE_URL}${path}`,

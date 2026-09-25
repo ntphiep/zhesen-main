@@ -7,7 +7,7 @@ import { getCachedWordOfDay } from '@/lib/dictionary/cached'
 
 const SECTIONS = [
   { href: '/dictionary', title: 'Dịch', desc: 'Nghĩa, phát âm, ví dụ, cả đoạn' },
-  { href: '/grammar', title: 'Ngữ pháp', desc: 'Điểm ngữ pháp theo cấp độ, có ví dụ' },
+  { href: '/theory', title: 'Lý thuyết', desc: 'Phát âm, từ loại, câu, ngữ pháp, collocation' },
   { href: '/practice', title: 'Luyện tập', desc: 'Ôn từ, kiểm tra, nghe & nói' },
   { href: '/wordlist', title: 'Sổ tay', desc: 'Từ vựng bạn đã lưu' },
 ]

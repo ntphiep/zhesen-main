@@ -1,8 +1,7 @@
 import { notFound } from 'next/navigation'
 import { LANG_CODES, getLanguage, isLangCode } from '@/lib/languages'
-import { getCachedGrammarPointsByLang } from '@/lib/grammar/cached'
-import { groupByLevelAndCategory } from '@/lib/grammar/group'
-import { GrammarPointList } from '@/components/grammar/GrammarPointList'
+import { getCachedCommonWords, getCachedLevelsForLanguage } from '@/lib/dictionary/cached'
+import { LanguageHub } from '@/components/learn/LanguageHub'
 
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
@@ -36,17 +35,19 @@ export async function generateMetadata(
   const language = isLangCode(lang) ? getLanguage(lang) : undefined
   if (!language) return {}
   return pageMetadata({
-    title: `Ngữ pháp ${language.name}`,
-    description: `Điểm ngữ pháp ${language.name} theo trình độ, kèm cấu trúc và ví dụ.`,
-    canonical: `/grammar/${language.code}`,
+    title: `Từ vựng ${language.name}`,
+    description: `Từ thông dụng và danh sách từ vựng ${language.name} theo trình độ.`,
+    canonical: `/theory/${language.code}/vocabulary`,
   })
 }
 
-export default async function GrammarLangPage({ params }: { params: Promise<{ lang: string }> }) {
+export default async function Page({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   const language = isLangCode(lang) ? getLanguage(lang) : undefined
   if (!language) notFound()
-  const points = await getCachedGrammarPointsByLang(language.code)
-  const levels = groupByLevelAndCategory(points)
-  return <GrammarPointList language={language} levels={levels} />
+  const [common, levels] = await Promise.all([
+    getCachedCommonWords(language.code),
+    getCachedLevelsForLanguage(language.code),
+  ])
+  return <LanguageHub language={language} common={common} levels={levels} />
 }
