@@ -32,7 +32,7 @@ export function WordlistReview() {
   if (queue.length === 0) {
     return (
       <main className="mx-auto max-w-md px-6 py-16 text-center">
-        <div className="text-2xl font-semibold">Hết thẻ cần ôn 🎉</div>
+        <div className="text-2xl font-semibold">Hết từ cần ôn.</div>
         {reviewed > 0 && <p className="mt-2 text-black/50">Đã ôn {reviewed} từ trong phiên này.</p>}
         <GradeSyncWarning failed={syncFailed} />
         <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">
@@ -51,7 +51,7 @@ export function WordlistReview() {
     try {
       next = await gradeCard(supabase, current, g, Date.now())
     } catch {
-      notify('Không lưu được kết quả ôn tập. Vui lòng thử lại.')
+      notify('Chưa lưu được kết quả. Thử lại.')
       return
     } finally {
       setGrading(false)

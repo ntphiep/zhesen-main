@@ -44,7 +44,9 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
     return (
       <main className="mx-auto max-w-md px-6 py-16 text-center">
         <div className="text-xl font-semibold">Chưa đủ từ để luyện</div>
-        <p className="mt-2 text-black/50">Thêm vài từ vào sổ tay trước nhé.</p>
+        <p className="mt-2 text-black/50">
+          {mode === 'write' ? 'Lưu thêm vài từ có nghĩa tiếng Việt.' : 'Lưu thêm vài từ vào sổ tay.'}
+        </p>
         <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">Về luyện tập</Link>
       </main>
     )
@@ -64,7 +66,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
   }
 
   const current = queue[index]
-  const title = mode === 'write' ? 'Viết từ' : 'Nghe & chép'
+  const title = mode === 'write' ? 'Viết từ' : 'Nghe và chép'
 
   function submit() {
     if (result !== null) return

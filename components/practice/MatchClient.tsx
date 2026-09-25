@@ -51,7 +51,7 @@ export function MatchClient() {
     return (
       <main className="mx-auto max-w-md px-6 py-16 text-center">
         <div className="text-xl font-semibold">Chưa đủ từ để chơi</div>
-        <p className="mt-2 text-black/50">Thêm vài từ có nghĩa tiếng Việt vào sổ tay trước.</p>
+        <p className="mt-2 text-black/50">Lưu thêm vài từ có nghĩa tiếng Việt.</p>
         <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">Về luyện tập</Link>
       </main>
     )
@@ -98,7 +98,7 @@ export function MatchClient() {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {/* Matched/wrong feedback is otherwise color-only -- announce it for screen readers. */}
           <p role="status" aria-live="polite" className="sr-only col-span-full">
-            {wrong.length > 0 ? 'Không khớp, thử lại.' : ''}
+            {wrong.length > 0 ? 'Chưa khớp. Thử lại.' : ''}
           </p>
           {tiles.map((t) => {
             const isMatched = matched.has(t.key)

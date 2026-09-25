@@ -6,7 +6,7 @@ export const metadata = pageMetadata({
   description: 'Nghe phát âm rồi gõ lại từ.',
 })
 
-// "Nghe & chép": play the word's audio, type what you hear.
+// "Nghe và chép": play the word's audio, type what you hear.
 export default function Page() {
   return <TypingSession mode="dictation" />
 }

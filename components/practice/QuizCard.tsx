@@ -27,7 +27,7 @@ export function QuizCard({
           a screen reader cannot perceive. */}
       {answered && (
         <p role="status" aria-live="polite" className="sr-only">
-          {selected === question.answer ? 'Chính xác' : `Sai. Đáp án đúng là ${question.answer}`}
+          {selected === question.answer ? 'Đúng' : `Sai. Đáp án: ${question.answer}`}
         </p>
       )}
 

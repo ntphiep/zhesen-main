@@ -77,6 +77,6 @@ describe('GradeSyncWarning', () => {
   })
   it('tells the learner their progress did not save', () => {
     render(<GradeSyncWarning failed />)
-    expect(screen.getByText(/Không lưu được tiến độ/)).toBeInTheDocument()
+    expect(screen.getByText(/Chưa lưu được tiến độ/)).toBeInTheDocument()
   })
 })

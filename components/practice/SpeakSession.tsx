@@ -35,11 +35,11 @@ function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
 
 /** Recogniser error codes worth explaining. Anything else falls back to one line. */
 const RECOGNITION_ERRORS: Record<string, string> = {
-  'not-allowed': 'Trình duyệt đang chặn micro. Cho phép micro cho trang này rồi thử lại.',
-  'service-not-allowed': 'Trình duyệt đang chặn micro. Cho phép micro cho trang này rồi thử lại.',
-  'audio-capture': 'Không tìm thấy micro. Kiểm tra thiết bị thu âm rồi thử lại.',
-  'no-speech': 'Chưa nghe thấy gì. Bấm Nói rồi đọc to hơn một chút.',
-  network: 'Mất kết nối tới dịch vụ nhận diện giọng nói. Thử lại sau ít giây.',
+  'not-allowed': 'Trình duyệt đang chặn micro. Cho phép micro rồi thử lại.',
+  'service-not-allowed': 'Trình duyệt đang chặn micro. Cho phép micro rồi thử lại.',
+  'audio-capture': 'Không tìm thấy micro. Kiểm tra micro rồi thử lại.',
+  'no-speech': 'Chưa nghe thấy gì. Bấm Nói rồi đọc to hơn.',
+  network: 'Trình duyệt mất kết nối tới bộ nhận giọng nói. Thử lại sau ít giây.',
 }
 
 interface SpeakWord { id: string; headword: string; meaningVi: string | null; audioUrl: string | null; lang: LangCode }
@@ -80,7 +80,7 @@ export function SpeakSession() {
     return (
       <main className="mx-auto max-w-md px-6 py-16 text-center">
         <div className="text-xl font-semibold">Trình duyệt chưa hỗ trợ luyện nói</div>
-        <p className="mt-2 text-black/50">Tính năng nhận diện giọng nói cần Chrome hoặc Edge trên máy tính (và quyền micro).</p>
+        <p className="mt-2 text-black/50">Mở trang này bằng Chrome hoặc Edge trên máy tính.</p>
         <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">Về luyện tập</Link>
       </main>
     )
@@ -133,7 +133,7 @@ export function SpeakSession() {
     // microphone never says so.
     r.onerror = (e) => {
       setListening(false)
-      setMicError(RECOGNITION_ERRORS[e.error ?? ''] ?? 'Không nhận được giọng nói. Thử lại.')
+      setMicError(RECOGNITION_ERRORS[e.error ?? ''] ?? 'Chưa nghe rõ. Thử lại.')
     }
     r.onend = () => setListening(false)
     setHeard(null); setResult(null); setMicError(null); setListening(true)
@@ -156,7 +156,7 @@ export function SpeakSession() {
           <AudioButton text={current.headword} lang={current.lang} audioUrl={current.audioUrl} />
         </div>
         {current.meaningVi && <div className="mt-1 text-black/50">{current.meaningVi}</div>}
-        <p className="mt-2 text-sm text-black/40">Nghe mẫu rồi đọc lại từ này</p>
+        <p className="mt-2 text-sm text-black/40">Nghe mẫu rồi đọc lại</p>
 
         {result === null && (
           <button
@@ -164,7 +164,7 @@ export function SpeakSession() {
             disabled={listening}
             className={`mt-6 w-full rounded-lg py-3 text-white ${listening ? 'bg-rose-500' : 'bg-black'}`}
           >
-            {listening ? 'Đang nghe… nói đi!' : '🎤 Nói'}
+            {listening ? 'Đang nghe…' : '🎤 Nói'}
           </button>
         )}
         {result === null && micError && (
@@ -172,9 +172,9 @@ export function SpeakSession() {
         )}
         {result !== null && (
           <div role="status" aria-live="polite" className="mt-6">
-            {result === 'correct' && <p className="font-medium text-emerald-700">Chính xác ✓</p>}
+            {result === 'correct' && <p className="font-medium text-emerald-700">Đúng ✓</p>}
             {result === 'close' && <p className="font-medium text-amber-700">Gần đúng</p>}
-            {result === 'wrong' && <p className="font-medium text-rose-700">Chưa khớp, thử lại sau nhé</p>}
+            {result === 'wrong' && <p className="font-medium text-rose-700">Chưa khớp. Thử lại sau.</p>}
             {heard && <p className="mt-1 text-sm text-black/50">Nghe được: “{heard}”</p>}
             <button onClick={next} className="mt-4 w-full rounded-lg bg-black py-2 text-white">Tiếp</button>
           </div>

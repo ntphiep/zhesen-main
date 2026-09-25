@@ -33,11 +33,11 @@ export function TypingCard({
         <div className="text-center">
           <p className="text-sm text-black/50">Nghĩa</p>
           <div className="mt-1 text-2xl font-semibold">{word.meaningVi}</div>
-          <p className="mt-2 text-sm text-black/40">Gõ từ tiếng Anh tương ứng</p>
+          <p className="mt-2 text-sm text-black/40">Gõ từ mang nghĩa này</p>
         </div>
       ) : (
         <div className="flex flex-col items-center">
-          <p className="text-sm text-black/50">Nghe và gõ lại từ</p>
+          <p className="text-sm text-black/50">Nghe rồi gõ từ</p>
           <div className="mt-2 scale-125"><AudioButton text={word.headword} lang={word.lang} audioUrl={word.audioUrl} /></div>
         </div>
       )}
@@ -52,7 +52,7 @@ export function TypingCard({
           onChange={(e) => onChange(e.target.value)}
           disabled={answered}
           aria-label="Câu trả lời"
-          placeholder="Nhập câu trả lời…"
+          placeholder="Gõ từ…"
           className="w-full rounded-lg border border-black/15 px-4 py-3 text-center text-lg focus:border-black/40 focus:outline-none disabled:bg-black/5"
         />
         {!answered && <button type="submit" className="rounded-lg bg-black py-2 text-white">Kiểm tra</button>}
@@ -60,8 +60,8 @@ export function TypingCard({
 
       {answered && (
         <div role="status" aria-live="polite" className="mt-4 text-center">
-          {result === 'correct' && <p className="font-medium text-emerald-700">Chính xác ✓</p>}
-          {result === 'close' && <p className="font-medium text-amber-700">Gần đúng — đáp án: <b>{word.headword}</b></p>}
+          {result === 'correct' && <p className="font-medium text-emerald-700">Đúng ✓</p>}
+          {result === 'close' && <p className="font-medium text-amber-700">Gần đúng. Đáp án: <b>{word.headword}</b></p>}
           {result === 'wrong' && <p className="font-medium text-rose-700">Đáp án: <b>{word.headword}</b></p>}
           {mode === 'dictation' && word.meaningVi && <p className="mt-1 text-sm text-black/50">{word.meaningVi}</p>}
           <button onClick={onNext} className="mt-4 w-full rounded-lg bg-black py-2 text-white">Tiếp</button>

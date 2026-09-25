@@ -3,14 +3,17 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 /** Folders whose copy follows `.claude/rules/copy.md`. Each area of #68 adds its own. */
-const CHECKED = ['app/wordlist', 'components/wordlist', 'lib/wordlist']
+const CHECKED = [
+  'app/wordlist', 'components/wordlist', 'lib/wordlist',
+  'app/practice', 'components/practice', 'lib/practice',
+]
 
 /** Content rather than interface copy, left to a later round of #68. */
 const SKIPPED = ['lib/ai/tasks.ts', 'lib/dictionary/radicals.ts', 'lib/theory/']
 
 const VIETNAMESE = /[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/i
 const LITERAL = /'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"|`((?:[^`\\]|\\.)*)`/g
-const JSX_TEXT = />([^<>{}'"`]*[^\s<>{}'"`][^<>{}'"`]*)</g
+const JSX_TEXT = /[>}]([^<>{}'"`]*[^\s<>{}'"`][^<>{}'"`]*)[<{]/g
 /** A regex literal after an operator. Left in, `/[",]/` opens a string that swallows the rest of the file. */
 const REGEX_LITERAL = /(?<=(?:[(,=:[!&|?{;]|\breturn)\s*)\/(?![/*])(?:\\.|\[(?:\\.|[^\]\\\n])*\]|[^/\\\n[])+\/[a-z]*/g
 

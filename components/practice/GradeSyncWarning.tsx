@@ -4,7 +4,7 @@ export function GradeSyncWarning({ failed }: { failed: boolean }) {
   if (!failed) return null
   return (
     <p className="mt-3 text-sm text-amber-700">
-      Không lưu được tiến độ của phiên này. Kiểm tra kết nối rồi ôn lại để lịch ôn tập được cập nhật.
+      Chưa lưu được tiến độ phiên này. Kiểm tra mạng rồi ôn lại.
     </p>
   )
 }

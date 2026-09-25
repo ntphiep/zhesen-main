@@ -49,7 +49,7 @@ the rules it can measure; the rest are on the writer.
 | --- | --- |
 | Không lưu được thay đổi. Vui lòng thử lại. | Chưa lưu được. Thử lại. |
 | Chưa có từ nào. Bấm Thêm từ để bắt đầu. | Chưa có từ. Tra một từ để lưu. |
-| Thêm vài từ vào sổ tay trước nhé. | Chưa có từ để ôn. Tra một từ để lưu. |
+| Thêm vài từ vào sổ tay trước nhé. | Lưu thêm vài từ vào sổ tay. |
 | Trang không dựng được. Tải lại giúp trong phần lớn trường hợp. | Chưa mở được trang. Tải lại trang. |
 | Bản triển khai này chưa bật dịch cả đoạn. | Chưa hỗ trợ dịch cả đoạn. |
 | Ôn tập theo lịch FSRS, kiểm tra, viết từ, nghe chép, ghép cặp và luyện nói. | Ôn từ đã lưu bằng nhiều cách. |

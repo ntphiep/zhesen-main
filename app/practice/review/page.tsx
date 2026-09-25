@@ -2,11 +2,11 @@ import { WordlistReview } from '@/components/practice/WordlistReview'
 import { pageMetadata } from '@/lib/site'
 
 export const metadata = pageMetadata({
-  title: 'Ôn tập',
-  description: 'Lặp lại ngắt quãng theo lịch FSRS.',
+  title: 'Ôn từ',
+  description: 'Ôn các từ đến hạn.',
 })
 
-// "Ôn tập": SM-2 spaced-repetition review over due wordlist cards.
+// "Ôn từ": FSRS spaced-repetition review over due wordlist cards.
 export default function Page() {
   return <WordlistReview />
 }

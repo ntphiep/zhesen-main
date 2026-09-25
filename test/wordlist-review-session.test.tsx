@@ -55,6 +55,6 @@ describe('WordlistReview', () => {
     expect(gradeCard).toHaveBeenCalledTimes(1)
     release(state('A'))
     await waitFor(() => expect(screen.getByText('B')).toBeInTheDocument())
-    expect(screen.queryByText(/Hết thẻ cần ôn/)).toBeNull()
+    expect(screen.queryByText(/Hết từ cần ôn/)).toBeNull()
   })
 })
