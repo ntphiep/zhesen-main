@@ -22,7 +22,10 @@ export interface Mistake {
   whyVi: string
 }
 
-export type PhonemeKind = 'vowel' | 'diphthong' | 'consonant'
+/** `weak` is the pair /i/ and /u/, which dictionaries print in unstressed syllables and
+ *  which stand for a sound between a long and a short vowel rather than a phoneme of
+ *  their own. */
+export type PhonemeKind = 'vowel' | 'diphthong' | 'weak' | 'consonant'
 
 export interface PhonemeExample {
   word: string

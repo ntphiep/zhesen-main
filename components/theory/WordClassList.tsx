@@ -10,6 +10,7 @@ export function WordClassList({ language, classes }: { language: Language; class
   return (
     <BlockPage
       language={language}
+      block="word-class"
       titleVi="Từ loại"
       leadVi="Mỗi từ thuộc một loại, và loại quyết định nó đứng ở đâu trong câu và đổi hình thế nào."
     >

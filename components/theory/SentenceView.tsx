@@ -11,6 +11,7 @@ export function SentenceView({ language, topics }: { language: Language; topics:
   return (
     <BlockPage
       language={language}
+      block="sentence"
       titleVi="Câu và cụm từ"
       leadVi="Từ ghép thành cụm, cụm ghép thành mệnh đề, mệnh đề ghép thành câu. Biết ba tầng này là đọc được câu dài."
     >
@@ -24,7 +25,7 @@ export function SentenceView({ language, topics }: { language: Language; topics:
 
       <div className="mt-10 flex flex-col gap-12">
         {topics.map((t) => (
-          <section key={t.id} id={t.id} className="scroll-mt-20 flex flex-col gap-5">
+          <section key={t.id} id={t.id} className="flex flex-col gap-5">
             <div>
               <h2 className="text-2xl font-semibold">{t.titleVi}</h2>
               <p className="mt-1 text-black/70">{t.introVi}</p>

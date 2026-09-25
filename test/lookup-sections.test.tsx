@@ -8,6 +8,11 @@ import { AddToWordlistButton } from '@/components/lookup/AddToWordlistButton'
 import { addWord } from '@/lib/wordlist/store'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 
+/** `IpaLinked` splits a transcription into one link per sound, so no single node holds
+ *  the whole string. Match the wrapper by its own text instead. */
+const ipa = (want: string) => (_: string, el: Element | null) =>
+  el?.classList.contains('ipa') === true && el.textContent === want
+
 vi.mock('@/lib/supabase/client', async () => {
   const { accountAuthStub } = await import('./helpers/supabase')
   // The add button reads the account, so the client stub carries a signed-in user.
@@ -44,9 +49,9 @@ describe('LookupHero', () => {
     expect(screen.getByRole('heading', { name: 'dog' })).toBeInTheDocument()
     expect(screen.getByText('A1')).toBeInTheDocument()
     expect(screen.getByText('UK')).toBeInTheDocument()
-    expect(screen.getByText('/dɒɡ/')).toBeInTheDocument()
+    expect(screen.getByText(ipa('/dɒɡ/'))).toBeInTheDocument()
     expect(screen.getByText('US')).toBeInTheDocument()
-    expect(screen.getByText('/dɑɡ/')).toBeInTheDocument()
+    expect(screen.getByText(ipa('/dɑɡ/'))).toBeInTheDocument()
   })
   it('shows Hán-Việt when provided', () => {
     render(<LookupHero detail={{ ...detail, lang: 'zh' }} hanViet="khuyển" />)

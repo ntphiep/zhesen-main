@@ -84,6 +84,8 @@ const nextConfig: NextConfig = {
       { source: '/grammar', destination: '/theory', permanent: true },
       { source: '/grammar/:lang', destination: '/theory/:lang/grammar', permanent: true },
       { source: '/grammar/:lang/:id', destination: '/theory/:lang/grammar/:id', permanent: true },
+      // /learn itself never had a page and answered 404 (#20).
+      { source: '/learn', destination: '/theory', permanent: true },
       { source: '/learn/:lang', destination: '/theory/:lang/vocabulary', permanent: true },
       { source: '/learn/:lang/:level', destination: '/theory/:lang/vocabulary/:level', permanent: true },
     ]

@@ -24,7 +24,7 @@ export function TheoryHub({ language, blocks, counts }: {
               href={theoryBlockPath(language.code, b.key)}
               className="flex items-start gap-4 rounded-2xl border border-black/10 px-5 py-4 transition hover:border-black/30 hover:bg-black/5"
             >
-              <span className="mt-0.5 w-6 shrink-0 text-lg font-semibold text-black/25">{i + 1}</span>
+              <span className="mt-0.5 w-6 shrink-0 text-lg font-semibold text-black/45">{i + 1}</span>
               <span className="flex-1">
                 <span className="flex flex-wrap items-baseline gap-x-3">
                   <span className="text-lg font-semibold">{b.titleVi}</span>

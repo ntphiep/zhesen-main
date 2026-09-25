@@ -55,6 +55,11 @@
      painted dark widgets on a light page. */
   color-scheme: light;
 
+  /* The site header is sticky, so anything else that sticks has to start below it and
+     any anchor has to clear it. Measured on the running build: 57px, and 101px under
+     640px where the nav takes a line of its own. Change SiteHeader and change this. */
+  --header-h: 57px;
+
   --background: #ffffff;
   --foreground: #171717;
 
@@ -113,6 +118,18 @@
    script in app/layout.tsx: "system" resolves there against prefers-color-scheme, so
    the palette lives in one place instead of once per media query. A browser running
    with JavaScript off gets the light scheme above. */
+@media (max-width: 639px) {
+  :root {
+    --header-h: 101px;
+  }
+}
+
+/* Every in-page anchor clears the sticky header, so no page needs its own offset.
+   An anchor under extra sticky chrome adds `scroll-mt-*` on top of this. */
+html {
+  scroll-padding-top: calc(var(--header-h) + 1rem);
+}
+
 :root[data-theme="dark"] {
   color-scheme: dark;
 

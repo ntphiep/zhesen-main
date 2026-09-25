@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { grammarPointPath } from '@/lib/grammar/path'
 import { theoryLangPath } from '@/lib/theory/path'
+import { NextBlock } from '@/components/theory/NextBlock'
 import type { GrammarLevelGroup } from '@/lib/grammar/group'
 import type { Language } from '@/lib/languages'
 
@@ -42,6 +43,8 @@ export function GrammarPointList({ language, levels }: { language: Language; lev
           </section>
         ))}
       </div>
+
+      <NextBlock lang={language.code} block="grammar" />
     </main>
   )
 }

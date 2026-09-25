@@ -14,12 +14,13 @@ export function CollocationView({ language, patterns, sets }: {
   return (
     <BlockPage
       language={language}
+      block="collocation"
       titleVi="Collocation"
       leadVi="Collocation là những từ quen đi với nhau. Câu đúng ngữ pháp mà sai collocation thì người bản ngữ vẫn nghe ra ngay."
     >
       <div className="mt-8 flex flex-col gap-10">
         {patterns.map((p) => (
-          <section key={p.id} id={p.id} className="scroll-mt-20 flex flex-col gap-4">
+          <section key={p.id} id={p.id} className="flex flex-col gap-4">
             <div>
               <div className="flex flex-wrap items-baseline gap-x-3">
                 <h2 className="text-xl font-semibold">{p.titleVi}</h2>

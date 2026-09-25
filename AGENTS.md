@@ -84,7 +84,7 @@ loosen or delete a test to make it pass.
 - `app/` holds routes, layouts and `globals.css` only. Components live in
   `components/<group>/`; React hooks live in `lib/hooks/`.
 - camelCase for modules, PascalCase for components, tests in `test/` named `*.test.ts(x)`.
-- Route paths are English and singular (`/wordlist`, `/learn`). Never a Vietnamese route.
+- Route paths are English and singular (`/wordlist`, `/theory`). Never a Vietnamese route.
 - The database is snake_case and TypeScript is camelCase. Convert explicitly in the parser
   layer (`lib/dictionary/`, `lib/wordlist/store.ts`) and nowhere else.
 
@@ -176,6 +176,12 @@ header to it by string equality. The auth cookie name is pinned in `lib/supabase
   line in `ERASED_TASKS`. The route needs no change.
 
 ## Removed, do not rebuild
+
+Verified to have no remaining callers before deletion on 2026-09-26:
+`components/grammar/GrammarLangList.tsx`. `/grammar` and `/learn` are blocks of
+`/theory` now, and `components/theory/TheoryLangList.tsx` is the landing page they
+share. Both old paths redirect permanently in `next.config.ts`; do not add a page
+back under either.
 
 Verified to have no remaining callers before deletion on 2026-09-22:
 `app/dictionary/browse/[lang]/[letter]/page.tsx` and `lib/dictionary/browse.ts`. The A-Z
