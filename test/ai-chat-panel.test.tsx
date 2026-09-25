@@ -16,11 +16,11 @@ beforeEach(() => {
 
 async function openPanel() {
   render(<AiChatPanel />)
-  await userEvent.click(await screen.findByRole('button', { name: 'Hỏi gia sư' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Hỏi trợ lý' }))
 }
 
 async function ask(text: string) {
-  await userEvent.type(screen.getByLabelText('Câu hỏi cho gia sư'), text)
+  await userEvent.type(screen.getByLabelText('Câu hỏi cho trợ lý'), text)
   await userEvent.click(screen.getByRole('button', { name: 'Gửi' }))
 }
 
@@ -36,7 +36,7 @@ describe('AiChatPanel', () => {
   // components that call useAiEnabled() with no argument.
   it('asks nothing when the server has already answered', async () => {
     render(<AiChatPanel enabled />)
-    expect(await screen.findByRole('button', { name: 'Hỏi gia sư' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Hỏi trợ lý' })).toBeInTheDocument()
     expect(aiEnabled).not.toHaveBeenCalled()
   })
 
@@ -48,8 +48,8 @@ describe('AiChatPanel', () => {
 
   it('stays closed until the button is pressed', async () => {
     render(<AiChatPanel />)
-    expect(await screen.findByRole('button', { name: 'Hỏi gia sư' })).toBeInTheDocument()
-    expect(screen.queryByLabelText('Câu hỏi cho gia sư')).toBeNull()
+    expect(await screen.findByRole('button', { name: 'Hỏi trợ lý' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('Câu hỏi cho trợ lý')).toBeNull()
   })
 
   // Without it, "từ này" in a question has no referent and the answer is a

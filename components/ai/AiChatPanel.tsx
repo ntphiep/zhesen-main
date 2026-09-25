@@ -54,7 +54,7 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
     } catch {
       // `callAi` handles fetch failures, but its dynamic task-module import rejects
       // after a redeploy, leaving the send button disabled for the life of the page.
-      setError('Không gửi được câu hỏi. Vui lòng thử lại.')
+      setError('Chưa gửi được câu hỏi. Thử lại.')
     } finally {
       setBusy(false)
     }
@@ -68,7 +68,7 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
         onClick={() => setOpen(true)}
         className="fixed bottom-5 right-5 z-40 rounded-full bg-blue-700 px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-blue-800"
       >
-        Hỏi gia sư
+        Hỏi trợ lý
       </button>
     )
   }
@@ -79,7 +79,7 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
       className="fixed bottom-5 right-5 z-40 flex max-h-[min(32rem,80vh)] w-[min(24rem,calc(100vw-2.5rem))] flex-col rounded-2xl border border-black/10 bg-white shadow-xl"
     >
       <header className="flex items-center gap-2 border-b border-black/10 px-4 py-3">
-        <span className="mr-auto text-sm font-semibold">Gia sư Zhesen</span>
+        <span className="mr-auto text-sm font-semibold">Trợ lý Zhesen</span>
         <button
           type="button"
           onClick={() => setOpen(false)}
@@ -93,7 +93,7 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 text-sm">
         {turns.length === 0 && (
           <p className="text-black/50">
-            Hỏi về từ đang xem, nhờ sửa một câu, hoặc hỏi nên ôn gì tiếp. Câu trả lời do trợ lý sinh ra, chưa qua từ điển.
+            Hỏi về từ đang xem, nhờ sửa câu hoặc hỏi nên ôn gì. Câu trả lời do trợ lý viết, chưa qua từ điển.
           </p>
         )}
         {turns.map((t, i) => (
@@ -126,7 +126,7 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
             // two lines, and reaching for the button by mouse costs more.
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send() }
           }}
-          aria-label="Câu hỏi cho gia sư"
+          aria-label="Câu hỏi cho trợ lý"
           placeholder="Nhập câu hỏi…"
           className="flex-1 resize-none rounded-xl border border-black/15 px-3 py-2 text-sm outline-none focus:border-blue-600"
         />

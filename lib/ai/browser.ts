@@ -30,20 +30,20 @@ export async function callAi<K extends TaskName>(
     })
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e
-    return { status: 'error', message: 'Không kết nối được tới trợ lý.' }
+    return { status: 'error', message: 'Chưa kết nối được trợ lý.' }
   }
 
   const body: unknown = await res.json().catch(() => null)
   if (!res.ok) {
     const message = (body as { error?: string } | null)?.error
-    return { status: 'error', message: message ?? 'Trợ lý gặp lỗi.' }
+    return { status: 'error', message: message ?? 'Trợ lý chưa trả lời được.' }
   }
 
   // Loaded here rather than at module scope: by now the request has been made
   // and the chunk downloads alongside it.
   const { TASKS } = await import('./tasks')
   const parsed = TASKS[task].output.safeParse((body as { data?: unknown } | null)?.data)
-  if (!parsed.success) return { status: 'error', message: 'Trợ lý trả về dữ liệu lạ.' }
+  if (!parsed.success) return { status: 'error', message: 'Chưa đọc được câu trả lời.' }
   return { status: 'ok', data: parsed.data as Output<K> }
 }
 

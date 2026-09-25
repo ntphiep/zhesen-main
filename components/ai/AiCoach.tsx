@@ -39,7 +39,7 @@ export function AiCoach({ lang, headword, meaningVi }: {
     } catch {
       // `callAi` handles fetch failures, but its dynamic task-module import rejects
       // after a redeploy, which would leave this stuck on the loading state.
-      setState({ status: 'error', message: 'Không hỏi được trợ lý. Vui lòng thử lại.' })
+      setState({ status: 'error', message: 'Chưa hỏi được trợ lý.' })
     }
   }
 
