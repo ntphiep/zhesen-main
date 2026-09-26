@@ -7,7 +7,7 @@ vi.mock('@/lib/admin/ssm', async (orig) => ({
   clients: () => ({ ssm: { send }, ec2: {}, sns: {} }),
 }))
 
-import { APP_PARAMETERS, CACHE_MS, resetRuntimeEnv, runtimeEnv } from '@/lib/secrets'
+import { APP_KEYS, CACHE_MS, appParameter, resetRuntimeEnv, runtimeEnv } from '@/lib/secrets'
 
 const ROLE = 'arn:aws:iam::014498663963:role/zhesen-vercel-health'
 const ENV = ['AWS_ROLE_ARN', 'AI_API_KEY', 'AI_BASE_URL', 'REVALIDATE_SECRET'] as const
@@ -42,7 +42,7 @@ afterEach(() => {
 
 describe('runtimeEnv', () => {
   it('prefers the SSM parameter over the env var of the same key', async () => {
-    ssmHas({ [APP_PARAMETERS.AI_API_KEY]: 'from-ssm' })
+    ssmHas({ [appParameter('AI_API_KEY')]: 'from-ssm' })
     const env = await runtimeEnv()
     expect(env.AI_API_KEY).toBe('from-ssm')
     expect(env.AI_BASE_URL).toBe('http://env.test/v1')
@@ -54,7 +54,12 @@ describe('runtimeEnv', () => {
     await runtimeEnv()
     expect(send).toHaveBeenCalledTimes(1)
     const cmd = send.mock.calls[0][0] as GetParametersCommand
-    expect(cmd.input.Names).toEqual(Object.values(APP_PARAMETERS))
+    expect(cmd.input.Names).toEqual([
+      '/zhesen/prod/azure_translator_key', '/zhesen/prod/azure_translator_region', '/zhesen/prod/azure_translator_endpoint',
+      '/zhesen/prod/ai_base_url', '/zhesen/prod/ai_api_key', '/zhesen/prod/ai_model', '/zhesen/prod/revalidate_secret',
+      '/zhesen/prod/vercel_token',
+    ])
+    expect(APP_KEYS).toHaveLength(8)
     expect(cmd.input.Names?.length).toBeLessThanOrEqual(10)
     expect(cmd.input.WithDecryption).toBe(true)
   })
@@ -71,10 +76,10 @@ describe('runtimeEnv', () => {
   })
 
   it('keeps one answer for the cache window and asks again after it', async () => {
-    ssmHas({ [APP_PARAMETERS.AI_API_KEY]: 'first' })
+    ssmHas({ [appParameter('AI_API_KEY')]: 'first' })
     const t0 = 1_000_000
     expect((await runtimeEnv(t0)).AI_API_KEY).toBe('first')
-    ssmHas({ [APP_PARAMETERS.AI_API_KEY]: 'second' })
+    ssmHas({ [appParameter('AI_API_KEY')]: 'second' })
     expect((await runtimeEnv(t0 + CACHE_MS - 1)).AI_API_KEY).toBe('first')
     expect(send).toHaveBeenCalledTimes(1)
     expect((await runtimeEnv(t0 + CACHE_MS)).AI_API_KEY).toBe('second')
