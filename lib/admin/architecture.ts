@@ -15,6 +15,7 @@ export const CONTAINERS = [
   { service: 'meta', container: 'supabase-meta', image: 'supabase/postgres-meta:v0.99.0', role: 'Schema API that Studio uses' },
   { service: 'studio', container: 'supabase-studio', image: 'supabase/studio:2026.09.07-sha-7996410', role: 'Database UI, opened only through an SSM tunnel' },
   { service: 'sampler', container: 'zhesen-sampler', image: 'python:3.13.15-alpine3.24', role: 'Records host and container CPU and memory every 5 s for the admin pages' },
+  { service: 'ai-router', container: 'zhesen-9router', image: 'decolua/9router:0.5.91', role: 'Model router behind the assistant, served at /ai/v1/' },
 ] as const
 
 /** infra/terraform/variables.tf `region` and `instance_type`; vercel.json `regions`. */
