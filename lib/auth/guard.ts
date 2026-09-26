@@ -10,6 +10,13 @@ const currentUser = cache(
   async (supabase: SupabaseClient): Promise<User | null> => (await supabase.auth.getUser()).data.user,
 )
 
+/** For route handlers, where a redirect is useless to `fetch`: the permanent account
+ *  signed in, or null for an anonymous session and for no session at all. */
+export async function permanentUser(supabase: SupabaseClient): Promise<User | null> {
+  const user = await currentUser(supabase)
+  return accountKind(user) === 'permanent' ? user : null
+}
+
 /**
  * The door every account-only page goes through: an anonymous session to /register, which
  * attaches an email to the SAME account so saved words survive; a browser holding nothing

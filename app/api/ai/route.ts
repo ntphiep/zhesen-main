@@ -3,15 +3,18 @@ import { askJson, AiUnavailableError } from '@/lib/ai/client'
 import { ERASED_TASKS, isTaskName } from '@/lib/ai/tasks'
 import { z } from '@/lib/zod'
 import { clientKey, createRateLimiter } from '@/lib/http/rateLimit'
+import { createClient } from '@/lib/supabase/server'
+import { permanentUser } from '@/lib/auth/guard'
 
 /**
  * The single entry point for the assistant features, so the model key stays on
  * the server.
  *
- * GET reports whether the feature is configured at all, so the browser can leave
- * the buttons out rather than offer something that will fail. A deployment that
- * cannot reach the router -- it lives on a private network -- is a supported
- * state, not a broken one.
+ * Only a permanent account may use it, the owner's decision: GET answers
+ * `enabled: true` only when the model is configured AND the caller has one, so the
+ * browser leaves the buttons out for everyone else, and POST refuses them. A
+ * deployment that cannot reach the router -- it lives on a private network -- is a
+ * supported state, not a broken one.
  */
 
 // Two budgets: per-address, and a global one as a backstop for deployments where
@@ -20,10 +23,9 @@ import { clientKey, createRateLimiter } from '@/lib/http/rateLimit'
 //
 // KNOWN CEILING: both counters live in this process's memory, so on a platform
 // that runs several instances the real limit is the number below times the
-// number of instances. That is enough while the assistant is unreachable in
-// production (`GET /api/ai` answers {"enabled": false}); before pointing a
-// deployment at a reachable router, move the global counter to a shared store or
-// put the route behind a session.
+// number of instances. The route now sits behind a permanent account, so a caller
+// must first register one; move the global counter to a shared store if accounts
+// ever start being farmed for it.
 const CALLS_PER_MINUTE = 20
 let rateLimit = createRateLimiter({ limit: CALLS_PER_MINUTE, windowMs: 60_000 })
 
@@ -47,12 +49,21 @@ const envelopeSchema = z.object({ task: z.unknown(), input: z.unknown() })
 /** A model call that has not answered by now is not worth the user's wait. */
 const TIMEOUT_MS = 30_000
 
+/** The answer depends on the caller's session, so no cache may keep it. */
+const PRIVATE = { 'Cache-Control': 'private, no-store' }
+
+async function signedIn(): Promise<boolean> {
+  return (await permanentUser(await createClient())) !== null
+}
+
 export async function GET() {
-  return Response.json({ enabled: aiConfig() !== null })
+  const enabled = (await signedIn()) && (await aiConfig()) !== null
+  return Response.json({ enabled }, { headers: PRIVATE })
 }
 
 export async function POST(request: Request) {
-  const cfg = aiConfig()
+  if (!(await signedIn())) return Response.json({ error: 'Đăng nhập để dùng trợ lý.' }, { status: 401 })
+  const cfg = await aiConfig()
   if (!cfg) return Response.json({ error: 'Chưa bật trợ lý.' }, { status: 503 })
 
   let body: unknown

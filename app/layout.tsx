@@ -3,7 +3,6 @@ import { Geist } from 'next/font/google'
 import './globals.css'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { AiChatPanel } from '@/components/ai/AiChatPanel'
-import { aiConfig } from '@/lib/ai/config'
 import { SITE_URL } from '@/lib/site'
 import { THEME_BOOT_SCRIPT } from '@/lib/theme'
 
@@ -60,10 +59,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <SiteHeader />
         <div className="flex-1">{children}</div>
-        {/* Answered here rather than by a request after hydration: aiConfig() only
-            reads environment variables, so it costs nothing and does not opt the
-            layout into dynamic rendering. */}
-        <AiChatPanel enabled={aiConfig() !== null} />
+        {/* Asks GET /api/ai after hydration: the answer depends on the account and on
+            SSM, and reading either here would make every page dynamic. */}
+        <AiChatPanel />
       </body>
     </html>
   )

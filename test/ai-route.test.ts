@@ -1,4 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+
+// The assistant is for a permanent account only (test/ai-gate.test.ts); every case
+// here runs as one.
+const { getUser } = vi.hoisted(() => ({ getUser: vi.fn() }))
+vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser } }) }))
+
 import { GET, POST, resetAiBudgets } from '@/app/api/ai/route'
 
 const ENV = ['AI_BASE_URL', 'AI_API_KEY', 'AI_MODEL', 'TRUST_PROXY_HEADER', 'VERCEL'] as const
@@ -22,6 +28,7 @@ describe('/api/ai', () => {
 
   beforeEach(() => {
     resetAiBudgets()
+    getUser.mockReset().mockResolvedValue({ data: { user: { id: 'u1', email: 'learner@example.com' } } })
     for (const k of ENV) saved[k] = process.env[k]
     process.env.AI_BASE_URL = 'http://router.test/v1'
     process.env.AI_API_KEY = 'sk-secret-must-not-leak'
