@@ -3,7 +3,7 @@ import { parseUserWordRow, draftFromDictEntry, addWord, addWords, updateWordsSta
 import { authStub, clientReturning } from './helpers/supabase'
 import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 import type { WordDraft } from '@/lib/wordlist/types'
-import { resetSessionState } from '@/lib/supabase/session'
+import { NoSessionError } from '@/lib/supabase/session'
 
 const row = {
   id: '11111111-1111-1111-1111-111111111111', lang: 'en', entry_id: 'en:dog', headword: 'dog',
@@ -55,8 +55,8 @@ function mockClient({ existing = [] as unknown[], inserted = row, session = { us
   const eq = vi.fn(() => ({ limit, not: notNull }))
   const select = vi.fn(() => ({ eq, order: listOrder, limit, range: listRange, not: notNull }))
   const from = vi.fn(() => ({ insert, select }))
-  // A real client always carries `auth`; the write paths use it to create the
-  // anonymous account on the first saved word (lib/supabase/session.ts).
+  // A real client always carries `auth`; the write paths read it to refuse a write
+  // with no session (lib/supabase/session.ts).
   const signInAnonymously = vi.fn(async () => ({ error: null }))
   const { auth } = authStub(session, signInAnonymously)
   return {
@@ -79,18 +79,14 @@ describe('addWord', () => {
     expect(w.headword).toBe('dog')
   })
 
-  it('creates the anonymous account on the first saved word', async () => {
-    // Browsing the dictionary deliberately creates no account, so the first write
-    // is where one has to appear or the insert fails against RLS.
-    resetSessionState()
+  it('refuses to save with no session and creates no anonymous account', async () => {
     const { client, insert, signInAnonymously } = mockClient({ session: null })
-    await addWord(client, draftFromDictEntry(dogEntry))
-    expect(signInAnonymously).toHaveBeenCalledTimes(1)
-    expect(insert).toHaveBeenCalled()
+    await expect(addWord(client, draftFromDictEntry(dogEntry))).rejects.toBeInstanceOf(NoSessionError)
+    expect(signInAnonymously).not.toHaveBeenCalled()
+    expect(insert).not.toHaveBeenCalled()
   })
 
   it('reuses the account a returning user already has', async () => {
-    resetSessionState()
     const { client, signInAnonymously } = mockClient()
     await addWord(client, draftFromDictEntry(dogEntry))
     expect(signInAnonymously).not.toHaveBeenCalled()
@@ -112,7 +108,6 @@ describe('addWord', () => {
     const select = vi.fn(() => ({ eq: () => ({ limit }) }))
     const { auth } = authStub({ user: { id: 'u1' } })
     const client = { from: vi.fn(() => ({ insert, select })), auth } as unknown as import('@supabase/supabase-js').SupabaseClient
-    resetSessionState()
     await expect(addWord(client, draftFromDictEntry(dogEntry))).rejects.toBeInstanceOf(WordAlreadyExistsError)
   })
 
@@ -165,20 +160,26 @@ describe('addWords', () => {
   it('bulk-inserts drafts (e.g. CSV import) with no duplicate check', async () => {
     const insertSelect = vi.fn(() => Promise.resolve({ data: [row], error: null }))
     const insert = vi.fn(() => ({ select: insertSelect }))
-    const signInAnonymously = vi.fn(async () => ({ error: null }))
-    const { auth } = authStub(null, signInAnonymously)
+    const { auth } = authStub({ user: { id: 'u1' } })
     const client = { from: vi.fn(() => ({ insert })), auth } as unknown as import('@supabase/supabase-js').SupabaseClient
     const draft = draftFromDictEntry(dogEntry)
-    resetSessionState()
     const res = await addWords(client, [draft, draft, draft])
     expect(insert).toHaveBeenCalledWith([
       expect.objectContaining({ headword: 'dog' }),
       expect.objectContaining({ headword: 'dog' }),
       expect.objectContaining({ headword: 'dog' }),
     ])
-    // One account for the whole import, not one per row.
-    expect(signInAnonymously).toHaveBeenCalledTimes(1)
     expect(res[0].headword).toBe('dog')
+  })
+
+  it('refuses an import with no session before inserting anything', async () => {
+    const insert = vi.fn()
+    const signInAnonymously = vi.fn(async () => ({ error: null }))
+    const { auth } = authStub(null, signInAnonymously)
+    const client = { from: vi.fn(() => ({ insert })), auth } as unknown as import('@supabase/supabase-js').SupabaseClient
+    await expect(addWords(client, [draftFromDictEntry(dogEntry)])).rejects.toBeInstanceOf(NoSessionError)
+    expect(signInAnonymously).not.toHaveBeenCalled()
+    expect(insert).not.toHaveBeenCalled()
   })
 
   /**
@@ -213,7 +214,6 @@ describe('addWords', () => {
       { data: { ...row, entry_id: null }, error: null },
       { data: { ...row, id: '2', entry_id: 'en:cat', headword: 'cat' }, error: null },
     ])
-    resetSessionState()
     const res = await addWords(client, [draftFromDictEntry(dogEntry), draftFromDictEntry(cat)])
 
     const single = rowsSeen.filter((r) => !Array.isArray(r)) as Record<string, unknown>[]
@@ -231,7 +231,6 @@ describe('addWords', () => {
       { data: null, error: { code: '23505', message: 'duplicate key value' } },
       { data: { ...row, id: '2', entry_id: 'en:cat', headword: 'cat' }, error: null },
     ])
-    resetSessionState()
     const res = await addWords(client, [draftFromDictEntry(dogEntry), draftFromDictEntry(cat)])
     expect(res.map((w) => w.headword)).toEqual(['cat'])
   })
@@ -244,7 +243,6 @@ describe('addWords', () => {
     }))
     const { auth } = authStub({ user: { id: 'u1' } })
     const client = { from: vi.fn(() => ({ insert })), auth } as unknown as import('@supabase/supabase-js').SupabaseClient
-    resetSessionState()
     await expect(addWords(client, [draftFromDictEntry(dogEntry)])).rejects.toMatchObject({ code: '42501' })
   })
 
@@ -261,7 +259,6 @@ describe('addWords', () => {
     }))
     const { auth } = authStub({ user: { id: 'u1' } })
     const client = { from: vi.fn(() => ({ insert })), auth } as unknown as import('@supabase/supabase-js').SupabaseClient
-    resetSessionState()
     const drafts = Array.from({ length: 1200 }, () => draftFromDictEntry(dogEntry))
     const res = await addWords(client, drafts)
     expect(res).toHaveLength(1200)
@@ -393,7 +390,6 @@ describe('addWords batch splitting', () => {
     const { client, count } = splittingClient('w137')
     const drafts = Array.from({ length: 500 }, (_, i) =>
       ({ ...draftFromDictEntry(dogEntry), headword: `w${i}`, entryId: `en:w${i}` }))
-    resetSessionState()
 
     const res = await addWords(client, drafts)
 
@@ -405,7 +401,6 @@ describe('addWords batch splitting', () => {
     const { client, count } = splittingClient('nothing-matches')
     const drafts = Array.from({ length: 400 }, (_, i) =>
       ({ ...draftFromDictEntry(dogEntry), headword: `w${i}`, entryId: `en:w${i}` }))
-    resetSessionState()
 
     expect(await addWords(client, drafts)).toHaveLength(400)
     expect(count()).toBe(1)

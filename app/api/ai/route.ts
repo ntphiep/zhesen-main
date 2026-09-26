@@ -32,7 +32,7 @@ let globalBudget = createRateLimiter({ limit: GLOBAL_CALLS_PER_MINUTE, windowMs:
 
 /** Start both budgets over. For tests, which reuse the module and would
  *  otherwise have one case's flood decide the next case's answer -- the same
- *  reason `resetSessionState` and `resetDetailCache` exist. */
+ *  reason `resetDetailCache` exists. */
 export function resetAiBudgets(): void {
   rateLimit = createRateLimiter({ limit: CALLS_PER_MINUTE, windowMs: 60_000 })
   globalBudget = createRateLimiter({ limit: GLOBAL_CALLS_PER_MINUTE, windowMs: 60_000 })

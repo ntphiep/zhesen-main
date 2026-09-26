@@ -28,10 +28,9 @@ prefix needs a Chrome already listening on port 9222 and will fail without one.
 ## Ground rules
 
 - Walk the flow the change touches, and the nearest flow that could have broken with it.
-- Anonymous accounts are how the product works: saving a word creates one through
-  `ensureSession`, so exercising the wordlist is expected and fine. What you must not do
-  without being told is register a permanent email account against the production Supabase
-  project, because each one consumes the hourly email quota and leaves a real row behind.
+- Saving a word needs a permanent account; nothing creates an anonymous one
+  (`ensureSession`, `lib/supabase/session.ts`). Do not register an account against the
+  production database without being told: each one leaves a real row in `auth.users`.
 - Write screenshots to `.playwright-mcp/`, which is gitignored. Playwright refuses a path
   outside the workspace, so "outside the repository" is not an option. `git status` must be
   clean when you finish.

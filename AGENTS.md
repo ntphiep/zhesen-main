@@ -152,13 +152,13 @@ header to it by string equality. The auth cookie name is pinned in `lib/supabase
   the way out, keeping the user id and every row under it. GoTrue runs with
   `GOTRUE_MAILER_AUTOCONFIRM=true` and no SMTP, so accounts are email plus password only:
   no confirmation mail, no magic link, no password reset. Revisit with real users.
-- Middleware does not create anonymous sessions. The earlier behaviour created an
-  `auth.users` row per cookieless request: 122 accounts of which 1 held data, and hitting
-  the sign-in ceiling cost real users their sessions. Any new write path must therefore call
-  `ensureSession` (`lib/supabase/session.ts`) rather than assume a session exists. This is a
-  rule for the data layer and says nothing about which buttons the UI offers: today
-  `AddToWordlistButton` requires a permanent account, so no screen reaches the anonymous
-  path.
+- Nothing creates an anonymous session. Middleware once created an `auth.users` row per
+  cookieless request: 122 accounts of which 1 held data, and hitting the sign-in ceiling
+  cost real users their sessions. `ensureSession` (`lib/supabase/session.ts`) then created
+  one on the first saved word; it now throws `NoSessionError`, because such an account dies
+  with the browser's cookie. Every path that adds a row still calls it rather than assume a
+  session exists. An anonymous session that already exists keeps working, and account-only pages
+  send it to `/register` (`lib/auth/guard.ts`), where `attachEmail` keeps its words.
 - The lookup has one box per direction and detects nothing. Vietnamese cannot be told from
   English or Spanish by its text: "an", "ban" and "con" are real headwords in both and
   score 4.01 to 4.12 in `lex.search`, above any threshold, so a single box answered "cá"

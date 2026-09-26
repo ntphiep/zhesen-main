@@ -56,7 +56,7 @@ export function rpcClientReturning(data: unknown, error: unknown = null) {
 
 /**
  * The auth half of a client. `session` is what getSession reports: an object to
- * act as a signed-in user, null to make ensureSession create an account.
+ * act as a signed-in user, null for a visitor with no session, which ensureSession refuses.
  */
 export function authStub(
   session: unknown,
