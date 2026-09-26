@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { accountKind, type AccountKind } from '@/lib/auth/account'
+import { loadSupabaseClient } from '@/lib/supabase/loadClient'
 
 /** Which account this browser carries. Must stay client-side: reading it in a shared server
  *  component calls `cookies()` on every route and stops the prerendered pages prerendering.
@@ -20,7 +21,7 @@ export function useAccount(): { kind: AccountKind | null; email: string | null }
     }
     // Dynamic import: this hook runs in the header of every route, and a static one puts
     // all 62.2 kB gzipped of supabase-js on the blocking path of pages that query nothing.
-    void import('@/lib/supabase/client').then(({ createClient }) => {
+    void loadSupabaseClient().then(({ createClient }) => {
       if (!live) return
       const supabase = createClient()
       // `getSession`, never `getUser`: this only decides which links to draw, and `getUser`

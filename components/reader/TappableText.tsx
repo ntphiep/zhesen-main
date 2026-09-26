@@ -5,6 +5,7 @@ import { WordPopover } from './WordPopover'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
 import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
+import { loadSupabaseClient } from '@/lib/supabase/loadClient'
 
 /**
  * Text with dictionary-known words made tappable, each opening an inline popover;
@@ -69,7 +70,7 @@ export function TappableText({
         // Imported here, as in `PersonalStrip`: the server resolves most texts, so most
         // pages never reach this branch and need neither supabase-js nor zod.
         const [{ createClient }, { resolveTokens, getZhSegmentCandidates }, { getCharacters }] = await Promise.all([
-          import('@/lib/supabase/client'),
+          loadSupabaseClient(),
           import('@/lib/dictionary/resolveTokens'),
           import('@/lib/dictionary/entryDetail'),
         ])

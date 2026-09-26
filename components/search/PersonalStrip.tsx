@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { recentEntries } from '@/lib/dictionary/recent'
 import type { UserWord } from '@/lib/wordlist/types'
+import { loadSupabaseClient } from '@/lib/supabase/loadClient'
 
 /** Enough to fill one row at 1440px. */
 const SHOW = 8
@@ -33,7 +34,7 @@ export function PersonalStrip() {
     // Dynamic import for the same reason `useAccount` uses one: supabase-js is 62.2 kB
     // gzipped and this strip sits below the fold of a page that queries nothing.
     void (async () => {
-      const { createClient } = await import('@/lib/supabase/client')
+      const { createClient } = await loadSupabaseClient()
       const supabase = createClient()
       const { data } = await supabase.auth.getSession()
       if (!live || !data.session) return

@@ -8,6 +8,7 @@ import { signInHref, useAccount } from '@/lib/hooks/useAccount'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { Language } from '@/lib/languages'
 import { Ipa } from '@/components/ui/Ipa'
+import { loadSupabaseClient } from '@/lib/supabase/loadClient'
 
 type AddAllState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'done'; added: number; skipped: number } | { kind: 'error' }
 
@@ -33,7 +34,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
       // Imported on the click, as in `PersonalStrip`: browsing the list needs neither
       // supabase-js nor zod, and a static import put both on this page's first load.
       const [{ createClient }, { getEntriesByLevel }] = await Promise.all([
-        import('@/lib/supabase/client'),
+        loadSupabaseClient(),
         import('@/lib/dictionary/levels'),
       ])
       const page = await getEntriesByLevel(createClient(), language.code, level, items.length, pageSize)
@@ -47,7 +48,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
     setAddAll({ kind: 'busy' })
     try {
       const [{ createClient }, { getAllEntriesByLevel }, { addWords, draftFromDictEntry, listSavedEntryIds }] = await Promise.all([
-        import('@/lib/supabase/client'),
+        loadSupabaseClient(),
         import('@/lib/dictionary/levels'),
         import('@/lib/wordlist/store'),
       ])
