@@ -119,7 +119,7 @@ export const SECRETS: SecretDef[] = [
     pattern: /^arn:aws:iam::\d{12}:role\/[\w+=,.@/-]+$/, hint: 'An IAM role ARN, arn:aws:iam::<account>:role/<name>.',
     purpose: 'IAM role every function assumes through Vercel OIDC for its AWS calls.' },
   { id: '9router_dashboard_password', group: 'Elsewhere', secure: true, apply: null, revealable: false,
-    locked: 'Kept only as a hash inside 9router: change it in the 9router dashboard, reached through an SSM tunnel to port 20128.',
+    locked: 'Kept only as a hash inside 9router: change it in the 9router dashboard, opened with infra/supabase/bin/router-tunnel.ps1 (SSM tunnel to port 20128).',
     purpose: 'Password of the 9router dashboard.' },
 ]
 

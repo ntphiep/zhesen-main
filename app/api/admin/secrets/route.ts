@@ -141,8 +141,6 @@ async function apply(ssm: SSMClient, def: SecretDef, value: string, vercel: Verc
   }
 }
 
-const MODELS = z.object({ data: z.array(z.object({ id: z.string() })) })
-
 async function runTest(kind: 'azure' | 'ai'): Promise<string> {
   const started = Date.now()
   const ms = () => `${Date.now() - started} ms`
@@ -159,14 +157,16 @@ async function runTest(kind: 'azure' | 'ai'): Promise<string> {
   const cfg = await aiConfig()
   if (!cfg) return 'Not configured: ai_base_url or ai_api_key is set in neither SSM nor Vercel.'
   try {
-    const res = await fetch(`${cfg.baseUrl}/models`, {
-      headers: { 'x-api-key': cfg.apiKey, authorization: `Bearer ${cfg.apiKey}` }, signal: AbortSignal.timeout(10_000),
+    // One token through the endpoint the assistant uses, with its headers (lib/ai/client.ts).
+    const res = await fetch(`${cfg.baseUrl}/messages`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': cfg.apiKey, authorization: `Bearer ${cfg.apiKey}`, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: cfg.model, max_tokens: 1, stream: false, messages: [{ role: 'user', content: 'ping' }] }),
+      signal: AbortSignal.timeout(20_000),
     })
-    if (!res.ok) return `The router answered HTTP ${res.status} in ${ms()}.`
-    const models = MODELS.safeParse(await res.json().catch(() => null))
-    if (!models.success) return `The router answered HTTP ${res.status} in ${ms()}, but not with a model list.`
-    const listed = models.data.data.some((m) => m.id === cfg.model)
-    return `The router answered in ${ms()} with ${models.data.data.length} models; ${cfg.model} is ${listed ? '' : 'not '}among them.`
+    return res.ok
+      ? `The router answered a one-token call to ${cfg.model} in ${ms()}.`
+      : `The router answered HTTP ${res.status} for ${cfg.model} in ${ms()}.`
   } catch (e) {
     return `Could not reach the router (${e instanceof Error ? e.name : 'Error'}) after ${ms()}.`
   }
