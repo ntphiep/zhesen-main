@@ -52,7 +52,9 @@ infra/
                              health, power the instance, SSM commands, rescue secret,
                              alert channels
   supabase/                  what runs on the instance, synced to /opt/zhesen/supabase
-    docker-compose.yml       upstream compose trimmed to db, auth, rest, api-gw, studio, meta
+    docker-compose.yml       upstream compose trimmed to db, auth, rest, api-gw, studio, meta,
+                             plus sampler
+    sampler/                 sampler.py, host and container counters into Postgres every 5 s
     env.template             .env with ${SSM:/path} placeholders
     volumes/                 Envoy config and Postgres init scripts, copied from upstream
     bin/                     render-env.sh, backup.sh, migrate.sh, studio-tunnel.ps1
@@ -93,7 +95,12 @@ upstream's `utils/upgrade-pg17.sh` is the pattern for that.
 ## Operating it
 
 Shell: `aws ssm start-session --region ap-northeast-2 --target <instance_id>`, then
-`sudo -i`. Compose lives in `/opt/zhesen/supabase`; `docker ps` shows six containers.
+`sudo -i`. Compose lives in `/opt/zhesen/supabase`; `docker ps` shows seven containers.
+
+Metrics: `zhesen-sampler` writes host and container counters to `admin.host_samples` every
+5 s and keeps one hour. `/admin/infra` reads them through PostgREST and falls back to one SSM
+command when the newest row is more than 20 s old. `docker logs zhesen-sampler` holds one line
+per failed sample.
 
 Studio: `pwsh infra/supabase/bin/studio-tunnel.ps1`, then `http://localhost:8000`, user
 `zhesen`, password in SSM `/zhesen/prod/dashboard_password`.

@@ -14,6 +14,7 @@ export const CONTAINERS = [
   { service: 'db', container: 'supabase-db', image: 'supabase/postgres:17.6.1.136', role: 'Postgres 17 with PGroonga and pg_trgm' },
   { service: 'meta', container: 'supabase-meta', image: 'supabase/postgres-meta:v0.99.0', role: 'Schema API for Studio' },
   { service: 'studio', container: 'supabase-studio', image: 'supabase/studio:2026.09.07-sha-7996410', role: 'Database UI, reachable only through an SSM tunnel' },
+  { service: 'sampler', container: 'zhesen-sampler', image: 'python:3.13.15-alpine3.24', role: 'Host and container counters into Postgres every 5 s' },
 ] as const
 
 /** infra/terraform/variables.tf `region` and `instance_type`; vercel.json `regions`. */

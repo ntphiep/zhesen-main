@@ -11,6 +11,7 @@ export const NAV_GROUPS: { label: string; links: { href: string; label: string }
     links: [
       { href: '/admin', label: 'Overview' },
       { href: '/admin/monitor', label: 'Monitor' },
+      { href: '/admin/containers', label: 'Containers' },
       { href: '/admin/database', label: 'Database' },
     ],
   },

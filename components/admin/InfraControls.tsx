@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { z } from '@/lib/zod'
 import { usePoll } from '@/lib/hooks/usePoll'
 import { postAdmin } from '@/lib/admin/browser'
-import { LOG_SERVICES, parseHostResponse, type HostResponse } from '@/lib/admin/monitor'
+import { parseHostResponse, type HostResponse } from '@/lib/admin/monitor'
 import { formatBytes } from '@/lib/admin/metrics'
 import { clock, num, when, Section, Status, type Tone } from '@/components/admin/Page'
 import { GuardDialog } from '@/components/admin/GuardDialog'
@@ -44,7 +44,6 @@ const TONE: Record<string, Tone> = {
 type Pending =
   | { kind: 'power'; op: 'start' | 'stop' | 'reboot' }
   | { kind: 'resize' }
-  | { kind: 'restart'; service: (typeof LOG_SERVICES)[number] }
   | { kind: 'backup' }
 
 const button = 'rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium hover:bg-black/[0.04] disabled:opacity-40'
@@ -112,11 +111,11 @@ export function amiLabel(name: string): string {
 const spec = (t: { vcpus: number | null; memoryGb: number | null }) =>
   [t.vcpus !== null ? `${t.vcpus} vCPU` : null, t.memoryGb !== null ? `${num(t.memoryGb)} GB` : null].filter(Boolean).join(' · ')
 
-/** The EC2 instance with its power and type controls, container restarts and an on-demand
- *  backup, each behind GuardDialog. */
+/** The EC2 instance with its power and type controls and an on-demand backup, each behind
+ *  GuardDialog. */
 export function InfraControls() {
   const poll = usePoll('/api/admin/control?part=state', 10_000, (raw) => stateSchema.parse(raw))
-  const hostPoll = usePoll<HostResponse>('/api/admin/monitor?part=host', 30_000, parseHostResponse)
+  const hostPoll = usePoll<HostResponse>('/api/admin/monitor?part=host', 5_000, parseHostResponse)
   const [pending, setPending] = useState<Pending | null>(null)
   const [result, setResult] = useState<{ title: string; at: Date; text: string } | null>(null)
   const [types, setTypes] = useState<TypeOption[] | 'error' | null>(null)
@@ -174,17 +173,6 @@ export function InfraControls() {
     if (pending.kind === 'resize') {
       return { title: 'Change instance type', label: 'Change type', target: INSTANCE_NAME, text: '', body: { action: 'resize', type: chosen } }
     }
-    if (pending.kind === 'restart') {
-      return {
-        title: `Restart supabase-${pending.service}`,
-        label: 'Restart',
-        target: `supabase-${pending.service}`,
-        text: pending.service === 'db'
-          ? 'Postgres stops for a few seconds; running queries are cancelled.'
-          : 'The container stops for a few seconds; requests to it fail meanwhile.',
-        body: { action: 'restart', service: pending.service },
-      }
-    }
     return {
       title: 'Backup now',
       label: 'Backup now',
@@ -220,7 +208,9 @@ export function InfraControls() {
           </div>
           <div className="grid gap-5 px-4 py-4 lg:grid-cols-[auto_1fr]">
             <div className="flex justify-around gap-4 lg:justify-start">
-              <Ring label="CPU load" share={cpu} note={h?.load ? `${h.load[0].toFixed(2)} / ${h.cpus}` : undefined} />
+              {h && h.cpuPercent !== null
+                ? <Ring label="CPU" share={h.cpuPercent / 100} note={h.load ? `load ${h.load[0].toFixed(2)}` : undefined} />
+                : <Ring label="CPU load" share={cpu} note={h?.load ? `${h.load[0].toFixed(2)} / ${h.cpus}` : undefined} />}
               <Ring label="Memory" share={h?.memory ? (h.memory.total - h.memory.available) / h.memory.total : null}
                 note={h?.memory ? `${formatBytes(h.memory.total - h.memory.available)} of ${formatBytes(h.memory.total)}` : undefined} />
               <Ring label="Disk" share={h?.disk ? h.disk.used / h.disk.size : null}
@@ -249,19 +239,6 @@ export function InfraControls() {
           )}
         </div>
         <p className="mt-2 text-xs text-black/50">If the instance is stopped this page cannot load; start it from /rescue.</p>
-      </Section>
-
-      <Section title="Containers">
-        <ul className="divide-y divide-black/5 rounded-lg border border-black/10">
-          {LOG_SERVICES.map((svc) => (
-            <li key={svc} className="flex items-center justify-between gap-2 px-4 py-2">
-              <span className="font-mono text-sm">supabase-{svc}</span>
-              <button type="button" className={button} disabled={!running} onClick={() => setPending({ kind: 'restart', service: svc })}>
-                Restart
-              </button>
-            </li>
-          ))}
-        </ul>
       </Section>
 
       <Section title="Backup">

@@ -34,6 +34,7 @@ means an upstream bump is a straight copy.
 | --- | --- |
 | Services removed: `realtime`, `storage`, `imgproxy`, `functions`, `supavisor` | None of them is used. The app reads PostgREST and GoTrue only. Dropping them takes roughly 1 GB of RSS off a 4 GB host. |
 | `deno-cache` named volume removed | Only `functions` mounted it. |
+| Service added: `sampler`, container `zhesen-sampler`, `python:3.13.15-alpine3.24`, 64m, `init: true` | Writes host and container counters to `admin.host_samples` every 5 s for `/admin/infra` (migration 0072). It mounts the Docker socket, `/proc` and `/` read-only. The socket is root on the host, as the SSM command it replaces is; `sampler.py` only sends GETs to it. |
 | `auth` image `supabase/gotrue:v2.197.0` | Upstream pins v2.196.0. The Cloud project runs v2.197.0 with auth schema migration `20260831180000`; an older binary refuses a newer schema. |
 | `api-gw` has no `depends_on: studio` | Upstream starts the gateway only after Studio is healthy. The API does not need Studio, so a Studio that fails its healthcheck no longer blocks `/auth/v1/` and `/rest/v1/`. |
 | `api-gw` `ports: ["80:8000"]` | Upstream binds `${API_GW_HTTP_PORT:-8000}`. CloudFront reaches the origin on port 80. The security group admits only the CloudFront VPC origin's service-managed security group, so binding every interface exposes nothing further. |

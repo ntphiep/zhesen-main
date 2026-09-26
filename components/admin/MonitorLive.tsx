@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { usePoll, type Poll } from '@/lib/hooks/usePoll'
 import {
@@ -9,7 +10,7 @@ import { formatBytes } from '@/lib/admin/metrics'
 import { clock, num, Status, type Tone } from '@/components/admin/Page'
 
 const LIVE_MS = 10_000
-const HOST_MS = 30_000
+const HOST_MS = 5_000
 /** Ten minutes of 10-second samples. */
 const KEEP = 60
 
@@ -17,21 +18,22 @@ const rate = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: n
 const pct = (n: number) => `${n.toLocaleString('en-US', { maximumFractionDigits: 1 })}%`
 
 /** When the last poll landed, or why it did not. */
-function Freshness({ poll, everyMs }: { poll: Poll<unknown>; everyMs: number }) {
+export function Freshness({ poll, everyMs }: { poll: Poll<unknown>; everyMs: number }) {
   const every = `every ${everyMs / 1000} s`
   if (poll.state === 'loading') return <Status tone="idle">Loading</Status>
   if (poll.state === 'error') {
     return <Status tone="bad">{poll.message}{poll.at ? ` Showing data from ${clock(new Date(poll.at))}.` : ''}</Status>
   }
-  return <Status tone="ok">Updated {every} · last {clock(new Date(poll.at))}</Status>
+  return <Status tone="ok">Updated {clock(new Date(poll.at))} · {every}</Status>
 }
 
-/** The last ten minutes of one number, drawn without axes: its shape is the point. */
-function Trail({ values, label }: { values: number[]; label: string }) {
+/** The last `slots` values of one number, newest at the right edge, drawn without axes:
+ *  its shape is the point. */
+export function Trail({ values, label, slots = KEEP }: { values: number[]; label: string; slots?: number }) {
   if (values.length < 2) return <div className="h-8" />
   const max = Math.max(...values, 1e-9)
-  const step = 100 / (KEEP - 1)
-  const offset = (KEEP - values.length) * step
+  const step = 100 / (slots - 1)
+  const offset = (slots - values.length) * step
   const d = values.map((v, i) => `${i === 0 ? 'M' : 'L'}${(offset + i * step).toFixed(2)},${(30 - (v / max) * 28).toFixed(2)}`).join(' ')
   return (
     <svg viewBox="0 0 100 32" preserveAspectRatio="none" className="h-8 w-full" role="img" aria-label={label}>
@@ -149,22 +151,22 @@ function Meter({ label, used, total, format }: { label: string; used: number; to
   )
 }
 
-function duration(seconds: number): string {
+export function duration(seconds: number): string {
   const days = Math.floor(seconds / 86_400)
   const hours = Math.floor((seconds % 86_400) / 3600)
   return days > 0 ? `${days} d ${hours} h` : `${hours} h ${Math.floor((seconds % 3600) / 60)} min`
 }
 
-function containerTone(status: string, health: string | null): Tone {
+export function containerTone(status: string, health: string | null): Tone {
   if (status !== 'running') return 'bad'
   if (health === 'unhealthy') return 'bad'
   if (health === 'starting') return 'warn'
   return 'ok'
 }
 
-const HEALTH: Record<string, string> = { healthy: 'healthy', unhealthy: 'unhealthy', starting: 'starting' }
+export const HEALTH: Record<string, string> = { healthy: 'healthy', unhealthy: 'unhealthy', starting: 'starting' }
 
-/** The instance and each container every 30 seconds, through one SSM command. */
+/** The instance and each container every 5 seconds. */
 export function HostPanel() {
   const poll = usePoll<HostResponse>('/api/admin/monitor?part=host', HOST_MS, parseHostResponse)
   const host = poll.state === 'loading' ? undefined : poll.data
@@ -234,6 +236,9 @@ export function HostPanel() {
               </tbody>
             </table>
           </div>
+          <p className="mt-2 text-sm">
+            <Link href="/admin/containers" prefetch={false} className="underline underline-offset-2 hover:text-black/70">All containers</Link>
+          </p>
         </>
       )}
     </div>
@@ -242,37 +247,51 @@ export function HostPanel() {
 
 type LogState = { state: 'idle' } | { state: 'busy' } | { state: 'error'; message: string } | { state: 'ok'; data: LogsResponse }
 
-/** One container's last 15 minutes, read on request rather than polled. */
-export function LogViewer() {
-  const [service, setService] = useState<(typeof LOG_SERVICES)[number]>('db')
-  const [logs, setLogs] = useState<LogState>({ state: 'idle' })
+type Service = (typeof LOG_SERVICES)[number]
+
+async function readLogs(service: Service): Promise<LogState> {
+  try {
+    const res = await fetch(`/api/admin/monitor?part=logs&service=${service}`, { cache: 'no-store' })
+    const body: unknown = await res.json()
+    if (!res.ok) {
+      const message = typeof body === 'object' && body && 'error' in body && typeof body.error === 'string' ? body.error : `HTTP ${res.status}`
+      return { state: 'error', message }
+    }
+    return { state: 'ok', data: parseLogsResponse(body) }
+  } catch {
+    return { state: 'error', message: 'Lost connection to the server.' }
+  }
+}
+
+/** One container's last 15 minutes, read on request rather than polled. Given `fixed`, it
+ *  reads that container at once and offers no picker. */
+export function LogViewer({ fixed }: { fixed?: Service } = {}) {
+  const [picked, setService] = useState<Service>('db')
+  const service = fixed ?? picked
+  const [logs, setLogs] = useState<LogState>(fixed ? { state: 'busy' } : { state: 'idle' })
   const box = useRef<HTMLPreElement>(null)
 
   useEffect(() => {
     if (logs.state === 'ok' && box.current) box.current.scrollTop = box.current.scrollHeight
   }, [logs])
 
+  useEffect(() => {
+    if (!fixed) return
+    let alive = true
+    void readLogs(fixed).then((l) => { if (alive) setLogs(l) })
+    return () => { alive = false }
+  }, [fixed])
+
   async function load() {
     setLogs({ state: 'busy' })
-    try {
-      const res = await fetch(`/api/admin/monitor?part=logs&service=${service}`, { cache: 'no-store' })
-      const body: unknown = await res.json()
-      if (!res.ok) {
-        const message = typeof body === 'object' && body && 'error' in body && typeof body.error === 'string' ? body.error : `HTTP ${res.status}`
-        setLogs({ state: 'error', message })
-      } else {
-        setLogs({ state: 'ok', data: parseLogsResponse(body) })
-      }
-    } catch {
-      setLogs({ state: 'error', message: 'Lost connection to the server.' })
-    }
+    setLogs(await readLogs(service))
   }
 
   const data = logs.state === 'ok' ? logs.data : undefined
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        <div role="radiogroup" aria-label="Container" className="flex flex-wrap gap-1 rounded-lg border border-black/10 p-1">
+        {!fixed && <div role="radiogroup" aria-label="Container" className="flex flex-wrap gap-1 rounded-lg border border-black/10 p-1">
           {LOG_SERVICES.map((s) => (
             <button
               key={s}
@@ -285,7 +304,7 @@ export function LogViewer() {
               {s}
             </button>
           ))}
-        </div>
+        </div>}
         <button
           type="button"
           onClick={() => void load()}

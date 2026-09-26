@@ -190,9 +190,28 @@ export interface ContainerState {
   cpuPercent: number | null
   memBytes: number | null
   memLimitBytes: number | null
+  /** The rest comes only from the sampler (infra/supabase/sampler); the SSM read leaves it null or empty. */
+  service: string | null
+  /** Cores the container may use; null when unlimited. */
+  cpuLimit: number | null
+  netRxBps: number | null
+  netTxBps: number | null
+  netRxBytes: number | null
+  netTxBytes: number | null
+  blkReadBps: number | null
+  blkWriteBps: number | null
+  pids: number | null
+  ports: string[]
+  mounts: { type: string; source: string; destination: string; rw: boolean }[]
+  healthLog: { exitCode: number; output: string; at: string } | null
 }
 
 export interface HostSnapshot {
+  /** Where the numbers came from: the 5 s sampler rows, or one SSM command when they are stale. */
+  source: 'sampler' | 'ssm'
+  /** Busy share of all cores over the last interval; null from SSM, which reads load only. */
+  cpuPercent: number | null
+  net: { rxBps: number; txBps: number } | null
   containers: ContainerState[]
   memory: { total: number; used: number; available: number } | null
   disk: { size: number; used: number; available: number } | null
@@ -248,6 +267,8 @@ export function parseHost(stdout: string): HostSnapshot {
       cpuPercent: st && Number.isFinite(st.cpu) ? st.cpu : null,
       memBytes: st?.used ?? null,
       memLimitBytes: st?.limit ?? null,
+      service: null, cpuLimit: null, netRxBps: null, netTxBps: null, netRxBytes: null, netTxBytes: null,
+      blkReadBps: null, blkWriteBps: null, pids: null, ports: [], mounts: [], healthLog: null,
     }
   }).sort((a, b) => a.name.localeCompare(b.name))
   const mem = nums(s.mem?.[0])
@@ -256,6 +277,9 @@ export function parseHost(stdout: string): HostSnapshot {
   const up = nums(s.uptime?.[0])
   const cpus = nums(s.cpus?.[0])
   return {
+    source: 'ssm',
+    cpuPercent: null,
+    net: null,
     containers,
     memory: mem.length === 3 ? { total: mem[0], used: mem[1], available: mem[2] } : null,
     disk: disk.length === 3 ? { size: disk[0], used: disk[1], available: disk[2] } : null,
@@ -267,15 +291,24 @@ export function parseHost(stdout: string): HostSnapshot {
 
 /* ---------- What the browser reads back from /api/admin/monitor ---------- */
 
+const n = z.number().nullable()
+const containerState = z.object({
+  name: z.string(), image: z.string(), status: z.string(), startedAt: z.string(), restarts: z.number(),
+  health: z.string().nullable(), cpuPercent: n, memBytes: n, memLimitBytes: n,
+  service: z.string().nullable(), cpuLimit: n, netRxBps: n, netTxBps: n, netRxBytes: n, netTxBytes: n,
+  blkReadBps: n, blkWriteBps: n, pids: n, ports: z.array(z.string()),
+  mounts: z.array(z.object({ type: z.string(), source: z.string(), destination: z.string(), rw: z.boolean() })),
+  healthLog: z.object({ exitCode: z.number(), output: z.string(), at: z.string() }).nullable(),
+})
+
 const hostResponse = z.union([
   z.object({ enabled: z.literal(false) }),
   z.object({
     at: z.string(),
-    containers: z.array(z.object({
-      name: z.string(), image: z.string(), status: z.string(), startedAt: z.string(), restarts: z.number(),
-      health: z.string().nullable(), cpuPercent: z.number().nullable(), memBytes: z.number().nullable(),
-      memLimitBytes: z.number().nullable(),
-    })),
+    source: z.enum(['sampler', 'ssm']),
+    cpuPercent: n,
+    net: z.object({ rxBps: z.number(), txBps: z.number() }).nullable(),
+    containers: z.array(containerState),
     memory: z.object({ total: z.number(), used: z.number(), available: z.number() }).nullable(),
     disk: z.object({ size: z.number(), used: z.number(), available: z.number() }).nullable(),
     load: z.tuple([z.number(), z.number(), z.number()]).nullable(),
@@ -288,6 +321,30 @@ export type HostResponse = { enabled: false } | (HostSnapshot & { at: string })
 
 export function parseHostResponse(raw: unknown): HostResponse {
   return hostResponse.parse(raw)
+}
+
+/** One point per sampler row: CPU in percent of the container's share of the host, memory in bytes. */
+const point = z.object({ t: z.string(), cpu: n, mem: n })
+
+/** `GET /api/admin/monitor?part=containers`: the latest snapshot plus the last hour per container. */
+const containersResponse = z.union([
+  z.object({ enabled: z.literal(false) }),
+  z.object({
+    at: z.string(),
+    source: z.enum(['sampler', 'ssm']),
+    containers: z.array(containerState),
+    series: z.array(z.object({ name: z.string(), points: z.array(point) })),
+    host: z.array(point),
+  }),
+])
+
+export type SeriesPoint = z.infer<typeof point>
+export type ContainersResponse =
+  | { enabled: false }
+  | { at: string; source: 'sampler' | 'ssm'; containers: ContainerState[]; series: { name: string; points: SeriesPoint[] }[]; host: SeriesPoint[] }
+
+export function parseContainersResponse(raw: unknown): ContainersResponse {
+  return containersResponse.parse(raw)
 }
 
 const logsResponse = z.union([
