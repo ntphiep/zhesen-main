@@ -138,7 +138,7 @@ export function SecretsTable() {
                   <li key={r.id} className="flex flex-col gap-2 px-4 py-3 text-sm">
                     <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-1">
                       <div className="min-w-0 flex-1">
-                        <code className="font-mono font-medium wrap-anywhere">{r.id}</code>
+                        <code className="font-mono font-bold wrap-anywhere">{r.id}</code>
                         <p className="text-black/60">{r.purpose}</p>
                         <p className="text-xs text-black/50 wrap-anywhere">{r.where}</p>
                       </div>

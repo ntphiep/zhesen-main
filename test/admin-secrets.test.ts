@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createHmac } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { DescribeParametersCommand, GetParameterCommand, GetParametersCommand, PutParameterCommand } from '@aws-sdk/client-ssm'
 
@@ -138,6 +138,20 @@ describe('the variable-to-service table', () => {
   })
 })
 
+describe('the audit filter', () => {
+  it('accepts every action the app records, as defined by the newest admin.record', () => {
+    const migrations = resolve(__dirname, '../supabase/migrations')
+    const newest = readdirSync(migrations).sort().map((f) => readFileSync(resolve(migrations, f), 'utf8'))
+      .filter((sql) => sql.includes('function admin.record(')).at(-1) ?? ''
+    const filter = new RegExp(newest.match(/p_action !~ '([^']+)'/)?.[1] ?? '^$')
+    const actions = ['app', 'lib'].flatMap((dir) => readdirSync(resolve(__dirname, '..', dir), { recursive: true, encoding: 'utf8' })
+      .filter((f) => /\.tsx?$/.test(f))
+      .flatMap((f) => [...readFileSync(resolve(__dirname, '..', dir, f), 'utf8').matchAll(/record\(supabase, '([^']+)'/g)].map((m) => m[1])))
+    expect(actions).toContain('secret.reveal')
+    for (const action of actions) expect(action).toMatch(filter)
+  })
+})
+
 describe('rotation pieces', () => {
   it('signs new keys with the new secret and the current claims shape', () => {
     const secret = 'n'.repeat(64)
@@ -262,13 +276,15 @@ describe('jwt_secret rotation', () => {
   const rotate = () => post({ action: 'update', id: 'jwt_secret', generate: true, confirm: 'jwt_secret' })
   const steps = () => log.filter((l) => l.startsWith('vercel') || l.startsWith('put') || l === 'shell')
 
-  function vercelAnswers(envStatus: number) {
+  const PRODUCTION_ANON = { id: 'env_1', key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', target: ['production'] }
+
+  function vercelAnswers(envStatus: number, envs: unknown[] = [PRODUCTION_ANON]) {
     vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
       const method = init?.method ?? 'GET'
       log.push(`vercel ${method}`)
       if (method === 'GET') {
         return envStatus === 200
-          ? Response.json({ envs: [{ id: 'env_1', key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', target: ['production'] }] })
+          ? Response.json({ envs })
           : Response.json({ error: { message: 'Not authorized' } }, { status: envStatus })
       }
       if (method === 'PATCH') return Response.json({ key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY' })
@@ -297,6 +313,16 @@ describe('jwt_secret rotation', () => {
       'vercel GET', 'put /zhesen/prod/jwt_secret', 'put /zhesen/prod/anon_key', 'put /zhesen/prod/service_role_key',
       'shell', 'vercel PATCH', 'vercel POST',
     ])
+  })
+
+  it('gives every record of the anon key the new value, preview and branch records included', async () => {
+    vercelAnswers(200, [
+      { ...PRODUCTION_ANON, target: ['production', 'preview', 'development'] },
+      { id: 'env_2', key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', target: ['preview'] },
+      { id: 'env_3', key: 'NEXT_PUBLIC_SUPABASE_URL', target: ['production'] },
+    ])
+    expect((await rotate()).status).toBe(200)
+    expect(steps().filter((l) => l === 'vercel PATCH')).toHaveLength(2)
   })
 
   it('changes nothing when Vercel refuses the token', async () => {

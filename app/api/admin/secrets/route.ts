@@ -10,7 +10,7 @@ import {
   PREFIX, ROLES_OK, applyScript, buildInventory, describeParameters, findSecret, generateSecret, postgresPasswordScript,
   readValue, readValues, rotatedKeys, servicesFor, writeValue, type SecretDef,
 } from '@/lib/admin/secrets'
-import { productionEnvIds, redeployProduction, setEnv, vercelTarget, VercelError, type VercelTarget } from '@/lib/admin/vercel'
+import { envRecordIds, redeployProduction, setEnv, vercelTarget, VercelError, type VercelTarget } from '@/lib/admin/vercel'
 import { resetRuntimeEnv, CACHE_MS } from '@/lib/secrets'
 import { aiConfig } from '@/lib/ai/config'
 import { azureTranslatorConfig } from '@/lib/translate/config'
@@ -118,7 +118,7 @@ async function apply(ssm: SSMClient, def: SecretDef, value: string, vercel: Verc
     case 'jwt': {
       if (!vercel) throw new ApplyError('Vercel is not configured.')
       // Before the instance changes: a Vercel refusal after it leaves every browser on the old anon key.
-      const anonIds = await productionEnvIds(vercel, 'NEXT_PUBLIC_SUPABASE_ANON_KEY').catch((e: unknown) => {
+      const anonIds = await envRecordIds(vercel, 'NEXT_PUBLIC_SUPABASE_ANON_KEY').catch((e: unknown) => {
         throw new ApplyError(`Nothing changed: ${e instanceof Error ? e.message : 'Vercel did not answer'}.`)
       })
       const names = { secret: `${PREFIX}/jwt_secret`, anon: `${PREFIX}/anon_key`, service: `${PREFIX}/service_role_key` }
@@ -166,7 +166,7 @@ async function apply(ssm: SSMClient, def: SecretDef, value: string, vercel: Verc
     }
     case 'vercel': {
       if (!vercel || !def.env) throw new ApplyError('Vercel is not configured.')
-      await setEnv(vercel, await productionEnvIds(vercel, def.env), value)
+      await setEnv(vercel, await envRecordIds(vercel, def.env), value)
       const d = await redeployProduction(vercel)
       return [`Saved ${def.env} in Vercel; production build ${d.id} started (https://${d.url}).`]
     }

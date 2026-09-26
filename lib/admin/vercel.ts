@@ -60,12 +60,13 @@ const envListSchema = z.object({
   envs: z.array(z.object({ id: z.string(), key: z.string(), target: z.union([z.array(z.string()), z.string()]).optional() })),
 })
 
-/** The ids of every production record of `key`. Doubles as proof that the token reaches the project. */
-export async function productionEnvIds(t: VercelTarget, key: string): Promise<string[]> {
+/** The ids of every record of `key`, preview and branch records included, since all of them
+ *  point at the one instance. Doubles as proof that the token reaches the project. */
+export async function envRecordIds(t: VercelTarget, key: string): Promise<string[]> {
   const { envs } = envListSchema.parse(await call(t, 'GET', `/v10/projects/${t.projectId}/env`))
-  const ids = envs.filter((e) => e.key === key && [e.target ?? []].flat().includes('production')).map((e) => e.id)
-  if (ids.length === 0) throw new VercelError(`Vercel has no production variable ${key}.`)
-  return ids
+  const records = envs.filter((e) => e.key === key)
+  if (!records.some((e) => [e.target ?? []].flat().includes('production'))) throw new VercelError(`Vercel has no production variable ${key}.`)
+  return records.map((e) => e.id)
 }
 
 /** Each record gets the new value; type and targets stay. */
