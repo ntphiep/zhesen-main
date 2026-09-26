@@ -34,6 +34,7 @@ const POS_GROUPS: Record<string, PosGroup> = {
   numeral: { key: 'numeral', abbr: 'num.', labelVi: 'Số từ' },
   num: { key: 'numeral', abbr: 'num.', labelVi: 'Số từ' },
   name: { key: 'name', abbr: 'prop.', labelVi: 'Danh từ riêng' },
+  proper_noun: { key: 'name', abbr: 'prop.', labelVi: 'Danh từ riêng' },
   article: { key: 'article', abbr: 'art.', labelVi: 'Mạo từ' },
   character: { key: 'character', abbr: 'char.', labelVi: 'Chữ Hán' },
   contraction: { key: 'contraction', abbr: 'contr.', labelVi: 'Từ viết tắt' },

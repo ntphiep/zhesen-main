@@ -7,6 +7,8 @@ describe('posGroup', () => {
     expect(posGroup('adjective')).toEqual({ key: 'adjective', abbr: 'adj.', labelVi: 'Tính từ' })
     expect(posGroup('adv')?.key).toBe('adverb')
     expect(posGroup('adverb')?.key).toBe('adverb')
+    // The word page's family table showed the raw key for Takeda under take.
+    expect(posGroup('proper_noun')).toEqual(posGroup('name'))
   })
   it('returns null for null/empty pos', () => {
     expect(posGroup(null)).toBeNull()
