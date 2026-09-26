@@ -8,13 +8,13 @@
 -- structure is used and what it contrasts with, common_mistake_vi names a mistake a
 -- Vietnamese speaker actually makes, and every point carries three to five examples.
 --
--- 44 points are added so that each level covers the per-level list of the British
--- Council / EAQUALS Core Inventory for General English: 16 at A2, 13 at B1 and 15 at B2,
--- which had no rows at all. That inventory has no open licence, so only its point labels
--- are used, as a checklist of which structures belong to which level. Every Vietnamese
--- explanation and every example sentence below is written for this project.
+-- 49 points are added so that each level covers the per-level list of the British
+-- Council / EAQUALS Core Inventory for General English: 5 at A1, 16 at A2, 13 at B1 and
+-- 15 at B2, which had no rows at all. That inventory has no open licence, so only its
+-- point labels are used, as a checklist of which structures belong to which level. Every
+-- Vietnamese explanation and every example sentence below is written for this project.
 --
--- Counts after this migration: A1 12, A2 28, B1 23, B2 15; 78 points and 272 examples.
+-- Counts after this migration: A1 17, A2 28, B1 23, B2 15; 83 points and 296 examples.
 -- No row whose lang is not 'en' is read or written.
 --
 -- TO ROLL BACK: restore the `en` rows of lex.grammar_points and lex.grammar_examples
@@ -108,6 +108,41 @@ values
  E'Câu hỏi bắt đầu bằng what, where, when, who, why hoặc how dùng để hỏi thông tin, không hỏi đúng sai. Từ để hỏi luôn đứng đầu câu.\n\nSau từ để hỏi là trật tự của câu hỏi yes/no: trợ động từ do hoặc does với động từ thường, hoặc am, is, are với to be.\n\nKhi chính từ để hỏi là chủ ngữ, câu không cần trợ động từ. Viết "Who lives here?", không viết "Who does live here?".',
  'Giữ trật tự câu kể sau từ để hỏi. Người học viết "Where you are from?" thay vì "Where are you from?".',
  11),
+
+('en:a1:cau-menh-lenh', 'en', 'CEFR', 'A1', 'Cấu trúc câu',
+ 'Câu mệnh lệnh (Imperatives)',
+ 'V (nguyên mẫu) + ... | Don''t + V (nguyên mẫu) + ...',
+ E'Câu mệnh lệnh dùng để yêu cầu, hướng dẫn, mời hoặc cảnh báo. Câu bắt đầu thẳng bằng động từ nguyên mẫu và không có chủ ngữ, vì người nghe luôn là you.\n\nPhủ định thêm don''t trước động từ: "Don''t touch the stove". Dạng này giữ nguyên dù người nghe là một người hay nhiều người.\n\nCâu mệnh lệnh không kèm từ nào khác nghe khá thẳng. Thêm please ở đầu hoặc cuối câu làm lời yêu cầu nhẹ hơn. Let''s cộng động từ nguyên mẫu dùng khi rủ người nghe cùng làm.',
+ 'Dịch chữ "đừng" thành not và đặt thẳng trước động từ, vì tiếng Việt chỉ cần thêm một từ phủ định. Người học viết "Not touch the stove" hoặc "You not go out" thay vì "Don''t touch the stove" và "Don''t go out".',
+ 12),
+
+('en:a1:cau-truc-have-got', 'en', 'CEFR', 'A1', 'Cấu trúc câu',
+ 'Have got chỉ sự sở hữu',
+ 'S + have / has got + N | S + haven''t / hasn''t got + N | Have / Has + S + got + N?',
+ E'Have got nghĩa là "có", dùng cho đồ vật sở hữu, quan hệ gia đình, đặc điểm ngoại hình và bệnh nhẹ. Cấu trúc này phổ biến trong tiếng Anh Anh, nhất là trong văn nói. Nghĩa của nó giống have, dù hình thức trông giống thì hiện tại hoàn thành.\n\nHas got đi với he, she, it và danh từ số ít; have got đi với các chủ ngữ còn lại. Văn nói thường rút gọn thành I''ve got và she''s got.\n\nPhủ định và câu hỏi không dùng do: thêm not sau have hoặc has, hoặc đảo have hoặc has lên trước chủ ngữ. Have đứng một mình thì ngược lại, cần do. "Have you got a pen?" và "Do you have a pen?" cùng nghĩa.\n\nHave got chỉ dùng ở hiện tại. Nói về sự sở hữu trong quá khứ thì dùng had.',
+ 'Ghép do với have got, vì người học đã quen dùng do cho mọi câu hỏi có động từ thường. Người học viết "Do you have got a car?" hoặc "I don''t have got time" thay vì "Have you got a car?" và "I haven''t got time".',
+ 13),
+
+('en:a1:so-huu-cach-s', 'en', 'CEFR', 'A1', 'Danh từ',
+ 'Sở hữu cách với ''s',
+ 'Danh từ (người sở hữu) + ''s + Danh từ (vật được sở hữu)',
+ E'Sở hữu cách ''s gắn vào người sở hữu để nói vật đó là của ai: Lan''s bike, my father''s car. Trật tự ngược với tiếng Việt: người sở hữu đứng trước, vật được sở hữu đứng sau.\n\nDanh từ số nhiều đã tận cùng bằng -s chỉ thêm dấu nháy: my parents'' house. Danh từ số nhiều bất quy tắc vẫn thêm ''s: the children''s room.\n\n''s dùng chủ yếu cho người và con vật. Với đồ vật, tiếng Anh thường dùng of hoặc ghép hai danh từ: the door of the car, the car door.',
+ 'Giữ trật tự của tiếng Việt và dùng of cho người, vì dịch từng chữ cụm "xe đạp của Lan". Người học viết "the bike of Lan" hoặc "the house of my parents" thay vì "Lan''s bike" và "my parents'' house".',
+ 14),
+
+('en:a1:tu-chi-dinh-this-that-these-those', 'en', 'CEFR', 'A1', 'Đại từ & Tính từ',
+ 'Từ chỉ định: This, That, These, Those',
+ 'this / that + N (số ít / không đếm được) | these / those + N (số nhiều)',
+ E'Bốn từ này chỉ ra vật nào đang được nói tới, theo hai tiêu chí: gần hay xa người nói, và số ít hay số nhiều. This và these chỉ vật ở gần, tương ứng với "này". That và those chỉ vật ở xa, tương ứng với "kia" hoặc "đó".\n\nThis và that đi với danh từ số ít hoặc không đếm được. These và those đi với danh từ số nhiều, và động từ theo sau cũng chia số nhiều.\n\nCả bốn từ đứng được một mình như đại từ khi vật đã rõ: "This is my brother", "Those are too expensive". Khi gọi điện thoại, người nói tự giới thiệu bằng "This is Nam", không dùng "I am Nam".',
+ 'Dùng this hoặc that với danh từ số nhiều, vì "này" và "kia" trong tiếng Việt không đổi theo số lượng. Người học viết "this shoes" hoặc "that books" thay vì "these shoes" và "those books".',
+ 15),
+
+('en:a1:dai-tu-tan-ngu', 'en', 'CEFR', 'A1', 'Đại từ & Tính từ',
+ 'Đại từ tân ngữ (Object pronouns)',
+ 'V / giới từ + me / you / him / her / it / us / them',
+ E'Đại từ tân ngữ đứng sau động từ hoặc sau giới từ, ở vị trí của người hay vật chịu tác động: me, you, him, her, it, us, them. Tiếng Việt dùng cùng một từ ở cả hai vị trí: "tôi" trong "tôi gọi" và "gọi tôi" không đổi. Tiếng Anh đổi I thành me, he thành him.\n\nYou và it giữ nguyên dạng ở cả hai vị trí. Các đại từ còn lại cần nhớ theo cặp: I và me, he và him, she và her, we và us, they và them.\n\nSau giới từ luôn là dạng tân ngữ: with me, for them, between us. Câu trả lời ngắn trong văn nói cũng dùng dạng này: hỏi "Who wants tea?" thì đáp "Me".',
+ 'Dùng dạng chủ ngữ sau động từ hoặc giới từ, vì đại từ tiếng Việt không đổi theo vị trí trong câu. Người học viết "Please call I" hoặc "She lives with they" thay vì "Please call me" và "She lives with them".',
+ 16),
 
 -- A2
 ('en:a2:present-continuous-actions-now', 'en', 'CEFR', 'A2', 'Thì hiện tại tiếp diễn',
@@ -655,6 +690,35 @@ values
 ('en:a1:cau-hoi-wh-questions', 'What does your brother do?', null, 'Anh trai bạn làm nghề gì?', 1),
 ('en:a1:cau-hoi-wh-questions', 'When is the next train?', null, 'Chuyến tàu tiếp theo lúc mấy giờ?', 2),
 ('en:a1:cau-hoi-wh-questions', 'Who lives on the top floor?', null, 'Ai sống ở tầng trên cùng?', 3),
+
+('en:a1:cau-menh-lenh', 'Turn left at the next traffic light.', null, 'Rẽ trái ở đèn giao thông tiếp theo.', 0),
+('en:a1:cau-menh-lenh', 'Please take off your shoes before you come in.', null, 'Vui lòng cởi giày trước khi vào nhà.', 1),
+('en:a1:cau-menh-lenh', 'Don''t forget your helmet.', null, 'Đừng quên mũ bảo hiểm nhé.', 2),
+('en:a1:cau-menh-lenh', 'Don''t drink the tap water here.', null, 'Đừng uống nước máy ở đây.', 3),
+('en:a1:cau-menh-lenh', 'Let''s have pho for breakfast.', null, 'Sáng nay mình đi ăn phở đi.', 4),
+
+('en:a1:cau-truc-have-got', 'I''ve got two older brothers.', null, 'Tôi có hai anh trai.', 0),
+('en:a1:cau-truc-have-got', 'She''s got long black hair.', null, 'Cô ấy có mái tóc đen dài.', 1),
+('en:a1:cau-truc-have-got', 'Have you got change for fifty thousand dong?', null, 'Bạn có tiền lẻ đổi tờ năm mươi nghìn không?', 2),
+('en:a1:cau-truc-have-got', 'We haven''t got time for lunch today.', null, 'Hôm nay chúng tôi không có thời gian ăn trưa.', 3),
+('en:a1:cau-truc-have-got', 'He''s got a bad cold.', null, 'Anh ấy bị cảm nặng.', 4),
+
+('en:a1:so-huu-cach-s', 'This is my mother''s phone number.', null, 'Đây là số điện thoại của mẹ tôi.', 0),
+('en:a1:so-huu-cach-s', 'Minh''s house is at the end of the alley.', null, 'Nhà Minh ở cuối ngõ.', 1),
+('en:a1:so-huu-cach-s', 'We had dinner at my grandparents'' house.', null, 'Chúng tôi ăn tối ở nhà ông bà tôi.', 2),
+('en:a1:so-huu-cach-s', 'The children''s toys are all over the floor.', null, 'Đồ chơi của bọn trẻ vương vãi khắp sàn nhà.', 3),
+
+('en:a1:tu-chi-dinh-this-that-these-those', 'This coffee is too sweet.', null, 'Cà phê này ngọt quá.', 0),
+('en:a1:tu-chi-dinh-this-that-these-those', 'Is that your motorbike over there?', null, 'Chiếc xe máy đằng kia là của bạn à?', 1),
+('en:a1:tu-chi-dinh-this-that-these-those', 'These mangoes are from my hometown.', null, 'Mấy quả xoài này là xoài quê tôi.', 2),
+('en:a1:tu-chi-dinh-this-that-these-those', 'How much are those sandals?', null, 'Đôi dép kia bao nhiêu tiền?', 3),
+('en:a1:tu-chi-dinh-this-that-these-those', 'Hello, this is Nam from the sales team.', null, 'Alô, tôi là Nam ở phòng kinh doanh.', 4),
+
+('en:a1:dai-tu-tan-ngu', 'Please send me the address.', null, 'Bạn gửi cho tôi địa chỉ nhé.', 0),
+('en:a1:dai-tu-tan-ngu', 'I see them at the market every Sunday.', null, 'Chủ nhật nào tôi cũng gặp họ ở chợ.', 1),
+('en:a1:dai-tu-tan-ngu', 'My grandmother lives with us.', null, 'Bà tôi sống cùng chúng tôi.', 2),
+('en:a1:dai-tu-tan-ngu', 'This gift is for him.', null, 'Món quà này dành cho anh ấy.', 3),
+('en:a1:dai-tu-tan-ngu', 'I like this song. Listen to it!', null, 'Tôi thích bài hát này. Bạn nghe thử đi!', 4),
 
 -- A2 examples
 ('en:a2:present-continuous-actions-now', 'I am waiting for the bus.', null, 'Tôi đang đợi xe buýt.', 0),
