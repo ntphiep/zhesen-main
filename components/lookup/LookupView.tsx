@@ -65,8 +65,10 @@ export function LookupView({
 
       {/* Phone order: what the word means, the links across languages, then the
           reference material. Wide screens pair the first two and drop the third under
-          them, which also stops the rail stranding content in a short column. */}
-      <div className={hasSideRail ? 'grid gap-x-10 gap-y-8 lg:grid-cols-3' : 'flex flex-col gap-8'}>
+          them, which also stops the rail stranding content in a short column.
+          `grid-cols-1` is minmax(0, 1fr): without it the word-forms table of en:give
+          widened the phone page to 402px instead of scrolling in its own box. */}
+      <div className={hasSideRail ? 'grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-3' : 'flex flex-col gap-8'}>
         <div className="flex flex-col gap-8 lg:col-span-2">
           <SenseList senses={detail.senses} lang={detail.lang} />
           {/* Characters are the substance of a Chinese entry, not an appendix: radicals,
