@@ -10,16 +10,17 @@ the previous version, which is the most repeated mistake in this project's histo
 
 ## Procedure
 
-1. Free the port first, so Next does not silently move to 3001 and leave you testing an old
-   process:
+1. Pick a port nothing listens on. Other sessions serve their own worktrees, so a process on
+   3000 is someone else's server: never stop it, and never test against it.
 
    ```powershell
-   Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue |
-     ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+   $port = 3000..3020 | Where-Object {
+     -not (Get-NetTCPConnection -LocalPort $_ -State Listen -ErrorAction SilentlyContinue)
+   } | Select-Object -First 1
    ```
 
 2. `npm run build`. A build failure is the answer; stop and report it with its output.
-3. `npm run start` in the background on port 3000.
+3. `npm run start -- -p $port` in the background, and browse `http://localhost:$port`.
 4. Drive the browser with `mcp__plugin_playwright_playwright__browser_*`. It launches its
    own browser, so nothing has to be running first. Walk the flow the change actually
    touches, and the flow nearest it that could have broken.
@@ -31,7 +32,7 @@ the previous version, which is the most repeated mistake in this project's histo
 6. Repeat the same flow at 390x844 (`browser_resize`). Every change that renders gets this;
    phone breakage counts as breakage, and the header overflow that broke every phone was
    found this way.
-7. Stop the server and confirm port 3000 is free and `git status` is clean.
+7. Stop the server you started, confirm `$port` is free, and confirm `git status` is clean.
 
 ## When the question is performance
 

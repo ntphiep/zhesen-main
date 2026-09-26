@@ -17,6 +17,9 @@ gh issue view $number --repo ntphiep/zhesen-main --comments
 Restate in one sentence what a user will be able to do afterwards. If the issue does not say
 what "done" means, stop and ask; do not invent an acceptance criterion.
 
+Then call `EnterWorktree` with the name `issue-$number` and run `npm ci` in it, unless the
+session is already in a worktree for this issue.
+
 ## 2. Decide whether it needs a plan
 
 A one-file change with an obvious fix goes straight to step 3. Anything touching more than

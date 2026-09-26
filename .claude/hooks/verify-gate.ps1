@@ -4,8 +4,8 @@ Stop hook: a turn that touched TypeScript does not end until types, lint and the
 tests agree.
 
 Two constraints this script exists to hold, both learned the hard way:
-  - It finds the repository from its own path. A hard-coded root went stale on a folder
-    rename and the gate was dead for months.
+  - It finds the repository from the input's cwd, never from a fixed path. A hard-coded root
+    went stale on a folder rename and the gate was dead for months.
   - A missing tool is a BLOCK, not a skip. A gate that cannot check must never report clean.
 
 Hook contract (https://code.claude.com/docs/en/hooks):
@@ -23,26 +23,34 @@ function Deny([string]$Message) {
 
 # stop_hook_active means Claude is already continuing because of this hook. Blocking again
 # on something it cannot resolve would spin until Claude Code's 8-block ceiling cuts it off.
+$cwd = $null
 try {
   $raw = [Console]::In.ReadToEnd()
   if ($raw) {
     $stdin = $raw | ConvertFrom-Json
     if ($stdin.stop_hook_active) { exit 0 }
+    $cwd = $stdin.cwd
   }
 } catch {
   # Unparseable stdin is not evidence of a problem, and not a reason to pass unverified code.
 }
 
-# $PSScriptRoot is <repo>\.claude\hooks, independent of the working directory and of git.
-$root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+# A silently disabled gate cannot fake a fresh timestamp, so this is how to check it is alive.
+Set-Content -LiteralPath (Join-Path $PSScriptRoot '..\.verify-gate-last-run') `
+            -Value (Get-Date -Format 'o') -Encoding utf8
+
+# Only a linked worktree is judged. Sessions do not edit the main checkout (worktree-guard.ps1),
+# so what is dirty there belongs to other sessions, and so does a cwd outside any repository.
+# `/ship` still runs the full `npm run verify` before anything reaches master.
+$root = if ($cwd) { git -C $cwd rev-parse --show-toplevel 2>$null }
+if (-not $root) { exit 0 }
+$gitDir = git -C $root rev-parse --absolute-git-dir 2>$null
+$common = git -C $root rev-parse --path-format=absolute --git-common-dir 2>$null
+if ([IO.Path]::GetFullPath($gitDir) -eq [IO.Path]::GetFullPath($common)) { exit 0 }
 if (-not (Test-Path (Join-Path $root 'package.json'))) {
-  Deny "verify-gate: no package.json at '$root'. The hook is in the wrong place and cannot verify."
+  Deny "verify-gate: no package.json at '$root'. This worktree is not a checkout of the app and cannot be verified."
 }
 Set-Location $root
-
-# A silently disabled gate cannot fake a fresh timestamp, so this is how to check it is alive.
-Set-Content -LiteralPath (Join-Path $root '.claude\.verify-gate-last-run') `
-            -Value (Get-Date -Format 'o') -Encoding utf8
 
 # -z gives NUL-separated, unquoted paths. Without it git escapes non-ASCII names
 # (core.quotepath) and Test-Path silently misses them.

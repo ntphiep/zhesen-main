@@ -68,6 +68,30 @@ loosen or delete a test to make it pass.
 `.claude/hooks/verify-gate.ps1` enforces step 1 at the end of every turn that touches
 `.ts` or `.tsx`. A missing tool makes it block, not skip.
 
+## One session, one worktree
+
+Several sessions run in this repository at once. In one shared checkout the verify gate
+judged every session's half-done TypeScript, so one session's work blocked another's turn.
+The main checkout is therefore read-only for sessions:
+
+1. Before the first edit, call `EnterWorktree` with a short name for the task, or start
+   with `claude -w <name>`. The worktree lands in `.claude/worktrees/<name>` on branch
+   `worktree-<name>`, cut from `origin/master`; `.worktreeinclude` copies `.env.local` in.
+2. Run `npm ci` in it. The gate blocks until `node_modules` exists there.
+3. Ship with `/ship`: rebase onto `origin/master`, verify, `git push origin HEAD:master`.
+   Then leave with `ExitWorktree` and `remove`.
+
+`.claude/hooks/worktree-guard.ps1` refuses an `Edit` or `Write` in the main checkout, and
+inside a worktree Claude Code's own isolation refuses the same. The verify gate reads the
+hook input's `cwd` and judges only a linked worktree, never the main checkout. Hook
+commands run the main checkout's copy of each script, because `${CLAUDE_PROJECT_DIR}` stays
+there after `EnterWorktree`, so a hook change takes effect once that checkout is updated.
+
+`.claude/hooks/session-digest.ps1` runs at startup, resume and clear. It fast-forwards the
+main checkout, then prints the open board items by priority, each worktree with its
+sessions and uncommitted files, and the commits, issues and wiki pages that changed since
+the previous session started. Read it before choosing what to work on.
+
 ## Code style
 
 - Minimal diff, inside the requested scope. Read the surrounding file first and copy its

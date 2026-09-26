@@ -61,6 +61,7 @@ next-env.d.ts
 /*.png
 .claude/.verify-gate-last-run
 .claude/settings.local.json
+.claude/worktrees/
 
 # terraform saved plans
 infra/terraform/*.tfplan

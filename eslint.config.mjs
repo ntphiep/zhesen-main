@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // `vercel build` writes its output here; it is generated code, and the
     // launcher files use require() by design.
     ".vercel/**",
+    // Other sessions' checkouts, each with its own .next; they lint themselves.
+    ".claude/worktrees/**",
   ]),
 ]);
 
