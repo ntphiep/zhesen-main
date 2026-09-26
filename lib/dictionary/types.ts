@@ -56,6 +56,16 @@ export interface DictEntryDetail extends DictEntryPreview {
   examples: DictExample[]
   relations: DictRelation[]
   attributes: Record<string, unknown>
+  /** The synonyms that belong to one sense, from `lex.relation_senses`; absent or empty
+   *  when none matched or the call failed. */
+  senseLinks?: SenseLink[]
+}
+export interface SenseLink {
+  text: string
+  /** `lex.senses.sense_order` of the headword sense the synonym shares a term with. */
+  senseOrder: number
+  /** The entry the synonym resolves to. */
+  targetId: string
 }
 /** A "did you mean...?" candidate from `lex.suggest`
  *  (supabase/migrations/0018_reverse_lookup.sql), for a query with zero direct hits. */

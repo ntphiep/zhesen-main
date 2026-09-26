@@ -119,6 +119,13 @@ export const termPreviewRow = z.object({
   gloss_en: z.string().nullable(),
 })
 
+/** Row from `lex.relation_senses` (supabase/migrations/0074_relation_senses.sql). */
+export const relationSenseRow = z.object({
+  related_text: z.string(),
+  sense_order: z.number(),
+  target_id: z.string(),
+})
+
 export const crossLanguageSourceRow = z.object({
   lang: langCode,
   headword_normalized: z.string().nullable(),

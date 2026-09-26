@@ -5,6 +5,7 @@ import { SiteHeader } from '@/components/layout/SiteHeader'
 import { AiChatPanel } from '@/components/ai/AiChatPanel'
 import { SITE_URL } from '@/lib/site'
 import { THEME_BOOT_SCRIPT } from '@/lib/theme'
+import { WORD_LAYOUT_BOOT_SCRIPT } from '@/lib/dictionary/wordLayout'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -55,6 +56,9 @@ export default function RootLayout({
             the wrong scheme. It writes the attribute the server did not render, which
             is what suppressHydrationWarning above covers. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        {/* The word page's layout choice, for the same reason: the page is cached for
+            everyone in the default layout, so another one has to be known before paint. */}
+        <script dangerouslySetInnerHTML={{ __html: WORD_LAYOUT_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
         <SiteHeader />

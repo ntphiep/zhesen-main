@@ -203,10 +203,12 @@ header to it by string equality. The auth cookie name is pinned in `lib/supabase
 
 Verified to have no remaining callers before deletion on 2026-09-26:
 `components/lookup/WordFamily.tsx`, `components/lookup/WordKin.tsx`,
-`components/lookup/ContainingWords.tsx` and `components/lookup/RelatedWords.tsx`. The word
-page shows the inflected forms on one "Dạng từ" line and every related word once, in the
-tabs of `components/lookup/RelatedTabs.tsx`; `RELATION_SECTIONS` moved to
-`lib/dictionary/relations.ts`.
+`components/lookup/ContainingWords.tsx`, `components/lookup/RelatedWords.tsx` and
+`components/lookup/RelatedTabs.tsx`. The word page draws every related word once, in the
+blocks of `components/lookup/WordParts.tsx` that its three layouts share (overview,
+side by side, columns; `components/lookup/WordLayouts.tsx`). `RELATION_SECTIONS` moved to
+`lib/dictionary/relations.ts`. The "Khái niệm" tab (WordNet broader, narrower and
+same-kind terms) is gone on purpose: take's 401 were unrelated verbs.
 
 Verified to have no remaining callers before deletion on 2026-09-26:
 `components/grammar/GrammarLangList.tsx`. `/grammar` and `/learn` are blocks of

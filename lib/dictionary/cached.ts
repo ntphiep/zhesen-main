@@ -28,8 +28,8 @@ import type { LangCode } from '@/lib/languages'
 
 export const getCachedEntryDetail = unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),
-  // v2: senses carry ids and examples carry senseId; an older cached value has neither.
-  ['dict-entry-detail-v2'],
+  // v3: carries senseLinks, which a v2 value lacks.
+  ['dict-entry-detail-v3'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 

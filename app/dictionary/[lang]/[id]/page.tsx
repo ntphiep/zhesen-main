@@ -1,12 +1,8 @@
 import { notFound } from 'next/navigation'
-import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections, getCachedEntriesContaining, getCachedTermPreviews, getCachedTappableTexts, getCachedWordKin } from '@/lib/dictionary/cached'
-import { getCachedGrammarPointsForEntry } from '@/lib/grammar/cached'
+import { getCachedEntryDetail } from '@/lib/dictionary/cached'
 import { buildEntryId, entryPath } from '@/lib/dictionary/entryId'
 import { LookupView } from '@/components/lookup/LookupView'
-import { groupWordForms } from '@/lib/dictionary/family'
-import { lemmaFromSenses } from '@/lib/dictionary/lemma'
-import { RELATION_CAP } from '@/lib/dictionary/relations'
-import { exampleCandidates, relatedTabs, senseSections } from '@/lib/dictionary/wordPage'
+import { loadWordPage } from '@/lib/dictionary/wordPageData'
 import { getLanguage, isLangCode } from '@/lib/languages'
 import { percentDecode } from '@/lib/http/percentDecode'
 import type { Metadata } from 'next'
@@ -73,69 +69,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function Page({ params }: { params: Params }) {
   const { lang, id } = await params
   if (!isLangCode(lang)) notFound()
-  const entryId = buildEntryId(lang, percentDecode(id))
-
-  const detail = await getCachedEntryDetail(entryId)
-  if (!detail) notFound()
-
-  // The word this entry is a form of, resolved through the same preview call as
-  // the related words so an inflected page is not a dead end. It only reads
-  // `detail`, so it does not have to wait for the queries below.
-  const lemma = lemmaFromSenses(detail.senses, detail.headword)
-  const sections = senseSections(detail.senses)
-
-  const [characters, siblings, inflections, grammarPoints, containing, kin, resolvedExamples] = await Promise.all([
-    detail.lang === 'zh' ? getCachedCharacters(detail.headword) : Promise.resolve([]),
-    getCachedCrossLanguage(entryId),
-    getCachedInflections(entryId),
-    getCachedGrammarPointsForEntry(entryId),
-    getCachedEntriesContaining(detail.lang, detail.headword),
-    // The stem the derived words hang off: the lemma when this entry is a form of
-    // something else, otherwise the headword itself. Chinese is left out because a
-    // prefix of a Chinese headword is a compound, which `containing` already answers.
-    detail.lang === 'zh'
-      ? Promise.resolve([])
-      : getCachedWordKin(detail.lang, lemma ?? detail.headword, detail.headword),
-    // Resolve the example sentences here rather than letting each one do it from
-    // the browser. Done there, a Chinese entry issued eighteen requests and showed
-    // nothing until the last returned; done here the sentences are in the HTML.
-    //
-    // In this wave rather than the next one: it reads `detail.examples` and
-    // nothing the queries above return, so waiting for them bought nothing while
-    // adding its own round trip to the page's critical path. Measured against
-    // production on a first visit, the sentences of `en:quickly` took 680 ms and
-    // `zh:朋友` 716 ms, all of it after the wave above had already finished.
-    //
-    // Every sentence the page can show, so none resolves itself from the browser.
-    getCachedTappableTexts(detail.lang, exampleCandidates(sections, detail.examples).map((e) => e.text)),
-  ])
-
-  // The related words are stored as bare text, so one more call gives the ones each tab
-  // shows before expanding a meaning. It runs once the tabs are known, because the tabs
-  // drop duplicates and inflected forms, and is cached on their contents.
-  const tabs = relatedTabs({
-    lang: detail.lang, headword: detail.headword, lemma, relations: detail.relations,
-    containing, kin, formTexts: groupWordForms(inflections).map((f) => f.text), previews: {},
-  })
-  const terms = [
-    ...tabs.flatMap((t) => t.items.slice(0, RELATION_CAP)).filter((i) => !i.entry).map((i) => i.text),
-    ...(lemma ? [lemma] : []),
-  ]
-  const previewRows = await getCachedTermPreviews(detail.lang, terms)
-  const previews = Object.fromEntries(previewRows.map((p) => [p.matchText.toLowerCase(), p]))
-
-  return (
-    <LookupView
-      detail={detail}
-      lemma={lemma}
-      characters={characters}
-      siblings={siblings}
-      inflections={inflections}
-      grammarPoints={grammarPoints}
-      containing={containing}
-      kin={kin}
-      previews={previews}
-      resolvedExamples={resolvedExamples}
-    />
-  )
+  const data = await loadWordPage(buildEntryId(lang, percentDecode(id)))
+  if (!data) notFound()
+  return <LookupView {...data} />
 }

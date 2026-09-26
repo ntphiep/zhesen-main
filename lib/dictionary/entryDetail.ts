@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { DictEntryDetail, DictEntryPreview, DictSense, DictExample, DictRelation, CrossLangSibling, TermPreview, CharInfo, WordForm } from './types'
-import { entryDetailRow, exampleRow, crossLanguageSourceRow, crossLangSiblingRow, termPreviewRow, pivotViRow, inflectionRow, charRow, toPreview, toSenses, toProns } from './rows'
+import type { DictEntryDetail, DictEntryPreview, DictSense, DictExample, DictRelation, CrossLangSibling, TermPreview, CharInfo, WordForm, SenseLink } from './types'
+import { entryDetailRow, exampleRow, crossLanguageSourceRow, crossLangSiblingRow, termPreviewRow, pivotViRow, inflectionRow, charRow, relationSenseRow, toPreview, toSenses, toProns } from './rows'
 import { fillPivotVi, cleanMtGloss, cleanGlossVi } from './textQuality'
 import { entryPivots, cleanGlossTerm } from './crosslang'
 import { DETAIL_SELECT } from './entrySelect'
@@ -32,10 +32,25 @@ export function capExamples<T extends { senseId?: string | null }>(rows: T[]): T
   })
 }
 
+/** Which sense each synonym belongs to. A failure leaves the synonyms unsorted rather than
+ *  failing the page: the call is an extra, and en:head alone carries 1,569 relations. */
+async function getSenseLinks(supabase: SupabaseClient, entryId: string): Promise<SenseLink[]> {
+  try {
+    const { data, error } = await supabase.schema('lex').rpc('relation_senses', { p_entry_id: entryId })
+    if (error) throw error
+    return relationSenseRow.array().parse(data ?? []).map((r) => ({
+      text: r.related_text, senseOrder: r.sense_order, targetId: r.target_id,
+    }))
+  } catch (e) {
+    console.error('relation_senses failed', entryId, e)
+    return []
+  }
+}
+
 export async function getEntryDetail(supabase: SupabaseClient, entryId: string): Promise<DictEntryDetail | null> {
   // Examples are a query of their own, in parallel: sense-linked rows first, then rows
   // with a Vietnamese translation, then by id.
-  const [entry, ex] = await Promise.all([
+  const [entry, ex, senseLinks] = await Promise.all([
     supabase
       .schema('lex')
       .from('entries')
@@ -51,6 +66,7 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
       .order('translation_vi', { nullsFirst: false })
       .order('id')
       .limit(MAX_FETCHED_EXAMPLES),
+    getSenseLinks(supabase, entryId),
   ])
   if (entry.error) throw entry.error
   if (!entry.data) return null
@@ -70,7 +86,7 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
     ...preview,
     senses,
     pronunciations: toProns(r.pronunciations),
-    examples, relations,
+    examples, relations, senseLinks,
     attributes: r.attributes ?? {},
   }
 }

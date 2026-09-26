@@ -16,9 +16,13 @@ export const SHOWN_SENSES = 5
 export const SHOWN_EXAMPLES = 3
 /** Sentences "Ví dụ khác" can list after expanding. */
 export const MAX_OTHER_EXAMPLES = 6
-/** Words a related-words tab carries. take has 401 concepts and 249 synonyms, and every
- *  item handed to the tabs is serialised into the page. */
+/** Words a related-words list carries. take has 249 synonyms, and every item is
+ *  serialised into the page. */
 export const MAX_TAB_ITEMS = 40
+/** Words per list whose meaning and part of speech are looked up: the rows a table shows
+ *  before expanding. en:head has 1,569 relations, and previewing all of them took 1.85 s
+ *  against the anon role's 3 s statement timeout. */
+export const PREVIEWED_ITEMS = 12
 
 export interface SenseSection {
   /** Canonical part-of-speech key, '' for senses without one. */
@@ -130,6 +134,10 @@ export interface RelatedItem {
   gloss: string | null
   /** True when the item came from an entry row, which carries its own gloss. */
   entry: boolean
+  /** The entry behind the item, when the dictionary holds one. */
+  id: string | null
+  pos: string | null
+  level: string | null
 }
 
 export interface RelatedTab {
@@ -138,12 +146,17 @@ export interface RelatedTab {
   items: RelatedItem[]
 }
 
-interface EntryLike { id: string; headword: string; glossVi: string | null; glossEn: string | null }
+interface EntryLike {
+  id: string; headword: string; glossVi: string | null; glossEn: string | null
+  pos?: string | null; level?: string | null
+}
 
 const isPhrase = (t: string) => /[\s-]/.test(t)
 
 /** Tabs in reading order, only the non-empty ones. An item appears once, in the first tab
- *  it fits, and never when it is the headword or one of its own inflected forms. */
+ *  it fits, and never when it is the headword or one of its own inflected forms. WordNet's
+ *  broader, narrower and same-kind terms are left out: take's 401 were a list of unrelated
+ *  verbs. */
 export function relatedTabs({ lang, headword, lemma, relations, containing, kin, formTexts, previews }: {
   lang: LangCode
   headword: string
@@ -157,10 +170,15 @@ export function relatedTabs({ lang, headword, lemma, relations, containing, kin,
   const c = classifyRelations(relations)
   const fromText = (texts: string[]): RelatedItem[] => texts.map((text) => {
     const p = previews[text.toLowerCase()]
-    return { text, href: searchPath(lang, text), gloss: p?.glossVi || p?.glossEn || null, entry: false }
+    return {
+      text, href: p ? entryPath(p.id) : searchPath(lang, text), gloss: p?.glossVi || p?.glossEn || null,
+      entry: false, id: p?.id ?? null, pos: p?.pos ?? null, level: null,
+    }
   })
-  const fromEntry = (w: EntryLike): RelatedItem =>
-    ({ text: w.headword, href: entryPath(w.id), gloss: w.glossVi || w.glossEn || null, entry: true })
+  const fromEntry = (w: EntryLike): RelatedItem => ({
+    text: w.headword, href: entryPath(w.id), gloss: w.glossVi || w.glossEn || null, entry: true,
+    id: w.id, pos: w.pos ?? previews[w.headword.toLowerCase()]?.pos ?? null, level: w.level ?? null,
+  })
   const kinItems = kin.map(fromEntry)
   const candidates: RelatedTab[] = [
     { key: 'compounds', label: 'Cụm từ', items: [...containing.map(fromEntry), ...kinItems.filter((i) => isPhrase(i.text)), ...fromText(c.compounds)] },
@@ -168,7 +186,6 @@ export function relatedTabs({ lang, headword, lemma, relations, containing, kin,
     { key: 'synonyms', label: 'Cận nghĩa', items: fromText(c.synonyms) },
     { key: 'antonyms', label: 'Trái nghĩa', items: fromText(c.antonyms) },
     { key: 'related', label: 'Cùng gốc từ', items: fromText(c.related) },
-    { key: 'concepts', label: 'Khái niệm', items: fromText([...c.broader, ...c.narrower, ...c.sameKind]) },
   ]
   const seen = new Set([headword, ...formTexts].map((t) => t.toLowerCase()))
   return candidates

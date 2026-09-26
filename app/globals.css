@@ -45,6 +45,9 @@
   --color-sky-50: var(--sky-50);
   --color-sky-200: var(--sky-200);
   --color-sky-700: var(--sky-700);
+
+  --color-violet-50: var(--violet-50);
+  --color-violet-700: var(--violet-700);
 }
 
 :root {
@@ -101,6 +104,9 @@
   --sky-50: oklch(97.7% 0.013 236.62);
   --sky-200: oklch(90.1% 0.058 230.902);
   --sky-700: oklch(50% 0.134 242.749);
+
+  --violet-50: oklch(96.9% 0.016 293.756);
+  --violet-700: oklch(49.1% 0.27 292.581);
 }
 
 @theme inline {
@@ -178,6 +184,9 @@ html {
   --sky-50: oklch(29.3% 0.066 243.157);
   --sky-200: oklch(44.3% 0.11 240.79);
   --sky-700: oklch(74.6% 0.16 232.661);
+
+  --violet-50: oklch(28.3% 0.141 291.089);
+  --violet-700: oklch(70.2% 0.183 293.541);
 }
 
 /* No font-family here: a value on body would beat Tailwind's preflight cascade
@@ -276,4 +285,18 @@ header nav .link-pending {
 
 @media (prefers-reduced-motion: reduce) {
   .chip-rotate { animation: none; }
+}
+
+/* The word page is cached for everyone in the overview layout. When another one is
+   stored, the boot script in app/layout.tsx marks <html> before paint and the overview
+   stays hidden until the client renders the stored layout, instead of drawing one layout
+   and then jumping to another. The delayed reveal keeps the page readable if that render
+   never comes. */
+html[data-word-layout="bilingual"] [data-rendered-layout="overview"],
+html[data-word-layout="columns"] [data-rendered-layout="overview"] {
+  visibility: hidden;
+  animation: word-layout-reveal 0s 1.5s forwards;
+}
+@keyframes word-layout-reveal {
+  to { visibility: visible; }
 }
