@@ -201,6 +201,13 @@ header to it by string equality. The auth cookie name is pinned in `lib/supabase
 ## Removed, do not rebuild
 
 Verified to have no remaining callers before deletion on 2026-09-26:
+`components/lookup/WordFamily.tsx`, `components/lookup/WordKin.tsx`,
+`components/lookup/ContainingWords.tsx` and `components/lookup/RelatedWords.tsx`. The word
+page shows the inflected forms on one "Dạng từ" line and every related word once, in the
+tabs of `components/lookup/RelatedTabs.tsx`; `RELATION_SECTIONS` moved to
+`lib/dictionary/relations.ts`.
+
+Verified to have no remaining callers before deletion on 2026-09-26:
 `components/grammar/GrammarLangList.tsx`. `/grammar` and `/learn` are blocks of
 `/theory` now, and `components/theory/TheoryLangList.tsx` is the landing page they
 share. Both old paths redirect permanently in `next.config.ts`; do not add a page

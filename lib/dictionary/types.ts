@@ -8,6 +8,10 @@ export interface DictSense {
   /** Vietnamese gloss derived via the English pivot, set only when glossVi is absent.
    *  Must be shown with a "qua tiếng Anh" marker, not as a direct translation. */
   pivotVi?: string | null
+  /** `lex.senses.id`; present on an entry page's senses, which examples link to. */
+  id?: string
+  /** Rank of a core sense within its part of speech, 1 most common; null when unranked. */
+  senseFrequency?: number | null
 }
 export interface DictPron {
   accent: string
@@ -19,6 +23,8 @@ export interface DictExample {
   reading: string | null
   translationVi: string | null
   translationEn: string | null
+  /** The sense this sentence illustrates (`lex.examples.sense_id`); null when unlinked. */
+  senseId?: string | null
 }
 export interface DictRelation {
   relationType: string

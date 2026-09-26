@@ -46,13 +46,18 @@ export function cleanGlossVi(gloss: string | null): string | null {
 /** Whether a sense carries any Vietnamese gloss (direct or via the English pivot). */
 const hasVi = (s: DictSense): boolean => Boolean(s.glossVi || s.pivotVi)
 
-/** The most relevant senses, capped at `max`. A sense with a Vietnamese gloss (direct
- *  or pivot-derived) sorts ahead of an English-only one, then by sense_order. */
-export function pickSenses(senses: DictSense[], max = 3): { shown: DictSense[]; hiddenCount: number } {
-  const sorted = [...senses].sort(
-    (a, b) => (Number(hasVi(b)) - Number(hasVi(a))) || a.senseOrder - b.senseOrder,
+/** Most relevant first: a ranked sense by its `senseFrequency`, then a sense with a
+ *  Vietnamese gloss (direct or pivot-derived) ahead of an English-only one, then sense_order. */
+export function rankSenses(senses: DictSense[]): DictSense[] {
+  const rank = (s: DictSense) => s.senseFrequency ?? Infinity
+  return [...senses].sort(
+    (a, b) => (rank(a) - rank(b)) || (Number(hasVi(b)) - Number(hasVi(a))) || a.senseOrder - b.senseOrder,
   )
-  return { shown: sorted.slice(0, max), hiddenCount: Math.max(0, senses.length - max) }
+}
+
+/** The most relevant senses, capped at `max`, in `rankSenses` order. */
+export function pickSenses(senses: DictSense[], max = 3): { shown: DictSense[]; hiddenCount: number } {
+  return { shown: rankSenses(senses).slice(0, max), hiddenCount: Math.max(0, senses.length - max) }
 }
 
 /** Derive a Vietnamese gloss for senses that lack one by bridging through the English
@@ -166,8 +171,7 @@ export function hasUnknownLongWord(segments: Segment[], known: Set<string>, minL
 /** How many examples an entry page shows. */
 export const MAX_EXAMPLES = 6
 
-/** The examples a page renders. The list and the server-side resolver must both call
- *  this, or one resolves texts the other drops and renders texts it never resolved. */
+/** The examples the wordlist's word detail renders. */
 export function pickExamples<T extends { text: string }>(examples: T[]): T[] {
   return examples.filter((e) => isCleanExample(e.text)).slice(0, MAX_EXAMPLES)
 }

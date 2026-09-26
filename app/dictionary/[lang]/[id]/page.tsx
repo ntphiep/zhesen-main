@@ -4,9 +4,9 @@ import { getCachedGrammarPointsForEntry } from '@/lib/grammar/cached'
 import { buildEntryId, entryPath } from '@/lib/dictionary/entryId'
 import { LookupView } from '@/components/lookup/LookupView'
 import { groupWordForms } from '@/lib/dictionary/family'
-import { pickExamples } from '@/lib/dictionary/textQuality'
 import { lemmaFromSenses } from '@/lib/dictionary/lemma'
-import { previewedRelationTexts } from '@/lib/dictionary/relations'
+import { RELATION_CAP } from '@/lib/dictionary/relations'
+import { exampleCandidates, relatedTabs, senseSections } from '@/lib/dictionary/wordPage'
 import { getLanguage, isLangCode } from '@/lib/languages'
 import { percentDecode } from '@/lib/http/percentDecode'
 import type { Metadata } from 'next'
@@ -82,6 +82,7 @@ export default async function Page({ params }: { params: Params }) {
   // the related words so an inflected page is not a dead end. It only reads
   // `detail`, so it does not have to wait for the queries below.
   const lemma = lemmaFromSenses(detail.senses, detail.headword)
+  const sections = senseSections(detail.senses)
 
   const [characters, siblings, inflections, grammarPoints, containing, kin, resolvedExamples] = await Promise.all([
     detail.lang === 'zh' ? getCachedCharacters(detail.headword) : Promise.resolve([]),
@@ -104,15 +105,20 @@ export default async function Page({ params }: { params: Params }) {
     // adding its own round trip to the page's critical path. Measured against
     // production on a first visit, the sentences of `en:quickly` took 680 ms and
     // `zh:朋友` 716 ms, all of it after the wave above had already finished.
-    getCachedTappableTexts(detail.lang, pickExamples(detail.examples).map((e) => e.text)),
+    //
+    // Every sentence the page can show, so none resolves itself from the browser.
+    getCachedTappableTexts(detail.lang, exampleCandidates(sections, detail.examples).map((e) => e.text)),
   ])
 
-  // The related words and the inflected forms are stored as bare text, so one more
-  // call turns them into rows a learner can read. It runs after the two lists are
-  // known, and is cached on their contents.
+  // The related words are stored as bare text, so one more call gives the ones each tab
+  // shows before expanding a meaning. It runs once the tabs are known, because the tabs
+  // drop duplicates and inflected forms, and is cached on their contents.
+  const tabs = relatedTabs({
+    lang: detail.lang, headword: detail.headword, lemma, relations: detail.relations,
+    containing, kin, formTexts: groupWordForms(inflections).map((f) => f.text), previews: {},
+  })
   const terms = [
-    ...previewedRelationTexts(detail.relations),
-    ...groupWordForms(inflections).map((f) => f.text),
+    ...tabs.flatMap((t) => t.items.slice(0, RELATION_CAP)).filter((i) => !i.entry).map((i) => i.text),
     ...(lemma ? [lemma] : []),
   ]
   const previewRows = await getCachedTermPreviews(detail.lang, terms)

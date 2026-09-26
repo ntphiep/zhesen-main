@@ -1,32 +1,65 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { DictEntryDetail, DictEntryPreview, DictSense, DictExample, DictRelation, CrossLangSibling, TermPreview, CharInfo, WordForm } from './types'
-import { entryDetailRow, crossLanguageSourceRow, crossLangSiblingRow, termPreviewRow, pivotViRow, inflectionRow, charRow, toPreview, toSenses, toProns } from './rows'
+import { entryDetailRow, exampleRow, crossLanguageSourceRow, crossLangSiblingRow, termPreviewRow, pivotViRow, inflectionRow, charRow, toPreview, toSenses, toProns } from './rows'
 import { fillPivotVi, cleanMtGloss, cleanGlossVi } from './textQuality'
 import { entryPivots, cleanGlossTerm } from './crosslang'
-import { PREVIEW_SELECT } from './entrySelect'
+import { DETAIL_SELECT } from './entrySelect'
 import { searchAllLanguagesVi } from './search'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
 
 /** Everything the entry detail page needs beyond the preview: senses, pronunciations,
  *  examples, relations, cross-language siblings, inflections and Han character info. */
 
+/** Rows read per entry. Every sense-linked row must fit, because they sort by the text
+ *  of sense_id and a cut would drop `#2` before `#10`: the most any entry has is 204
+ *  (`en:take`, 92 senses), measured on production.
+ *  ponytail: fixed cap, move the per-sense cut into SQL if an import passes it. */
+export const MAX_FETCHED_EXAMPLES = 300
+/** Kept per sense: the page shows one and prefers the one with a real translation. */
+export const EXAMPLES_PER_SENSE = 2
+/** Kept without a sense, translated ones first. */
+export const MAX_UNLINKED_EXAMPLES = 40
+
+/** Linked rows capped per sense, then the unlinked ones, in the order they were read. */
+export function capExamples<T extends { senseId?: string | null }>(rows: T[]): T[] {
+  const perSense = new Map<string, number>()
+  let unlinked = 0
+  return rows.filter((e) => {
+    if (!e.senseId) return ++unlinked <= MAX_UNLINKED_EXAMPLES
+    const n = (perSense.get(e.senseId) ?? 0) + 1
+    perSense.set(e.senseId, n)
+    return n <= EXAMPLES_PER_SENSE
+  })
+}
+
 export async function getEntryDetail(supabase: SupabaseClient, entryId: string): Promise<DictEntryDetail | null> {
-  const { data, error } = await supabase
-    .schema('lex')
-    .from('entries')
-    .select(
-      `${PREVIEW_SELECT}, examples!examples_entry_id_fkey(text, reading, translation_vi, translation_en),` +
-      ' lex_relations!lex_relations_entry_id_fkey(relation_type, related_text, related_entry_id)',
-    )
-    .eq('id', entryId)
-    .maybeSingle()
-  if (error) throw error
-  if (!data) return null
-  const r = entryDetailRow.parse(data)
+  // Examples are a query of their own, in parallel: sense-linked rows first, then rows
+  // with a Vietnamese translation, then by id.
+  const [entry, ex] = await Promise.all([
+    supabase
+      .schema('lex')
+      .from('entries')
+      .select(`${DETAIL_SELECT}, lex_relations!lex_relations_entry_id_fkey(relation_type, related_text, related_entry_id)`)
+      .eq('id', entryId)
+      .maybeSingle(),
+    supabase
+      .schema('lex')
+      .from('examples')
+      .select('text, reading, translation_vi, translation_en, sense_id')
+      .eq('entry_id', entryId)
+      .order('sense_id', { nullsFirst: false })
+      .order('translation_vi', { nullsFirst: false })
+      .order('id')
+      .limit(MAX_FETCHED_EXAMPLES),
+  ])
+  if (entry.error) throw entry.error
+  if (!entry.data) return null
+  if (ex.error) throw ex.error
+  const r = entryDetailRow.parse(entry.data)
   const preview = toPreview(r)
-  const examples: DictExample[] = (r.examples ?? []).map((e) => ({
-    text: e.text, reading: e.reading, translationVi: e.translation_vi, translationEn: e.translation_en,
-  }))
+  const examples: DictExample[] = capExamples(exampleRow.array().parse(ex.data ?? []).map((e) => ({
+    text: e.text, reading: e.reading, translationVi: e.translation_vi, translationEn: e.translation_en, senseId: e.sense_id,
+  })))
   const relations: DictRelation[] = (r.lex_relations ?? []).map((x) => ({
     relationType: x.relation_type, relatedText: x.related_text, relatedEntryId: x.related_entry_id,
   }))

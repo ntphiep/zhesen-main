@@ -11,6 +11,20 @@ export interface ClassifiedRelations {
   sameKind: string[]
 }
 
+/** The Vietnamese name and hint of each bucket, in reading order. */
+export const RELATION_SECTIONS: { key: keyof ClassifiedRelations; label: string; hint: string }[] = [
+  { key: 'synonyms', label: 'Cận nghĩa', hint: 'Dùng thay được trong một số ngữ cảnh' },
+  { key: 'antonyms', label: 'Trái nghĩa', hint: 'Nghĩa ngược lại' },
+  { key: 'derived', label: 'Phái sinh', hint: 'Từ tạo ra từ gốc này' },
+  { key: 'compounds', label: 'Từ ghép và cụm từ', hint: 'Cụm cố định chứa từ này' },
+  // Wiktionary's "Related terms" share an etymological root and are not idioms:
+  // "holy" lists halibut, halidom, hallow and holiday.
+  { key: 'related', label: 'Cùng gốc từ', hint: 'Chung nguồn gốc, nghĩa có thể đã khác' },
+  { key: 'broader', label: 'Khái niệm rộng hơn', hint: 'Loại lớn hơn hoặc tổng thể chứa nó' },
+  { key: 'narrower', label: 'Khái niệm hẹp hơn', hint: 'Loại cụ thể hơn hoặc bộ phận của nó' },
+  { key: 'sameKind', label: 'Cùng nhóm', hint: 'Cùng loại hoặc gần nghĩa' },
+]
+
 /** Words shown per section before the reader expands it. */
 export const RELATION_CAP = 8
 

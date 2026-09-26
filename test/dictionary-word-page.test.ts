@@ -1,0 +1,135 @@
+import { describe, it, expect } from 'vitest'
+import { exampleCandidates, isPlausibleDerived, knownWordExamples, MAX_OTHER_EXAMPLES, planExamples, relatedTabs, senseSections, summaryLine } from '@/lib/dictionary/wordPage'
+import { capExamples, MAX_UNLINKED_EXAMPLES } from '@/lib/dictionary/entryDetail'
+import { parseSenseFrequency } from '@/lib/dictionary/rows'
+import { tokenize } from '@/lib/reader/tokenize'
+import type { DictExample, DictSense } from '@/lib/dictionary/types'
+
+const sense = (over: Partial<DictSense> & { senseOrder: number }): DictSense =>
+  ({ pos: 'verb', glossVi: null, glossEn: null, ...over })
+const example = (text: string, over: Partial<DictExample> = {}): DictExample =>
+  ({ text, reading: null, translationVi: null, translationEn: null, ...over })
+
+describe('parseSenseFrequency', () => {
+  it('reads "1" to "5" and nothing else', () => {
+    expect(parseSenseFrequency(' 2 ')).toBe(2)
+    for (const raw of ['0', '6', '1.5', 'high', '', null, undefined]) expect(parseSenseFrequency(raw)).toBeNull()
+  })
+})
+
+describe('senseSections', () => {
+  // Dictionary order put a cricket meaning fourth on take; the rank is what a learner meets.
+  it('orders a part of speech by rank, then by Vietnamese gloss, then dictionary order', () => {
+    const [verb, noun] = senseSections([
+      sense({ senseOrder: 1, glossEn: 'cricket catch' }),
+      sense({ senseOrder: 2, glossVi: 'mang đi' }),
+      sense({ senseOrder: 3, glossVi: 'cầm', senseFrequency: 1 }),
+      sense({ senseOrder: 4, pos: 'noun', glossVi: 'cảnh quay' }),
+    ])
+    expect(verb.labelVi).toBe('Động từ')
+    expect(verb.senses.map((s) => s.senseOrder)).toEqual([3, 2, 1])
+    expect(noun.anchor).toBe('pos-noun')
+  })
+  it('keeps classifier notes out of the meanings', () => {
+    expect(senseSections([sense({ senseOrder: 1, pos: null, glossEn: 'CL:個|个[ge4]' })])).toEqual([])
+  })
+})
+
+describe('summaryLine', () => {
+  it('joins the first term of each shown sense, keeping a comma inside parentheses', () => {
+    const sections = senseSections([
+      sense({ senseOrder: 1, glossVi: 'Cầm, nắm' }),
+      sense({ senseOrder: 2, glossVi: 'Đi (xe, tàu)' }),
+      sense({ senseOrder: 3, glossVi: 'cầm' }),
+    ])
+    expect(summaryLine(sections)).toBe('Cầm · Đi (xe, tàu)')
+  })
+})
+
+describe('planExamples', () => {
+  const sections = senseSections([sense({ senseOrder: 1, id: 's1', glossVi: 'cầm' })])
+
+  it('puts every example under "Ví dụ khác" while none is linked, translated ones first', () => {
+    const plan = planExamples(sections, [example('Take it.'), example('Take one.', { translationVi: 'Lấy một cái.' })], [])
+    expect(plan.bySense).toEqual({})
+    expect(plan.others.map((e) => e.text)).toEqual(['Take one.', 'Take it.'])
+  })
+  it('shows one linked example per sense, preferring a real translation', () => {
+    const plan = planExamples(sections, [
+      example('Take it.', { senseId: 's1', translationVi: 'cầm' }),
+      example('Take my hand.', { senseId: 's1', translationVi: 'Nắm tay tôi.' }),
+    ], ['cầm'])
+    expect(plan.bySense.s1.text).toBe('Take my hand.')
+    expect(plan.others.map((e) => e.text)).toEqual(['Take it.'])
+  })
+})
+
+describe('capExamples', () => {
+  it('keeps two rows per sense and the first unlinked rows', () => {
+    const rows = [
+      ...['a', 'b', 'c'].map((t) => example(t, { senseId: 'en:take#10' })),
+      example('d', { senseId: 'en:take#2' }),
+      ...Array.from({ length: MAX_UNLINKED_EXAMPLES + 5 }, (_, i) => example(`u${i}`)),
+    ]
+    const kept = capExamples(rows)
+    expect(kept.filter((e) => e.senseId).map((e) => e.text)).toEqual(['a', 'b', 'd'])
+    expect(kept.filter((e) => !e.senseId)).toHaveLength(MAX_UNLINKED_EXAMPLES)
+  })
+})
+
+describe('exampleCandidates', () => {
+  // Sense 6 is past the fold, so its sentence would have to resolve from the browser.
+  it('takes the linked sentences of shown senses, then a capped run of unlinked ones', () => {
+    const sections = senseSections(Array.from({ length: 6 }, (_, i) => sense({ senseOrder: i + 1, id: `s${i + 1}`, glossVi: 'x' })))
+    const out = exampleCandidates(sections, [
+      example('Take one.', { senseId: 's1' }),
+      example('Take six.', { senseId: 's6' }),
+      ...Array.from({ length: MAX_OTHER_EXAMPLES + 3 }, (_, i) => example(`Other ${i}.`)),
+    ])
+    expect(out[0].text).toBe('Take one.')
+    expect(out.map((e) => e.text)).not.toContain('Take six.')
+    expect(out).toHaveLength(1 + MAX_OTHER_EXAMPLES)
+  })
+})
+
+describe('knownWordExamples', () => {
+  it('drops a sentence with a long word the dictionary does not know, and keeps Chinese', () => {
+    const text = 'Stand on holyground.'
+    const resolved = [{ text, segments: tokenize('en', text), entries: [], chars: [] }]
+    expect(knownWordExamples([example(text)], resolved, 'en')).toEqual([])
+    expect(knownWordExamples([example(text)], [], 'en')).toHaveLength(1)
+  })
+})
+
+describe('relatedTabs', () => {
+  const base = { lang: 'en' as const, headword: 'take', lemma: null, containing: [], kin: [], formTexts: [], previews: {} }
+
+  it('drops a derived word that shares nothing with the stem', () => {
+    expect(isPlausibleDerived('thou', 'take')).toBe(false)
+    expect(isPlausibleDerived('mistake', 'take')).toBe(true)
+    expect(isPlausibleDerived('happiness', 'happy')).toBe(true)
+    expect(isPlausibleDerived('comida', 'comer')).toBe(true)
+    expect(isPlausibleDerived('speech', 'speak')).toBe(true)
+  })
+  it('lists an item once, in the first tab it fits, and never an inflected form', () => {
+    const tabs = relatedTabs({
+      ...base,
+      formTexts: ['takes', 'took'],
+      containing: [{ id: 'en:take up', headword: 'take up', glossVi: 'bắt đầu', glossEn: null }],
+      kin: [{ id: 'en:takes', headword: 'takes', glossVi: null, glossEn: null }, { id: 'en:takeoff', headword: 'takeoff', glossVi: null, glossEn: null }],
+      relations: [
+        { relationType: 'derived', relatedText: 'take up', relatedEntryId: null },
+        { relationType: 'derived', relatedText: 'thou', relatedEntryId: null },
+        { relationType: 'derived', relatedText: 'mistake', relatedEntryId: null },
+        { relationType: 'synonym', relatedText: 'mistake', relatedEntryId: null },
+        { relationType: 'synonym', relatedText: 'grab', relatedEntryId: null },
+      ],
+    })
+    expect(tabs.map((t) => [t.label, t.items.map((i) => i.text)])).toEqual([
+      ['Cụm từ', ['take up']],
+      ['Phái sinh', ['takeoff', 'mistake']],
+      ['Cận nghĩa', ['grab']],
+    ])
+    expect(tabs[0].items[0]).toMatchObject({ href: '/dictionary/en/take%20up', gloss: 'bắt đầu', entry: true })
+  })
+})

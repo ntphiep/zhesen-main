@@ -18,6 +18,9 @@ export const senseRow = z.object({
   gloss_vi: z.string().nullable(),
   gloss_en: z.string().nullable(),
   sense_order: z.number(),
+  // Selected only by DETAIL_SELECT.
+  id: z.string().optional(),
+  sense_frequency: z.string().nullable().optional(),
 })
 export type SenseRow = z.infer<typeof senseRow>
 
@@ -48,6 +51,7 @@ export const exampleRow = z.object({
   reading: z.string().nullable(),
   translation_vi: z.string().nullable(),
   translation_en: z.string().nullable(),
+  sense_id: z.string().nullable(),
 })
 
 export const relationRow = z.object({
@@ -57,7 +61,6 @@ export const relationRow = z.object({
 })
 
 export const entryDetailRow = entryPreviewRow.extend({
-  examples: z.array(exampleRow).nullable(),
   lex_relations: z.array(relationRow).nullable(),
 })
 export type EntryDetailRow = z.infer<typeof entryDetailRow>
@@ -163,8 +166,17 @@ export function pickPrimarySense(senses: DictSense[]): DictSense | null {
   return [...senses].sort((a, b) => a.senseOrder - b.senseOrder)[0]
 }
 
+/** `lex.senses.sense_frequency` holds "1" to "5"; anything else is unranked. */
+export function parseSenseFrequency(raw: string | null | undefined): number | null {
+  const t = raw?.trim() ?? ''
+  return /^[1-5]$/.test(t) ? Number(t) : null
+}
+
 export function toSenses(rows: SenseRow[] | null): DictSense[] {
-  return (rows ?? []).map((r) => ({ pos: r.pos, glossVi: cleanGlossVi(cleanMtGloss(r.gloss_vi)), glossEn: r.gloss_en, senseOrder: r.sense_order }))
+  return (rows ?? []).map((r) => ({
+    pos: r.pos, glossVi: cleanGlossVi(cleanMtGloss(r.gloss_vi)), glossEn: r.gloss_en, senseOrder: r.sense_order,
+    ...(r.id === undefined ? {} : { id: r.id, senseFrequency: parseSenseFrequency(r.sense_frequency) }),
+  }))
 }
 export function toProns(rows: PronRow[] | null): DictPron[] {
   return (rows ?? []).map((r) => ({ accent: r.accent, ipa: r.ipa, audioUrl: r.audio_url }))
