@@ -97,8 +97,8 @@ const NO_VOICE: Record<LangCode, string> = {
  * for the language; the Chinese entries carry no recordings at all.
  */
 export function AudioButton({
-  text, lang, audioUrl, accent,
-}: { text: string; lang: LangCode; audioUrl?: string | null; accent?: string }) {
+  text, lang, audioUrl, accent, label,
+}: { text: string; lang: LangCode; audioUrl?: string | null; accent?: string; label?: string }) {
   const [busy, setBusy] = useState(false)
   const [noVoice, setNoVoice] = useState(false)
   const bcp47 = accent || speechLang(lang)
@@ -125,7 +125,7 @@ export function AudioButton({
     <button
       type="button"
       onClick={onClick}
-      aria-label={noVoice ? NO_VOICE[lang] : `Phát âm ${text}`}
+      aria-label={noVoice ? NO_VOICE[lang] : (label ?? `Phát âm ${text}`)}
       aria-busy={busy}
       title={noVoice ? NO_VOICE[lang] : undefined}
       className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-base hover:bg-black/10 ${busy ? 'opacity-60' : ''} ${noVoice ? 'opacity-40' : ''}`}

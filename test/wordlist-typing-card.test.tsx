@@ -32,4 +32,14 @@ describe('TypingCard', () => {
     rerender(<TypingCard {...props} result="wrong" />)
     expect(screen.getByRole('link', { name: 'nguồn' })).toHaveAttribute('href', 'https://commons.wikimedia.org/wiki/File:En-us-develop.ogg')
   })
+
+  it('dictation audio button never says the headword before the answer is checked', () => {
+    const props = { mode: 'dictation' as const, word, value: '', onChange: () => {}, onSubmit: () => {}, onNext: () => {} }
+    const { rerender } = render(<TypingCard {...props} result={null} />)
+    expect(screen.queryByRole('button', { name: /develop/i })).not.toBeInTheDocument()
+    const button = screen.getByRole('button', { name: 'Phát âm từ cần gõ' })
+    expect(button.getAttribute('aria-label')).not.toContain(word.headword)
+    rerender(<TypingCard {...props} result="correct" />)
+    expect(screen.getByRole('button', { name: `Phát âm ${word.headword}` })).toBeInTheDocument()
+  })
 })

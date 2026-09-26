@@ -38,7 +38,14 @@ export function TypingCard({
       ) : (
         <div className="flex flex-col items-center">
           <p className="text-sm text-black/50">Nghe rồi gõ từ</p>
-          <div className="mt-2 scale-125"><AudioButton text={word.headword} lang={word.lang} audioUrl={word.audioUrl} /></div>
+          <div className="mt-2 scale-125">
+            <AudioButton
+              text={word.headword}
+              lang={word.lang}
+              audioUrl={word.audioUrl}
+              label={answered ? undefined : 'Phát âm từ cần gõ'}
+            />
+          </div>
           {/* The Commons file name spells the word, so the link waits for the answer. */}
           {answered && <SourceLink url={word.audioUrl} />}
         </div>
