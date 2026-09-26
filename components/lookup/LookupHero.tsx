@@ -37,7 +37,14 @@ export function LookupHero({ detail, hanViet, summary, jumps = [] }: {
             Hay gặp
           </span>
         )}
-        <div className="ml-auto"><AddToWordlistButton entry={detail} /></div>
+        {/* Everything handed to a client component is serialised into the page. The save
+            reads the entry fields and a translated example, not every sense, relation and
+            sense-linked row: passed whole, take's was 136 kB of the page's 326 kB. */}
+        <div className="ml-auto">
+          <AddToWordlistButton
+            entry={{ ...detail, senses: [], relations: [], pronunciations: [], examples: detail.examples.filter((e) => e.translationVi) }}
+          />
+        </div>
       </div>
       {(showPinyin || hanViet) && (
         <div className="flex flex-wrap items-center gap-3 text-black/60">

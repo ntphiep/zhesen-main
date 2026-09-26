@@ -14,8 +14,11 @@ import type { LangCode } from '@/lib/languages'
 
 export const SHOWN_SENSES = 5
 export const SHOWN_EXAMPLES = 3
-/** Sentences without a sense that "Ví dụ khác" can list after expanding. */
-export const MAX_OTHER_EXAMPLES = 12
+/** Sentences "Ví dụ khác" can list after expanding. */
+export const MAX_OTHER_EXAMPLES = 6
+/** Words a related-words tab carries. take has 401 concepts and 249 synonyms, and every
+ *  item handed to the tabs is serialised into the page. */
+export const MAX_TAB_ITEMS = 40
 
 export interface SenseSection {
   /** Canonical part-of-speech key, '' for senses without one. */
@@ -65,16 +68,16 @@ export function summaryLine(sections: SenseSection[]): string | null {
   return terms.length > 0 ? terms.join(' · ') : null
 }
 
-/** The examples the page can show: those linked to a sense a section shows before
- *  expanding, then up to MAX_OTHER_EXAMPLES unlinked ones. A sense past the fold shows no
- *  example, so no sentence has to resolve itself from the browser. */
+/** The examples the page can show: the first one linked to each sense a section shows
+ *  before expanding, then up to MAX_OTHER_EXAMPLES others, unlinked ones first. A sense past
+ *  the fold shows no example, so no sentence has to resolve itself from the browser. */
 export function exampleCandidates(sections: SenseSection[], examples: DictExample[]): DictExample[] {
   const shown = new Set(sections.flatMap((sec) => sec.senses.slice(0, SHOWN_SENSES).map((s) => s.id)))
   const clean = examples.filter((e) => isCleanExample(e.text))
-  return [
-    ...clean.filter((e) => e.senseId && shown.has(e.senseId)),
-    ...clean.filter((e) => !e.senseId).slice(0, MAX_OTHER_EXAMPLES),
-  ]
+  const linked = clean.filter((e) => e.senseId && shown.has(e.senseId))
+  const first = linked.filter((e, i) => linked.findIndex((x) => x.senseId === e.senseId) === i)
+  const rest = [...clean.filter((e) => !e.senseId), ...linked.filter((e) => !first.includes(e))]
+  return [...first, ...rest.slice(0, MAX_OTHER_EXAMPLES)]
 }
 
 /** Drops a sentence whose words the dictionary cannot account for; see hasUnknownLongWord.
@@ -176,7 +179,7 @@ export function relatedTabs({ lang, headword, lemma, relations, containing, kin,
         if (seen.has(k)) return false
         seen.add(k)
         return true
-      }),
+      }).slice(0, MAX_TAB_ITEMS),
     }))
     .filter((tab) => tab.items.length > 0)
 }

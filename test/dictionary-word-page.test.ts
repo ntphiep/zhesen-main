@@ -79,16 +79,23 @@ describe('capExamples', () => {
 
 describe('exampleCandidates', () => {
   // Sense 6 is past the fold, so its sentence would have to resolve from the browser.
-  it('takes the linked sentences of shown senses, then a capped run of unlinked ones', () => {
+  it('takes the first linked sentence of each shown sense, then a capped run of others', () => {
     const sections = senseSections(Array.from({ length: 6 }, (_, i) => sense({ senseOrder: i + 1, id: `s${i + 1}`, glossVi: 'x' })))
     const out = exampleCandidates(sections, [
       example('Take one.', { senseId: 's1' }),
+      example('Take one again.', { senseId: 's1' }),
       example('Take six.', { senseId: 's6' }),
       ...Array.from({ length: MAX_OTHER_EXAMPLES + 3 }, (_, i) => example(`Other ${i}.`)),
     ])
     expect(out[0].text).toBe('Take one.')
     expect(out.map((e) => e.text)).not.toContain('Take six.')
+    expect(out.map((e) => e.text)).not.toContain('Take one again.')
     expect(out).toHaveLength(1 + MAX_OTHER_EXAMPLES)
+  })
+  it('falls back on a second linked sentence when there is nothing unlinked', () => {
+    const sections = senseSections([sense({ senseOrder: 1, id: 's1', glossVi: 'x' })])
+    const out = exampleCandidates(sections, [example('Take one.', { senseId: 's1' }), example('Take two.', { senseId: 's1' })])
+    expect(out.map((e) => e.text)).toEqual(['Take one.', 'Take two.'])
   })
 })
 
