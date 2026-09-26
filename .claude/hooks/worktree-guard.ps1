@@ -18,7 +18,11 @@ if (-not $target) { exit 0 }
 $common = git -C $PSScriptRoot rev-parse --path-format=absolute --git-common-dir 2>$null
 if (-not $common) { exit 0 }
 $main = [IO.Path]::GetFullPath((Split-Path $common -Parent)).TrimEnd('\') + '\'
-$file = [IO.Path]::GetFullPath($target)
+# \\?\C:\..., \\.\C:\..., \\?\UNC\host\... and \\<this machine>\C$\... all spell a local path.
+$file = $target.Replace('/', '\') -replace '^\\\\\?\\UNC\\', '\\' -replace '^\\\\[.?]\\', ''
+$file = [IO.Path]::GetFullPath($file)
+$self = "localhost|127\.0\.0\.1|$([regex]::Escape($env:COMPUTERNAME))"
+if ($file -match "^\\\\(?:$self)\\([a-z])\$\\(.*)$") { $file = "$($Matches[1]):\$($Matches[2])" }
 
 $inMain = $file.StartsWith($main, [StringComparison]::OrdinalIgnoreCase)
 # Subagent memory (`memory: project`) is gitignored and lives only here, so it stays writable.

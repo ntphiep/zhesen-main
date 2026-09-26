@@ -76,10 +76,11 @@ The main checkout is therefore read-only for sessions:
 
 1. Before the first edit, call `EnterWorktree` with a short name for the task, or start
    with `claude -w <name>`. The worktree lands in `.claude/worktrees/<name>` on branch
-   `worktree-<name>`, cut from `origin/master`; `.worktreeinclude` copies `.env.local` in.
+   `worktree-<name>`, cut from `origin/master`; `.worktreeinclude` copies `.env.local` and
+   `.claude/agent-memory/` in. A subagent in a worktree session reads and writes that copy.
 2. Run `npm ci` in it. The gate blocks until `node_modules` exists there.
-3. Ship with `/ship`: rebase onto `origin/master`, verify, `git push origin HEAD:master`.
-   Then leave with `ExitWorktree` and `remove`.
+3. Ship with `/ship`: rebase onto `origin/master`, verify, `git push origin HEAD:master`,
+   carry new subagent notes back to the main checkout, then `ExitWorktree` with `remove`.
 
 `.claude/hooks/worktree-guard.ps1` refuses an `Edit` or `Write` in the main checkout, and
 inside a worktree Claude Code's own isolation refuses the same. The verify gate reads the
@@ -157,8 +158,8 @@ header to it by string equality. The auth cookie name is pinned in `lib/supabase
   cost real users their sessions. `ensureSession` (`lib/supabase/session.ts`) then created
   one on the first saved word; it now throws `NoSessionError`, because such an account dies
   with the browser's cookie. Every path that adds a row still calls it rather than assume a
-  session exists. An anonymous session that already exists keeps working, and account-only pages
-  send it to `/register` (`lib/auth/guard.ts`), where `attachEmail` keeps its words.
+  session exists. An anonymous session that already exists keeps working, and account-only
+  pages send it to `/register` (`lib/auth/guard.ts`), where `attachEmail` keeps its words.
 - The lookup has one box per direction and detects nothing. Vietnamese cannot be told from
   English or Spanish by its text: "an", "ban" and "con" are real headwords in both and
   score 4.01 to 4.12 in `lex.search`, above any threshold, so a single box answered "cá"

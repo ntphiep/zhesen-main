@@ -69,9 +69,17 @@ procedure; point it at `https://zhesen-main.vercel.app` instead of a local build
 ## 5. Leave the worktree
 
 Once the deployment checks out, call `ExitWorktree` with `remove`. Every tracked file is on
-`master` by now. Ignored files are not: if `.claude/agent-memory/` exists in the worktree,
-merge its notes into the same folder of the main checkout first, which the worktree guard
-leaves writable.
+`master` by now; subagent notes are not. `.worktreeinclude` copies `.claude/agent-memory/`
+in when the worktree is created and subagents write new notes to that copy, so first carry
+them back from PowerShell in the worktree:
+
+```powershell
+$main = Split-Path (git rev-parse --path-format=absolute --git-common-dir) -Parent
+git diff --no-index --stat -- "$main\.claude\agent-memory" .claude\agent-memory
+```
+
+Copy each new note across with `Copy-Item`. A changed `MEMORY.md` gets only its new lines,
+appended to the main copy with `Add-Content`, since another session may have added its own.
 
 ## 6. Report
 

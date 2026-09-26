@@ -24,7 +24,12 @@ $last = try { Get-Content -LiteralPath $stateFile -Raw -ErrorAction Stop | Conve
 $since = if ($last.at) { [DateTimeOffset]::FromUnixTimeSeconds($last.at) } else { [DateTimeOffset]::UtcNow.AddDays(-7) }
 $sinceIso = $since.UtcDateTime.ToString('yyyy-MM-ddTHH:mm:ssZ')
 
-# The two network calls run beside the git fetch; the slowest of the three sets the wall time.
+# The three network calls run as jobs against one deadline, so a stalled connection costs a
+# section, never the hook's 30 s timeout. A call still running then is skipped and killed.
+$deadline = [DateTime]::UtcNow.AddSeconds(18)
+function Wait-Deadline($Jobs) {
+  $null = Wait-Job $Jobs -Timeout ([Math]::Max(1, [int]($deadline - [DateTime]::UtcNow).TotalSeconds))
+}
 $query = @'
 query($since: DateTime!) {
   user(login: "ntphiep") { projectV2(number: 2) { items(first: 100) { totalCount nodes {
@@ -46,10 +51,13 @@ $wikiJob = Start-ThreadJob {
   git -C $dir log --since=$using:sinceIso --format='@%s' --name-only master 2>$null
 }
 
-git -C $main fetch --quiet origin 2>$null
+$fetchJob = Start-ThreadJob { git -C $using:main fetch --quiet origin 2>$null }
+
+Wait-Deadline $fetchJob
 $tip = git -C $main rev-parse --short origin/master 2>$null
 $out = [Collections.Generic.List[string]]::new()
 $out.Add("# Project state at session start (.claude/hooks/session-digest.ps1)")
+if ($fetchJob.State -ne 'Completed') { $out.Add('git fetch did not finish in time, so origin/master below may be behind GitHub.') }
 
 # The main checkout is what CLAUDE_PROJECT_DIR hooks and new sessions read, and no session
 # edits it, so it only moves forward here.
@@ -120,12 +128,12 @@ if (-not $here -or $here.path -eq $main) {
 
 # Board: what is open, what is in hand, what comes first.
 $out.Add('')
-# A hung call would run into the hook's own timeout and take the whole digest with it.
-$null = Wait-Job $boardJob, $wikiJob -Timeout 20
-$raw = Receive-Job $boardJob | Out-String
+Wait-Deadline @($boardJob, $wikiJob)
+$raw = if ($boardJob.State -eq 'Completed') { Receive-Job $boardJob | Out-String } else { 'the GitHub call did not finish in time' }
 $data = try { ($raw | ConvertFrom-Json).data } catch { $null }
 if (-not $data.user) {
-  $out.Add("## Board: unavailable ($((($raw ?? '') -split "`n")[0].Trim()))")
+  $reason = (($raw ?? '') -split "`n")[0].Trim()
+  $out.Add("## Board: unavailable ($($reason.Substring(0, [Math]::Min(120, $reason.Length))))")
 } else {
   $items = $data.user.projectV2.items
   $open = @($items.nodes | Where-Object { $_.content.state -eq 'OPEN' })
@@ -165,8 +173,7 @@ if ($data.repository) {
     $out.Add("$label ($($hits.Count)): $(($hits | Select-Object -First 10 | ForEach-Object { "#$($_.number) $($_.title)" }) -join '; ')$(if ($hits.Count -gt 10) { '; ...' })")
   }
 }
-$wikiLog = Receive-Job $wikiJob
-Remove-Job $boardJob, $wikiJob -Force
+$wikiLog = if ($wikiJob.State -eq 'Completed') { Receive-Job $wikiJob }
 $pages = [ordered]@{}
 $subject = $null
 foreach ($line in $wikiLog) {
@@ -186,4 +193,11 @@ if ($data.repository) {
 }
 
 $out -join "`n"
+
+# A git or gh still running inherited this hook's stdout and holds it open. Measured against a
+# proxy that never answers: 21.4 s with this cleanup, still waiting after 60 s without it.
+if (@($fetchJob, $boardJob, $wikiJob).State -contains 'Running') {
+  Get-CimInstance Win32_Process -Filter "ParentProcessId = $PID" -ErrorAction SilentlyContinue |
+    ForEach-Object { taskkill /T /F /PID $_.ProcessId 2>&1 | Out-Null }
+}
 exit 0
