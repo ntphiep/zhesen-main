@@ -4,9 +4,9 @@
  * 'adj'/'adv'/'intj'/'det' where en rows write them out. Without grouping, the filter
  * chips split one real category in two.
  *
- * `abbr` is what the product shows; `labelVi` is the expansion behind it. Every
- * surface renders the abbreviation, so a table column holds one line and the same
- * word reads the same everywhere. `components/ui/PosTag.tsx` pairs the two.
+ * `abbr` is what the product shows; `labelVi` is the expansion behind it. Tables render
+ * the abbreviation, so a column holds one line; the word page spells it out, where there
+ * is room. `components/ui/PosTag.tsx` pairs the two.
  */
 export interface PosGroup {
   key: string

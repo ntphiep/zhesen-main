@@ -128,11 +128,16 @@ export function AudioButton({
       aria-label={noVoice ? NO_VOICE[lang] : (label ?? `Phát âm ${text}`)}
       aria-busy={busy}
       title={noVoice ? NO_VOICE[lang] : undefined}
-      className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-base hover:bg-black/10 ${busy ? 'opacity-60' : ''} ${noVoice ? 'opacity-40' : ''}`}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-black/60 hover:bg-black/10 hover:text-black ${busy ? 'opacity-60' : ''} ${noVoice ? 'opacity-40' : ''}`}
     >
       {busy
         ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-black/20 border-t-black/60" />
-        : (noVoice ? '🔇' : '🔊')}
+        : (
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 5 6 9H2v6h4l5 4V5z" />
+            {noVoice ? <path d="m22 9-6 6m0-6 6 6" /> : <><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M19 5a10 10 0 0 1 0 14" /></>}
+          </svg>
+        )}
     </button>
   )
 }

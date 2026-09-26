@@ -1,11 +1,12 @@
 import { buildConjugation, type Conjugation } from './conjugation'
 import { entryPath } from './entryId'
 import { groupWordForms } from './family'
-import { entryMeaningVi } from './textQuality'
+import { entryMeaningVi, isCleanExample } from './textQuality'
 import {
   entryGlosses, exampleCandidates, knownWordExamples, planExamples, relatedTabs, senseSections, summaryLine,
   type RelatedItem, type SenseSection,
 } from './wordPage'
+import type { LangCode } from '@/lib/languages'
 import type { ResolvedText } from './tappable'
 import type {
   CharInfo, ContainingWord, CrossLangSibling, DictEntryDetail, DictEntryPreview, DictExample, DictSense, TermPreview,
@@ -13,16 +14,12 @@ import type {
 } from './types'
 import type { GrammarPoint } from '@/lib/grammar/types'
 
-/**
- * Everything the three word-page layouts draw, as plain data. The page hands it to a
- * client component once, and the side-by-side layout fetches the same shape for every
- * word it opens, so one builder serves both.
- */
+/** Everything the three word-page layouts draw, as plain data, built once on the server. */
 
 export interface ViewWord {
   text: string
   href: string
-  /** The entry behind the word; the side-by-side layout opens it in a column. */
+  /** The entry behind the word, when the dictionary has one. */
   id: string | null
   gloss: string | null
   pos: string | null
@@ -99,6 +96,17 @@ const toWord = ({ text, href, id, gloss, pos, level }: RelatedItem): ViewWord =>
 
 const LANG_ORDER = ['zh', 'es', 'en']
 
+/** The order a learner meets the forms in: the -s form, the past, the participles, then
+ *  degrees. Any other label keeps its place after these. */
+const FORM_ORDER = [
+  'Ngôi thứ ba số ít', 'Số nhiều', 'Quá khứ', 'Quá khứ và phân từ II', 'Phân từ II (quá khứ)', 'Phân từ I (-ing)',
+  'So sánh hơn', 'So sánh nhất',
+]
+const formRank = (label: string) => {
+  const i = FORM_ORDER.indexOf(label)
+  return i < 0 ? FORM_ORDER.length : i
+}
+
 /** English endings that follow the rules; anything else changes the stem. */
 const REGULAR_EN = /^(s|es|d|ed|ing|r|er|st|est)$/
 
@@ -159,6 +167,7 @@ export function buildWordView({
   const allForms = groupWordForms(inflections)
   const forms = conjugation ? [] : allForms
     .filter((f) => f.standard && f.text.toLowerCase() !== detail.headword.toLowerCase())
+    .sort((a, b) => formRank(a.label) - formRank(b.label))
     .map((f) => ({ text: f.text, label: f.label, ...splitForm(detail.headword, f.text, detail.lang) }))
 
   const sections = senseSections(detail.senses)
@@ -241,12 +250,44 @@ export function mainSenses(sections: SenseSection[], max = 4): { section: SenseS
   return sections.map((section, i) => ({ section, senses: section.senses.slice(0, quota[i]) })).filter((g) => g.senses.length > 0)
 }
 
-/** Which of the overview's two columns each tile joins, in order: always the shorter one,
- *  so the columns end close together. Ties go to the first. */
-export function balanceColumns(heights: number[]): (0 | 1)[] {
+export interface SenseGroup {
+  label: string
+  senses: DictSense[]
+}
+
+/** Senses gathered under the Vietnamese term they lead with, in the order each term first
+ *  appears: take's "cầm, nắm" and "cầm lấy" are one group, "chiếm lấy" another. */
+export function groupSenses(senses: DictSense[]): SenseGroup[] {
+  const groups = new Map<string, SenseGroup>()
+  for (const s of senses) {
+    const label = senseLabel(s)
+    if (!label) continue
+    const key = label.toLocaleLowerCase('vi')
+    const g = groups.get(key) ?? { label, senses: [] }
+    g.senses.push(s)
+    groups.set(key, g)
+  }
+  return [...groups.values()]
+}
+
+/** The example sentences a layout may show: short, clean, and made of words the
+ *  dictionary knows. */
+export function cleanExamples(examples: DictExample[], resolved: ResolvedText[], lang: LangCode): DictExample[] {
+  return knownWordExamples(examples.filter((e) => isCleanExample(e.text)), resolved, lang)
+}
+
+/** The headword and its forms, which an example sentence sets in bold. */
+export function headwordForms(view: Pick<WordView, 'head' | 'forms'>): string[] {
+  return [view.head.headword, ...view.forms.map((f) => f.text)].map((t) => t.toLowerCase())
+}
+
+/** Which of the overview's two columns each tile joins, in order: a `wide` tile the first,
+ *  wider one, any other the shorter one, so the columns end close together. Ties go to
+ *  the first. */
+export function balanceColumns(heights: number[], wide: boolean[] = []): (0 | 1)[] {
   const totals = [0, 0]
-  return heights.map((h) => {
-    const side = totals[1] < totals[0] ? 1 : 0
+  return heights.map((h, i) => {
+    const side = !wide[i] && totals[1] < totals[0] ? 1 : 0
     totals[side] += h
     return side
   })

@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { OverviewLayout } from './OverviewLayout'
+import { CONTAINER } from './WordParts'
 import { WORD_LAYOUTS, wordLayout, type WordLayout } from '@/lib/dictionary/wordLayout'
 import type { WordView } from '@/lib/dictionary/wordView'
 
@@ -11,7 +12,7 @@ import type { WordView } from '@/lib/dictionary/wordView'
 const BilingualLayout = dynamic(() => import('./BilingualLayout').then((m) => m.BilingualLayout), {
   ssr: false, loading: () => <LayoutLoading />,
 })
-const ColumnsLayout = dynamic(() => import('./ColumnsLayout').then((m) => m.ColumnsLayout), {
+const ClassicLayout = dynamic(() => import('./ClassicLayout').then((m) => m.ClassicLayout), {
   ssr: false, loading: () => <LayoutLoading />,
 })
 
@@ -22,7 +23,7 @@ function LayoutLoading() {
 const ICONS: Record<WordLayout, React.ReactNode> = {
   overview: <><rect x="2" y="2" width="7" height="7" rx="1.5" /><rect x="11" y="2" width="7" height="4" rx="1.5" /><rect x="11" y="8" width="7" height="10" rx="1.5" /><rect x="2" y="11" width="7" height="7" rx="1.5" /></>,
   bilingual: <><path d="M10 2v16" /><path d="M3 5h4M3 9h4M3 13h4M13 5h4M13 9h4M13 13h4" /></>,
-  columns: <><rect x="2" y="3" width="3" height="14" rx="1" /><rect x="7" y="3" width="5" height="14" rx="1" /><rect x="14" y="3" width="4" height="14" rx="1" /></>,
+  classic: <><path d="M2 4h9M2 8h9M2 12h9M2 16h6" /><rect x="14" y="3" width="4" height="14" rx="1" /></>,
 }
 
 function LayoutPicker({ value }: { value: WordLayout }) {
@@ -49,22 +50,23 @@ function LayoutPicker({ value }: { value: WordLayout }) {
   )
 }
 
-/** The word page in the layout the reader picked, with the picker above it. */
+/** The word page in the layout the reader picked, with the picker above it. Each layout
+ *  sets its own width; the overview draws on a grey page. */
 export function WordLayouts({ view }: { view: WordView }) {
   const layout = useSyncExternalStore(wordLayout.subscribe, wordLayout.snapshot, wordLayout.serverSnapshot)
   return (
     <main
       data-rendered-layout={layout}
-      className={`mx-auto flex w-full flex-col gap-5 px-4 py-8 sm:px-6 ${layout === 'columns' ? 'max-w-[1600px]' : 'max-w-[1248px]'}`}
+      className={`flex w-full flex-col gap-5 pt-5 pb-16 ${layout === 'overview' ? 'bg-black/[0.035]' : ''}`}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className={`${CONTAINER} flex items-center justify-between gap-3`}>
         <Link href="/dictionary" className="text-sm text-black/50 hover:underline">← Dịch</Link>
         <LayoutPicker value={layout} />
       </div>
       {layout === 'bilingual'
         ? <BilingualLayout view={view} />
-        : layout === 'columns'
-          ? <ColumnsLayout view={view} />
+        : layout === 'classic'
+          ? <ClassicLayout view={view} />
           : <OverviewLayout view={view} />}
     </main>
   )

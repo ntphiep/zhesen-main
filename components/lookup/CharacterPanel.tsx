@@ -2,6 +2,7 @@ import type { CharInfo } from '@/lib/dictionary/types'
 import { radicalInfo } from '@/lib/dictionary/radicals'
 import { StrokeOrder } from './StrokeOrder'
 
+/** One card per character. The layout around it gives the heading. */
 export function CharacterPanel({ characters }: { characters: CharInfo[] }) {
   if (characters.length === 0) return null
 
@@ -15,9 +16,7 @@ export function CharacterPanel({ characters }: { characters: CharInfo[] }) {
   }
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-lg font-semibold">Chữ và bộ thủ</h2>
-      <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2">
         {[...seen.values()].map(({ info: c, times }) => {
           const rad = radicalInfo(c.radical)
           return (
@@ -41,7 +40,6 @@ export function CharacterPanel({ characters }: { characters: CharInfo[] }) {
             </div>
           )
         })}
-      </div>
-    </section>
+    </div>
   )
 }

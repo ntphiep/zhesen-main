@@ -293,7 +293,7 @@ header nav .link-pending {
    and then jumping to another. The delayed reveal keeps the page readable if that render
    never comes. */
 html[data-word-layout="bilingual"] [data-rendered-layout="overview"],
-html[data-word-layout="columns"] [data-rendered-layout="overview"] {
+html[data-word-layout="classic"] [data-rendered-layout="overview"] {
   visibility: hidden;
   animation: word-layout-reveal 0s 1.5s forwards;
 }

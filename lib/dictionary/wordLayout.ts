@@ -8,12 +8,12 @@
  * first paint when another layout is stored, until the client renders that one.
  */
 
-export type WordLayout = 'overview' | 'bilingual' | 'columns'
+export type WordLayout = 'overview' | 'bilingual' | 'classic'
 
 export const WORD_LAYOUTS: { key: WordLayout; label: string }[] = [
   { key: 'overview', label: 'Tổng quan' },
   { key: 'bilingual', label: 'Song ngữ' },
-  { key: 'columns', label: 'Nhiều cột' },
+  { key: 'classic', label: 'Cổ điển' },
 ]
 
 const DEFAULT: WordLayout = 'overview'
@@ -66,7 +66,9 @@ export const wordLayout = {
 }
 
 /** Runs in <head> before the first paint and marks <html> with the stored layout, which
- *  `app/globals.css` uses to hide a word page rendered in another one. */
+ *  `app/globals.css` uses to hide a word page rendered in another one. Only a layout that
+ *  still exists: a stored name the page no longer draws would hide it for nothing. */
 export const WORD_LAYOUT_BOOT_SCRIPT =
   `(function(){try{var v=localStorage.getItem('${KEY}');` +
-  `if(v)document.documentElement.dataset.wordLayout=v}catch(e){}})()`
+  `if(${JSON.stringify(WORD_LAYOUTS.map((l) => l.key).filter((k) => k !== DEFAULT))}.indexOf(v)>=0)` +
+  `document.documentElement.dataset.wordLayout=v}catch(e){}})()`

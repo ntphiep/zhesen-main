@@ -14,8 +14,10 @@ const SavedButton = dynamic(() => import('./SavedButton').then((m) => m.SavedBut
  * Save one dictionary entry to the notebook. The notebook belongs to an account, so
  * without one this is an invitation to sign in, pointing back at the page the visitor
  * came from, since signing in must not cost them where they were reading.
+ *
+ * `lg` is the word page's primary action: 44px tall, the height of a touch target.
  */
-export function AddToWordlistButton({ entry }: { entry: DictEntryPreview | DictEntryDetail }) {
+export function AddToWordlistButton({ entry, size = 'sm' }: { entry: DictEntryPreview | DictEntryDetail; size?: 'sm' | 'lg' }) {
   const { kind } = useAccount()
 
   if (kind === null) return null
@@ -24,12 +26,14 @@ export function AddToWordlistButton({ entry }: { entry: DictEntryPreview | DictE
       <Link
         href={`${signInHref(kind)}?next=${encodeURIComponent(entryPath(entry.id))}`}
         prefetch={false}
-        className="rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium text-black/70 hover:bg-black/5"
+        className={size === 'lg'
+          ? 'inline-flex h-11 items-center rounded-[10px] border border-black/15 bg-white px-[18px] text-sm font-semibold hover:bg-black/5'
+          : 'rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium text-black/70 hover:bg-black/5'}
       >
         Đăng nhập để lưu
         <LinkPending />
       </Link>
     )
   }
-  return <SavedButton entry={entry} />
+  return <SavedButton entry={entry} size={size} />
 }

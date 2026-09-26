@@ -50,15 +50,14 @@ function Chip({ text }: { text: string }) {
 }
 
 /** Spanish verb conjugation, SpanishDict-style: non-finite forms + present indicative
- * shown by default, the full indicative/subjunctive/imperative paradigm behind a toggle. */
+ * shown by default, the full indicative/subjunctive/imperative paradigm behind a toggle.
+ * The layout around it gives the heading. */
 export function ConjugationTable({ conjugation: c }: { conjugation: Conjugation }) {
   const [expanded, setExpanded] = useState(false)
   const present = c.indicative.filter((t) => t.key === 'present')
 
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-semibold">Chia động từ</h2>
-
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
         {c.infinitive && <span><span className="text-black/40">Nguyên thể </span><span className="font-medium">{c.infinitive}</span></span>}
         {c.gerund && <span><span className="text-black/40">Gerundio </span><span className="font-medium">{c.gerund}</span></span>}
@@ -106,6 +105,6 @@ export function ConjugationTable({ conjugation: c }: { conjugation: Conjugation 
       >
         {expanded ? 'Thu gọn' : 'Xem bảng chia đầy đủ'}
       </button>
-    </section>
+    </div>
   )
 }

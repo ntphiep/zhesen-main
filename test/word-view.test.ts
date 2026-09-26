@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
-  balanceColumns, buildWordView, mainSenses, splitAroundStem, splitForm, splitPhrasalVerbs, type ViewWord,
+  balanceColumns, buildWordView, groupSenses, mainSenses, splitAroundStem, splitForm, splitPhrasalVerbs, type ViewWord,
 } from '@/lib/dictionary/wordView'
-import { wordViewResponse } from '@/lib/dictionary/wordViewResponse'
 import { senseSections } from '@/lib/dictionary/wordPage'
 import type { DictEntryDetail, DictSense } from '@/lib/dictionary/types'
 
@@ -83,6 +82,23 @@ describe('balanceColumns', () => {
     expect(balanceColumns([4])).toEqual([0])
     expect(balanceColumns([])).toEqual([])
   })
+
+  it('keeps a wide tile in the first column whatever the heights', () => {
+    expect(balanceColumns([3, 8, 12, 8], [true, false, true, false])).toEqual([0, 1, 0, 1])
+    expect(balanceColumns([10, 2, 4], [false, false, true])).toEqual([0, 1, 0])
+  })
+})
+
+describe('groupSenses', () => {
+  it('gathers senses under the Vietnamese term they lead with, in first-seen order', () => {
+    const groups = groupSenses([
+      sense({ senseOrder: 1, glossVi: 'cầm, nắm', id: 'a' }),
+      sense({ senseOrder: 2, glossVi: 'chiếm lấy', id: 'b' }),
+      sense({ senseOrder: 3, glossVi: 'Cầm; giữ', id: 'c' }),
+      sense({ senseOrder: 4 }),
+    ])
+    expect(groups.map((g) => [g.label, g.senses.map((s) => s.id)])).toEqual([['cầm', ['a', 'c']], ['chiếm lấy', ['b']]])
+  })
 })
 
 describe('buildWordView', () => {
@@ -116,9 +132,16 @@ describe('buildWordView', () => {
     expect(view.senses).toHaveLength(3)
   })
 
-  // The side-by-side layout reads this shape from the network, so it must survive a parse.
-  it('round-trips through the wire schema', () => {
-    const wire = JSON.parse(JSON.stringify(view))
-    expect(wordViewResponse.parse(wire)).toEqual(wire)
+  it('orders the forms as a learner meets them: the -s form, the past, the participles', () => {
+    const withForms = buildWordView({
+      detail: take, characters: [], siblings: [],
+      inflections: [
+        { formText: 'taking', formLabel: 'participle present' },
+        { formText: 'taken', formLabel: 'participle past' },
+        { formText: 'took', formLabel: 'past' },
+        { formText: 'takes', formLabel: 'present singular third-person' },
+      ],
+    })
+    expect(withForms.forms.map((f) => f.text)).toEqual(['takes', 'took', 'taken', 'taking'])
   })
 })

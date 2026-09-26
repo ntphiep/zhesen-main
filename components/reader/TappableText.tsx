@@ -13,13 +13,18 @@ import { loadSupabaseClient } from '@/lib/supabase/loadClient'
  * public (anon) client, and a failure degrades to plain text.
  */
 export function TappableText({
-  text, lang, resolved,
+  text, lang, resolved, quiet = false, mark = [],
 }: {
   text: string
   lang: LangCode
   /** Resolved on the server: with it the text renders on the first paint and no
    * request is made, without it the effect below resolves in the browser. */
   resolved?: ResolvedText
+  /** Ink with a faint underline instead of blue, for a sentence that is read first and
+   * tapped second, as under a dictionary sense. */
+  quiet?: boolean
+  /** Lower-case words set in bold: the headword and its forms in its own examples. */
+  mark?: string[]
 }) {
   // Tokenised up front, not left empty until the effect below answers: the words are on
   // screen from the first paint and only become tappable once the entries arrive. Starting
@@ -103,15 +108,18 @@ export function TappableText({
     <span className="leading-relaxed" ref={root}>
       {segments.map((seg, i) => {
         if (!seg.word) return <span key={i}>{seg.text}</span>
+        const bold = mark.includes(seg.text.toLowerCase()) ? 'font-semibold' : ''
         const entry = entries.get(seg.text.toLowerCase())
         const charInfo = !entry && lang === 'zh' ? chars.get(seg.text) : undefined
-        if (!entry && !charInfo) return <span key={i}>{seg.text}</span>
+        if (!entry && !charInfo) return <span key={i} className={bold || undefined}>{seg.text}</span>
         return (
           <span key={i} className="relative inline-block">
             <button
               type="button"
               onClick={() => setActive(active === i ? null : i)}
-              className="rounded text-blue-700 underline decoration-dotted underline-offset-2 hover:bg-blue-50"
+              className={`rounded underline decoration-dotted hover:bg-blue-50 ${bold} ${
+                quiet ? 'decoration-black/25 underline-offset-4 hover:text-blue-700' : 'text-blue-700 underline-offset-2'
+              }`}
             >
               {seg.text}
             </button>

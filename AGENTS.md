@@ -206,9 +206,15 @@ Verified to have no remaining callers before deletion on 2026-09-26:
 `components/lookup/ContainingWords.tsx`, `components/lookup/RelatedWords.tsx` and
 `components/lookup/RelatedTabs.tsx`. The word page draws every related word once, in the
 blocks of `components/lookup/WordParts.tsx` that its three layouts share (overview,
-side by side, columns; `components/lookup/WordLayouts.tsx`). `RELATION_SECTIONS` moved to
+side by side, classic; `components/lookup/WordLayouts.tsx`). `RELATION_SECTIONS` moved to
 `lib/dictionary/relations.ts`. The "Khái niệm" tab (WordNet broader, narrower and
 same-kind terms) is gone on purpose: take's 401 were unrelated verbs.
+
+Removed on 2026-09-27 at the owner's request, as redundant beside the other layouts:
+the columns layout (`components/lookup/ColumnsLayout.tsx`), which opened a related word
+as a column beside the page, with the `GET /dictionary/view` route and
+`lib/dictionary/wordViewResponse.ts` that fed it. A browser that still stores `columns`
+falls back to the overview.
 
 Verified to have no remaining callers before deletion on 2026-09-26:
 `components/grammar/GrammarLangList.tsx`. `/grammar` and `/learn` are blocks of

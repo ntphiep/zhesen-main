@@ -1,9 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { LookupView } from '@/components/lookup/LookupView'
-import { wordLayout } from '@/lib/dictionary/wordLayout'
-import { buildWordView } from '@/lib/dictionary/wordView'
+import { WORD_LAYOUT_BOOT_SCRIPT, wordLayout } from '@/lib/dictionary/wordLayout'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 
 vi.mock('@/lib/supabase/client', async () => {
@@ -26,10 +25,6 @@ const dog: DictEntryDetail = {
   attributes: {},
   senseLinks: [{ text: 'hound', senseOrder: 1, targetId: 'en:hound' }],
 }
-const hound: DictEntryDetail = {
-  ...dog, id: 'en:hound', headword: 'hound', glossVi: 'chó săn', relations: [], senseLinks: [],
-  senses: [{ pos: 'noun', glossVi: 'chó săn', glossEn: 'a hunting dog', senseOrder: 1, id: 'en:hound#1' }],
-}
 
 beforeEach(() => {
   localStorage.clear()
@@ -37,7 +32,6 @@ beforeEach(() => {
   delete document.documentElement.dataset.wordLayout
   window.history.replaceState(null, '', '/dictionary/en/dog')
 })
-afterEach(() => vi.unstubAllGlobals())
 
 describe('word page layouts', () => {
   it('opens in the overview, with the synonym under its sense', () => {
@@ -57,30 +51,29 @@ describe('word page layouts', () => {
     expect(document.documentElement.dataset.wordLayout).toBe('bilingual')
   })
 
-  it('opens a related word as a column beside the page and keeps it in the address', async () => {
-    const fetchMock = vi.fn(async () => Response.json(buildWordView({ detail: hound, characters: [], siblings: [] })))
-    vi.stubGlobal('fetch', fetchMock)
+  it('switches to the classic page, with the synonym under its sense', async () => {
     render(<LookupView detail={dog} characters={[]} siblings={[]} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Nhiều cột' }))
-    await userEvent.click(await screen.findByRole('link', { name: 'hound' }))
-
-    const pane = (await screen.findByRole('heading', { level: 2, name: 'hound' })).closest('article')
-    if (!pane) throw new Error('the opened word has no column')
-    expect(within(pane).getByText('chó săn', { selector: 'span' })).toBeInTheDocument()
-    expect(fetchMock).toHaveBeenCalledWith('/dictionary/view?id=en%3Ahound', expect.anything())
-    expect(window.location.hash).toBe('#open=en%3Ahound')
-
-    await userEvent.click(screen.getByRole('button', { name: 'Đóng cột' }))
-    expect(screen.queryByRole('heading', { level: 2, name: 'hound' })).toBeNull()
-    expect(window.location.hash).toBe('')
+    await userEvent.click(screen.getByRole('button', { name: 'Cổ điển' }))
+    expect(await screen.findByText('Đồng nghĩa')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'dog' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'hound' })).toHaveAttribute('href', '/dictionary/en/hound')
+    expect(localStorage.getItem('zhesen:word-layout')).toBe('classic')
   })
 
-  it('reopens a chain from the address once per word, without the page word', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json(buildWordView({ detail: hound, characters: [], siblings: [] }))))
+  it('falls back to the overview for a stored layout that no longer exists', () => {
     localStorage.setItem('zhesen:word-layout', 'columns')
-    window.history.replaceState(null, '', '/dictionary/en/dog#open=en%3Ahound,en%3Ahound,en%3Adog')
     render(<LookupView detail={dog} characters={[]} siblings={[]} />)
-    expect(await screen.findAllByRole('heading', { level: 2, name: 'hound' })).toHaveLength(1)
-    expect(screen.getAllByRole('heading', { level: 1, name: 'dog' })).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'Tổng quan' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('Nghĩa chính')).toBeInTheDocument()
+  })
+
+  it('marks the page before paint only for a layout that still exists', () => {
+    const cases: [string, string | undefined][] = [['classic', 'classic'], ['columns', undefined], ['overview', undefined]]
+    for (const [stored, marked] of cases) {
+      delete document.documentElement.dataset.wordLayout
+      localStorage.setItem('zhesen:word-layout', stored)
+      new Function(WORD_LAYOUT_BOOT_SCRIPT)()
+      expect(document.documentElement.dataset.wordLayout).toBe(marked)
+    }
   })
 })

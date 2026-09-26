@@ -13,13 +13,18 @@ import type { LangCode } from '@/lib/languages'
  * With `linkLang`, a class the theory pages document becomes a link to it. Only the word
  * page passes it: in a table every row would carry the same four links.
  */
-export function PosTag({ value, linkLang, className = '' }: {
+export function PosTag({ value, linkLang, full = false, className = '' }: {
   value: string | null | undefined
   linkLang?: LangCode
+  /** Spelled out in lower case ("danh từ, động từ"), for the word page's chips and rows. */
+  full?: boolean
   className?: string
 }) {
   const groups = posGroups(splitPos(value))
   if (groups.length === 0) return null
+  if (full) {
+    return <span className={className || undefined}>{groups.map((g) => g.labelVi.toLocaleLowerCase('vi')).join(', ')}</span>
+  }
   return (
     <span className={`inline-flex flex-wrap items-baseline gap-x-1 ${className}`.trim()}>
       {groups.map((g, i) => {

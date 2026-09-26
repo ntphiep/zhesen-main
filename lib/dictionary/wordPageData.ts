@@ -5,8 +5,8 @@ import { lemmaFromSenses } from './lemma'
 import { exampleCandidates, PREVIEWED_ITEMS, relatedTabs, senseSections } from './wordPage'
 import type { WordViewInput } from './wordView'
 
-/** Everything the word page reads for one entry, from the caches in `./cached`. The page
- *  and `GET /dictionary/view` both start here. Null when the entry does not exist. */
+/** Everything the word page reads for one entry, from the caches in `./cached`. Null when
+ *  the entry does not exist. */
 export async function loadWordPage(entryId: string): Promise<WordViewInput | null> {
   const detail = await getCachedEntryDetail(entryId)
   if (!detail) return null
