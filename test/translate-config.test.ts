@@ -16,24 +16,24 @@ afterEach(() => {
 })
 
 describe('azureTranslatorConfig', () => {
-  it('returns null without a key', () => {
-    expect(azureTranslatorConfig()).toBeNull()
+  it('returns null without a key', async () => {
+    expect(await azureTranslatorConfig()).toBeNull()
   })
 
-  it('fills in the default endpoint and region when only the key is set', () => {
+  it('fills in the default endpoint and region when only the key is set', async () => {
     process.env.AZURE_TRANSLATOR_KEY = 'secret'
-    expect(azureTranslatorConfig()).toEqual({
+    expect(await azureTranslatorConfig()).toEqual({
       key: 'secret',
       endpoint: 'https://api.cognitive.microsofttranslator.com',
       region: 'eastasia',
     })
   })
 
-  it('reads an explicit endpoint and region, trimming a trailing slash', () => {
+  it('reads an explicit endpoint and region, trimming a trailing slash', async () => {
     process.env.AZURE_TRANSLATOR_KEY = 'secret'
     process.env.AZURE_TRANSLATOR_REGION = 'westus'
     process.env.AZURE_TRANSLATOR_ENDPOINT = 'https://custom.example.com/'
-    expect(azureTranslatorConfig()).toEqual({
+    expect(await azureTranslatorConfig()).toEqual({
       key: 'secret',
       endpoint: 'https://custom.example.com',
       region: 'westus',

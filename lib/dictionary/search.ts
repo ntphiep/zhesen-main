@@ -124,7 +124,7 @@ async function searchTranslation(
 ): Promise<Partial<Record<LangCode, TranslatedHits>> | null> {
   const weak = langs.filter((l) => native[l].length < TRANSLATE_BELOW)
   if (weak.length === 0) return null
-  const cfg = azureTranslatorConfig()
+  const cfg = await azureTranslatorConfig()
   if (!cfg) return null
   try {
     const { translations } = await translateCached(cfg, q, 'vi', weak, AbortSignal.timeout(TRANSLATE_TIMEOUT_MS))

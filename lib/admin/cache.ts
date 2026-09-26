@@ -1,6 +1,7 @@
 import { revalidateTag } from 'next/cache'
 import { aiConfig } from '@/lib/ai/config'
 import { azureTranslatorConfig } from '@/lib/translate/config'
+import { runtimeEnv } from '@/lib/secrets'
 
 /** Every cached dictionary read carries this tag; see lib/dictionary/cached.ts. */
 export const LEX_TAG = 'lex'
@@ -17,10 +18,11 @@ export interface Integration {
 }
 
 /** Whether each outside service is configured, never its values. */
-export function integrations(): Integration[] {
+export async function integrations(): Promise<Integration[]> {
+  const [ai, azure, env] = await Promise.all([aiConfig(), azureTranslatorConfig(), runtimeEnv()])
   return [
-    { label: 'AI assistant', enabled: aiConfig() !== null },
-    { label: 'Azure AI Translator', enabled: azureTranslatorConfig() !== null },
-    { label: 'Revalidate secret', enabled: Boolean(process.env.REVALIDATE_SECRET) },
+    { label: 'AI assistant', enabled: ai !== null },
+    { label: 'Azure AI Translator', enabled: azure !== null },
+    { label: 'Revalidate secret', enabled: Boolean(env.REVALIDATE_SECRET) },
   ]
 }

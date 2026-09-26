@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Đoạn văn bản quá dài hoặc để trống.' }, { status: 400 })
   }
 
-  const cfg = azureTranslatorConfig()
+  const cfg = await azureTranslatorConfig()
   if (!cfg) return Response.json({ enabled: false })
 
   const { text, from, to } = parsed.data

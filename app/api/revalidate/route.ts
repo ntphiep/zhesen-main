@@ -1,4 +1,5 @@
 import { revalidateTag } from 'next/cache'
+import { runtimeEnv } from '@/lib/secrets'
 
 /**
  * Drops the cached dictionary reads so a pipeline load shows up immediately
@@ -23,7 +24,7 @@ function secretMatches(given: string | null, expected: string): boolean {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const secret = process.env.REVALIDATE_SECRET
+  const secret = (await runtimeEnv()).REVALIDATE_SECRET
   if (!secret) {
     return Response.json({ error: 'REVALIDATE_SECRET chưa được cấu hình' }, { status: 503 })
   }

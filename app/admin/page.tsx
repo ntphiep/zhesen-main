@@ -56,8 +56,8 @@ export default async function AdminPage() {
   const supabase = await createClient()
   await requireAdmin(supabase)
   const readAt = new Date()
-  const [{ m, ms }, audit, auth, aws, costs] = await Promise.all([
-    timedMetrics(supabase), listAudit(supabase, 5), probeAuth(), readAws(), cachedCosts().catch(() => null),
+  const [{ m, ms }, audit, auth, aws, costs, links] = await Promise.all([
+    timedMetrics(supabase), listAudit(supabase, 5), probeAuth(), readAws(), cachedCosts().catch(() => null), integrations(),
   ])
   const disk = aws.state === 'ok' ? aws.alarms.find((a) => a.metric === 'disk_used_percent')?.latest ?? null : null
   const cfg = awsHealthConfig()
@@ -72,7 +72,7 @@ export default async function AdminPage() {
     },
     database: { tone: 'ok', text: `${ms} ms`, version: m.postgres.version },
     ...awsLive(aws),
-    integrations: integrations(),
+    integrations: links,
     bucket: cfg ? `zhesen-db-backups-${cfg.accountId}` : null,
   }
 
