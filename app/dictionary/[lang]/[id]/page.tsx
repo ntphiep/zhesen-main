@@ -6,6 +6,7 @@ import { LookupView } from '@/components/lookup/LookupView'
 import { groupWordForms } from '@/lib/dictionary/family'
 import { pickExamples } from '@/lib/dictionary/textQuality'
 import { lemmaFromSenses } from '@/lib/dictionary/lemma'
+import { previewedRelationTexts } from '@/lib/dictionary/relations'
 import { getLanguage, isLangCode } from '@/lib/languages'
 import { percentDecode } from '@/lib/http/percentDecode'
 import type { Metadata } from 'next'
@@ -110,7 +111,7 @@ export default async function Page({ params }: { params: Params }) {
   // call turns them into rows a learner can read. It runs after the two lists are
   // known, and is cached on their contents.
   const terms = [
-    ...detail.relations.map((r) => r.relatedText ?? ''),
+    ...previewedRelationTexts(detail.relations),
     ...groupWordForms(inflections).map((f) => f.text),
     ...(lemma ? [lemma] : []),
   ]

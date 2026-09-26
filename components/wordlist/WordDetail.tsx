@@ -8,6 +8,7 @@ import type { DictEntryDetail } from '@/lib/dictionary/types'
 import type { UserWord } from '@/lib/wordlist/types'
 import { Ipa } from '@/components/ui/Ipa'
 import { PosTag } from '@/components/ui/PosTag'
+import { RELATION_CAP } from '@/lib/dictionary/relations'
 
 type DetailState =
   | { status: 'loading' }
@@ -133,7 +134,7 @@ export function WordDetail({ word }: { word: UserWord }) {
           {Object.entries(relationGroups).map(([type, words]) => (
             <div key={type} className="flex gap-2 items-baseline flex-wrap">
               <span className="text-xs font-medium text-black/40 uppercase">{type}</span>
-              {words.map((w, i) => (
+              {words.slice(0, RELATION_CAP).map((w, i) => (
                 <span key={i} className="text-black/70">{w}</span>
               ))}
             </div>

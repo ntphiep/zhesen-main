@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { pickSenses, isCleanExample, isClassifierGloss, parseClassifiers, fillPivotVi, cleanMtGloss, cleanGlossVi, isSentenceTranslation, hasUnknownLongWord, entryMeaningVi } from '@/lib/dictionary/textQuality'
 import { tokenize } from '@/lib/reader/tokenize'
-import { classifyRelations } from '@/lib/dictionary/relations'
+import { classifyRelations, previewedRelationTexts, RELATION_CAP } from '@/lib/dictionary/relations'
 import { groupWordForms } from '@/lib/dictionary/family'
 import type { DictSense, DictRelation } from '@/lib/dictionary/types'
 
@@ -246,5 +246,26 @@ describe('entryMeaningVi', () => {
 
   it('is null when the entry genuinely has no Vietnamese meaning', () => {
     expect(entryMeaningVi({ glossVi: null, senses: [sense()] })).toBeNull()
+  })
+})
+
+describe('WordNet relations', () => {
+  it('puts hypernyms, hyponyms and coordinate terms in their own sections', () => {
+    const c = classifyRelations([
+      { relationType: 'hypernym', relatedText: 'animal', relatedEntryId: 'en:animal' },
+      { relationType: 'holonym', relatedText: 'Felidae', relatedEntryId: null },
+      { relationType: 'hyponym', relatedText: 'kitten', relatedEntryId: 'en:kitten' },
+      { relationType: 'meronym', relatedText: 'whisker', relatedEntryId: null },
+      { relationType: 'coordinate', relatedText: 'dog', relatedEntryId: 'en:dog' },
+    ])
+    expect(c.broader).toEqual(['animal', 'Felidae'])
+    expect(c.narrower).toEqual(['kitten', 'whisker'])
+    expect(c.sameKind).toEqual(['dog'])
+    expect(c.derived).toEqual([])
+  })
+  it('previews only the words shown before expanding', () => {
+    const rels: DictRelation[] = Array.from({ length: 20 }, (_, i) => (
+      { relationType: 'synonym', relatedText: `w${i}`, relatedEntryId: null }))
+    expect(previewedRelationTexts(rels)).toHaveLength(RELATION_CAP)
   })
 })

@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { searchPath } from '@/lib/dictionary/entryId'
-import { classifyRelations, type ClassifiedRelations } from '@/lib/dictionary/relations'
+import { classifyRelations, RELATION_CAP, type ClassifiedRelations } from '@/lib/dictionary/relations'
 import { PosTag } from '@/components/ui/PosTag'
 import type { DictRelation, TermPreview } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
@@ -15,11 +15,14 @@ const SECTIONS: { key: keyof ClassifiedRelations; label: string; hint: string }[
   // Wiktionary's "Related terms" share an etymological root and are not idioms:
   // "holy" lists halibut, halidom, hallow and holiday.
   { key: 'related', label: 'Cùng gốc từ', hint: 'Chung nguồn gốc, nghĩa có thể đã khác' },
+  { key: 'broader', label: 'Khái niệm rộng hơn', hint: 'Loại lớn hơn hoặc tổng thể chứa nó' },
+  { key: 'narrower', label: 'Khái niệm hẹp hơn', hint: 'Loại cụ thể hơn hoặc bộ phận của nó' },
+  { key: 'sameKind', label: 'Cùng nhóm', hint: 'Cùng loại hoặc gần nghĩa' },
 ]
 
-// Some entries (Spanish verbs especially) carry dozens of idioms; cap each group
-// so the page stays scannable, with a toggle to reveal the rest.
-const CAP = 8
+// Some entries carry hundreds of related words; cap each group so the page stays
+// scannable, with a toggle to reveal the rest.
+const CAP = RELATION_CAP
 
 function Row({ text, preview, lang }: { text: string; preview?: TermPreview; lang: LangCode }) {
   return (
