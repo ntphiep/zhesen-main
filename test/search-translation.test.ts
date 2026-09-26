@@ -32,14 +32,15 @@ beforeEach(() => {
 })
 
 describe('searchOneDirection, Vietnamese fallback through a translation', () => {
-  it('searches a thin language for the translation and keeps only new structural hits', async () => {
+  it('searches a thin language for the translation and keeps only new word-level hits', async () => {
     translateCached.mockResolvedValue({ from: 'vi', translations: { en: 'Attendees' } })
     const { client: c, rpc } = client(
       [row('en:participant', 'participant', 3.85), row('en:participator', 'participator', 3.85)],
       { attendees: [
         row('en:attendees', 'attendees', 4.0),
         row('en:attendee', 'attendee', 3.5),
-        row('en:participant', 'participant', 3.2),
+        row('en:participant', 'participant', 4.0),
+        row('en:attendeeship', 'attendeeship', 3.0),
         row('en:attention', 'attention', 1.8),
       ] },
     )

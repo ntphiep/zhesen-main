@@ -4,7 +4,7 @@ import type { DictEntryPreview, SuggestionPreview } from './types'
 import { entryPreviewRow, searchRpcRow, suggestRow, toPreview, toPreviewFromSearchRow, toSuggestion } from './rows'
 import { azureTranslatorConfig } from '@/lib/translate/config'
 import { translateCached } from '@/lib/translate/azure'
-import { isStructuralMatch } from './detect'
+import { isStructuralMatch, isWordMatch } from './detect'
 
 /**
  * Preview-list queries: `lex.search` (supabase/migrations/0016_search.sql), the Vietnamese
@@ -132,9 +132,8 @@ async function searchTranslation(
       const text = translations[l]?.trim().replace(/[.。]$/, '')
       if (!text) return null
       const seen = new Set(native[l].map((e) => e.id))
-      // Structural matches only: a trigram guess for a translation is a guess of a guess.
       const hits = (await searchEntries(supabase, l, text.toLowerCase(), perLang))
-        .filter((e) => isStructuralMatch(e) && !seen.has(e.id))
+        .filter((e) => isWordMatch(e) && !seen.has(e.id))
         .slice(0, perLang - native[l].length)
       return hits.length > 0 ? [l, { text, entries: hits }] as const : null
     }))

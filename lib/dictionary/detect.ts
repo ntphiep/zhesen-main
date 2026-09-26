@@ -36,3 +36,10 @@ const STRUCTURAL_FLOOR = 2.95
 export function isStructuralMatch(e: DictEntryPreview): boolean {
   return (e.matchScore ?? 0) >= STRUCTURAL_FLOOR
 }
+
+/** The query itself or a form of it: exact headword 4.0, inflection or exact pinyin 3.5.
+ *  Leaves out the 3.0 prefix tier, which answered "Chicken" with chickenshit and "Cursor"
+ *  with cursorialism. */
+export function isWordMatch(e: DictEntryPreview): boolean {
+  return (e.matchScore ?? 0) >= 3.45
+}

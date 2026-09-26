@@ -10,7 +10,7 @@ import { TappableText } from '@/components/reader/TappableText'
 import { fetchTextLookup, type TextLookup } from '@/lib/dictionary/textLookup'
 import { fetchTranslation } from '@/lib/translate/client'
 import { fetchSearch } from '@/lib/dictionary/searchClient'
-import { isStructuralMatch } from '@/lib/dictionary/detect'
+import { isWordMatch } from '@/lib/dictionary/detect'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { TranslateLangCode } from '@/lib/translate/azure'
 import type { Direction } from '@/lib/dictionary/search'
@@ -133,7 +133,7 @@ export function PassageBlock({ text, direction, targets }: {
     const ctrl = new AbortController()
     Promise.all(asks.map(async ([l, text]) => {
       const outcome = await fetchSearch(text, ctrl.signal, { langs: [l] })
-      const entries = outcome.status === 'ok' ? outcome.data.entries[l].filter(isStructuralMatch) : []
+      const entries = outcome.status === 'ok' ? outcome.data.entries[l].filter(isWordMatch) : []
       return [l, { text: state.translations[l] ?? '', entries }] as const
     }))
       .then((pairs) => setFound(Object.fromEntries(pairs)))
