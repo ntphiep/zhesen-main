@@ -2,7 +2,7 @@
 import { Fragment } from 'react'
 import { PosTag } from '@/components/ui/PosTag'
 import { Ipa } from '@/components/ui/Ipa'
-import { AudioButton } from '@/components/ui/AudioButton'
+import { AudioButton, SourceLink } from '@/components/ui/AudioButton'
 import { TagChips, WordRowActions } from '@/components/wordlist/WordRowActions'
 import { WordDetail } from '@/components/wordlist/WordDetail'
 import { formatWordDate, isDueAt, DUE_LABEL } from '@/lib/wordlist/format'
@@ -184,6 +184,12 @@ function Cell({ word: w, column }: { word: UserWord; column: ColumnKey }) {
         </span>
       )
     case 'fsrsLapses': return <span className="text-black/50">{w.fsrsLapses}</span>
-    case 'audio': return <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
+    case 'audio':
+      return (
+        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+          <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
+          <SourceLink url={w.audioUrl} />
+        </span>
+      )
   }
 }

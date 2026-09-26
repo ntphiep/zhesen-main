@@ -21,7 +21,7 @@ import { EditWordDialog } from '@/components/wordlist/EditWordDialog'
 import { ImportCsvDialog } from '@/components/wordlist/ImportCsvDialog'
 import { WordDetail } from '@/components/wordlist/WordDetail'
 import { TagChips, WordRowActions } from '@/components/wordlist/WordRowActions'
-import { AudioButton } from '@/components/ui/AudioButton'
+import { AudioButton, SourceLink } from '@/components/ui/AudioButton'
 import type { UserWord, WordDraft, WordStatus } from '@/lib/wordlist/types'
 import { Ipa } from '@/components/ui/Ipa'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -362,7 +362,10 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                   <span className="font-semibold">{w.headword}</span>
                   <Ipa value={w.ipa} lang={w.lang} className="text-xs text-black/50" />
                 </div>
-                <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
+                <span className="inline-flex items-center gap-1">
+                  <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
+                  <SourceLink url={w.audioUrl} />
+                </span>
               </div>
 
               <PosTag value={w.pos} className="text-xs text-black/55" />

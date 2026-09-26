@@ -1,5 +1,5 @@
-import { AudioButton } from '@/components/ui/AudioButton'
-import { commonsFilePage, pickAccentRows } from '@/lib/dictionary/pronunciation'
+import { AudioButton, SourceLink } from '@/components/ui/AudioButton'
+import { pickAccentRows } from '@/lib/dictionary/pronunciation'
 import { IpaLinked } from '@/components/theory/IpaLinked'
 import type { DictPron } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
@@ -24,21 +24,5 @@ export function Pronunciation({ headword, prons, lang }: { headword: string; pro
         </span>
       ))}
     </div>
-  )
-}
-
-function SourceLink({ url }: { url: string | null }) {
-  const page = commonsFilePage(url)
-  if (!page) return null
-  return (
-    <a
-      href={page}
-      target="_blank"
-      rel="noopener noreferrer"
-      title="Tác giả và giấy phép của bản ghi"
-      className="text-[0.7rem] text-black/35 hover:underline"
-    >
-      nguồn
-    </a>
   )
 }

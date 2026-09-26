@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listPracticeWords } from '@/lib/wordlist/store'
-import { AudioButton } from '@/components/ui/AudioButton'
+import { AudioButton, SourceLink } from '@/components/ui/AudioButton'
 import { checkTypedAnswer, type TypedResult } from '@/lib/practice/typing'
 import { shuffle } from '@/lib/practice/shuffle'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
@@ -154,6 +154,7 @@ export function SpeakSession() {
         <div className="flex items-center justify-center gap-2">
           <span className="text-3xl font-semibold">{current.headword}</span>
           <AudioButton text={current.headword} lang={current.lang} audioUrl={current.audioUrl} />
+          <SourceLink url={current.audioUrl} />
         </div>
         {current.meaningVi && <div className="mt-1 text-black/50">{current.meaningVi}</div>}
         <p className="mt-2 text-sm text-black/40">Nghe mẫu rồi đọc lại</p>

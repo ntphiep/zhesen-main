@@ -1,5 +1,5 @@
 'use client'
-import { AudioButton } from '@/components/ui/AudioButton'
+import { AudioButton, SourceLink } from '@/components/ui/AudioButton'
 import type { ReviewCard } from '@/lib/wordlist/review'
 import type { Grade } from '@/lib/progress/types'
 import { Ipa } from '@/components/ui/Ipa'
@@ -26,6 +26,7 @@ export function WordReviewCard({
       <div className="flex items-center justify-center gap-2">
         <span className="text-4xl font-semibold">{card.headword}</span>
         <AudioButton text={card.headword} lang={card.lang} audioUrl={card.audioUrl} />
+        <SourceLink url={card.audioUrl} />
       </div>
       {card.reading && <div className="mt-1 text-black/50">{card.reading}</div>}
       <Ipa value={card.ipa} lang={card.lang} className="mt-1 block text-black/40" />

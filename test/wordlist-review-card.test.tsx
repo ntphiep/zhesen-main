@@ -27,4 +27,12 @@ describe('WordReviewCard', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Tốt' }))
     expect(onGrade).toHaveBeenCalledWith('good')
   })
+
+  it('links a Commons recording to its file page and a card without one to nothing', () => {
+    const { rerender } = render(<WordReviewCard card={card} revealed={false} onReveal={() => {}} onGrade={() => {}} />)
+    expect(screen.queryByRole('link', { name: 'nguồn' })).not.toBeInTheDocument()
+    const recorded = { ...card, audioUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/En-us-dog.ogg' }
+    rerender(<WordReviewCard card={recorded} revealed={false} onReveal={() => {}} onGrade={() => {}} />)
+    expect(screen.getByRole('link', { name: 'nguồn' })).toHaveAttribute('href', 'https://commons.wikimedia.org/wiki/File:En-us-dog.ogg')
+  })
 })

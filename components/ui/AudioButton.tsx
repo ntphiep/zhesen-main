@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { speechLang, type LangCode } from '@/lib/languages'
+import { commonsFilePage } from '@/lib/dictionary/pronunciation'
 
 // Chrome/Edge return [] from getVoices() until the async 'voiceschanged' fires, so
 // the first speak() of a session plays nothing. Resolve the list once and reuse it.
@@ -133,5 +134,23 @@ export function AudioButton({
         ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-black/20 border-t-black/60" />
         : (noVoice ? '🔇' : '🔊')}
     </button>
+  )
+}
+
+/** Link to a recording's Wikimedia Commons file page, which names the author and licence
+ *  that CC BY-SA 4.0 section 3(a)(2) lets a link carry. Nothing for TTS or another host. */
+export function SourceLink({ url }: { url: string | null }) {
+  const page = commonsFilePage(url)
+  if (!page) return null
+  return (
+    <a
+      href={page}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Tác giả và giấy phép của bản ghi"
+      className="text-[0.7rem] text-black/35 hover:underline"
+    >
+      nguồn
+    </a>
   )
 }
