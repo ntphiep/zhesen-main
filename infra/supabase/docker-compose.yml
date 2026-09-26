@@ -259,6 +259,9 @@ services:
     restart: unless-stopped
     # No memory limit: Postgres sizes its own caches from the settings below and
     # a cgroup ceiling under them means the OOM killer, not a slower query.
+    # Docker's 64 MB /dev/shm failed a parallel hash join over lex.senses with
+    # "could not resize shared memory segment ... No space left on device".
+    shm_size: 256m
     volumes:
       - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
       # Must be superuser to create event trigger
@@ -352,6 +355,25 @@ services:
       - /:/hostfs:ro
     environment:
       SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+
+  # Not upstream: 9router, the model router behind the assistant (lib/ai/). Envoy serves
+  # its /v1/ API at /ai/v1/, where 9router checks its own API key. The dashboard is bound
+  # to the host's loopback only: bin/router-tunnel.ps1. Its data, provider logins
+  # included, lives outside this folder so the sync's --delete never reaches it.
+  ai-router:
+    container_name: zhesen-9router
+    image: decolua/9router:0.5.91
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    ports:
+      - "127.0.0.1:20128:20128"
+    volumes:
+      - /opt/zhesen/9router:/app/data
+    environment:
+      DATA_DIR: /app/data
 
 volumes:
   db-config:

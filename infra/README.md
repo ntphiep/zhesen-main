@@ -95,7 +95,7 @@ upstream's `utils/upgrade-pg17.sh` is the pattern for that.
 ## Operating it
 
 Shell: `aws ssm start-session --region ap-northeast-2 --target <instance_id>`, then
-`sudo -i`. Compose lives in `/opt/zhesen/supabase`; `docker ps` shows seven containers.
+`sudo -i`. Compose lives in `/opt/zhesen/supabase`; `docker ps` shows eight containers.
 
 Metrics: `zhesen-sampler` writes host and container counters to `admin.host_samples` every
 5 s and keeps one hour. `/admin/infra` reads them through PostgREST and falls back to one SSM
@@ -104,6 +104,12 @@ per failed sample.
 
 Studio: `pwsh infra/supabase/bin/studio-tunnel.ps1`, then `http://localhost:8000`, user
 `zhesen`, password in SSM `/zhesen/prod/dashboard_password`.
+
+9router: the assistant's model router, container `zhesen-9router`. The app calls
+`https://<cloudfront>/ai/v1/` with a 9router API key held in SSM `/zhesen/prod/ai_api_key`.
+Dashboard: `pwsh infra/supabase/bin/router-tunnel.ps1`, then
+`http://localhost:20128/dashboard`. Provider logins and keys live in
+`/opt/zhesen/9router/db/data.sqlite`, which the nightly dump does not cover.
 
 Backup: `bin/backup.sh` at 03:30 UTC writes `pg_dump -Fc` plus `pg_dumpall --globals-only`
 to `s3://zhesen-db-backups-<account>/postgres/`, kept 30 days; a failure posts to SNS.

@@ -55,18 +55,19 @@ resource "aws_vpc_security_group_ingress_rule" "cloudfront_http" {
 }
 
 # Studio, the Envoy admin port and the unused Realtime, Storage and Functions
-# prefixes are all reachable from the origin. The edge answers only the two
-# prefixes the app uses, so nothing else is exposed to the internet.
+# prefixes are all reachable from the origin. The edge answers only the three
+# prefixes the app uses, so nothing else is exposed to the internet. /ai/v1/ is
+# 9router's API, which checks its own key.
 resource "aws_cloudfront_function" "api_paths" {
   name    = "${var.name_prefix}-api-paths"
   runtime = "cloudfront-js-2.0"
   publish = true
-  comment = "Allow only /auth/v1/ and /rest/v1/"
+  comment = "Allow only /auth/v1/, /rest/v1/ and /ai/v1/"
 
   code = <<-JS
     function handler(event) {
       var uri = event.request.uri;
-      if (uri.startsWith('/auth/v1/') || uri.startsWith('/rest/v1/')) {
+      if (uri.startsWith('/auth/v1/') || uri.startsWith('/rest/v1/') || uri.startsWith('/ai/v1/')) {
         return event.request;
       }
       return {

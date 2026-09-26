@@ -128,6 +128,17 @@ data "aws_iam_policy_document" "operate" {
     actions   = ["ssm:DescribeParameters"]
     resources = ["*"]
   }
+
+  # /admin/secrets reads and replaces every parameter under the prefix, and the app reads
+  # its own keys (Azure, 9router) from it at runtime. The owner chose full read and write.
+  statement {
+    sid     = "ManageSecrets"
+    actions = ["ssm:GetParameter", "ssm:GetParameters", "ssm:GetParametersByPath", "ssm:PutParameter"]
+    resources = [
+      "arn:aws:ssm:${var.region}:${var.account_id}:parameter${var.ssm_prefix}",
+      "arn:aws:ssm:${var.region}:${var.account_id}:parameter${var.ssm_prefix}/*",
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "operate" {

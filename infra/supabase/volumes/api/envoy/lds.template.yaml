@@ -258,6 +258,35 @@ resources:
                                     principals:
                                       - any: true
 
+                      # Not upstream: 9router's OpenAI and Anthropic compatible API. No
+                      # apikey here: 9router checks its own key in Authorization. A coding
+                      # tool streams for minutes, so only silence ends a request.
+                      - name: ai-v1-all
+                        match:
+                          prefix: /ai/v1/
+                        route:
+                          cluster: ai-router
+                          prefix_rewrite: /v1/
+                          timeout: 0s
+                          idle_timeout: 120s
+                        typed_per_filter_config:
+                          envoy.filters.http.basic_auth:
+                            '@type': >-
+                              type.googleapis.com/envoy.config.route.v3.FilterConfig
+                            disabled: true
+                          envoy.filters.http.rbac:
+                            '@type': >-
+                              type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBACPerRoute
+                            rbac:
+                              rules:
+                                action: ALLOW
+                                policies:
+                                  allow_all:
+                                    permissions:
+                                      - any: true
+                                    principals:
+                                      - any: true
+
                       - name: functions-v1-all
                         match:
                           prefix: /functions/v1/
