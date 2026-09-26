@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { audioAccent, audioMatchesHeadword, formatPronunciation, pickAccentRows } from '@/lib/dictionary/pronunciation'
+import { audioAccent, audioMatchesHeadword, commonsFilePage, formatPronunciation, pickAccentRows } from '@/lib/dictionary/pronunciation'
 import type { DictPron } from '@/lib/dictionary/types'
 
 const p = (accent: string, ipa: string | null, audioUrl: string | null = null): DictPron => ({ accent, ipa, audioUrl })
@@ -152,5 +152,35 @@ describe('formatPronunciation', () => {
   it('trims incidental whitespace before deciding', () => {
     expect(formatPronunciation('  /ˈkasa/  ', 'es')).toBe('/ˈkasa/')
     expect(formatPronunciation('  keɪs  ', 'en')).toBe('/keɪs/')
+  })
+})
+
+const LL = 'https://upload.wikimedia.org/wikipedia/commons/transcoded/8/82/LL-Q1860_%28eng%29-Naomi_%28NaomiAmethyst%29-cat.wav/LL-Q1860_%28eng%29-Naomi_%28NaomiAmethyst%29-cat.wav.ogg'
+
+describe('Lingua Libre and other-accent recordings', () => {
+  it('matches a transcoded recording by the word before both extensions', () => {
+    expect(audioMatchesHeadword(LL, 'cat')).toBe(true)
+  })
+  it('takes the accent from the accent column when the filename names none', () => {
+    const rows = pickAccentRows([p('en-UK', 'kat'), p('en-US', 'kæt', LL)], 'en', 'cat')
+    expect(rows.find((r) => r.label === 'US')!.audioUrl).toBe(LL)
+    expect(rows.find((r) => r.label === 'UK')!.audioUrl).toBeNull()
+  })
+  it('offers an Australian recording under its own label when UK and US have none', () => {
+    const au = `${COMMONS}En-au-cat.ogg`
+    const rows = pickAccentRows([p('en-UK', 'kat'), p('en-US', 'kæt'), p('en-AU', 'kæt', au)], 'en', 'cat')
+    expect(rows.map((r) => r.label)).toEqual(['UK', 'US', 'AU'])
+    expect(rows[2].audioUrl).toBe(au)
+  })
+})
+
+describe('commonsFilePage', () => {
+  it('links an original and a transcoded file to the same file page', () => {
+    expect(commonsFilePage(`${COMMONS}En-us-cat.ogg`)).toBe('https://commons.wikimedia.org/wiki/File:En-us-cat.ogg')
+    expect(commonsFilePage(LL)).toBe('https://commons.wikimedia.org/wiki/File:LL-Q1860_%28eng%29-Naomi_%28NaomiAmethyst%29-cat.wav')
+  })
+  it('returns null for anything that is not a Commons upload', () => {
+    expect(commonsFilePage(null)).toBeNull()
+    expect(commonsFilePage('https://example.com/cat.ogg')).toBeNull()
   })
 })

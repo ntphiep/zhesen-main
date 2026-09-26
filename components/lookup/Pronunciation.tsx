@@ -1,5 +1,5 @@
 import { AudioButton } from '@/components/ui/AudioButton'
-import { pickAccentRows } from '@/lib/dictionary/pronunciation'
+import { commonsFilePage, pickAccentRows } from '@/lib/dictionary/pronunciation'
 import { IpaLinked } from '@/components/theory/IpaLinked'
 import type { DictPron } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
@@ -8,7 +8,8 @@ import type { LangCode } from '@/lib/languages'
  * Cambridge-style pronunciation block: a UK and a US row for English (each with
  * its own IPA and audio), a single row otherwise. Each row's audio button plays
  * the accent's recording when present, else falls back to TTS in that accent.
- * Every symbol links to its own sound on the pronunciation page.
+ * Every symbol links to its own sound on the pronunciation page. A Commons recording
+ * links to its file page, which carries the attribution its licence requires.
  */
 export function Pronunciation({ headword, prons, lang }: { headword: string; prons: DictPron[]; lang: LangCode }) {
   const rows = pickAccentRows(prons, lang, headword)
@@ -19,8 +20,25 @@ export function Pronunciation({ headword, prons, lang }: { headword: string; pro
           {r.label && <span className="text-xs font-semibold uppercase tracking-wide text-black/40">{r.label}</span>}
           <IpaLinked value={r.ipa} lang={lang} className="text-[0.95rem] text-black/60" />
           <AudioButton text={headword} lang={lang} audioUrl={r.audioUrl} accent={r.ttsLang} />
+          <SourceLink url={r.audioUrl} />
         </span>
       ))}
     </div>
+  )
+}
+
+function SourceLink({ url }: { url: string | null }) {
+  const page = commonsFilePage(url)
+  if (!page) return null
+  return (
+    <a
+      href={page}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Tác giả và giấy phép của bản ghi"
+      className="text-[0.7rem] text-black/35 hover:underline"
+    >
+      nguồn
+    </a>
   )
 }
