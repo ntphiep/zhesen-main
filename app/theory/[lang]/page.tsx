@@ -53,6 +53,7 @@ export default async function TheoryLangPage({ params }: { params: Promise<{ lan
     counts['word-class'] = `${content.wordClasses.length} loại`
     counts.sentence = `${content.sentenceTopics.length} chủ đề`
     counts.collocation = `${content.collocationPatterns.length} dạng kết hợp`
+    counts.toeic = `${content.toeic.parts.length} part, ${content.toeic.practice.length} câu luyện`
   }
 
   return <TheoryHub language={language} blocks={BLOCKS_BY_LANG[language.code]} counts={counts} />

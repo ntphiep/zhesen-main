@@ -121,3 +121,60 @@ describe('collocation', () => {
     }
   })
 })
+
+describe('toeic', () => {
+  const t = en.toeic
+
+  it('lists the seven parts in test order, 100 questions per section', () => {
+    expect(t.parts.map((p) => p.number)).toEqual([1, 2, 3, 4, 5, 6, 7])
+    const count = (s: string) => t.parts.filter((p) => p.section === s).reduce((n, p) => n + p.questions, 0)
+    expect(count('listening')).toBe(100)
+    expect(count('reading')).toBe(100)
+  })
+
+  it('gives every part its tips and traps', () => {
+    for (const p of t.parts) {
+      expect(p.tips.length).toBeGreaterThan(0)
+      expect(p.traps.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('holds one Part 5 set, as long as the part itself, as the copy promises', () => {
+    expect(t.practice.length).toBe(t.parts.find((p) => p.number === 5)?.questions)
+  })
+
+  it('prints one gap and four distinct options per practice item', () => {
+    const ids = t.practice.map((q) => q.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const q of t.practice) {
+      expect(q.sentence.split('-------').length).toBe(2)
+      expect(new Set(q.options).size).toBe(4)
+      expect(q.answer).toBeGreaterThanOrEqual(0)
+      expect(q.answer).toBeLessThan(4)
+      expect(q.whyVi.length).toBeGreaterThan(0)
+      expect(q.vi.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('lists each word once, so each links to one entry', () => {
+    const words = t.wordTopics.flatMap((topic) => topic.words.map((w) => w.word))
+    expect(new Set(words).size).toBe(words.length)
+    for (const topic of t.wordTopics) for (const w of topic.words) expect(w.vi.length).toBeGreaterThan(0)
+  })
+
+  it('keys each grammar link the way lex.grammar_points does', () => {
+    for (const g of t.grammar) if (g.grammarKey) expect(g.grammarKey).toMatch(/^(a1|a2|b1|b2|c1|c2):[a-z0-9-]+$/)
+  })
+
+  it('has a unique anchor per note and never reuses a fixed section anchor', () => {
+    const ids = [t.scoring.id, ...t.notes.map((n) => n.id)]
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const fixed of ['format', 'listening', 'reading', 'grammar', 'paraphrase', 'words', 'practice', 'links']) {
+      expect(ids).not.toContain(fixed)
+    }
+  })
+
+  it('links only to https pages', () => {
+    for (const l of t.links) expect(l.url).toMatch(/^https:\/\//)
+  })
+})

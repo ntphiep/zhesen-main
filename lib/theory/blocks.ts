@@ -2,13 +2,15 @@ import { byLang, type LangCode } from '@/lib/languages'
 
 /** The blocks a language's theory hub can hold, in the order a learner meets them:
  *  sounds, then words, then sentences, then the rules, then how words pair up, then the
- *  vocabulary itself. The key is also the URL segment. */
+ *  exam that tests all of them, then the vocabulary itself. The key is also the URL
+ *  segment. */
 export type TheoryBlockKey =
   | 'pronunciation'
   | 'word-class'
   | 'sentence'
   | 'grammar'
   | 'collocation'
+  | 'toeic'
   | 'vocabulary'
 
 export interface TheoryBlock {
@@ -44,6 +46,11 @@ export const THEORY_BLOCKS: readonly TheoryBlock[] = [
     blurbVi: 'Những từ quen đi với nhau. Đúng ngữ pháp mà sai collocation thì vẫn lạ tai.',
   },
   {
+    key: 'toeic',
+    titleVi: 'Luyện thi TOEIC',
+    blurbVi: 'Cấu trúc đề, mẹo và bẫy từng part, từ vựng theo chủ đề, 30 câu luyện Part 5 và quy định ngày thi.',
+  },
+  {
     key: 'vocabulary',
     titleVi: 'Từ vựng',
     blurbVi: 'Từ thông dụng và danh sách từ theo từng trình độ, mở thẳng sang sổ tay.',
@@ -51,9 +58,9 @@ export const THEORY_BLOCKS: readonly TheoryBlock[] = [
 ]
 
 /** Grammar and vocabulary read the dictionary, so all three languages have them. The
- *  other four are written by hand and English is the only one written so far. */
+ *  others are written by hand and English is the only one written so far. */
 const WRITTEN: Partial<Record<LangCode, TheoryBlockKey[]>> = {
-  en: ['pronunciation', 'word-class', 'sentence', 'collocation'],
+  en: ['pronunciation', 'word-class', 'sentence', 'collocation', 'toeic'],
 }
 
 const FROM_DICTIONARY: TheoryBlockKey[] = ['grammar', 'vocabulary']

@@ -18,6 +18,7 @@ describe('theory paths', () => {
   it('builds a block path from its key', () => {
     expect(theoryBlockPath('en', 'word-class')).toBe('/theory/en/word-class')
     expect(theoryBlockPath('zh', 'vocabulary')).toBe('/theory/zh/vocabulary')
+    expect(theoryBlockPath('en', 'toeic')).toBe('/theory/en/toeic')
   })
 
   it('escapes a level that is not URL safe', () => {
@@ -51,5 +52,7 @@ describe('blocks by language', () => {
   it('answers hasBlock per language', () => {
     expect(hasBlock('en', 'collocation')).toBe(true)
     expect(hasBlock('zh', 'collocation')).toBe(false)
+    expect(hasBlock('en', 'toeic')).toBe(true)
+    expect(hasBlock('es', 'toeic')).toBe(false)
   })
 })

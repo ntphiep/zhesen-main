@@ -121,3 +121,100 @@ export interface CollocationSet {
   noteVi: string
   items: Example[]
 }
+
+export type ToeicSection = 'listening' | 'reading'
+
+/** A strategy or a trap inside one part, with the sentence that shows it when there is one. */
+export interface ToeicTip {
+  titleVi: string
+  bodyVi: string
+  example: Example | null
+}
+
+/** One of the seven parts of the Listening and Reading test. */
+export interface ToeicPart {
+  number: number
+  section: ToeicSection
+  /** The name ETS prints in the test book, e.g. `Photographs`. */
+  nameEn: string
+  titleVi: string
+  questions: number
+  /** What the test taker sees and hears, in one or two sentences. */
+  formatVi: string
+  tips: ToeicTip[]
+  traps: ToeicTip[]
+}
+
+/** The lowest section scores ETS maps to a CEFR level. */
+export interface ToeicCefrRow {
+  level: string
+  listening: number
+  reading: number
+}
+
+/** A heading and the points under it: the score, the time budget, the plan, the day. */
+export interface ToeicNote {
+  id: string
+  titleVi: string
+  introVi: string
+  points: string[]
+}
+
+/** A grammar point Part 5 and Part 6 test again and again. */
+export interface ToeicGrammarItem {
+  titleVi: string
+  explainVi: string
+  formula: string | null
+  example: Example
+  /** A key in `lex.grammar_points` without the `en:` prefix, for the full lesson. */
+  grammarKey: string | null
+}
+
+/** What the audio or the passage says, and the reworded form the right option uses. */
+export interface ToeicParaphrase {
+  heard: string
+  answer: string
+  vi: string
+}
+
+/** Words of one workplace topic. Each `word` is a headword of the English dictionary,
+ *  so it links to its entry, and `vi` is the sense the test uses. */
+export interface ToeicWordTopic {
+  id: string
+  titleVi: string
+  words: { word: string; vi: string }[]
+}
+
+export interface ToeicLink {
+  titleVi: string
+  url: string
+  noteVi: string
+}
+
+/** A Part 5 item: one sentence, one gap, four options, as the test book prints it. */
+export interface ToeicQuestion {
+  id: string
+  /** The sentence with its gap written `-------`. */
+  sentence: string
+  options: readonly [string, string, string, string]
+  /** Index into `options`. */
+  answer: number
+  /** What the item tests, in two or three words. */
+  skillVi: string
+  whyVi: string
+  /** The sentence with the answer in place, translated. */
+  vi: string
+}
+
+export interface ToeicGuide {
+  parts: readonly ToeicPart[]
+  scoring: ToeicNote
+  cefr: readonly ToeicCefrRow[]
+  /** Rendered in order after the practice: time, plan, the last week, the day itself. */
+  notes: readonly ToeicNote[]
+  grammar: readonly ToeicGrammarItem[]
+  paraphrases: readonly ToeicParaphrase[]
+  wordTopics: readonly ToeicWordTopic[]
+  practice: readonly ToeicQuestion[]
+  links: readonly ToeicLink[]
+}
