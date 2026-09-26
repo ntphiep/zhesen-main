@@ -7,7 +7,7 @@ import {
   LOG_SERVICES, parseContainersResponse, type ContainerState, type ContainersResponse, type SeriesPoint,
 } from '@/lib/admin/monitor'
 import { formatBytes } from '@/lib/admin/metrics'
-import { clock, num, Status } from '@/components/admin/Page'
+import { clock, Status } from '@/components/admin/Page'
 import { GuardDialog } from '@/components/admin/GuardDialog'
 import { Modal } from '@/components/ui/Modal'
 import { containerTone, duration, Freshness, HEALTH, LogViewer, Trail } from '@/components/admin/MonitorLive'
@@ -24,7 +24,6 @@ const button = 'rounded-lg border border-black/15 px-3 py-1.5 text-sm font-mediu
 
 const pct = (n: number) => `${n.toLocaleString('en-US', { maximumFractionDigits: 1 })}%`
 const bytes = (n: number | null) => (n === null ? '–' : formatBytes(n))
-const perSec = (n: number | null) => (n === null ? '–' : `${formatBytes(n)}/s`)
 const values = (points: SeriesPoint[], key: 'cpu' | 'mem') => points.flatMap((p) => {
   const v = p[key]
   return v === null ? [] : [v]
@@ -53,17 +52,9 @@ function Tile({ label, value, note, children }: { label: string; value: string; 
   )
 }
 
-function Line({ term, children }: { term: string; children: ReactNode }) {
-  return (
-    <div className="flex min-w-0 justify-between gap-3">
-      <dt className="shrink-0 text-black/55">{term}</dt>
-      <dd className="min-w-0 truncate text-right tabular-nums">{children}</dd>
-    </div>
-  )
-}
-
-function Card({ c, points, now, sampler, onLogs, onRestart }: {
+function Card({ c, role, points, now, sampler, onLogs, onRestart }: {
   c: ContainerState
+  role: string | undefined
   points: SeriesPoint[]
   now: number
   sampler: boolean
@@ -75,28 +66,21 @@ function Card({ c, points, now, sampler, onLogs, onRestart }: {
   const share = c.memBytes !== null && c.memLimitBytes ? Math.min(1, c.memBytes / c.memLimitBytes) : null
   const hasDetails = c.ports.length > 0 || c.mounts.length > 0 || c.healthLog !== null
   return (
-    <li className="min-w-0 rounded-lg border border-black/10">
-      <div className="flex items-start justify-between gap-3 border-b border-black/10 px-4 py-3">
-        <div className="min-w-0">
-          <h2 className="truncate font-mono text-sm font-medium">{c.name}</h2>
-          <div className="truncate font-mono text-xs text-black/45" title={c.image}>{c.image}</div>
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs tabular-nums">
+    <li className="flex min-w-0 flex-col rounded-lg border border-black/10">
+      <div className="px-4 py-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="min-w-0 truncate font-mono text-sm font-medium">{c.name}</h2>
+          <span className="shrink-0 text-xs">
             <Status tone={containerTone(c.status, c.health)}>
               {running ? (c.health ? HEALTH[c.health] ?? c.health : 'running') : c.status}
             </Status>
-            {running && c.startedAt && <span className="text-black/55">up {duration(Math.max(0, (now - Date.parse(c.startedAt)) / 1000))}</span>}
-            <span className={c.restarts > 0 ? 'text-amber-800' : 'text-black/55'}>{c.restarts} restarts</span>
-          </div>
+          </span>
         </div>
-        {svc && (
-          <div className="flex shrink-0 gap-2">
-            <button type="button" className={button} onClick={() => onLogs(svc)}>Logs</button>
-            <button type="button" className={button} onClick={() => onRestart(svc)}>Restart</button>
-          </div>
-        )}
+        {role && <p className="mt-1 text-sm text-black/70">{role}</p>}
+        <p className="mt-1 font-mono text-xs text-black/45 wrap-anywhere">{c.image}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 px-4 py-3">
+      <div className="grid grid-cols-2 gap-3 border-t border-black/10 px-4 py-3">
         <Tile label="CPU" value={c.cpuPercent === null ? '–' : pct(c.cpuPercent)}>
           {sampler && <div className="mt-1"><Trail values={values(points, 'cpu')} slots={HOUR} label={`${c.name} CPU, last hour`} /></div>}
         </Tile>
@@ -107,19 +91,8 @@ function Card({ c, points, now, sampler, onLogs, onRestart }: {
               <div className={`h-full ${share >= 0.9 ? 'bg-rose-700' : share >= 0.8 ? 'bg-amber-700' : 'bg-black/60'}`} style={{ width: `${share * 100}%` }} />
             </div>
           )}
-          {sampler && <div className="mt-1"><Trail values={values(points, 'mem')} slots={HOUR} label={`${c.name} memory, last hour`} /></div>}
         </Tile>
       </div>
-
-      {sampler && (
-        <dl className="grid gap-y-1 border-t border-black/10 px-4 py-3 text-xs">
-          <Line term="Network">{perSec(c.netRxBps)} in · {perSec(c.netTxBps)} out</Line>
-          <Line term="Network total">{bytes(c.netRxBytes)} in · {bytes(c.netTxBytes)} out</Line>
-          <Line term="Disk">{perSec(c.blkReadBps)} read · {perSec(c.blkWriteBps)} write</Line>
-          <Line term="PIDs">{c.pids === null ? '–' : num(c.pids)}</Line>
-          <Line term="CPU limit">{c.cpuLimit === null ? 'none' : `${num(c.cpuLimit)} cores`}</Line>
-        </dl>
-      )}
 
       {hasDetails && (
         <details className="border-t border-black/10 px-4 py-2 text-xs">
@@ -154,12 +127,26 @@ function Card({ c, points, now, sampler, onLogs, onRestart }: {
           </div>
         </details>
       )}
+
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-black/10 px-4 py-2.5">
+        <div className="flex gap-x-3 text-xs tabular-nums">
+          {running && c.startedAt && <span className="text-black/55">up {duration(Math.max(0, (now - Date.parse(c.startedAt)) / 1000))}</span>}
+          <span className={c.restarts > 0 ? 'text-amber-800' : 'text-black/55'}>{c.restarts} restarts</span>
+        </div>
+        {svc && (
+          <div className="flex gap-2">
+            <button type="button" className={button} onClick={() => onLogs(svc)}>Logs</button>
+            <button type="button" className={button} onClick={() => onRestart(svc)}>Restart</button>
+          </div>
+        )}
+      </div>
     </li>
   )
 }
 
-/** Every container on the instance every 5 seconds, with the last hour from the sampler. */
-export function ContainerBoard() {
+/** Every container on the instance every 5 seconds, with the last hour from the sampler.
+ *  `roles` maps a container name to what it does here. */
+export function ContainerBoard({ roles }: { roles: Record<string, string> }) {
   const poll = usePoll<ContainersResponse>('/api/admin/monitor?part=containers', EVERY_MS, parseContainersResponse)
   const [restart, setRestart] = useState<Service | null>(null)
   const [logs, setLogs] = useState<Service | null>(null)
@@ -199,7 +186,7 @@ export function ContainerBoard() {
 
           <ul className="mt-4 grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
             {containers.map((c) => (
-              <Card key={c.name} c={c} points={series.get(c.name) ?? []} now={Date.parse(data.at)} sampler={sampler}
+              <Card key={c.name} c={c} role={roles[c.name]} points={series.get(c.name) ?? []} now={Date.parse(data.at)} sampler={sampler}
                 onLogs={setLogs} onRestart={setRestart} />
             ))}
           </ul>

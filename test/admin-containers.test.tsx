@@ -8,6 +8,9 @@ vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ auth: { getSess
 import { ContainerBoard } from '@/components/admin/ContainerBoard'
 import { AdminNav } from '@/components/admin/AdminNav'
 import { parseHost, type ContainerState } from '@/lib/admin/monitor'
+import { CONTAINERS } from '@/lib/admin/architecture'
+
+const ROLES = Object.fromEntries(CONTAINERS.map((c) => [c.container, c.role]))
 
 const AT = '2026-09-26T03:00:00.000Z'
 const MIB = 1024 ** 2
@@ -77,7 +80,7 @@ afterEach(() => vi.unstubAllGlobals())
 describe('ContainerBoard', () => {
   it('puts the compose services first in their order, then the rest by name', async () => {
     serve(SAMPLER)
-    render(<ContainerBoard />)
+    render(<ContainerBoard roles={ROLES} />)
     await screen.findByRole('heading', { name: 'supabase-db' })
     expect(screen.getAllByRole('heading').map((h) => h.textContent)).toEqual([
       'supabase-db', 'supabase-envoy', 'supabase-studio', 'zhesen-sampler',
@@ -85,20 +88,18 @@ describe('ContainerBoard', () => {
     expect(screen.getByText(/^Updated \d\d:\d\d:\d\d · every 5 s$/)).toBeInTheDocument()
   })
 
-  it('formats the sampler numbers and draws the last hour', async () => {
+  it('says what each container does, formats its numbers and draws the last hour', async () => {
     serve(SAMPLER)
-    render(<ContainerBoard />)
+    render(<ContainerBoard roles={ROLES} />)
     await screen.findByRole('heading', { name: 'supabase-db' })
     const db = within(card('supabase-db'))
     expect(db.getByText('2.3%')).toBeInTheDocument()
     expect(db.getByText('483 MB')).toBeInTheDocument()
     expect(db.getByText('of 4.0 GB')).toBeInTheDocument()
     expect(db.getByRole('meter', { name: 'supabase-db memory' })).toHaveAttribute('aria-valuenow', '12')
-    expect(db.getByText('1.5 kB/s in · 512 B/s out')).toBeInTheDocument()
-    expect(db.getByText('2.0 GB in · 300 MB out')).toBeInTheDocument()
-    expect(db.getByText('0 B/s read · 12 kB/s write')).toBeInTheDocument()
-    expect(db.getByText('42')).toBeInTheDocument()
-    expect(db.getByText('1.5 cores')).toBeInTheDocument()
+    expect(db.getByText('Postgres 17: the dictionary, word lists and accounts')).toBeInTheDocument()
+    expect(db.getByText('supabase/postgres:17.6.1.136')).toBeInTheDocument()
+    expect(db.queryByText('Network')).not.toBeInTheDocument()
     expect(db.getByText('up 3 d 0 h')).toBeInTheDocument()
     expect(db.getByRole('img', { name: 'supabase-db CPU, last hour' })).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Host CPU, last hour' })).toBeInTheDocument()
@@ -111,7 +112,7 @@ describe('ContainerBoard', () => {
 
   it('lists ports, mounts and the last healthcheck under Details', async () => {
     serve(SAMPLER)
-    render(<ContainerBoard />)
+    render(<ContainerBoard roles={ROLES} />)
     await screen.findByRole('heading', { name: 'supabase-db' })
     const db = within(card('supabase-db'))
     expect(db.getByText('Details')).toBeInTheDocument()
@@ -124,7 +125,7 @@ describe('ContainerBoard', () => {
 
   it('reads an SSM response without history and says so', async () => {
     serve(SSM)
-    render(<ContainerBoard />)
+    render(<ContainerBoard roles={ROLES} />)
     await screen.findByRole('heading', { name: 'supabase-db' })
     expect(screen.getByText('Sampler offline; showing a slower SSM read without history.')).toBeInTheDocument()
     expect(screen.queryAllByRole('img')).toHaveLength(0)
@@ -140,7 +141,7 @@ describe('ContainerBoard', () => {
 
   it('offers restart and logs only for compose services', async () => {
     serve(SAMPLER)
-    render(<ContainerBoard />)
+    render(<ContainerBoard roles={ROLES} />)
     await screen.findByRole('heading', { name: 'supabase-db' })
     expect(within(card('zhesen-sampler')).queryByRole('button')).not.toBeInTheDocument()
     expect(within(card('supabase-studio')).getByRole('button', { name: 'Restart' })).toBeInTheDocument()
@@ -148,7 +149,7 @@ describe('ContainerBoard', () => {
 
   it('restarts behind GuardDialog with the container name as the target', async () => {
     serve(SAMPLER)
-    render(<ContainerBoard />)
+    render(<ContainerBoard roles={ROLES} />)
     await screen.findByRole('heading', { name: 'supabase-envoy' })
     await userEvent.click(within(card('supabase-envoy')).getByRole('button', { name: 'Restart' }))
 
@@ -166,7 +167,7 @@ describe('ContainerBoard', () => {
 
   it('opens that container’s logs and reads them at once', async () => {
     serve(SAMPLER)
-    render(<ContainerBoard />)
+    render(<ContainerBoard roles={ROLES} />)
     await screen.findByRole('heading', { name: 'supabase-db' })
     await userEvent.click(within(card('supabase-db')).getByRole('button', { name: 'Logs' }))
     const dialog = screen.getByRole('dialog', { name: 'supabase-db logs' })
