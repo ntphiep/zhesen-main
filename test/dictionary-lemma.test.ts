@@ -30,4 +30,33 @@ describe('lemmaFromSenses', () => {
     const senses = [sense('Having been adjourned; suspended.'), sense('past participle of adjourn')]
     expect(lemmaFromSenses(senses, 'adjourned')).toBe('adjourn')
   })
+
+  // Glosses from the full English import, measured on production.
+  it('ignores a pointer word inside a definition', () => {
+    const memorial = sense('A statement of facts set out in the form of a petition to a person in authority.')
+    expect(lemmaFromSenses([sense('Serving to commemorate.'), memorial], 'memorial')).toBeNull()
+    const weak = sense('In a conjugation other than singular active forms (regardless of person).')
+    expect(lemmaFromSenses([sense('Lacking in force.'), weak], 'weak')).toBeNull()
+    expect(lemmaFromSenses([sense('A form of government.')], 'democracy')).toBeNull()
+  })
+
+  it('reads the Spanish pointers', () => {
+    expect(lemmaFromSenses([sense('feminine singular of bueno')], 'buena')).toBe('bueno')
+    const imperative = sense('informal second-person singular (tú) affirmative imperative of hablar')
+    expect(lemmaFromSenses([sense('A talk.'), imperative], 'habla')).toBe('hablar')
+  })
+
+  it('reads a spelling pointer only when it is the first sense', () => {
+    const give = [sense('To transfer one\'s possession of something to someone.'), sense('Alternative form of gyve.')]
+    expect(lemmaFromSenses(give, 'give')).toBeNull()
+    expect(lemmaFromSenses([sense('Misspelling of advise.')], 'advize')).toBe('advise')
+    expect(lemmaFromSenses([sense('Alternative spelling of color')], 'colour')).toBe('color')
+  })
+
+  it('ignores a pointer after sense 15', () => {
+    const run = [...Array.from({ length: 117 }, () => sense('To move swiftly.')), sense('past participle of rin')]
+    expect(lemmaFromSenses(run, 'run')).toBeNull()
+    const saw = [...Array.from({ length: 14 }, () => sense('A tool for cutting.')), sense('simple past of see')]
+    expect(lemmaFromSenses(saw, 'saw')).toBe('see')
+  })
 })
