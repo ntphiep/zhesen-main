@@ -32,11 +32,11 @@ describe('ArchitectureMap', () => {
 
   it('nests the instance inside the VPC inside the AWS region', () => {
     render(<ArchitectureMap s={STATE} />)
-    const vpc = screen.getByText('VPC · private subnet').parentElement as HTMLElement
+    const vpc = screen.getByText('VPC · public subnet').parentElement as HTMLElement
     expect(within(vpc).getByText('EC2')).toBeInTheDocument()
     const aws = screen.getByText(/^AWS · ap-northeast-2/).parentElement as HTMLElement
     expect(within(aws).getByText('CloudFront')).toBeInTheDocument()
-    expect(within(aws).getByText('VPC · private subnet')).toBeInTheDocument()
+    expect(within(aws).getByText('VPC · public subnet')).toBeInTheDocument()
   })
 })
 

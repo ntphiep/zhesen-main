@@ -46,10 +46,11 @@ infra/
       edge/                  CloudFront: VPC origin, path-allowlist function,
                              distribution, and the one ingress rule it needs
       backup/                S3 bucket for the pg_dump files, 30-day expiry
-      alerts/                SNS topic, email subscription, monthly budget
+      alerts/                SNS topic, HTTPS subscription, monthly budget
       settings/              SSM parameters carrying the API URL and bucket names
       vercel/                OIDC provider and the role the admin console uses: read
-                             health, power the instance, SSM commands, rescue secret
+                             health, power the instance, SSM commands, rescue secret,
+                             alert channels
   supabase/                  what runs on the instance, synced to /opt/zhesen/supabase
     docker-compose.yml       upstream compose trimmed to db, auth, rest, api-gw, studio, meta
     env.template             .env with ${SSM:/path} placeholders
@@ -116,14 +117,19 @@ about 2 to 3 minutes down. Terraform ignores `instance_type`, so an apply does n
 instance id survive. More memory means raising `shared_buffers` and `effective_cache_size` in
 `docker-compose.yml`.
 
-Alarms (CPU, CPU credits, memory, disk, status checks) and the 45 USD budget email
-`alert_email` through SNS topic `zhesen-alerts`, once the subscription is confirmed. An
-unconfirmed subscription expires after three days and the next apply sends a new mail.
+Alarms (CPU, CPU credits, memory, disk, status checks), the 45 USD budget and a failed
+backup publish to SNS topic `zhesen-alerts`. Its one subscriber is the HTTPS endpoint
+`/api/alerts/sns` on the production deployment, which verifies each message's signature,
+confirms the subscription itself, and forwards to the Slack webhook and Telegram chat set
+under Alerts on `/admin/infra`. Admin actions go to the same channels directly. The channels
+live in the SecureString `/zhesen/prod/alert_channels`, written by that page, never by
+Terraform. Deploy the endpoint before the apply that creates the subscription: SNS sends
+the confirmation once.
 
 ## Rebuilding from nothing
 
 ```bash
-cp infra/terraform/terraform.tfvars.example infra/terraform/terraform.tfvars   # one email
+cp infra/terraform/terraform.tfvars.example infra/terraform/terraform.tfvars
 terraform -chdir=infra/terraform init && terraform -chdir=infra/terraform apply
 ```
 
@@ -133,8 +139,8 @@ invalidate the anon key the app ships, so it stays out of Terraform. If the firs
 stops with "no matching EC2 Security Group found", CloudFront had not yet created the VPC
 origin's group: apply again. Cloud-init is done when `/var/lib/cloud/zhesen-ready`
 exists (about 5 minutes, plus up to 20 for the CloudFront URL on a first apply); its log
-is `/var/log/zhesen-cloud-init.log`. Then confirm the SNS email and restore the latest
-dump.
+is `/var/log/zhesen-cloud-init.log`. Then restore the latest dump and set the alert
+channels on `/admin/infra`.
 
 ## Migration and cutover, 2026-09-23
 

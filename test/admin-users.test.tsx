@@ -89,13 +89,13 @@ describe('AccountTable', () => {
   })
 
   it('shows the refusal the server gives and keeps the dialog open', async () => {
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ error: 'Chuỗi xác nhận không khớp.' }), { status: 409 }))
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ error: 'The confirmation text does not match.' }), { status: 409 }))
     render(<AccountTable accounts={ACCOUNTS} />)
     await userEvent.click(within(rowOf('qa@example.com')).getByRole('button', { name: 'Delete' }))
     await userEvent.type(screen.getByRole('textbox'), 'qa@example.com')
     await userEvent.click(screen.getByRole('button', { name: 'Delete permanently' }))
 
-    expect(await screen.findByText('Chuỗi xác nhận không khớp.')).toBeInTheDocument()
+    expect(await screen.findByText('The confirmation text does not match.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Delete permanently' })).toBeInTheDocument()
     expect(refresh).not.toHaveBeenCalled()
   })

@@ -19,7 +19,7 @@ export async function GET(request: Request): Promise<Response> {
     try {
       return Response.json(await getLiveRow(supabase), { headers: NO_STORE })
     } catch {
-      return Response.json({ error: 'Không đọc được số liệu từ database.' }, { status: 502, headers: NO_STORE })
+      return Response.json({ error: 'Could not read metrics from the database.' }, { status: 502, headers: NO_STORE })
     }
   }
 
@@ -33,7 +33,7 @@ export async function GET(request: Request): Promise<Response> {
     const { ssm } = clients(cfg)
     const out = await runShell(ssm, part === 'host' ? HOST_SCRIPT : logScript(service ?? ''), 20)
     if (out.status !== 'Success') {
-      return Response.json({ error: `Lệnh trên instance kết thúc với trạng thái ${out.status}.` }, { status: 502, headers: NO_STORE })
+      return Response.json({ error: `Command on the instance finished with status ${out.status}.` }, { status: 502, headers: NO_STORE })
     }
     const at = new Date().toISOString()
     if (part === 'host') return Response.json({ at, ...parseHost(out.stdout) }, { headers: NO_STORE })
@@ -41,6 +41,6 @@ export async function GET(request: Request): Promise<Response> {
   } catch (e) {
     // The error name (AccessDenied, InvalidInstanceId) says what to fix; the message can carry ARNs.
     const name = e instanceof Error ? e.name : 'Error'
-    return Response.json({ error: `Không gọi được SSM (${name}).` }, { status: 502, headers: NO_STORE })
+    return Response.json({ error: `Could not call SSM (${name}).` }, { status: 502, headers: NO_STORE })
   }
 }

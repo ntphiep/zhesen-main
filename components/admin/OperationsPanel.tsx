@@ -23,7 +23,7 @@ export function OperationsPanel() {
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/10 px-4 py-3">
       <div>
         <div className="text-sm font-medium">Dictionary cache · 7 days</div>
-        <p className="text-sm text-black/60">Flush sau khi nạp hoặc sửa dữ liệu để trang từ điển đọc bản mới.</p>
+        <p className="text-sm text-black/60">Flush after loading or editing data so the dictionary page reads the new version.</p>
       </div>
       <div className="flex items-center gap-3">
         {feedback && (

@@ -43,7 +43,7 @@ describe('VacuumNote', () => {
     const { container } = render(<VacuumNote m={M} />)
     expect(container).toBeEmptyDOMElement()
     render(<VacuumNote m={parseMetrics({ ...METRICS_PAYLOAD, pgroonga_surplus: 2 })} />)
-    expect(screen.getByText(/2 bộ dữ liệu index thừa/)).toBeInTheDocument()
+    expect(screen.getByText(/2 surplus index datasets/)).toBeInTheDocument()
   })
 })
 

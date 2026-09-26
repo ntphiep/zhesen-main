@@ -21,7 +21,7 @@ async function readDumps(): Promise<Dumps | null | 'error'> {
   }
 }
 
-const NO_AWS = <p className="text-sm text-black/60">Chưa cấu hình quyền AWS cho bản triển khai này (AWS_ROLE_ARN).</p>
+const NO_AWS = <p className="text-sm text-black/60">AWS access is not configured for this deployment (AWS_ROLE_ARN).</p>
 
 export default async function AdminDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const supabase = await createClient()
@@ -45,7 +45,7 @@ export default async function AdminDatabasePage({ searchParams }: { searchParams
       </Section>
       <Section title="Restore">
         {dumps === null ? NO_AWS
-          : dumps === 'error' ? <p className="text-sm text-rose-700">Không đọc được danh sách bản dump từ S3.</p>
+          : dumps === 'error' ? <p className="text-sm text-rose-700">Could not read the dump list from S3.</p>
             : <RestorePanel dumps={dumps.slice(0, 14)} />}
       </Section>
     </div>

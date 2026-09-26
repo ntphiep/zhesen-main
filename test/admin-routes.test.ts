@@ -65,7 +65,7 @@ describe('POST /api/admin/accounts', () => {
     rpc.mockResolvedValue({ data: null, error: { code: '22023', message: 'confirm_mismatch' } })
     const res = await post(accounts, { action: 'delete', id: ID_A, confirm: 'x' })
     expect(res.status).toBe(409)
-    await expect(res.json()).resolves.toEqual({ error: 'Chuỗi xác nhận không khớp.' })
+    await expect(res.json()).resolves.toEqual({ error: 'The confirmation text does not match.' })
   })
 
   it('answers 404 when the database gate disagrees with the server one', async () => {
@@ -109,7 +109,7 @@ describe('POST /api/admin/content', () => {
     rpc.mockResolvedValue({ data: null, error: { code: '22023', message: 'no_such_sense' } })
     const res = await post(content, { action: 'update_sense', senseId: 'x', glossVi: null, glossEn: null })
     expect(res.status).toBe(409)
-    await expect(res.json()).resolves.toEqual({ error: 'Không còn nghĩa này.' })
+    await expect(res.json()).resolves.toEqual({ error: 'This sense no longer exists.' })
     expect(revalidateTag).not.toHaveBeenCalled()
   })
 })

@@ -137,7 +137,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
             onSubmit={(e) => { e.preventDefault(); void confirmDelete(target) }}
           >
             <p className="text-sm text-black/70">
-              Xoá {name(target)}, {target.words} từ đã lưu và lịch sử luyện tập; chỉ khôi phục được từ backup.
+              Deletes {name(target)}, {target.words} saved words and practice history; recoverable only from backup.
             </p>
             <label className="mt-4 block text-sm">
               Type <span className="font-mono">{confirmationFor(target)}</span> to confirm
@@ -181,7 +181,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
             onSubmit={(e) => { e.preventDefault(); void confirmMerge(target) }}
           >
             <p className="text-sm text-black/70">
-              Chuyển {target.words} từ của {name(target)} sang tài khoản đích; từ trùng giữ lại ở nguồn, nguồn không bị xoá.
+              Moves {target.words} words from {name(target)} to the target account; duplicates stay in the source, and the source is not deleted.
             </p>
             <label className="mt-4 block text-sm">
               Target account

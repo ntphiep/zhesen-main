@@ -9,8 +9,8 @@ paths:
 
 Every Vietnamese string a learner sees follows one voice: minimal. No form of address, no
 explanation, only what happened and what to do next. The owner chose it in #68. The admin
-area uses English labels (#66) and is not covered here. `test/copy-style.test.ts` enforces
-the rules it can measure; the rest are on the writer.
+area and `/rescue` are all English (#66) and are not covered here. `test/copy-style.test.ts`
+enforces the rules it can measure; the rest are on the writer.
 
 ## Rules
 

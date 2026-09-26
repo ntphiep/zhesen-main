@@ -101,6 +101,33 @@ data "aws_iam_policy_document" "operate" {
     actions   = ["sns:Publish"]
     resources = [var.alerts_topic_arn]
   }
+
+  # Where the alerts go (lib/admin/alerts.ts), a SecureString under aws/ssm like the secret above.
+  statement {
+    sid       = "AlertChannels"
+    actions   = ["ssm:GetParameter", "ssm:PutParameter"]
+    resources = ["arn:aws:ssm:${var.region}:${var.account_id}:parameter${var.ssm_prefix}/alert_channels"]
+  }
+
+  # The AWS services table on /admin/infra (lib/admin/services.ts).
+  statement {
+    sid       = "DescribeServices"
+    actions   = ["s3:GetLifecycleConfiguration"]
+    resources = [var.backup_bucket_arn]
+  }
+
+  statement {
+    sid       = "ListAlertSubscribers"
+    actions   = ["sns:ListSubscriptionsByTopic"]
+    resources = [var.alerts_topic_arn]
+  }
+
+  # DescribeParameters accepts no resource narrower than "*"; it returns names, not values.
+  statement {
+    sid       = "CountParameters"
+    actions   = ["ssm:DescribeParameters"]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "operate" {

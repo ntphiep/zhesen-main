@@ -39,7 +39,7 @@ type Body = z.infer<typeof body>
 function awsFailure(e: unknown): Response {
   // The error name (AccessDenied, IncorrectInstanceState) says what to fix; the message can carry ARNs.
   const name = e instanceof Error ? e.name : 'Error'
-  return json({ error: `AWS từ chối hoặc không trả lời (${name}).` }, 502)
+  return json({ error: `AWS refused or did not respond (${name}).` }, 502)
 }
 
 const shellBody = (r: ShellResult) => ({
@@ -148,10 +148,10 @@ export async function POST(request: Request): Promise<Response> {
   const b = parsed.data
 
   const cfg = awsHealthConfig()
-  if (!cfg) return json({ error: 'Chưa cấu hình quyền AWS cho bản triển khai này (AWS_ROLE_ARN).' }, 503)
+  if (!cfg) return json({ error: 'AWS access is not configured for this deployment (AWS_ROLE_ARN).' }, 503)
 
   if (b.action === 'sql' && PSQL_META.test(b.sql)) {
-    return json({ error: 'Lệnh psql bắt đầu bằng dấu \\ không chạy ở đây; dùng ô lệnh shell.' }, 400)
+    return json({ error: 'A psql command starting with \\ does not run here; use the shell box.' }, 400)
   }
 
   const guard = guardOf(b)
@@ -168,7 +168,7 @@ export async function POST(request: Request): Promise<Response> {
     } catch (e) {
       return awsFailure(e)
     }
-    if (from === b.type) return json({ error: `Instance đang là ${b.type}.` }, 409)
+    if (from === b.type) return json({ error: `Instance is already ${b.type}.` }, 409)
   }
 
   // With the database down adminUser has already answered 404; /rescue starts the instance then.
@@ -177,7 +177,7 @@ export async function POST(request: Request): Promise<Response> {
     try {
       await record(supabase, audit.action, audit.target, audit.detail)
     } catch {
-      return json({ error: 'Không ghi được nhật ký thao tác nên chưa làm gì cả.' }, 502)
+      return json({ error: 'Could not write the audit log, so nothing ran.' }, 502)
     }
   }
 

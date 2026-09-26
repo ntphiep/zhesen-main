@@ -59,7 +59,7 @@ function useRun() {
   const [error, setError] = useState<string | null>(null)
   const take = (data: unknown) => {
     const r = runSchema.safeParse(data)
-    if (r.success) { setRun({ run: r.data, at: new Date() }); setError(null) } else setError('Server trả về dữ liệu không đúng dạng.')
+    if (r.success) { setRun({ run: r.data, at: new Date() }); setError(null) } else setError('Server returned data in the wrong shape.')
   }
   return { run, error, setError, take }
 }
@@ -91,7 +91,7 @@ export function SqlConsole() {
         <p className={`text-sm ${mode === 'read' ? 'text-black/55' : 'text-amber-800'}`}>
           {mode === 'read'
             ? 'Read-only transaction, 30 s timeout. psql \\ commands do not run.'
-            : 'Chạy đúng như gõ trên production và không hoàn tác được; dừng sau 2 phút.'}
+            : 'Runs exactly as typed on production and cannot be undone; stops after 2 minutes.'}
         </p>
       </div>
       <textarea
@@ -123,8 +123,8 @@ export function SqlConsole() {
         >
           <p>
             {mode === 'write'
-              ? 'Chạy bằng supabase_admin trên production, không hoàn tác được; nên Backup now ở Infrastructure trước.'
-              : 'SQL đọc được mọi bảng, kể cả tài khoản, nên cần đăng nhập trong 10 phút gần nhất.'}
+              ? 'Runs as supabase_admin on production and cannot be undone; Backup now on Infrastructure first is recommended.'
+              : 'SQL can read every table, including accounts, so it needs a sign-in within the last 10 minutes.'}
           </p>
           <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/[0.04] p-2 font-mono text-xs whitespace-pre-wrap">{sql}</pre>
         </GuardDialog>
@@ -170,7 +170,7 @@ export function ShellConsole() {
         onClose={() => setGuard(false)}
         onDone={take}
       >
-        <p>Chạy bằng root trên server production, có ghi audit log và gửi email.</p>
+        <p>Runs as root on the production server, writes an audit log and sends an email.</p>
         <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/[0.04] p-2 font-mono text-xs whitespace-pre-wrap">{command}</pre>
       </GuardDialog>
     </div>
@@ -196,7 +196,7 @@ export function RestorePanel({ dumps }: { dumps: { key: string; at: string; byte
         const s = statusSchema.safeParse(await res.json())
         if (s.success) setStatus(s.data)
       } catch {
-        setError('Mất kết nối khi đọc tiến độ.')
+        setError('Lost connection while reading progress.')
       }
     }, 10_000)
     return () => clearInterval(t)
@@ -214,7 +214,7 @@ export function RestorePanel({ dumps }: { dumps: { key: string; at: string; byte
         </label>
         <button type="button" className={button} disabled={!key || (status?.state === 'running')} onClick={() => setGuard(true)}>Restore</button>
       </div>
-      <p className="mt-2 text-sm text-black/55">Khôi phục vào một database mới; database production không bị động tới.</p>
+      <p className="mt-2 text-sm text-black/55">Restores into a new database; the production database is not touched.</p>
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
       {db && (
         <div role="status" className="mt-3 rounded-lg border border-black/10 px-4 py-3 text-sm">
@@ -243,11 +243,11 @@ export function RestorePanel({ dumps }: { dumps: { key: string; at: string; byte
         onClose={() => setGuard(false)}
         onDone={(data) => {
           const r = runSchema.safeParse(data)
-          if (r.success && r.data.db) { setDb(r.data.db); setStatus(null) } else setError('Không bắt đầu được việc khôi phục.')
+          if (r.success && r.data.db) { setDb(r.data.db); setStatus(null) } else setError('Could not start the restore.')
         }}
       >
         <p>
-          Khôi phục vào database mới <code className="font-mono">restore_…</code>, không đụng production; tốn ổ đĩa bằng database hiện tại, tối đa 2 bản.
+          Restores into a new database <code className="font-mono">restore_…</code>, without touching production; uses as much disk as the current database, up to 2 copies.
         </p>
       </GuardDialog>
     </div>

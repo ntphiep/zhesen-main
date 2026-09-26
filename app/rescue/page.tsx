@@ -12,7 +12,7 @@ export default async function RescuePage() {
     <main className="mx-auto w-full max-w-lg px-4 py-10">
       <h1 className="text-2xl font-semibold tracking-tight">Rescue</h1>
       <p className="mt-2 text-sm text-black/60">
-        Bật lại instance khi admin không mở được. Mỗi lần unlock và start đều gửi email.
+        Turns the instance back on when admin cannot open it. Every unlock and start sends an email.
       </p>
       <div className="mt-6">
         <RescuePanel unlocked={unlocked} />

@@ -26,7 +26,7 @@ variable "account_id" {
 }
 
 variable "ssm_prefix" {
-  description = "Parameter Store prefix holding admin_rescue_secret."
+  description = "Parameter Store prefix holding admin_rescue_secret and alert_channels."
   type        = string
 }
 
@@ -36,6 +36,6 @@ variable "instance_arn" {
 }
 
 variable "alerts_topic_arn" {
-  description = "SNS topic whose email subscription receives the console's alerts."
+  description = "SNS topic the rescue entry publishes to."
   type        = string
 }

@@ -43,7 +43,7 @@ describe('EntryEditor', () => {
     render(<EntryEditor entry={ENTRY} />)
     await userEvent.clear(viBoxes()[0])
     await userEvent.type(viBoxes()[0], 'a'.repeat(81))
-    expect(screen.getByText(/81 ký tự, quá 80/)).toBeInTheDocument()
+    expect(screen.getByText(/81 characters, over 80/)).toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
@@ -90,11 +90,11 @@ describe('EntryEditor', () => {
   })
 
   it('shows a refusal from the server', async () => {
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ error: 'Không còn nghĩa này.' }), { status: 409 }))
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ error: 'This sense no longer exists.' }), { status: 409 }))
     render(<EntryEditor entry={ENTRY} />)
     await userEvent.type(viBoxes()[0], '!')
     await userEvent.click(screen.getAllByRole('button', { name: 'Save' })[0])
-    expect(await screen.findByText('Không còn nghĩa này.')).toBeInTheDocument()
+    expect(await screen.findByText('This sense no longer exists.')).toBeInTheDocument()
     expect(refresh).not.toHaveBeenCalled()
   })
 })

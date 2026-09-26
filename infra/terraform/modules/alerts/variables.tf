@@ -7,8 +7,12 @@ variable "region" {
   type        = string
 }
 
-variable "alert_email" {
-  description = "Address subscribed to the topic and to the budget notifications."
+variable "account_id" {
+  type = string
+}
+
+variable "alert_endpoint" {
+  description = "HTTPS endpoint subscribed to the topic: app/api/alerts/sns on the production deployment."
   type        = string
 }
 

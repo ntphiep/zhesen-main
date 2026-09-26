@@ -3,7 +3,7 @@ import { parseCsv, parseRestoreStatus, restoreName, restoreScript, shellScript, 
 import { secretMatches, signRescue, verifyRescue, RESCUE_TTL_MS } from '@/lib/admin/rescue'
 import { BACKUP_SCRIPT, restartScript } from '@/lib/admin/control'
 
-const { adminUser, rpc, getClaims, power, resize, runShell, alertOwner, readRescueSecret, instanceState, jar } = vi.hoisted(() => ({
+const { adminUser, rpc, getClaims, power, resize, runShell, alertOwner, sendAlert, readRescueSecret, instanceState, jar } = vi.hoisted(() => ({
   adminUser: vi.fn(),
   rpc: vi.fn(),
   getClaims: vi.fn(),
@@ -11,6 +11,7 @@ const { adminUser, rpc, getClaims, power, resize, runShell, alertOwner, readResc
   resize: vi.fn(),
   runShell: vi.fn(),
   alertOwner: vi.fn(),
+  sendAlert: vi.fn(),
   readRescueSecret: vi.fn(),
   instanceState: vi.fn(),
   jar: new Map<string, string>(),
@@ -26,6 +27,7 @@ vi.mock('@/lib/admin/ssm', async (orig) => ({
   alertOwner,
   readRescueSecret,
 }))
+vi.mock('@/lib/admin/alerts', () => ({ sendAlert }))
 vi.mock('@/lib/admin/control', async (orig) => ({
   ...(await orig<typeof import('@/lib/admin/control')>()),
   power,
@@ -147,7 +149,7 @@ describe('POST /api/admin/control', () => {
     getClaims.mockReset().mockResolvedValue({ data: { claims: { amr: [{ method: 'password', timestamp: NOW_S - 60 }] } }, error: null })
     power.mockReset().mockResolvedValue(undefined)
     runShell.mockReset().mockResolvedValue({ status: 'Success', exitCode: 0, stdout: 'count\n36361\n', stderr: '', truncated: false, ms: 900 })
-    alertOwner.mockReset().mockResolvedValue(true)
+    sendAlert.mockReset().mockResolvedValue([{ channel: 'slack', ok: true }])
     resize.mockReset().mockResolvedValue(150_000)
     instanceState.mockReset().mockResolvedValue({ state: 'running', type: 't4g.medium' })
   })
@@ -182,15 +184,15 @@ describe('POST /api/admin/control', () => {
     expect(power).not.toHaveBeenCalled()
   })
 
-  it('writes the audit row before it stops the instance, then emails', async () => {
+  it('writes the audit row before it stops the instance, then alerts', async () => {
     const order: string[] = []
     rpc.mockImplementation(async () => { order.push('audit'); return { data: null, error: null } })
     power.mockImplementation(async () => { order.push('stop') })
-    alertOwner.mockImplementation(async () => { order.push('email'); return true })
+    sendAlert.mockImplementation(async () => { order.push('alert'); return [{ channel: 'slack', ok: true }] })
     const res = await post(control, { action: 'power', op: 'stop', confirm: 'zhesen-supabase' })
     expect(res.status).toBe(200)
     expect(rpc).toHaveBeenCalledWith('record', { p_action: 'infra.stop', p_target: 'zhesen-supabase', p_detail: {} })
-    expect(order).toEqual(['audit', 'stop', 'email'])
+    expect(order).toEqual(['audit', 'stop', 'alert'])
   })
 
   it('does nothing when the audit row cannot be written', async () => {
@@ -252,17 +254,17 @@ describe('POST /api/admin/control', () => {
       expect(resize).not.toHaveBeenCalled()
     })
 
-    it('writes the audit row before it changes the type, then emails and answers from, to and ms', async () => {
+    it('writes the audit row before it changes the type, then alerts and answers from, to and ms', async () => {
       const order: string[] = []
       rpc.mockImplementation(async () => { order.push('audit'); return { data: null, error: null } })
       resize.mockImplementation(async () => { order.push('resize'); return 150_000 })
-      alertOwner.mockImplementation(async () => { order.push('email'); return true })
+      sendAlert.mockImplementation(async () => { order.push('alert'); return [{ channel: 'slack', ok: true }] })
       const res = await post(control, change)
       expect(res.status).toBe(200)
       await expect(res.json()).resolves.toEqual({ from: 't4g.medium', to: 't4g.large', ms: 150_000 })
       expect(rpc).toHaveBeenCalledWith('record', { p_action: 'infra.resize', p_target: 'zhesen-supabase', p_detail: { from: 't4g.medium', to: 't4g.large' } })
       expect(resize).toHaveBeenCalledWith({}, 't4g.large', 't4g.medium')
-      expect(order).toEqual(['audit', 'resize', 'email'])
+      expect(order).toEqual(['audit', 'resize', 'alert'])
     })
 
     it('does nothing when the audit row cannot be written', async () => {
@@ -271,10 +273,10 @@ describe('POST /api/admin/control', () => {
       expect(resize).not.toHaveBeenCalled()
     })
 
-    it('emails when the change fails halfway, since the instance may be left stopped', async () => {
+    it('alerts when the change fails halfway, since the instance may be left stopped', async () => {
       resize.mockRejectedValue(Object.assign(new Error('timed out'), { name: 'TimeoutError' }))
       expect((await post(control, change)).status).toBe(502)
-      expect(alertOwner).toHaveBeenCalledTimes(1)
+      expect(sendAlert).toHaveBeenCalledTimes(1)
     })
   })
 

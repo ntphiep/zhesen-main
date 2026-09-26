@@ -88,7 +88,7 @@ export function ArchitectureMap({ s }: { s: MapState }) {
           <div className="flex flex-col lg:flex-row lg:items-stretch">
             <div className="lg:w-40 lg:self-center"><Box name="CloudFront" meta={s.edgeHost} live={s.auth} /></div>
             <Wire label="VPC origin" />
-            <Boundary name="VPC · private subnet" tone="vpc" className="min-w-0 flex-1">
+            <Boundary name="VPC · public subnet" tone="vpc" className="min-w-0 flex-1">
               <div className="rounded-lg border border-black/10 bg-white px-3 py-2.5">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                   <span className="text-sm font-semibold">EC2</span>

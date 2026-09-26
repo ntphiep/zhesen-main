@@ -1,7 +1,4 @@
-# Copy to terraform.tfvars, which is git-ignored, and fill in the address.
-# Everything else has a default in variables.tf.
-
-alert_email = "you@example.com"
+# Copy to terraform.tfvars, which is git-ignored, to override a default in variables.tf.
 
 # region                  = "ap-northeast-2"
 # availability_zone       = "ap-northeast-2a"

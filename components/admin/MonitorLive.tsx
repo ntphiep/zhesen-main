@@ -264,7 +264,7 @@ export function LogViewer() {
         setLogs({ state: 'ok', data: parseLogsResponse(body) })
       }
     } catch {
-      setLogs({ state: 'error', message: 'Mất kết nối tới server.' })
+      setLogs({ state: 'error', message: 'Lost connection to the server.' })
     }
   }
 

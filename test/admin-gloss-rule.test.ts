@@ -10,7 +10,7 @@ describe('glossWarning', () => {
   })
 
   it('warns one character over, naming the length', () => {
-    expect(glossWarning('a'.repeat(81))).toMatch(/81 ký tự, quá 80/)
+    expect(glossWarning('a'.repeat(81))).toMatch(/81 characters, over 80/)
   })
 
   it('ignores surrounding space, which the save trims', () => {

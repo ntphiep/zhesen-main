@@ -1,12 +1,12 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { z } from '@/lib/zod'
-import { alertOwner, clients } from '@/lib/admin/ssm'
+import { sendAlert } from '@/lib/admin/alerts'
 import type { AwsHealthConfig } from '@/lib/admin/aws'
 
 /**
  * The guard on every console action that stops, deletes, overwrites or runs arbitrary
  * code, agreed with the owner in #64: the target's name typed back, a sign-in within the
- * last 10 minutes, an audit row written before the action, and an email after it.
+ * last 10 minutes, an audit row written before the action, and an alert after it.
  */
 
 export const REAUTH_SECONDS = 600
@@ -38,11 +38,11 @@ export async function checkGuard(
   now: number = Date.now(),
 ): Promise<Refusal | null> {
   if (target !== null && confirm !== target) {
-    return { status: 409, body: { error: `Gõ đúng ${target} để xác nhận.` } }
+    return { status: 409, body: { error: `Type ${target} exactly to confirm.` } }
   }
   const since = await secondsSinceSignIn(supabase, now)
   if (since === null || since > REAUTH_SECONDS) {
-    return { status: 401, body: { error: 'Thao tác này cần đăng nhập lại trong 10 phút gần nhất.', reauth: true } }
+    return { status: 401, body: { error: 'This action needs a sign-in within the last 10 minutes.', reauth: true } }
   }
   return null
 }
@@ -54,9 +54,8 @@ export async function record(supabase: SupabaseClient, action: string, target: s
   if (error) throw new Error(`audit refused: ${error.code ?? ''}`)
 }
 
-/** The email after an action; never throws. The subject stays ASCII for SNS. */
+/** The alert after an action, to every channel in lib/admin/alerts.ts; never throws. */
 export async function notify(cfg: AwsHealthConfig, user: Pick<User, 'email'> | null, subject: string, lines: string[]): Promise<boolean> {
-  const { sns } = clients(cfg)
-  const body = [...lines, '', `By: ${user?.email ?? 'rescue entry'}`, `At: ${new Date().toISOString()}`].join('\n')
-  return alertOwner(sns, cfg.accountId, `zhesen admin: ${subject}`, body)
+  const results = await sendAlert(`zhesen admin: ${subject}`, [...lines, '', `By: ${user?.email ?? 'rescue entry'}`, `At: ${new Date().toISOString()}`], cfg)
+  return results.length > 0 && results.every((r) => r.ok)
 }

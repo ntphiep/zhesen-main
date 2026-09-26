@@ -1,11 +1,11 @@
 /** Answers shared by the handlers under app/api/admin/. */
 
 export function notFoundJson(): Response {
-  return Response.json({ error: 'Không tìm thấy.' }, { status: 404 })
+  return Response.json({ error: 'Not found.' }, { status: 404 })
 }
 
 export function badRequest(): Response {
-  return Response.json({ error: 'Yêu cầu không hợp lệ.' }, { status: 400 })
+  return Response.json({ error: 'Invalid request.' }, { status: 400 })
 }
 
 /**
@@ -20,9 +20,9 @@ export function rpcError(
 ): Response {
   if (error.code === '42501') return notFoundJson()
   if (error.code === '22023') {
-    return Response.json({ error: refusals[error.message] ?? 'Thao tác bị từ chối.' }, { status: 409 })
+    return Response.json({ error: refusals[error.message] ?? 'The action was refused.' }, { status: 409 })
   }
-  return Response.json({ error: 'Database server gặp lỗi.' }, { status: 502 })
+  return Response.json({ error: 'Database server error.' }, { status: 502 })
 }
 
 /** The body as JSON, or undefined when it is not JSON. The content-type check keeps a

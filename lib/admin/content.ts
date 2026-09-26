@@ -138,13 +138,13 @@ export function glossWarning(glossVi: string): string | null {
   // Code points, as Postgres `length` counts them, not UTF-16 units.
   const n = [...glossVi.trim()].length
   if (n > GLOSS_TERM_MAX) {
-    return `Dài ${n} ký tự, quá ${GLOSS_TERM_MAX}: tra tiếng Việt sẽ không tìm ra mục từ theo nghĩa này.`
+    return `${n} characters, over ${GLOSS_TERM_MAX}: a Vietnamese lookup will not find the entry by this sense.`
   }
   return null
 }
 
 /** The refusals the content functions raise (0060), in words. */
 export const CONTENT_REFUSALS: Record<string, string> = {
-  no_such_sense: 'Không còn nghĩa này.',
-  no_such_entry: 'Không còn mục từ này.',
+  no_such_sense: 'This sense no longer exists.',
+  no_such_entry: 'This entry no longer exists.',
 }

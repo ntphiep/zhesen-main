@@ -36,20 +36,20 @@ export function usePoll<T>(url: string, everyMs: number, parse: (raw: unknown) =
         const body: unknown = await res.json()
         if (!alive) return
         if (!res.ok) {
-          fail(typeof body === 'object' && body && 'error' in body && typeof body.error === 'string' ? body.error : `Lỗi ${res.status}`)
+          fail(typeof body === 'object' && body && 'error' in body && typeof body.error === 'string' ? body.error : `Error ${res.status}`)
         } else {
           let data: T
           try {
             data = parseRef.current(body)
           } catch {
-            fail('Server trả về dữ liệu không đúng dạng.')
+            fail('Server returned data in the wrong shape.')
             return
           }
           onDataRef.current?.(data)
           setPoll({ state: 'ok', data, at: Date.now() })
         }
       } catch {
-        if (alive) fail('Mất kết nối tới server.')
+        if (alive) fail('Lost connection to the server.')
       } finally {
         inFlight = false
         if (alive) timer = setTimeout(() => void tick(), everyMs)

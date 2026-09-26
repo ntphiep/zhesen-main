@@ -23,10 +23,11 @@ locals {
 module "alerts" {
   source = "./modules/alerts"
 
-  name_prefix = local.name_prefix
-  region      = var.region
-  alert_email = var.alert_email
-  budget_usd  = var.budget_usd
+  name_prefix    = local.name_prefix
+  region         = var.region
+  account_id     = local.account_id
+  alert_endpoint = "${var.site_url}/api/alerts/sns"
+  budget_usd     = var.budget_usd
 }
 
 module "backup" {

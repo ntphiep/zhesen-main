@@ -47,6 +47,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'infra.restart': 'Restart container',
   'infra.backup': 'Backup now',
   'infra.resize': 'Change instance type',
+  'infra.alert_channels': 'Change alert channels',
   'console.sql': 'Write SQL',
   'console.shell': 'Shell command',
   'console.restore': 'Restore dump',

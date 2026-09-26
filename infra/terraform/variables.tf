@@ -22,11 +22,6 @@ variable "root_volume_gb" {
   default     = 30
 }
 
-variable "alert_email" {
-  description = "Address subscribed to the SNS alarm topic and to the budget notifications."
-  type        = string
-}
-
 variable "site_url" {
   description = "GOTRUE_SITE_URL: where auth links land."
   type        = string

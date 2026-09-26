@@ -86,11 +86,27 @@ function Ring({ label, share, note }: { label: string; share: number | null; not
 
 function Row({ term, children }: { term: string; children: ReactNode }) {
   return (
-    <div className="flex flex-wrap justify-between gap-x-4 gap-y-0.5 py-1.5 sm:grid sm:grid-cols-[7rem_1fr]">
+    <div className="flex min-w-0 justify-between gap-3 sm:justify-start">
       <dt className="text-black/55">{term}</dt>
       <dd className="min-w-0 break-words tabular-nums">{children}</dd>
     </div>
   )
+}
+
+function Fact({ label, value, note, title }: { label: string; value: ReactNode; note?: string; title?: string }) {
+  return (
+    <div className="min-w-0 rounded-lg bg-black/[0.03] px-3 py-2.5" title={title}>
+      <div className="text-xs text-black/55">{label}</div>
+      <div className="mt-0.5 truncate text-base font-medium tabular-nums">{value}</div>
+      {note && <div className="mt-0.5 truncate text-xs text-black/55 tabular-nums">{note}</div>}
+    </div>
+  )
+}
+
+/** "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-arm64-server-20260904" as "Ubuntu 24.04 · 2026-09-04". */
+export function amiLabel(name: string): string {
+  const m = name.match(/ubuntu-[a-z]+-(\d+\.\d+)-[a-z0-9]+-server-(\d{4})(\d{2})(\d{2})/)
+  return m ? `Ubuntu ${m[1]} · ${m[2]}-${m[3]}-${m[4]}` : name.split('/').at(-1) ?? name
 }
 
 const spec = (t: { vcpus: number | null; memoryGb: number | null }) =>
@@ -110,7 +126,7 @@ export function InfraControls() {
   useEffect(() => { void loadTypes() }, [])
 
   const s = poll.state === 'loading' ? undefined : poll.data
-  if (s && 'enabled' in s) return <p className="text-sm text-black/60">Chưa cấu hình quyền AWS cho bản triển khai này (AWS_ROLE_ARN).</p>
+  if (s && 'enabled' in s) return <p className="text-sm text-black/60">AWS access is not configured for this deployment (AWS_ROLE_ARN).</p>
   const state = s?.state
   const host = hostPoll.state === 'loading' ? undefined : hostPoll.data
   const h = host && !('enabled' in host) ? host : null
@@ -143,15 +159,15 @@ export function InfraControls() {
         return
       }
     }
-    setResult({ title: `${title} · database not back after 5 min`, at: new Date(), text: 'Xem Monitor hoặc dùng /rescue.' })
+    setResult({ title: `${title} · database not back after 5 min`, at: new Date(), text: 'Check Monitor, or start it from /rescue.' })
   }
 
   const dialog = pending && (() => {
     if (pending.kind === 'power') {
       const words = {
-        start: { title: 'Start instance', label: 'Start', target: null, text: 'Instance bật trong 1 tới 2 phút, rồi các container tự chạy lại.' },
-        stop: { title: 'Stop instance', label: 'Stop', target: INSTANCE_NAME, text: 'Database, đăng nhập và trang này ngừng hoạt động. Bật lại ở /rescue.' },
-        reboot: { title: 'Reboot instance', label: 'Reboot', target: INSTANCE_NAME, text: 'Mọi container dừng khoảng 1 tới 2 phút rồi tự chạy lại.' },
+        start: { title: 'Start instance', label: 'Start', target: null, text: 'The instance boots in 1 to 2 minutes, then the containers start on their own.' },
+        stop: { title: 'Stop instance', label: 'Stop', target: INSTANCE_NAME, text: 'The database, sign-in and this page go down. Start it again from /rescue.' },
+        reboot: { title: 'Reboot instance', label: 'Reboot', target: INSTANCE_NAME, text: 'Every container stops for 1 to 2 minutes, then starts again.' },
       }[pending.op]
       return { ...words, body: { action: 'power', op: pending.op } }
     }
@@ -164,8 +180,8 @@ export function InfraControls() {
         label: 'Restart',
         target: `supabase-${pending.service}`,
         text: pending.service === 'db'
-          ? 'Postgres dừng vài giây; truy vấn đang chạy bị huỷ.'
-          : 'Container dừng vài giây; yêu cầu tới nó trong lúc đó sẽ lỗi.',
+          ? 'Postgres stops for a few seconds; running queries are cancelled.'
+          : 'The container stops for a few seconds; requests to it fail meanwhile.',
         body: { action: 'restart', service: pending.service },
       }
     }
@@ -173,7 +189,7 @@ export function InfraControls() {
       title: 'Backup now',
       label: 'Backup now',
       target: null,
-      text: 'Chạy script sao lưu hằng đêm, khoảng 1 phút, không gián đoạn người dùng.',
+      text: 'Runs the nightly backup script now, about 1 minute, no downtime.',
       body: { action: 'backup' },
     }
   })()
@@ -202,43 +218,37 @@ export function InfraControls() {
               <button type="button" className={`${button} text-rose-700`} disabled={!running} onClick={() => setPending({ kind: 'power', op: 'stop' })}>Stop</button>
             </div>
           </div>
-          <div className="grid gap-6 px-4 py-4 md:grid-cols-[auto_1fr]">
-            <div className="flex justify-around gap-4 md:justify-start">
+          <div className="grid gap-5 px-4 py-4 lg:grid-cols-[auto_1fr]">
+            <div className="flex justify-around gap-4 lg:justify-start">
               <Ring label="CPU load" share={cpu} note={h?.load ? `${h.load[0].toFixed(2)} / ${h.cpus}` : undefined} />
               <Ring label="Memory" share={h?.memory ? (h.memory.total - h.memory.available) / h.memory.total : null}
                 note={h?.memory ? `${formatBytes(h.memory.total - h.memory.available)} of ${formatBytes(h.memory.total)}` : undefined} />
               <Ring label="Disk" share={h?.disk ? h.disk.used / h.disk.size : null}
                 note={h?.disk ? `${formatBytes(h.disk.used)} of ${formatBytes(h.disk.size)}` : undefined} />
             </div>
-            <dl className="min-w-0 divide-y divide-black/5 text-sm">
-              <Row term="Type">
-                {i?.type ? <><span className="font-mono">{i.type}</span>{[spec(i), i.arch, monthly(i.type)].filter(Boolean).map((p) => ` · ${p}`)}</> : '–'}
-              </Row>
-              <Row term="Instance ID"><span className="font-mono">{i?.id ?? '–'}</span></Row>
-              <Row term="AZ">{i?.az ?? '–'}</Row>
-              <Row term="Private IP"><span className="font-mono">{i?.privateIp ?? '–'}</span></Row>
-              <Row term="AMI">
-                {i?.amiName ?? <span className="font-mono">{i?.amiId ?? '–'}</span>}
-              </Row>
-              <Row term="Volume">
-                {i?.volume ? [
-                  i.volume.sizeGb !== null ? `${i.volume.sizeGb} GB` : null,
-                  i.volume.type,
-                  i.volume.iops !== null ? `${num(i.volume.iops)} IOPS` : null,
-                  i.volume.throughput !== null ? `${i.volume.throughput} MB/s` : null,
-                ].filter(Boolean).join(' · ') || i.volume.id : '–'}
-              </Row>
-              <Row term="Launched">{i?.launchedAt ? when(i.launchedAt) : '–'}</Row>
-              <Row term="Uptime">{h && h.uptimeSeconds !== null ? duration(h.uptimeSeconds) : '–'}</Row>
-            </dl>
+            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+              <Fact label="Type" value={i?.type ? <span className="font-mono">{i.type}</span> : '–'}
+                note={[i ? spec(i) : null, i?.type ? monthly(i.type) : null].filter(Boolean).join(' · ')} />
+              <Fact label="Storage" value={i?.volume?.sizeGb != null ? `${i.volume.sizeGb} GB ${i.volume.type ?? ''}` : '–'}
+                note={i?.volume ? [i.volume.iops !== null ? `${num(i.volume.iops)} IOPS` : null, i.volume.throughput !== null ? `${i.volume.throughput} MB/s` : null].filter(Boolean).join(' · ') : undefined} />
+              <Fact label="Uptime" value={h && h.uptimeSeconds !== null ? duration(h.uptimeSeconds) : '–'}
+                note={i?.launchedAt ? `Launched ${when(i.launchedAt)}` : undefined} />
+              <Fact label="Image" value={i?.amiName ? amiLabel(i.amiName) : (i?.amiId ?? '–')} title={i?.amiName ?? undefined}
+                note={i?.arch ?? undefined} />
+            </div>
           </div>
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-1 border-t border-black/10 px-4 py-3 text-xs sm:grid-cols-3">
+            <Row term="Instance ID"><span className="font-mono">{i?.id ?? '–'}</span></Row>
+            <Row term="AZ">{i?.az ?? '–'}</Row>
+            <Row term="Private IP"><span className="font-mono">{i?.privateIp ?? '–'}</span></Row>
+          </dl>
           {(poll.state === 'error' || hostPoll.state === 'error') && (
             <p className="border-t border-black/10 px-4 py-2 text-xs text-rose-700">
               {poll.state === 'error' ? poll.message : hostPoll.state === 'error' ? hostPoll.message : ''}
             </p>
           )}
         </div>
-        <p className="mt-2 text-xs text-black/50">Instance tắt thì trang này không mở được; bật lại ở /rescue.</p>
+        <p className="mt-2 text-xs text-black/50">If the instance is stopped this page cannot load; start it from /rescue.</p>
       </Section>
 
       <Section title="Containers">
@@ -275,7 +285,7 @@ export function InfraControls() {
           target={dialog.target}
           actionLabel={dialog.label}
           run={async (confirm) => {
-            if (dialog.body.action === 'resize' && !chosen) return { ok: false, message: 'Chọn một instance type.' }
+            if (dialog.body.action === 'resize' && !chosen) return { ok: false, message: 'Choose an instance type.' }
             setResizing(dialog.body.action === 'resize')
             try {
               return await postAdmin('/api/admin/control', { ...dialog.body, confirm })
@@ -298,8 +308,8 @@ export function InfraControls() {
         >
           {pending.kind === 'resize' ? (
             <>
-              {types === null && <p>Đang đọc giá.</p>}
-              {types === 'error' && <p className="text-rose-700">Không đọc được danh sách instance type.</p>}
+              {types === null && <p>Loading prices…</p>}
+              {types === 'error' && <p className="text-rose-700">Instance types could not be read.</p>}
               {Array.isArray(types) && (
                 <div role="radiogroup" aria-label="Instance type" className="grid grid-cols-2 gap-2">
                   {types.map((t) => {
@@ -320,8 +330,8 @@ export function InfraControls() {
                   })}
                 </div>
               )}
-              <p className="mt-3">Web app ngừng khoảng 2 tới 3 phút trong lúc instance tắt rồi bật lại.</p>
-              {resizing && <p role="status" className="mt-2 text-black">Đang stop, đổi type rồi start. Đừng đóng trang.</p>}
+              <p className="mt-3">The web app is down for 2 to 3 minutes while the instance stops and starts.</p>
+              {resizing && <p role="status" className="mt-2 text-black">Stopping, changing the type, starting. Keep this page open.</p>}
             </>
           ) : (
             <p>{dialog.text}</p>

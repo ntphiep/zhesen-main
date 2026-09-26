@@ -105,8 +105,8 @@ export function VacuumNote({ m }: { m: Metrics }) {
   if (m.pgroongaSurplus === 0) return null
   return (
     <p className="mt-2 text-sm text-amber-800">
-      PGroonga giữ {m.pgroongaSurplus} bộ dữ liệu index thừa; chạy <code className="font-mono">vacuum lex.entries</code> ở{' '}
-      <Link href="/admin/database" prefetch={false} className="underline">Database</Link> để dọn.
+      PGroonga holds {m.pgroongaSurplus} surplus index datasets; run <code className="font-mono">vacuum lex.entries</code> from{' '}
+      <Link href="/admin/database" prefetch={false} className="underline">Database</Link> to clean up.
     </p>
   )
 }

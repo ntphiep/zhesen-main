@@ -50,8 +50,8 @@ export function confirmationFor(a: Pick<AdminAccount, 'id' | 'email'>): string {
 
 /** The refusals `admin.delete_account` and `admin.merge_account` raise (0059), in words. */
 export const ACCOUNT_REFUSALS: Record<string, string> = {
-  no_such_account: 'Không còn tài khoản này.',
-  admin_account: 'Không xoá tài khoản quản trị từ đây.',
-  confirm_mismatch: 'Chuỗi xác nhận không khớp.',
-  same_account: 'Hai tài khoản phải khác nhau.',
+  no_such_account: 'This account no longer exists.',
+  admin_account: 'An admin account cannot be deleted from here.',
+  confirm_mismatch: 'The confirmation text does not match.',
+  same_account: 'The two accounts must be different.',
 }

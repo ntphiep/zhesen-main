@@ -26,7 +26,7 @@ export function RescuePanel({ unlocked }: { unlocked: boolean }) {
     setBusy(false)
     if (!out.ok) {
       setError(out.message)
-      if (out.message.startsWith('Phiên cứu hộ')) setOpen(false)
+      if (out.message.startsWith('Rescue session')) setOpen(false)
       return
     }
     const s = stateSchema.safeParse(out.data)
@@ -72,7 +72,7 @@ export function RescuePanel({ unlocked }: { unlocked: boolean }) {
       <div className="rounded-lg border border-black/10 px-4 py-3">
         <div className="font-mono text-sm">zhesen-supabase</div>
         <div className="mt-1 text-lg font-semibold">{state ? LABEL[state.state] ?? state.state : 'Loading'}</div>
-        {state?.launchedAt && <div className="text-xs text-black/50">{state.type}, bật lần gần nhất {when(state.launchedAt)}</div>}
+        {state?.launchedAt && <div className="text-xs text-black/50">{state.type}, last started {when(state.launchedAt)}</div>}
       </div>
       {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
       <div className="flex flex-wrap gap-2">
@@ -89,7 +89,7 @@ export function RescuePanel({ unlocked }: { unlocked: boolean }) {
         </button>
       </div>
       <p className="text-sm text-black/60">
-        Trạng thái đọc lại mỗi 10 giây; instance và container cần 1 tới 2 phút để chạy lại.
+        State refreshes every 10 seconds; the instance and its containers take 1 to 2 minutes to come back up.
       </p>
     </div>
   )

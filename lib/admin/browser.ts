@@ -18,11 +18,11 @@ export async function postAdmin(path: string, body?: unknown): Promise<AdminOutc
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch {
-    return { ok: false, message: 'Không kết nối được tới server.' }
+    return { ok: false, message: 'Could not connect to the server.' }
   }
   const data: unknown = await res.json().catch(() => null)
   if (res.ok) return { ok: true, data }
   const refusal = errorBody.safeParse(data)
-  if (!refusal.success) return { ok: false, message: 'Thao tác không thành công.' }
+  if (!refusal.success) return { ok: false, message: 'The action failed.' }
   return { ok: false, message: refusal.data.error, ...(refusal.data.reauth ? { reauth: true as const } : {}) }
 }

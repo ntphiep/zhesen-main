@@ -48,7 +48,7 @@ export function GuardDialog({
       const email = data.session?.user.email
       const signIn = email ? await supabase.auth.signInWithPassword({ email, password }) : null
       if (!signIn || signIn.error) {
-        setError('Mật khẩu không đúng, hoặc phiên đăng nhập đã hết.')
+        setError('Incorrect password, or the sign-in session expired.')
         setBusy(false)
         return
       }
@@ -85,7 +85,7 @@ export function GuardDialog({
         )}
         {reauth && (
           <label className="flex flex-col gap-1 text-sm">
-            <span>Password <span className="text-black/50">· lần đăng nhập gần nhất đã quá 10 phút</span></span>
+            <span>Password <span className="text-black/50">· last sign-in was over 10 minutes ago</span></span>
             <input
               type="password"
               value={password}
