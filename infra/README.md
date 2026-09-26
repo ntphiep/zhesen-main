@@ -109,10 +109,12 @@ Studio: `pwsh infra/supabase/bin/studio-tunnel.ps1`, then `http://localhost:8000
 `https://<cloudfront>/ai/v1/` with a 9router API key held in SSM `/zhesen/prod/ai_api_key`.
 Dashboard: `pwsh infra/supabase/bin/router-tunnel.ps1`, then
 `http://localhost:20128/dashboard`. Provider logins and keys live in
-`/opt/zhesen/9router/db/data.sqlite`, which the nightly dump does not cover.
+`/opt/zhesen/9router/db/data.sqlite`, which the nightly backup copies to `9router/`.
 
 Backup: `bin/backup.sh` at 03:30 UTC writes `pg_dump -Fc` plus `pg_dumpall --globals-only`
-to `s3://zhesen-db-backups-<account>/postgres/`, kept 30 days; a failure posts to SNS.
+to `s3://zhesen-db-backups-<account>/postgres/`, and a copy of the 9router database to
+`9router/`, all kept 30 days; a failure posts to SNS. Restore 9router by stopping
+`zhesen-9router` and putting the file back as `/opt/zhesen/9router/db/data.sqlite`.
 The root volume outlives the instance (`delete_on_termination = false`), so a dead host
 is rebuilt around the same volume; there is no volume snapshot.
 

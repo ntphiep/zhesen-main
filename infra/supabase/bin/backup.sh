@@ -36,16 +36,25 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$LOCAL_DIR"
 DUMP="$LOCAL_DIR/postgres-$STAMP.dump"
 GLOBALS="$LOCAL_DIR/globals-$STAMP.sql"
+ROUTER="$LOCAL_DIR/9router-$STAMP.sqlite"
 
 # -Fc so pg_restore can pick single objects out of it later.
 docker exec "$CONTAINER" pg_dump -U supabase_admin -Fc postgres >"$DUMP"
 # Roles and their settings live outside any one database.
 docker exec "$CONTAINER" pg_dumpall -U supabase_admin --globals-only >"$GLOBALS"
 
+# 9router's provider logins and API keys; the backup API copies a consistent snapshot
+# while the router keeps writing.
+python3 -c 'import sqlite3, sys
+src, dst = sqlite3.connect(sys.argv[1]), sqlite3.connect(sys.argv[2])
+src.backup(dst)
+dst.close()' /opt/zhesen/9router/db/data.sqlite "$ROUTER"
+
 aws s3 cp "$DUMP" "s3://$BUCKET/postgres/" --region "$REGION"
 aws s3 cp "$GLOBALS" "s3://$BUCKET/postgres/" --region "$REGION"
+aws s3 cp "$ROUTER" "s3://$BUCKET/9router/" --region "$REGION"
 
 find "$LOCAL_DIR" -type f -mtime "+$KEEP_LOCAL_DAYS" -delete
 
-echo "backup: $STAMP -> s3://$BUCKET/postgres/"
-du -h "$DUMP" "$GLOBALS"
+echo "backup: $STAMP -> s3://$BUCKET/postgres/ and 9router/"
+du -h "$DUMP" "$GLOBALS" "$ROUTER"
