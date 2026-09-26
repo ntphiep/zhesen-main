@@ -147,7 +147,7 @@ export function AccountSettings({
       <section>
         <h2 className="text-lg font-semibold">Giao diện</h2>
         <p className="mt-1 text-sm text-black/60">
-          Chỉ áp dụng trên trình duyệt này. Mặc định theo cài đặt của máy.
+          Chọn giao diện cho trình duyệt này.
         </p>
         <div className="mt-2">
           <ThemeToggle />
@@ -215,7 +215,7 @@ export function AccountSettings({
       <section>
         <h2 className="text-lg font-semibold">Dữ liệu</h2>
         <p className="mt-1 text-sm text-black/60">
-          Tải cả sổ tay về máy. File CSV mở bằng Excel, file TSV nhập vào Anki.
+          Tải cả sổ tay về máy.
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           <button

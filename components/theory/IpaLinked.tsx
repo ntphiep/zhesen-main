@@ -7,8 +7,9 @@ import type { LangCode } from '@/lib/languages'
 
 /**
  * A transcription where every sound links to its entry on the pronunciation page. Only
- * for the word page: in a list the links would outnumber the words. A language with no
- * phoneme table renders exactly what `Ipa` renders.
+ * where one word is shown, the word page or an expanded wordlist row: in a list the links
+ * would outnumber the words. A language with no phoneme table renders exactly what `Ipa`
+ * renders.
  */
 export function IpaLinked({ value, lang, className = '' }: {
   value: string | null

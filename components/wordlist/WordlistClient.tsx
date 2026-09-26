@@ -321,7 +321,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         <p className="text-center text-sm text-black/40 py-12">
           {words.length === 0
             ? 'Chưa có từ. Tra một từ để lưu.'
-            : 'Không có từ nào khớp bộ lọc.'}
+            : 'Không có từ nào khớp bộ lọc. Đổi bộ lọc.'}
         </p>
       )}
 

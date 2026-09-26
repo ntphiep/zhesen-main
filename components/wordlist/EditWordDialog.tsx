@@ -101,7 +101,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/50">Meaning (EN)</span>
+            <span className="text-xs text-black/50">Nghĩa tiếng Anh</span>
             <input
               type="text"
               value={meaningEn}

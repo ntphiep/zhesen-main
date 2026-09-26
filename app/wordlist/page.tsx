@@ -8,7 +8,7 @@ import { pageMetadata } from '@/lib/site'
 
 export const metadata = pageMetadata({
   title: 'Sổ tay',
-  description: 'Xem và ôn các từ đã lưu.',
+  description: 'Xem và sửa các từ đã lưu.',
 })
 
 export default async function WordlistPage({
@@ -41,7 +41,7 @@ export default async function WordlistPage({
           </Link>
         )}
       </div>
-      <p className="mt-1 text-sm text-black/60">Các từ đã lưu.</p>
+      <p className="mt-1 text-sm text-black/60">Xem và sửa các từ đã lưu.</p>
       <div className="mt-6">
         <WordlistClient initialWords={words} />
       </div>

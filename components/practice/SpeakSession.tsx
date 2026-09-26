@@ -172,7 +172,7 @@ export function SpeakSession() {
         )}
         {result !== null && (
           <div role="status" aria-live="polite" className="mt-6">
-            {result === 'correct' && <p className="font-medium text-emerald-700">Đúng ✓</p>}
+            {result === 'correct' && <p className="font-medium text-emerald-700">Đúng</p>}
             {result === 'close' && <p className="font-medium text-amber-700">Gần đúng</p>}
             {result === 'wrong' && <p className="font-medium text-rose-700">Chưa khớp. Thử lại sau.</p>}
             {heard && <p className="mt-1 text-sm text-black/50">Nghe được: “{heard}”</p>}

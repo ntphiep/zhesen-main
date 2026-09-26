@@ -74,7 +74,7 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
 
       <div className="p-5 flex flex-col gap-3">
         <p className="text-sm text-black/60">
-          Chọn file CSV có cột đầu là <code>headword</code>, như file xuất từ sổ tay. Không nhập lại từ đã có trong sổ tay ở cùng ngôn ngữ.
+          Chọn file CSV có cột đầu là <code>headword</code>, như file xuất từ sổ tay.
         </p>
 
         <label className="flex flex-col gap-1">

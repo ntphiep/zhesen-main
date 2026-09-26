@@ -29,7 +29,7 @@ export default async function AccountPage() {
       <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>
       <h1 className="mt-3 text-3xl font-bold">Tài khoản</h1>
       <p className="mt-1 text-sm text-black/60">
-        Sổ tay lưu theo tài khoản này.
+        Xem tiến độ và chỉnh cài đặt tài khoản.
       </p>
       {profile?.role === 'admin' && <div className="mt-8"><AdminEntry /></div>}
       <div className="mt-8">

@@ -337,7 +337,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
       {total > 0 && (
         <div className="flex flex-col gap-3">{shown.map(([l, list]) => renderCard(l, list))}</div>
       )}
-      {showFilteredEmpty && <p className="text-sm text-black/40">Không có từ nào khớp bộ lọc.</p>}
+      {showFilteredEmpty && <p className="text-sm text-black/40">Không có từ nào khớp bộ lọc. Đổi bộ lọc.</p>}
 
       {showEmpty && (
         data.suggestions.length > 0

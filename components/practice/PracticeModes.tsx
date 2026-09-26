@@ -2,8 +2,8 @@ import Link from 'next/link'
 
 export function PracticeModes({ due }: { due: number }) {
   const modes = [
-    { href: '/practice/review', label: 'Ôn từ', sub: due > 0 ? `${due} từ cần ôn` : 'Ôn từ đến hạn', primary: due > 0 },
-    { href: '/practice/quiz', label: 'Kiểm tra', sub: 'Trắc nghiệm 4 đáp án', primary: false },
+    { href: '/practice/review', label: 'Ôn từ', sub: due > 0 ? `${due} từ cần ôn` : 'Chưa có từ đến hạn', primary: due > 0 },
+    { href: '/practice/quiz', label: 'Kiểm tra', sub: 'Chọn nghĩa đúng', primary: false },
     { href: '/practice/write', label: 'Viết từ', sub: 'Nhìn nghĩa, gõ từ', primary: false },
     { href: '/practice/dictation', label: 'Nghe và chép', sub: 'Nghe rồi gõ từ', primary: false },
     { href: '/practice/match', label: 'Ghép cặp', sub: 'Nối từ với nghĩa', primary: false },

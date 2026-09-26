@@ -99,7 +99,7 @@ export function WordlistToolbar({
           <option value="">Tất cả từ loại</option>
           {/* The abbreviation leads, as it does everywhere else, but an option list has
               no column to be read in: "art." and "adv." are indistinguishable alone. */}
-          {posOptions.map((g) => <option key={g.key} value={g.key}>{g.abbr} — {g.labelVi}</option>)}
+          {posOptions.map((g) => <option key={g.key} value={g.key}>{g.abbr} ({g.labelVi})</option>)}
         </select>
       )}
 

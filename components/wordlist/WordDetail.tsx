@@ -1,14 +1,14 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { fetchEntryDetail } from '@/lib/dictionary/entryResponse'
-import { AudioButton } from '@/components/ui/AudioButton'
 import { AiCoach } from '@/components/ai/AiCoach'
+import { Pronunciation } from '@/components/lookup/Pronunciation'
+import { RELATION_SECTIONS } from '@/components/lookup/RelatedWords'
+import { classifyRelations, RELATION_CAP } from '@/lib/dictionary/relations'
 import { pickExamples, isSentenceTranslation } from '@/lib/dictionary/textQuality'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 import type { UserWord } from '@/lib/wordlist/types'
-import { Ipa } from '@/components/ui/Ipa'
 import { PosTag } from '@/components/ui/PosTag'
-import { RELATION_CAP } from '@/lib/dictionary/relations'
 
 type DetailState =
   | { status: 'loading' }
@@ -21,7 +21,7 @@ type DetailState =
 const detailCache = new Map<string, DictEntryDetail | null>()
 
 /** Empty the cache. Module-level state outlives a render and leaks between test
- *  cases, the same reason `resetSessionState` exists. */
+ *  cases, the same reason `resetAiBudgets` exists. */
 export function resetDetailCache(): void {
   detailCache.clear()
 }
@@ -80,13 +80,8 @@ export function WordDetail({ word }: { word: UserWord }) {
   const glosses = [detail.glossVi, ...detail.senses.map((sense) => sense.glossVi)]
   const examples = pickExamples(detail.examples)
 
-  const relationGroups = detail.relations.reduce<Record<string, string[]>>((acc, r) => {
-    if (!r.relatedText) return acc
-    const key = r.relationType
-    if (!acc[key]) acc[key] = []
-    acc[key].push(r.relatedText)
-    return acc
-  }, {})
+  const relations = classifyRelations(detail.relations)
+  const relationGroups = RELATION_SECTIONS.filter((s) => relations[s.key].length > 0)
 
   return (
     <div className="flex flex-col gap-3 text-sm">
@@ -103,15 +98,7 @@ export function WordDetail({ word }: { word: UserWord }) {
       )}
 
       {detail.pronunciations.length > 0 && (
-        <div className="flex flex-col gap-1">
-          {detail.pronunciations.map((p, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="text-xs text-black/40">{p.accent}</span>
-              <Ipa value={p.ipa} lang={detail.lang} className="text-black/70" />
-              <AudioButton text={detail.headword} lang={detail.lang} audioUrl={p.audioUrl} />
-            </div>
-          ))}
-        </div>
+        <Pronunciation headword={detail.headword} prons={detail.pronunciations} lang={detail.lang} />
       )}
 
       {/* Filtered exactly like the lookup page: the same corrupted sentences and the
@@ -129,13 +116,13 @@ export function WordDetail({ word }: { word: UserWord }) {
         </div>
       )}
 
-      {Object.keys(relationGroups).length > 0 && (
+      {relationGroups.length > 0 && (
         <div className="flex flex-col gap-1">
-          {Object.entries(relationGroups).map(([type, words]) => (
-            <div key={type} className="flex gap-2 items-baseline flex-wrap">
-              <span className="text-xs font-medium text-black/40 uppercase">{type}</span>
-              {words.slice(0, RELATION_CAP).map((w, i) => (
-                <span key={i} className="text-black/70">{w}</span>
+          {relationGroups.map((s) => (
+            <div key={s.key} className="flex gap-2 items-baseline flex-wrap">
+              <span className="text-xs font-medium text-black/40 uppercase">{s.label}</span>
+              {relations[s.key].slice(0, RELATION_CAP).map((w) => (
+                <span key={w} className="text-black/70">{w}</span>
               ))}
             </div>
           ))}

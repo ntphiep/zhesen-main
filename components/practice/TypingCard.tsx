@@ -60,9 +60,9 @@ export function TypingCard({
 
       {answered && (
         <div role="status" aria-live="polite" className="mt-4 text-center">
-          {result === 'correct' && <p className="font-medium text-emerald-700">Đúng ✓</p>}
+          {result === 'correct' && <p className="font-medium text-emerald-700">Đúng</p>}
           {result === 'close' && <p className="font-medium text-amber-700">Gần đúng. Đáp án: <b>{word.headword}</b></p>}
-          {result === 'wrong' && <p className="font-medium text-rose-700">Đáp án: <b>{word.headword}</b></p>}
+          {result === 'wrong' && <p className="font-medium text-rose-700">Sai. Đáp án: <b>{word.headword}</b></p>}
           {mode === 'dictation' && word.meaningVi && <p className="mt-1 text-sm text-black/50">{word.meaningVi}</p>}
           <button onClick={onNext} className="mt-4 w-full rounded-lg bg-black py-2 text-white">Tiếp</button>
         </div>

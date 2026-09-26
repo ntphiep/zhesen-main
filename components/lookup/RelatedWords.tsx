@@ -7,7 +7,7 @@ import { PosTag } from '@/components/ui/PosTag'
 import type { DictRelation, TermPreview } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 
-const SECTIONS: { key: keyof ClassifiedRelations; label: string; hint: string }[] = [
+export const RELATION_SECTIONS: { key: keyof ClassifiedRelations; label: string; hint: string }[] = [
   { key: 'synonyms', label: 'Cận nghĩa', hint: 'Dùng thay được trong một số ngữ cảnh' },
   { key: 'antonyms', label: 'Trái nghĩa', hint: 'Nghĩa ngược lại' },
   { key: 'derived', label: 'Phái sinh', hint: 'Từ tạo ra từ gốc này' },
@@ -48,7 +48,7 @@ export function RelatedWords({ relations, previews, lang }: {
 }) {
   const [expanded, setExpanded] = useState(false)
   const c = classifyRelations(relations)
-  const groups = SECTIONS.filter((s) => c[s.key].length > 0)
+  const groups = RELATION_SECTIONS.filter((s) => c[s.key].length > 0)
   if (groups.length === 0) return null
   const hasOverflow = groups.some((s) => c[s.key].length > CAP)
 

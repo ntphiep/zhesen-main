@@ -14,7 +14,7 @@ describe('EditWordDialog', () => {
   it('saves edited meaning and status', async () => {
     const onSave = vi.fn()
     render(<EditWordDialog word={word} open onClose={() => {}} onSave={onSave} />)
-    const meaning = screen.getByLabelText(/Nghĩa/i)
+    const meaning = screen.getByLabelText(/Nghĩa tiếng Việt/i)
     await userEvent.clear(meaning)
     await userEvent.type(meaning, 'chó nhà')
     await userEvent.selectOptions(screen.getByLabelText(/Trạng thái/i), 'learning')
@@ -56,7 +56,7 @@ describe('EditWordDialog', () => {
     const onSave = vi.fn()
     const { rerender } = render(<EditWordDialog word={word} open onClose={() => {}} onSave={onSave} />)
 
-    const meaning = screen.getByLabelText(/Nghĩa/i)
+    const meaning = screen.getByLabelText(/Nghĩa tiếng Việt/i)
     await userEvent.clear(meaning)
     await userEvent.type(meaning, 'BẢN NHÁP ĐÃ HỦY')
 
@@ -65,7 +65,7 @@ describe('EditWordDialog', () => {
     // Reopen the same word.
     rerender(<EditWordDialog word={word} open onClose={() => {}} onSave={onSave} />)
 
-    expect(screen.getByLabelText(/Nghĩa/i)).toHaveValue('con chó')
+    expect(screen.getByLabelText(/Nghĩa tiếng Việt/i)).toHaveValue('con chó')
     // And because the fields hold the real values again, pressing Lưu has
     // nothing to write -- which is the stronger form of the same claim.
     await userEvent.click(screen.getByRole('button', { name: /Lưu/i }))
@@ -77,6 +77,6 @@ describe('EditWordDialog', () => {
     const { rerender } = render(<EditWordDialog word={word} open onClose={() => {}} onSave={vi.fn()} />)
     rerender(<EditWordDialog word={null} open={false} onClose={() => {}} onSave={vi.fn()} />)
     rerender(<EditWordDialog word={other} open onClose={() => {}} onSave={vi.fn()} />)
-    expect(screen.getByLabelText(/Nghĩa/i)).toHaveValue('con mèo')
+    expect(screen.getByLabelText(/Nghĩa tiếng Việt/i)).toHaveValue('con mèo')
   })
 })

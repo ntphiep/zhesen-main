@@ -38,7 +38,7 @@ export const COLUMNS: ColumnDef[] = [
   { key: 'createdAt', label: 'Ngày thêm', sortKey: 'createdAt', defaultVisible: true },
   { key: 'fsrsDueAt', label: 'Lần ôn tới', sortKey: 'fsrsDueAt', defaultVisible: false },
   { key: 'fsrsLapses', label: 'Số lần sai', sortKey: 'fsrsLapses', defaultVisible: false },
-  { key: 'audio', label: 'Audio', sortKey: null, defaultVisible: true },
+  { key: 'audio', label: 'Phát âm', sortKey: null, defaultVisible: true },
 ]
 
 const BY_KEY = new Map(COLUMNS.map((c) => [c.key, c]))

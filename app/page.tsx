@@ -9,7 +9,7 @@ const SECTIONS = [
   { href: '/dictionary', title: 'Dịch', desc: 'Tra một từ hay dịch cả đoạn' },
   { href: '/theory', title: 'Lý thuyết', desc: 'Học phát âm, từ loại, câu, ngữ pháp và collocation' },
   { href: '/practice', title: 'Luyện tập', desc: 'Ôn từ đã lưu bằng nhiều cách' },
-  { href: '/wordlist', title: 'Sổ tay', desc: 'Các từ đã lưu' },
+  { href: '/wordlist', title: 'Sổ tay', desc: 'Xem và sửa các từ đã lưu' },
 ]
 
 export default async function Home() {

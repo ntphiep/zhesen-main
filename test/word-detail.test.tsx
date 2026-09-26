@@ -38,6 +38,15 @@ describe('WordDetail', () => {
     expect(screen.getByText('hound')).toBeInTheDocument()
   })
 
+  // The raw relation type and accent tag ("synonym", "en-US") are data, not labels; the
+  // dictionary page's own labels are what a learner reads.
+  it('labels relations and accents the way the dictionary page does', async () => {
+    render(<WordDetail word={base} />)
+    expect(await screen.findByText('Cận nghĩa')).toBeInTheDocument()
+    expect(screen.queryByText('synonym')).toBeNull()
+    expect(screen.queryByText('en-US')).toBeNull()
+  })
+
   it('shows user fields for a manual word', () => {
     render(<WordDetail word={{ ...base, entryId: null, meaningVi: 'tự nhập', notes: 'ghi chú' }} />)
     expect(screen.getByText('tự nhập')).toBeInTheDocument()

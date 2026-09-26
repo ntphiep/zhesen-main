@@ -78,7 +78,7 @@ describe('WordTable', () => {
   // The audio button has nothing to order by, so its header is a label and not a control.
   it('offers no sort on the audio column', () => {
     show()
-    const header = screen.getByRole('columnheader', { name: 'Audio' })
+    const header = screen.getByRole('columnheader', { name: 'Phát âm' })
     expect(within(header).queryByRole('button')).toBeNull()
   })
 

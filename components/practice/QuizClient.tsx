@@ -57,7 +57,7 @@ export function QuizClient() {
       <main className="mx-auto max-w-md px-6 py-16 text-center">
         <div className="text-2xl font-semibold">Kết quả: {score}/{questions.length}</div>
         <GradeSyncWarning failed={syncFailed} />
-        <p className="mt-2 text-black/50">{score === questions.length ? 'Đúng hết.' : 'Làm lại một lượt nữa.'}</p>
+        {score === questions.length && <p className="mt-2 text-black/50">Đúng hết.</p>}
         <div className="mt-6 flex justify-center gap-3">
           <button onClick={() => setRound((r) => r + 1)} className="rounded-lg bg-black px-5 py-2 text-white">Làm lại</button>
           <Link href="/practice" className="rounded-lg border border-black/15 px-5 py-2 hover:bg-black/5">Về luyện tập</Link>
