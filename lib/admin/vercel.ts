@@ -60,15 +60,19 @@ const envListSchema = z.object({
   envs: z.array(z.object({ id: z.string(), key: z.string(), target: z.union([z.array(z.string()), z.string()]).optional() })),
 })
 
-/** Every production record of `key` gets the new value; type and targets stay. */
-export async function setProductionEnv(t: VercelTarget, key: string, value: string): Promise<number> {
+/** The ids of every production record of `key`. Doubles as proof that the token reaches the project. */
+export async function productionEnvIds(t: VercelTarget, key: string): Promise<string[]> {
   const { envs } = envListSchema.parse(await call(t, 'GET', `/v10/projects/${t.projectId}/env`))
   const ids = envs.filter((e) => e.key === key && [e.target ?? []].flat().includes('production')).map((e) => e.id)
   if (ids.length === 0) throw new VercelError(`Vercel has no production variable ${key}.`)
+  return ids
+}
+
+/** Each record gets the new value; type and targets stay. */
+export async function setEnv(t: VercelTarget, ids: string[], value: string): Promise<void> {
   for (const id of ids) {
     z.object({ key: z.string() }).parse(await call(t, 'PATCH', `/v9/projects/${t.projectId}/env/${id}`, { value }))
   }
-  return ids.length
 }
 
 const deploymentSchema = z.object({ id: z.string(), url: z.string(), readyState: z.string().optional() })

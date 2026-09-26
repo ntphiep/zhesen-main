@@ -75,6 +75,17 @@ describe('runtimeEnv', () => {
     expect((await runtimeEnv()).AI_API_KEY).toBe('from-env')
   })
 
+  it('never answers REVALIDATE_SECRET from its env copy when SSM fails', async () => {
+    process.env.REVALIDATE_SECRET = 'rotated-away'
+    send.mockRejectedValue(Object.assign(new Error('timeout'), { name: 'TimeoutError' }))
+    const env = await runtimeEnv()
+    expect(env.REVALIDATE_SECRET).toBeUndefined()
+    expect(env.AI_API_KEY).toBe('from-env')
+    resetRuntimeEnv()
+    ssmHas({})
+    expect((await runtimeEnv()).REVALIDATE_SECRET).toBe('rotated-away')
+  })
+
   it('keeps one answer for the cache window and asks again after it', async () => {
     ssmHas({ [appParameter('AI_API_KEY')]: 'first' })
     const t0 = 1_000_000

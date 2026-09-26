@@ -29,11 +29,15 @@ const parametersSchema = z.object({
 
 type Values = Partial<Record<AppKey, string>>
 
-let cached: { at: number; values: Promise<Values> } | null = null
+/** Checked against a caller's header, so after a rotation from /admin/secrets the Vercel
+ *  copy is the leaked value: an SSM error must refuse rather than fall back to it. */
+const SSM_ONLY_ON_ERROR: ReadonlySet<AppKey> = new Set(['REVALIDATE_SECRET'])
 
-/** One GetParameters call for the whole set (the API takes at most 10 names). An error
- *  answers nothing, so every key falls back to its env var until the next read. */
-async function readSsm(): Promise<Values> {
+let cached: { at: number; values: Promise<Values | null> } | null = null
+
+/** One GetParameters call for the whole set (the API takes at most 10 names). Null means
+ *  the call failed, and every other key falls back to its env var until the next read. */
+async function readSsm(): Promise<Values | null> {
   const cfg = awsHealthConfig()
   if (!cfg) return {}
   try {
@@ -47,11 +51,11 @@ async function readSsm(): Promise<Values> {
       return v ? [[k, v]] : []
     }))
   } catch {
-    return {}
+    return null
   }
 }
 
-function ssmAppValues(now: number = Date.now()): Promise<Values> {
+function ssmAppValues(now: number = Date.now()): Promise<Values | null> {
   if (!cached || now - cached.at >= CACHE_MS) cached = { at: now, values: readSsm() }
   return cached.values
 }
@@ -60,7 +64,7 @@ function ssmAppValues(now: number = Date.now()): Promise<Values> {
 export async function runtimeEnv(now: number = Date.now()): Promise<Values> {
   const ssm = await ssmAppValues(now)
   return Object.fromEntries(APP_KEYS.flatMap((k) => {
-    const v = ssm[k] || process.env[k]?.trim()
+    const v = ssm === null && SSM_ONLY_ON_ERROR.has(k) ? undefined : ssm?.[k] || process.env[k]?.trim()
     return v ? [[k, v]] : []
   }))
 }

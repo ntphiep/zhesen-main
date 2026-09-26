@@ -10,7 +10,7 @@ import {
   PREFIX, ROLES_OK, applyScript, buildInventory, describeParameters, findSecret, generateSecret, postgresPasswordScript,
   readValue, readValues, rotatedKeys, servicesFor, writeValue, type SecretDef,
 } from '@/lib/admin/secrets'
-import { redeployProduction, setProductionEnv, vercelTarget, VercelError, type VercelTarget } from '@/lib/admin/vercel'
+import { productionEnvIds, redeployProduction, setEnv, vercelTarget, VercelError, type VercelTarget } from '@/lib/admin/vercel'
 import { resetRuntimeEnv, CACHE_MS } from '@/lib/secrets'
 import { aiConfig } from '@/lib/ai/config'
 import { azureTranslatorConfig } from '@/lib/translate/config'
@@ -44,7 +44,8 @@ export async function GET(): Promise<Response> {
     const { ssm } = clients(cfg)
     const meta = await describeParameters(ssm)
     const values = await readValues(ssm, [...meta.keys()])
-    return json({ rows: buildInventory(meta, values, process.env), vercelToken: values.has(`${PREFIX}/vercel_token`) })
+    const vercelToken = values.has(`${PREFIX}/vercel_token`) || Boolean(process.env.VERCEL_TOKEN?.trim())
+    return json({ rows: buildInventory(meta, values, process.env), vercelToken })
   } catch (e) {
     return failure(e)
   }
@@ -67,6 +68,19 @@ function shellFailed(what: string, r: ShellResult): ApplyError {
   return new ApplyError(`${what} (${r.status}, exit ${r.exitCode}): ${(r.stderr || r.stdout).trim().slice(-400)}`)
 }
 
+type Write = [name: string, value: string, type: string]
+
+/** Writes each previous value back; returns the parameters still holding the new one. */
+async function restore(ssm: SSMClient, writes: Write[], before: Map<string, string>): Promise<string[]> {
+  const stuck: string[] = []
+  for (const [n, , t] of writes) {
+    const old = before.get(n)
+    const ok = old ? await writeValue(ssm, n, old, t).then(() => true, () => false) : false
+    if (!ok) stuck.push(n)
+  }
+  return stuck
+}
+
 /** Runs the change and returns its summary lines. Throws ApplyError with words for the owner. */
 async function apply(ssm: SSMClient, def: SecretDef, value: string, vercel: VercelTarget | null): Promise<string[]> {
   const services = servicesFor(def)
@@ -84,7 +98,7 @@ async function apply(ssm: SSMClient, def: SecretDef, value: string, vercel: Verc
     case 'instance': {
       await writeValue(ssm, def.parameter ?? '', value, await parameterType(ssm, def))
       const r = await runShell(ssm, applyScript(services), 180)
-      if (r.exitCode !== 0) throw shellFailed(`Saved ${def.parameter}, but the instance still runs the old value: render or recreate failed`, r)
+      if (r.exitCode !== 0) throw shellFailed(`Saved ${def.parameter}, but render or recreate failed, so some services may still run the old value; run bin/render-env.sh and docker compose up -d on the instance`, r)
       return [`Saved ${def.parameter}, rendered .env, ${recreated}.`]
     }
     case 'postgres': {
@@ -93,14 +107,20 @@ async function apply(ssm: SSMClient, def: SecretDef, value: string, vercel: Verc
       await writeValue(ssm, name, value, 'SecureString')
       const r = await runShell(ssm, postgresPasswordScript(services), 240)
       if (!r.stdout.includes(ROLES_OK)) {
-        if (previous) await writeValue(ssm, name, previous, 'SecureString')
-        throw shellFailed('The database refused the new password, so nothing changed and the parameter is back as it was', r)
+        const stuck = await restore(ssm, [[name, value, 'SecureString']], new Map(previous ? [[name, previous]] : []))
+        throw shellFailed(stuck.length
+          ? `The database refused the new password, but ${name} could not be put back; set it to its previous version in SSM before anything renders .env`
+          : 'The database refused the new password, so nothing changed and the parameter is back as it was', r)
       }
       if (r.exitCode !== 0) throw shellFailed('The roles have the new password, but render or recreate failed; run bin/render-env.sh and docker compose up -d on the instance', r)
       return [`Changed the password of every database role, saved ${name}, rendered .env, ${recreated}.`]
     }
     case 'jwt': {
       if (!vercel) throw new ApplyError('Vercel is not configured.')
+      // Before the instance changes: a Vercel refusal after it leaves every browser on the old anon key.
+      const anonIds = await productionEnvIds(vercel, 'NEXT_PUBLIC_SUPABASE_ANON_KEY').catch((e: unknown) => {
+        throw new ApplyError(`Nothing changed: ${e instanceof Error ? e.message : 'Vercel did not answer'}.`)
+      })
       const names = { secret: `${PREFIX}/jwt_secret`, anon: `${PREFIX}/anon_key`, service: `${PREFIX}/service_role_key` }
       const meta = await describeParameters(ssm)
       const before = await readValues(ssm, Object.values(names))
@@ -108,31 +128,45 @@ async function apply(ssm: SSMClient, def: SecretDef, value: string, vercel: Verc
       if (!currentAnon) throw new ApplyError('anon_key could not be read, so its claims cannot be copied.')
       const keys = rotatedKeys(currentAnon, value)
       const typeOf = (n: string, fallback: string) => meta.get(n)?.type ?? fallback
-      const writes: [string, string, string][] = [
+      const writes: Write[] = [
         [names.secret, value, typeOf(names.secret, 'SecureString')],
         [names.anon, keys.anon, typeOf(names.anon, 'String')],
         [names.service, keys.serviceRole, typeOf(names.service, 'SecureString')],
       ]
-      for (const [n, v, t] of writes) await writeValue(ssm, n, v, t)
+      const written: Write[] = []
+      try {
+        for (const w of writes) {
+          await writeValue(ssm, ...w)
+          written.push(w)
+        }
+      } catch (e) {
+        const stuck = await restore(ssm, written, before)
+        throw new ApplyError(`AWS refused a write (${e instanceof Error ? e.name : 'Error'}), so the instance and Vercel were not touched; ${
+          stuck.length ? `${stuck.join(', ')} still hold the new value, set them to their previous versions in SSM` : 'the parameters are back as they were'}.`)
+      }
       const r = await runShell(ssm, applyScript(services), 240)
       if (r.exitCode !== 0) {
-        for (const [n, , t] of writes) {
-          const old = before.get(n)
-          if (old) await writeValue(ssm, n, old, t)
+        // render-env.sh has already written the new .env and some services may run it.
+        const stuck = await restore(ssm, writes, before)
+        if (stuck.length) {
+          throw shellFailed(`Render or recreate failed and ${stuck.join(', ')} could not be put back; set them to their previous versions in SSM, then run bin/render-env.sh and docker compose up -d on the instance. Vercel was not touched`, r)
         }
-        throw shellFailed('Render or recreate failed, so the three parameters are back as they were and Vercel was not touched', r)
+        const back = await runShell(ssm, applyScript(services), 240)
+        throw shellFailed(back.exitCode === 0
+          ? 'Render or recreate failed; the parameters are back and the instance runs the old keys again. Vercel was not touched'
+          : 'Render or recreate failed, and so did rendering the old keys again; the parameters are back, so run bin/render-env.sh and docker compose up -d on the instance. Vercel was not touched', r)
       }
       try {
-        await setProductionEnv(vercel, 'NEXT_PUBLIC_SUPABASE_ANON_KEY', keys.anon)
+        await setEnv(vercel, anonIds, keys.anon)
         const d = await redeployProduction(vercel)
         return [`Rotated jwt_secret, anon_key and service_role_key, ${recreated}.`, `Vercel has the new anon key; production build ${d.id} started (https://${d.url}).`]
       } catch (e) {
-        throw new ApplyError(`The instance runs the new keys, but Vercel was not updated (${e instanceof Error ? e.message : 'error'}). Set NEXT_PUBLIC_SUPABASE_ANON_KEY to the new anon_key and redeploy production.`)
+        throw new ApplyError(`The instance runs the new keys, but Vercel was not updated (${e instanceof Error ? e.message : 'error'}). Set NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel to the new anon_key, which this page reveals, and redeploy production.`)
       }
     }
     case 'vercel': {
       if (!vercel || !def.env) throw new ApplyError('Vercel is not configured.')
-      await setProductionEnv(vercel, def.env, value)
+      await setEnv(vercel, await productionEnvIds(vercel, def.env), value)
       const d = await redeployProduction(vercel)
       return [`Saved ${def.env} in Vercel; production build ${d.id} started (https://${d.url}).`]
     }

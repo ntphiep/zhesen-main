@@ -256,3 +256,87 @@ describe('update', () => {
     expect(store.get('/zhesen/prod/postgres_password')?.value).toBe('OldPostgresPassword0123456789')
   })
 })
+
+describe('jwt_secret rotation', () => {
+  const FAILED = { status: 'Failed', exitCode: 1, stdout: '', stderr: 'dependency failed to start: container supabase-rest is unhealthy', truncated: false, ms: 10 }
+  const rotate = () => post({ action: 'update', id: 'jwt_secret', generate: true, confirm: 'jwt_secret' })
+  const steps = () => log.filter((l) => l.startsWith('vercel') || l.startsWith('put') || l === 'shell')
+
+  function vercelAnswers(envStatus: number) {
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
+      const method = init?.method ?? 'GET'
+      log.push(`vercel ${method}`)
+      if (method === 'GET') {
+        return envStatus === 200
+          ? Response.json({ envs: [{ id: 'env_1', key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', target: ['production'] }] })
+          : Response.json({ error: { message: 'Not authorized' } }, { status: envStatus })
+      }
+      if (method === 'PATCH') return Response.json({ key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY' })
+      return Response.json({ id: 'dpl_new', url: 'zhesen-new.vercel.app' })
+    }))
+  }
+
+  beforeEach(() => {
+    process.env.VERCEL_TOKEN = 'vercel-token'
+    process.env.VERCEL_ENV = 'production'
+    process.env.VERCEL_PROJECT_ID = 'prj_1'
+    process.env.VERCEL_DEPLOYMENT_ID = 'dpl_1'
+    store.set('/zhesen/prod/service_role_key', { value: 'old-service-role', type: 'SecureString' })
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    delete process.env.VERCEL_ENV
+    delete process.env.VERCEL_PROJECT_ID
+    delete process.env.VERCEL_DEPLOYMENT_ID
+  })
+
+  it('reaches Vercel before it changes the instance, and updates Vercel after', async () => {
+    vercelAnswers(200)
+    expect((await rotate()).status).toBe(200)
+    expect(steps()).toEqual([
+      'vercel GET', 'put /zhesen/prod/jwt_secret', 'put /zhesen/prod/anon_key', 'put /zhesen/prod/service_role_key',
+      'shell', 'vercel PATCH', 'vercel POST',
+    ])
+  })
+
+  it('changes nothing when Vercel refuses the token', async () => {
+    vercelAnswers(403)
+    const res = await rotate()
+    expect(res.status).toBe(502)
+    await expect(res.json()).resolves.toMatchObject({ error: expect.stringContaining('Nothing changed') })
+    expect(steps()).toEqual(['vercel GET'])
+    expect(store.get('/zhesen/prod/jwt_secret')?.value).toBe(OLD_SECRET)
+  })
+
+  it('puts the parameters back and renders the old keys again when the recreate fails', async () => {
+    vercelAnswers(200)
+    runShell.mockImplementationOnce(async () => {
+      log.push('shell')
+      return FAILED
+    })
+    const res = await rotate()
+    expect(res.status).toBe(502)
+    await expect(res.json()).resolves.toMatchObject({ error: expect.stringContaining('runs the old keys again') })
+    expect(store.get('/zhesen/prod/jwt_secret')?.value).toBe(OLD_SECRET)
+    expect(store.get('/zhesen/prod/anon_key')?.value).toBe(OLD_ANON)
+    expect(store.get('/zhesen/prod/service_role_key')?.value).toBe('old-service-role')
+    expect(steps().filter((l) => l === 'shell')).toHaveLength(2)
+    expect(steps()).not.toContain('vercel PATCH')
+  })
+
+  it('puts back what it wrote and renders nothing when AWS refuses a later write', async () => {
+    vercelAnswers(200)
+    const base = send.getMockImplementation()
+    send.mockImplementation(async (cmd: unknown) => {
+      if (cmd instanceof PutParameterCommand && cmd.input.Name === '/zhesen/prod/anon_key' && cmd.input.Value !== OLD_ANON) {
+        throw Object.assign(new Error('Rate exceeded'), { name: 'ThrottlingException' })
+      }
+      return base?.(cmd)
+    })
+    const res = await rotate()
+    expect(res.status).toBe(502)
+    await expect(res.json()).resolves.toMatchObject({ error: expect.stringContaining('back as they were') })
+    expect(store.get('/zhesen/prod/jwt_secret')?.value).toBe(OLD_SECRET)
+    expect(steps()).not.toContain('shell')
+  })
+})
