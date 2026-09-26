@@ -5,7 +5,7 @@ import { pageMetadata } from '@/lib/site'
 
 export const metadata = pageMetadata({
   title: 'Lý thuyết',
-  description: 'Phát âm, từ loại, câu, ngữ pháp và collocation cho tiếng Trung, Tây Ban Nha và Anh.',
+  description: 'Học phát âm, từ loại, câu, ngữ pháp và collocation tiếng Trung, Tây Ban Nha và Anh.',
 })
 
 export default async function TheoryPage() {

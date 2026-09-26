@@ -11,6 +11,7 @@ const CHECKED = [
   'app/dictionary', 'components/search', 'components/lookup', 'lib/dictionary', 'lib/translate',
   'app/page.tsx', 'app/layout.tsx', 'app/error.tsx', 'app/global-error.tsx', 'app/not-found.tsx',
   'app/api/ai', 'components/home', 'components/layout', 'components/ui', 'lib/languages.ts', 'lib/theme.ts',
+  'app/theory', 'components/theory', 'components/grammar', 'components/reader', 'components/vocabulary', 'lib/grammar',
 ]
 
 /** Content rather than interface copy, left to a later round of #68. */

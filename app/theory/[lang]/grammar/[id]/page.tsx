@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const language = getLanguage(lang)
   return pageMetadata({
     title: `${point.titleVi} · Ngữ pháp ${language?.name ?? lang}`,
-    description: `Cấu trúc ${point.pattern}. Giải thích và ví dụ cho điểm ngữ pháp "${point.titleVi}".`,
+    description: `Học "${point.titleVi}" qua cấu trúc ${point.pattern}, giải thích và ví dụ.`,
     canonical: grammarPointPath(point.id),
   })
 }

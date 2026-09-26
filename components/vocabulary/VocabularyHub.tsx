@@ -21,7 +21,7 @@ export function VocabularyHub({ language, common, levels }: {
       language={language}
       block="vocabulary"
       titleVi={`Từ vựng ${language.name}`}
-      leadVi="Chọn một trình độ để xem danh sách từ, hoặc lưu thẳng cả danh sách vào sổ tay."
+      leadVi="Chọn một trình độ để xem danh sách từ hoặc lưu cả danh sách vào sổ tay."
     >
       {levels.length > 0 && (
         <section className="mt-8">

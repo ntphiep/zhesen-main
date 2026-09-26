@@ -23,7 +23,7 @@ export async function generateMetadata(
   if (!language) return {}
   return pageMetadata({
     title: `Collocation ${language.name}`,
-    description: `Những từ đi với nhau trong ${language.name}, theo từng dạng kết hợp.`,
+    description: `Học các từ hay đi với nhau trong ${language.name}, theo từng dạng kết hợp.`,
     canonical: `/theory/${language.code}/collocation`,
   })
 }

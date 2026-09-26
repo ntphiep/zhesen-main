@@ -28,7 +28,7 @@ export async function generateMetadata(
   if (!language) return {}
   return pageMetadata({
     title: `Lý thuyết ${language.name}`,
-    description: `Phát âm, từ loại, câu, ngữ pháp và collocation ${language.name}.`,
+    description: `Học phát âm, từ loại, câu, ngữ pháp và collocation ${language.name}.`,
     canonical: `/theory/${language.code}`,
   })
 }

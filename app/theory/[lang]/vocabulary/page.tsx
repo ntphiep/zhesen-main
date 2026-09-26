@@ -36,7 +36,7 @@ export async function generateMetadata(
   if (!language) return {}
   return pageMetadata({
     title: `Từ vựng ${language.name}`,
-    description: `Từ thông dụng và danh sách từ vựng ${language.name} theo trình độ.`,
+    description: `Xem từ thông dụng và danh sách từ vựng ${language.name} theo trình độ.`,
     canonical: `/theory/${language.code}/vocabulary`,
   })
 }

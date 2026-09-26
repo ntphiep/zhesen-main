@@ -44,7 +44,7 @@ export async function generateMetadata(
   if (!language) return {}
   return pageMetadata({
     title: `${level} · ${language.name}`,
-    description: `Danh sách từ vựng ${language.name} trình độ ${level}.`,
+    description: `Xem danh sách từ vựng ${language.name} trình độ ${level}.`,
     canonical: `/theory/${language.code}/vocabulary/${encodeURIComponent(level)}`,
   })
 }

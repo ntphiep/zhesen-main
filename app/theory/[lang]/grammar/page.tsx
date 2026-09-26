@@ -37,7 +37,7 @@ export async function generateMetadata(
   if (!language) return {}
   return pageMetadata({
     title: `Ngữ pháp ${language.name}`,
-    description: `Điểm ngữ pháp ${language.name} theo trình độ, kèm cấu trúc và ví dụ.`,
+    description: `Học ngữ pháp ${language.name} theo trình độ, kèm cấu trúc và ví dụ.`,
     canonical: `/theory/${language.code}/grammar`,
   })
 }

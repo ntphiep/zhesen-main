@@ -23,7 +23,7 @@ export async function generateMetadata(
   if (!language) return {}
   return pageMetadata({
     title: `Từ loại ${language.name}`,
-    description: `Các loại từ trong ${language.name}: vai trò trong câu, biến đổi hình thái và lỗi hay mắc.`,
+    description: `Học các loại từ trong ${language.name}: vai trò trong câu, cách biến đổi và lỗi hay mắc.`,
     canonical: `/theory/${language.code}/word-class`,
   })
 }

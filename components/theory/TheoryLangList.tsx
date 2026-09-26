@@ -13,7 +13,7 @@ export function TheoryLangList({ languages, grammarCounts }: {
       <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>
       <h1 className="mt-3 text-3xl font-bold">Lý thuyết</h1>
       <p className="mt-1 text-sm text-black/60">
-        Phần không đổi của một ngôn ngữ: âm, từ loại, cấu trúc câu, ngữ pháp và những từ đi với nhau.
+        Học phần không đổi của một ngôn ngữ: âm, từ loại, cấu trúc câu, ngữ pháp và những từ đi với nhau.
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">

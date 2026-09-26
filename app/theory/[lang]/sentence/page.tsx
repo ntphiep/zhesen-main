@@ -23,7 +23,7 @@ export async function generateMetadata(
   if (!language) return {}
   return pageMetadata({
     title: `Câu và cụm từ ${language.name}`,
-    description: `Cụm từ, mệnh đề, các kiểu câu và trật tự từ trong ${language.name}.`,
+    description: `Học cụm từ, mệnh đề, kiểu câu và trật tự từ trong ${language.name}.`,
     canonical: `/theory/${language.code}/sentence`,
   })
 }

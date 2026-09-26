@@ -23,7 +23,7 @@ export async function generateMetadata(
   if (!language) return {}
   return pageMetadata({
     title: `Phát âm ${language.name}`,
-    description: `Bảng âm ${language.name} kèm ví dụ, cách viết và lỗi phát âm thường gặp của người Việt.`,
+    description: `Học bảng âm ${language.name} kèm ví dụ, cách viết và lỗi người Việt hay mắc.`,
     canonical: `/theory/${language.code}/pronunciation`,
   })
 }
