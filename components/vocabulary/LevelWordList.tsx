@@ -1,10 +1,7 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { LinkPending } from '@/components/ui/LinkPending'
-import { createClient } from '@/lib/supabase/client'
-import { getEntriesByLevel, getAllEntriesByLevel } from '@/lib/dictionary/levels'
-import { addWords, draftFromDictEntry, listSavedEntryIds } from '@/lib/wordlist/store'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { theoryBlockPath, vocabularyLevelPath } from '@/lib/theory/path'
 import { signInHref, useAccount } from '@/lib/hooks/useAccount'
@@ -25,7 +22,6 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
   total: number
   pageSize: number
 }) {
-  const supabase = useMemo(() => createClient(), [])
   const { kind } = useAccount()
   const [items, setItems] = useState(initialItems)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -34,7 +30,13 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
   async function loadMore() {
     setLoadingMore(true)
     try {
-      const page = await getEntriesByLevel(supabase, language.code, level, items.length, pageSize)
+      // Imported on the click, as in `PersonalStrip`: browsing the list needs neither
+      // supabase-js nor zod, and a static import put both on this page's first load.
+      const [{ createClient }, { getEntriesByLevel }] = await Promise.all([
+        import('@/lib/supabase/client'),
+        import('@/lib/dictionary/levels'),
+      ])
+      const page = await getEntriesByLevel(createClient(), language.code, level, items.length, pageSize)
       setItems((prev) => [...prev, ...page.items])
     } finally {
       setLoadingMore(false)
@@ -44,6 +46,12 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
   async function handleAddAll() {
     setAddAll({ kind: 'busy' })
     try {
+      const [{ createClient }, { getAllEntriesByLevel }, { addWords, draftFromDictEntry, listSavedEntryIds }] = await Promise.all([
+        import('@/lib/supabase/client'),
+        import('@/lib/dictionary/levels'),
+        import('@/lib/wordlist/store'),
+      ])
+      const supabase = createClient()
       const [all, saved] = await Promise.all([
         getAllEntriesByLevel(supabase, language.code, level),
         listSavedEntryIds(supabase, language.code),

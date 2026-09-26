@@ -1,10 +1,16 @@
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { Ipa } from '@/components/ui/Ipa'
 import { PosTag } from '@/components/ui/PosTag'
-import { AddToWordlistButton } from '@/components/lookup/AddToWordlistButton'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { LinkPending } from '@/components/ui/LinkPending'
 import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
+
+// Loaded with the popover rather than the page: it reaches supabase-js and zod, and it
+// renders nothing until the account is known, which is itself an asynchronous read.
+const AddToWordlistButton = dynamic(() =>
+  import('@/components/lookup/AddToWordlistButton').then((m) => m.AddToWordlistButton),
+)
 
 // Only inline-capable elements (span / a / button) so the popover is valid HTML
 // even when embedded inside a paragraph of example text.

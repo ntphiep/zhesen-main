@@ -1,8 +1,5 @@
 'use client'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { resolveTokens, getZhSegmentCandidates } from '@/lib/dictionary/resolveTokens'
-import { getCharacters } from '@/lib/dictionary/entryDetail'
+import { useEffect, useRef, useState } from 'react'
 import { tokenize, type Segment } from '@/lib/reader/tokenize'
 import { WordPopover } from './WordPopover'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
@@ -23,7 +20,6 @@ export function TappableText({
    * request is made, without it the effect below resolves in the browser. */
   resolved?: ResolvedText
 }) {
-  const supabase = useMemo(() => createClient(), [])
   // Tokenised up front, not left empty until the effect below answers: the words are on
   // screen from the first paint and only become tappable once the entries arrive. Starting
   // empty blanked a freshly translated passage for as long as the resolution took.
@@ -70,6 +66,14 @@ export function TappableText({
     let cancelled = false
     async function run() {
       try {
+        // Imported here, as in `PersonalStrip`: the server resolves most texts, so most
+        // pages never reach this branch and need neither supabase-js nor zod.
+        const [{ createClient }, { resolveTokens, getZhSegmentCandidates }, { getCharacters }] = await Promise.all([
+          import('@/lib/supabase/client'),
+          import('@/lib/dictionary/resolveTokens'),
+          import('@/lib/dictionary/entryDetail'),
+        ])
+        const supabase = createClient()
         const headwords = lang === 'zh' ? await getZhSegmentCandidates(supabase, text) : []
         const segs = tokenize(lang, text, headwords)
         const wordTokens = segs.filter((s) => s.word).map((s) => s.text)
@@ -92,7 +96,7 @@ export function TappableText({
     }
     run()
     return () => { cancelled = true }
-  }, [text, lang, supabase, resolved])
+  }, [text, lang, resolved])
 
   return (
     <span className="leading-relaxed" ref={root}>
