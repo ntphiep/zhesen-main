@@ -9,6 +9,9 @@ import { LANG_LABELS } from '@/lib/dictionary/labels'
 import { TappableText } from '@/components/reader/TappableText'
 import { fetchTextLookup, type TextLookup } from '@/lib/dictionary/textLookup'
 import { fetchTranslation } from '@/lib/translate/client'
+import { fetchSearch } from '@/lib/dictionary/searchClient'
+import { isStructuralMatch } from '@/lib/dictionary/detect'
+import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { TranslateLangCode } from '@/lib/translate/azure'
 import type { Direction } from '@/lib/dictionary/search'
 import type { LangCode } from '@/lib/languages'
@@ -37,6 +40,11 @@ export function looksLikeAPassage(q: string, direction: Direction): boolean {
  *  monthly quota on forty prefixes of itself. */
 const TRANSLATE_DEBOUNCE_MS = 900
 
+/** A translation this short names a word or a phrase rather than a sentence, so the
+ *  dictionary is searched for it: "người tham dự" comes back as "Attendees", and attendee
+ *  has no Vietnamese meaning the Vietnamese lookup could match. */
+const MAX_LOOKUP_WORDS = 3
+
 type State =
   | { kind: 'idle' }
   | { kind: 'loading' }
@@ -59,6 +67,8 @@ export function PassageBlock({ text, direction, targets }: {
 }) {
   const [state, setState] = useState<State>({ kind: 'idle' })
   const [words, setWords] = useState<TextLookup | null>(null)
+  // Keyed by the translation each list answers, so a list never outlives its translation.
+  const [found, setFound] = useState<Partial<Record<LangCode, { text: string; entries: DictEntryPreview[] }>>>({})
 
   const trimmed = text.trim()
   const tooLong = trimmed.length > MAX_PASSAGE_CHARS
@@ -111,6 +121,26 @@ export function PassageBlock({ text, direction, targets }: {
     return () => { clearTimeout(id); ctrl.abort() }
   }, [direction, trimmed])
 
+  // Reuses the translation this block already holds: no second Azure request, and each
+  // search goes through the cached route.
+  useEffect(() => {
+    if (direction !== 'vi' || state.kind !== 'done') return
+    const asks = targets.flatMap((l) => {
+      const text = state.translations[l]?.trim().replace(/[.。]$/, '')
+      return text && state.from !== l && text.split(/\s+/).length <= MAX_LOOKUP_WORDS ? [[l, text] as const] : []
+    })
+    if (asks.length === 0) return
+    const ctrl = new AbortController()
+    Promise.all(asks.map(async ([l, text]) => {
+      const outcome = await fetchSearch(text, ctrl.signal, { langs: [l] })
+      const entries = outcome.status === 'ok' ? outcome.data.entries[l].filter(isStructuralMatch) : []
+      return [l, { text: state.translations[l] ?? '', entries }] as const
+    }))
+      .then((pairs) => setFound(Object.fromEntries(pairs)))
+      .catch(() => {})
+    return () => ctrl.abort()
+  }, [direction, state, targets])
+
   if (!trimmed) return null
 
   return (
@@ -151,6 +181,28 @@ export function PassageBlock({ text, direction, targets }: {
                     ? value
                     : <TappableText text={value} lang={l} />}
                 </dd>
+                {l !== 'vi' && found[l]?.text === value && found[l].entries.length > 0 && (
+                  <dd className="m-0 mt-1 flex flex-col gap-0.5">
+                    <span className="text-xs text-black/40">Dịch máy: {value}</span>
+                    <ul className="flex flex-col gap-0.5">
+                      {found[l].entries.map((e) => (
+                        <li key={e.id}>
+                          <Link
+                            href={entryPath(e.id)}
+                            prefetch={false}
+                            className="flex flex-wrap items-baseline gap-2 rounded-lg px-2 py-1.5 hover:bg-black/5"
+                          >
+                            <span className="font-medium">{e.headword}</span>
+                            <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/40" />
+                            <PosTag value={e.pos} className="text-xs text-black/45" />
+                            {e.glossVi && <span className="text-sm text-black/60">{e.glossVi}</span>}
+                            <LinkPending />
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </dd>
+                )}
               </div>
             )
           })}

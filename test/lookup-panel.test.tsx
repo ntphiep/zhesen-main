@@ -82,6 +82,21 @@ describe('LookupPanel', () => {
     expect(screen.getByRole('link', { name: /dog/ })).toBeInTheDocument()
   })
 
+  it('lists what the translation found after the native hits, marked with the translation', async () => {
+    stubFetch({
+      entries: { ...EMPTY, en: [entry({ id: 'en:field', headword: 'field', glossVi: 'Cánh đồng' })] },
+      suggestions: [],
+      translated: { en: { text: 'School', entries: [entry({ id: 'en:school', headword: 'school' })] } },
+    })
+    render(<LookupPanel direction="vi" label="VN" />)
+    await userEvent.type(screen.getByLabelText('VN'), 'trường')
+    expect(await screen.findByText('Dịch máy: School')).toBeInTheDocument()
+    const links = screen.getAllByRole('link').map((a) => a.getAttribute('href'))
+    expect(links).toEqual([entryPath('en:field'), entryPath('en:school')])
+    // Spanish and Chinese are empty; English is not, whatever the source of its rows.
+    expect(screen.getAllByText('Chưa có từ khớp')).toHaveLength(2)
+  })
+
   it('renders an empty result with suggestions as links to the entry, not refill buttons', async () => {
     stubFetch({
       entries: EMPTY,

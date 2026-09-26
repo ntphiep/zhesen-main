@@ -36,12 +36,21 @@ const byLang = z.object({
   zh: entryPreview.array(),
 })
 
+const translatedHits = z.object({ text: z.string(), entries: entryPreview.array() })
+
 export const searchResponse = z.object({
   /** Results of the one direction the caller asked for, grouped by language. For the
    *  Vietnamese direction that is the language of the answer, not of the query. */
   entries: byLang,
   /** Trigram "did you mean" candidates, populated only when `entries` is empty. */
   suggestions: suggestion.array(),
+  /** What the query's machine translation found where `entries` is thin. Each language
+   *  spelled out, because `z.record` over an enum requires every key in Zod 4. */
+  translated: z.object({
+    en: translatedHits.optional(),
+    es: translatedHits.optional(),
+    zh: translatedHits.optional(),
+  }).optional(),
 })
 
 export type SearchResponse = z.infer<typeof searchResponse>

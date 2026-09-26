@@ -137,6 +137,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
   }, [trimmed, isPassage, targets, direction])
 
   const entries = data.entries
+  const translated = data.translated
   // The Vietnamese direction keeps the fixed language order: its columns are read side by
   // side, and one that moves between two queries is harder to read than a weak one. The
   // foreign direction leads with whichever language actually matched.
@@ -147,7 +148,10 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     [direction, targets, trimmed, entries],
   )
 
-  const allShown = useMemo(() => order.flatMap((l) => entries[l]), [order, entries])
+  const allShown = useMemo(
+    () => order.flatMap((l) => [...entries[l], ...(translated?.[l]?.entries ?? [])]),
+    [order, entries, translated],
+  )
   const levelOptions = useMemo(() => {
     const present = new Set(allShown.map((e) => e.level).filter((l): l is string => !!l))
     const ordered = LEVEL_ORDER.filter((l) => present.has(l))
@@ -163,10 +167,10 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     const keep = (e: DictEntryPreview) =>
       (!levelFilter || e.level === levelFilter)
       && (!posFilter || posGroups(splitPos(e.pos)).some((g) => g.key === posFilter))
-    return order.map((l) => [l, entries[l].filter(keep)] as const)
-  }, [order, entries, levelFilter, posFilter])
-  const total = shown.reduce((n, [, list]) => n + list.length, 0)
-  const first = shown.flatMap(([, list]) => list)[0]
+    return order.map((l) => [l, entries[l].filter(keep), (translated?.[l]?.entries ?? []).filter(keep)] as const)
+  }, [order, entries, translated, levelFilter, posFilter])
+  const total = shown.reduce((n, [, list, more]) => n + list.length + more.length, 0)
+  const first = shown.flatMap(([, list, more]) => [...list, ...more])[0]
 
   function remember(e: DictEntryPreview) {
     recentQueries.push(e.headword)
@@ -240,16 +244,27 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
    *  authoritative. An empty language in the Vietnamese direction says so rather than
    *  disappearing: a missing card next to two full ones reads as a bug, where
    *  "chưa có từ khớp" is the truth. */
-  function renderCard(l: LangCode, list: DictEntryPreview[]) {
-    if (list.length === 0 && direction !== 'vi') return null
+  function renderCard(l: LangCode, list: DictEntryPreview[], more: DictEntryPreview[]) {
+    if (list.length === 0 && more.length === 0 && direction !== 'vi') return null
     return (
       <section key={l} className="overflow-hidden rounded-xl border border-black/10">
         <h3 className="border-b border-black/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black/55">
           {LANG_LABELS[l]}
         </h3>
-        {list.length === 0
-          ? <p className="px-4 py-3 text-sm text-black/35">Chưa có từ khớp</p>
-          : <ul className="flex flex-col gap-0.5 py-1">{list.map(renderRow)}</ul>}
+        {list.length > 0 && <ul className="flex flex-col gap-0.5 py-1">{list.map(renderRow)}</ul>}
+        {more.length > 0 && (
+          <>
+            {/* Found through the machine translation of the query, not a Vietnamese
+                meaning in the dictionary, so it says which translation it came from. */}
+            <p className={`px-4 pt-2 text-xs text-black/40 ${list.length > 0 ? 'border-t border-black/10' : ''}`}>
+              Dịch máy: {translated?.[l]?.text}
+            </p>
+            <ul className="flex flex-col gap-0.5 py-1">{more.map(renderRow)}</ul>
+          </>
+        )}
+        {list.length === 0 && more.length === 0 && (
+          <p className="px-4 py-3 text-sm text-black/35">Chưa có từ khớp</p>
+        )}
       </section>
     )
   }
@@ -335,7 +350,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
       {refusal && <p className="text-sm text-red-600">{refusal}</p>}
 
       {total > 0 && (
-        <div className="flex flex-col gap-3">{shown.map(([l, list]) => renderCard(l, list))}</div>
+        <div className="flex flex-col gap-3">{shown.map(([l, list, more]) => renderCard(l, list, more))}</div>
       )}
       {showFilteredEmpty && <p className="text-sm text-black/40">Không có từ nào khớp bộ lọc. Đổi bộ lọc.</p>}
 

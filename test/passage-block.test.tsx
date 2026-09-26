@@ -158,3 +158,50 @@ describe('PassageBlock word list (fw direction)', () => {
     expect(screen.queryByText('Tra từng từ trong đoạn')).toBeNull()
   })
 })
+
+describe('PassageBlock dictionary hits for a short translation (vi direction)', () => {
+  function stubTranslateAndSearch(translateBody: unknown, searchBody: unknown) {
+    const fetchMock = vi.fn<typeof fetch>(async (url) => {
+      const body = String(url).startsWith('/dictionary/search') ? searchBody : translateBody
+      return { ok: true, json: async () => body } as Response
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    return fetchMock
+  }
+
+  it('lists the structural hits for the translation, marked as coming from it', async () => {
+    const fetchMock = stubTranslateAndSearch(
+      { enabled: true, from: 'vi', translations: { en: 'Attendees' } },
+      {
+        entries: {
+          en: [
+            wordEntry({ id: 'en:attendee', headword: 'attendee', matchScore: 3.5 }),
+            wordEntry({ id: 'en:attention', headword: 'attention', matchScore: 1.8 }),
+          ],
+          es: [], zh: [],
+        },
+        suggestions: [],
+      },
+    )
+    render(<PassageBlock text="người tham dự" direction="vi" targets={['en']} />)
+
+    const link = await screen.findByRole('link', { name: /attendee/ }, { timeout: 2000 })
+    expect(link).toHaveAttribute('href', '/dictionary/en/attendee')
+    expect(screen.getByText('Dịch máy: Attendees')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /attention/ })).toBeNull()
+    const search = fetchMock.mock.calls.find((c) => String(c[0]).startsWith('/dictionary/search'))
+    expect(String(search?.[0])).toContain('q=Attendees')
+    expect(String(search?.[0])).toContain('langs=en')
+    expect(fetchMock.mock.calls.filter((c) => String(c[0]) === '/dictionary/translate')).toHaveLength(1)
+  })
+
+  it('searches nothing for a translation that is a sentence', async () => {
+    const fetchMock = stubTranslateAndSearch(
+      { enabled: true, from: 'vi', translations: { en: 'I want a new desk' } },
+      { entries: { en: [], es: [], zh: [] }, suggestions: [] },
+    )
+    render(<PassageBlock text="tôi muốn mua một cái bàn" direction="vi" targets={['en']} />)
+    await screen.findByText('Tiếng Anh', {}, { timeout: 2000 })
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).startsWith('/dictionary/search'))).toBe(false)
+  })
+})

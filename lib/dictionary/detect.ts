@@ -28,3 +28,11 @@ export function orderByBestMatch(
     Math.max(0, ...groups.flatMap((g) => g[lang] ?? []).map((e) => e.matchScore ?? 0))
   return [...fallback].sort((a, b) => best(b) - best(a) || fallback.indexOf(a) - fallback.indexOf(b))
 }
+
+/** `lex.search` scores a structural match (exact headword, prefix, inflection, pinyin) at
+ *  3.0 or above and caps its trigram arm at 2.9, so the two bands never overlap. */
+const STRUCTURAL_FLOOR = 2.95
+
+export function isStructuralMatch(e: DictEntryPreview): boolean {
+  return (e.matchScore ?? 0) >= STRUCTURAL_FLOOR
+}

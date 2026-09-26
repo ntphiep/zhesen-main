@@ -1,6 +1,6 @@
 import { z } from '@/lib/zod'
 import { azureTranslatorConfig } from '@/lib/translate/config'
-import { translateText, AzureTranslateError, type TranslateLangCode } from '@/lib/translate/azure'
+import { translateCached, AzureTranslateError } from '@/lib/translate/azure'
 import { clientKey, createRateLimiter } from '@/lib/http/rateLimit'
 
 /**
@@ -33,31 +33,6 @@ const requestBody = z.object({
 
 const TIMEOUT_MS = 10_000
 
-// Lives inside one serverless instance's memory, not a shared store: it saves the repeat
-// within a warm instance and nothing fleet-wide, which is deliberate -- this route's quota
-// (about two million characters a month) is nowhere near what a real cache would be
-// needed for. Same eviction shape as components/search/LookupPanel.tsx's client-side
-// cache: Map insertion order is age, so the first key is the oldest.
-const CACHE_LIMIT = 200
-const cache = new Map<string, string>()
-
-function cacheKey(from: string, to: TranslateLangCode, text: string): string {
-  return `${from}:${to}:${text}`
-}
-
-/** The language Azure detected for a passage, so a request whose targets all hit the
- *  cache still answers `from`. Without it a repeated passage lost the label that says the
- *  text came back untouched. Same ceiling and eviction as the translation cache. */
-const detected = new Map<string, string>()
-
-function cacheSet(key: string, value: string): void {
-  if (cache.size >= CACHE_LIMIT) {
-    const oldest = cache.keys().next()
-    if (!oldest.done) cache.delete(oldest.value)
-  }
-  cache.set(key, value)
-}
-
 export async function POST(request: Request) {
   const caller = clientKey(request)
   if (caller) {
@@ -86,45 +61,16 @@ export async function POST(request: Request) {
   if (!cfg) return Response.json({ enabled: false })
 
   const { text, from, to } = parsed.data
-  const normalized = text.trim()
-  const fromKey = from ?? ''
-
-  const translations: Partial<Record<TranslateLangCode, string>> = {}
-  const missing: TranslateLangCode[] = []
-  for (const lang of to) {
-    const hit = cache.get(cacheKey(fromKey, lang, normalized))
-    if (hit !== undefined) translations[lang] = hit
-    else missing.push(lang)
-  }
-
-  let resolvedFrom: string = from ?? detected.get(normalized) ?? ''
-
-  if (missing.length > 0) {
-    try {
-      const result = await translateText(cfg, normalized, from, missing, AbortSignal.timeout(TIMEOUT_MS))
-      resolvedFrom = result.from
-      if (!from) {
-        if (detected.size >= CACHE_LIMIT) {
-          const oldest = detected.keys().next()
-          if (!oldest.done) detected.delete(oldest.value)
-        }
-        detected.set(normalized, result.from)
-      }
-      Object.assign(translations, result.translations)
-      for (const lang of missing) {
-        const value = result.translations[lang]
-        if (value) cacheSet(cacheKey(fromKey, lang, normalized), value)
-      }
-    } catch (e) {
-      if (e instanceof AzureTranslateError) {
-        return Response.json({ error: 'Chưa dịch được đoạn này. Thử lại sau ít giây.' }, { status: 502 })
-      }
-      if (e instanceof DOMException && e.name === 'TimeoutError') {
-        return Response.json({ error: 'Chưa dịch được đoạn này. Thử lại sau ít giây.' }, { status: 504 })
-      }
-      throw e
+  try {
+    const result = await translateCached(cfg, text, from, to, AbortSignal.timeout(TIMEOUT_MS))
+    return Response.json({ enabled: true, from: result.from, translations: result.translations })
+  } catch (e) {
+    if (e instanceof AzureTranslateError) {
+      return Response.json({ error: 'Chưa dịch được đoạn này. Thử lại sau ít giây.' }, { status: 502 })
     }
+    if (e instanceof DOMException && e.name === 'TimeoutError') {
+      return Response.json({ error: 'Chưa dịch được đoạn này. Thử lại sau ít giây.' }, { status: 504 })
+    }
+    throw e
   }
-
-  return Response.json({ enabled: true, from: resolvedFrom, translations })
 }

@@ -2,6 +2,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
 import type { DictEntryPreview, SuggestionPreview } from './types'
 import { entryPreviewRow, searchRpcRow, suggestRow, toPreview, toPreviewFromSearchRow, toSuggestion } from './rows'
+import { azureTranslatorConfig } from '@/lib/translate/config'
+import { translateCached } from '@/lib/translate/azure'
+import { isStructuralMatch } from './detect'
 
 /**
  * Preview-list queries: `lex.search` (supabase/migrations/0016_search.sql), the Vietnamese
@@ -41,14 +44,6 @@ export async function searchAllLanguages(
   const structural = found.some((list) => list.some(isStructuralMatch))
   langs.forEach((l, i) => { out[l] = structural ? found[i].filter(isStructuralMatch) : found[i] })
   return out
-}
-
-/** `lex.search` scores a structural match (exact headword, prefix, inflection, pinyin) at
- *  3.0 or above and caps its trigram arm at 2.9, so the two bands never overlap. */
-const STRUCTURAL_FLOOR = 2.95
-
-function isStructuralMatch(e: DictEntryPreview): boolean {
-  return (e.matchScore ?? 0) >= STRUCTURAL_FLOOR
 }
 
 /** Reverse lookup across all three languages in one RPC. The candidate-gloss scan is the
@@ -95,12 +90,60 @@ export async function suggestNearby(
  *  headwords as well as Vietnamese words, and no rule can separate them. */
 export type Direction = 'vi' | 'fw'
 
+/** Entries found by searching one language for the machine translation of the query. */
+export interface TranslatedHits {
+  text: string
+  entries: DictEntryPreview[]
+}
+
 export interface SearchOneDirection {
   /** Grouped by language. For `vi` that is the language the answer is written in. */
   entries: Record<LangCode, DictEntryPreview[]>
   /** Trigram-nearest suggestions, populated only when `entries` came back empty, and only
    *  from the side this direction searches. */
   suggestions: SuggestionPreview[]
+  /** `vi` only: what the translation of the query found in a language with few native
+   *  hits, never repeating one of them. */
+  translated?: Partial<Record<LangCode, TranslatedHits>>
+}
+
+/** A Vietnamese lookup with fewer native hits than this in a language is also searched
+ *  through its machine translation. The smallest value that reaches a two-hit column, which
+ *  is where the misses sit: measured on 60 queries against production, "trường" answered
+ *  only field and "hội nghị" assembly and con, with no school or conference. At 3 the
+ *  English column falls back on 13 of the 60. */
+const TRANSLATE_BELOW = 3
+/** The fallback is an extra: a slow Azure answer gives it up rather than hold the lookup. */
+const TRANSLATE_TIMEOUT_MS = 3000
+
+/** Search each weak language for the query's machine translation, in one Azure request.
+ *  Any failure answers null: the native hits stand on their own. */
+async function searchTranslation(
+  supabase: SupabaseClient, q: string, native: Record<LangCode, DictEntryPreview[]>,
+  perLang: number, langs: readonly LangCode[],
+): Promise<Partial<Record<LangCode, TranslatedHits>> | null> {
+  const weak = langs.filter((l) => native[l].length < TRANSLATE_BELOW)
+  if (weak.length === 0) return null
+  const cfg = azureTranslatorConfig()
+  if (!cfg) return null
+  try {
+    const { translations } = await translateCached(cfg, q, 'vi', weak, AbortSignal.timeout(TRANSLATE_TIMEOUT_MS))
+    const found = await Promise.all(weak.map(async (l) => {
+      const text = translations[l]?.trim().replace(/[.。]$/, '')
+      if (!text) return null
+      const seen = new Set(native[l].map((e) => e.id))
+      // Structural matches only: a trigram guess for a translation is a guess of a guess.
+      const hits = (await searchEntries(supabase, l, text.toLowerCase(), perLang))
+        .filter((e) => isStructuralMatch(e) && !seen.has(e.id))
+        .slice(0, perLang - native[l].length)
+      return hits.length > 0 ? [l, { text, entries: hits }] as const : null
+    }))
+    const out: Partial<Record<LangCode, TranslatedHits>> = {}
+    for (const f of found) if (f) out[f[0]] = f[1]
+    return Object.keys(out).length > 0 ? out : null
+  } catch {
+    return null
+  }
 }
 
 const EMPTY_BY_LANG: Record<LangCode, DictEntryPreview[]> = { en: [], zh: [], es: [] }
@@ -131,6 +174,8 @@ export async function searchOneDirection(
     ? await searchAllLanguagesVi(supabase, q, perLang, langs)
     : await searchAllLanguages(supabase, q, perLang, langs)
 
+  const translated = direction === 'vi' ? await searchTranslation(supabase, q, entries, perLang, langs) : null
+  if (translated) return { entries, suggestions: [], translated }
   if (countAll(entries) > 0) return { entries, suggestions: [] }
 
   // Offered only from the side the learner is typing on. A Vietnamese query answered with

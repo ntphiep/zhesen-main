@@ -84,3 +84,51 @@ export async function translateText(
   const detected = entry.detectedLanguage ? fromAzureLang(entry.detectedLanguage.language) : null
   return { from: detected ?? from ?? entry.detectedLanguage?.language ?? '', translations }
 }
+
+// Lives inside one serverless instance's memory, not a shared store: it saves the repeat
+// within a warm instance and nothing fleet-wide. The free tier's two million characters a
+// month is nowhere near what a real cache would be needed for. Map insertion order is age,
+// so the first key is the oldest.
+const CACHE_LIMIT = 200
+const cache = new Map<string, string>()
+/** The language Azure detected for a text, so a request whose targets all hit the cache
+ *  still answers `from`. Without it a repeated passage lost the label that says the text
+ *  came back untouched. */
+const detectedFrom = new Map<string, string>()
+
+function remember(map: Map<string, string>, key: string, value: string): void {
+  if (map.size >= CACHE_LIMIT) {
+    const oldest = map.keys().next()
+    if (!oldest.done) map.delete(oldest.value)
+  }
+  map.set(key, value)
+}
+
+/** translateText behind the per-instance cache, keyed on from:to:text. Every caller goes
+ *  through this, so a text is paid for once per instance whichever feature asked. */
+export async function translateCached(
+  cfg: AzureTranslatorConfig,
+  text: string,
+  from: TranslateLangCode | undefined,
+  to: readonly TranslateLangCode[],
+  signal?: AbortSignal,
+): Promise<TranslateResult> {
+  const normalized = text.trim()
+  const fromKey = from ?? ''
+  const translations: Partial<Record<TranslateLangCode, string>> = {}
+  const missing: TranslateLangCode[] = []
+  for (const lang of to) {
+    const hit = cache.get(`${fromKey}:${lang}:${normalized}`)
+    if (hit !== undefined) translations[lang] = hit
+    else missing.push(lang)
+  }
+  if (missing.length === 0) return { from: from ?? detectedFrom.get(normalized) ?? '', translations }
+
+  const result = await translateText(cfg, normalized, from, missing, signal)
+  if (!from) remember(detectedFrom, normalized, result.from)
+  for (const lang of missing) {
+    const value = result.translations[lang]
+    if (value) remember(cache, `${fromKey}:${lang}:${normalized}`, value)
+  }
+  return { from: result.from, translations: { ...translations, ...result.translations } }
+}
