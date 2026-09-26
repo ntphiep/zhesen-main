@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
+import { LinkPending } from '@/components/ui/LinkPending'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { recentEntries } from '@/lib/dictionary/recent'
 import type { UserWord } from '@/lib/wordlist/types'
@@ -28,6 +29,7 @@ export function PersonalStrip() {
     recentEntries.subscribe, recentEntries.snapshot, recentEntries.serverSnapshot,
   )
   const [book, setBook] = useState<Notebook | null>(null)
+  const [intent, setIntent] = useState<string | null>(null)
 
   useEffect(() => {
     let live = true
@@ -63,11 +65,15 @@ export function PersonalStrip() {
               <Link
                 key={e.id}
                 href={entryPath(e.id)}
-                prefetch={false}
+                prefetch={intent === e.id ? null : false}
+                onMouseEnter={() => setIntent(e.id)}
+                onFocus={() => setIntent(e.id)}
+                onTouchStart={() => setIntent(e.id)}
                 className="rounded-full border border-black/10 px-3 py-1 text-sm hover:bg-black/5"
                 title={e.glossVi ?? undefined}
               >
                 {e.headword}
+                <LinkPending />
               </Link>
             ))}
           </div>
@@ -87,11 +93,16 @@ export function PersonalStrip() {
               <Link
                 key={w.id}
                 href={w.entryId ? entryPath(w.entryId) : '/wordlist'}
-                prefetch={false}
+                // /wordlist reads the session, so only an entry page is prefetched.
+                prefetch={Boolean(w.entryId) && intent === w.id ? null : false}
+                onMouseEnter={() => setIntent(w.id)}
+                onFocus={() => setIntent(w.id)}
+                onTouchStart={() => setIntent(w.id)}
                 className="rounded-full border border-black/10 px-3 py-1 text-sm hover:bg-black/5"
                 title={w.meaningVi ?? undefined}
               >
                 {w.headword}
+                <LinkPending />
               </Link>
             ))}
             <Link

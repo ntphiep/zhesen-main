@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { LinkPending } from '@/components/ui/LinkPending'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
@@ -36,6 +37,8 @@ function page(pool: readonly WordChip[], from: number): WordChip[] {
 export function CommonWords({ pools }: { pools: Record<LangCode, WordChip[]> }) {
   const [from, setFrom] = useState(0)
   const [held, setHeld] = useState(false)
+  // The chip pointed at, whose entry page is prefetched ahead of the click.
+  const [intent, setIntent] = useState<string | null>(null)
 
   const longest = Math.max(...LANG_CODES.map((l) => pools[l].length))
 
@@ -64,11 +67,17 @@ export function CommonWords({ pools }: { pools: Record<LangCode, WordChip[]> }) 
                 // renaming it in place, which is what restarts the fade.
                 key={`${from}-${e.id}`}
                 href={entryPath(e.id)}
-                prefetch={false}
+                // Prefetched on intent, like the lookup results: forty chips in view would
+                // each prefetch an entry page to open one.
+                prefetch={intent === e.id ? null : false}
+                onMouseEnter={() => setIntent(e.id)}
+                onFocus={() => setIntent(e.id)}
+                onTouchStart={() => setIntent(e.id)}
                 className="chip-rotate rounded-full border border-black/10 px-3 py-1 text-sm hover:bg-black/5"
                 title={e.glossVi ?? undefined}
               >
                 {e.headword}
+                <LinkPending />
               </Link>
             ))}
           </div>
