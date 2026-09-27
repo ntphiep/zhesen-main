@@ -21,8 +21,3 @@ variable "security_group_id" {
   description = "The instance's security group, which receives the ingress rules."
   type        = string
 }
-
-variable "ssm_prefix" {
-  description = "Parameter Store prefix that receives router_gate_key."
-  type        = string
-}

@@ -135,22 +135,8 @@ resource "aws_cloudfront_distribution" "api" {
 }
 
 # The 9router dashboard gets its own distribution: its /_next/ and /api/ paths would
-# collide with the API's under one host. CloudFront reaches 9router's port directly, the
-# gate function admits only a browser holding a link from /admin/router, and 9router then
-# asks for its own password (router_password).
-resource "random_password" "router_gate_key" {
-  length  = 48
-  special = false
-}
-
-# lib/admin/router.ts signs the links with this value and the gate function carries the
-# same one, so it changes only here.
-resource "aws_ssm_parameter" "router_gate_key" {
-  name  = "${var.ssm_prefix}/router_gate_key"
-  type  = "SecureString"
-  value = random_password.router_gate_key.result
-}
-
+# collide with the API's under one host. CloudFront reaches 9router's port directly, and
+# 9router's own login (router_password) guards it.
 resource "aws_cloudfront_vpc_origin" "router" {
   vpc_origin_endpoint_config {
     name                   = "${var.name_prefix}-9router"
@@ -177,14 +163,6 @@ resource "aws_vpc_security_group_ingress_rule" "cloudfront_router" {
   from_port                    = 20128
   to_port                      = 20128
   referenced_security_group_id = data.aws_security_group.cloudfront_vpc_origins.id
-}
-
-resource "aws_cloudfront_function" "router_gate" {
-  name    = "${var.name_prefix}-router-gate"
-  runtime = "cloudfront-js-2.0"
-  publish = true
-  comment = "Admit only browsers sent by /admin/router"
-  code    = templatefile("${path.module}/router-gate.js", { key = random_password.router_gate_key.result })
 }
 
 resource "aws_cloudfront_distribution" "router" {
@@ -216,11 +194,6 @@ resource "aws_cloudfront_distribution" "router" {
 
     cache_policy_id          = data.aws_cloudfront_cache_policy.disabled.id
     origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
-
-    function_association {
-      event_type   = "viewer-request"
-      function_arn = aws_cloudfront_function.router_gate.arn
-    }
   }
 
   viewer_certificate {

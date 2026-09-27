@@ -190,7 +190,6 @@ describe('the inventory', () => {
     expect(byId.get('revalidate_secret')).toMatchObject({ last4: 'abcd', where: 'Vercel REVALIDATE_SECRET; no SSM parameter yet' })
     expect(byId.get('site_url')).toMatchObject({ group: 'Config', value: 'https://zhesen-main.vercel.app', apply: null })
     expect(byId.get('router_password')).toMatchObject({ group: 'Instance', apply: 'instance', services: ['ai-router'] })
-    expect(byId.get('router_gate_key')).toMatchObject({ revealable: false, apply: null })
     expect(JSON.stringify(rows)).not.toContain('sk-from-ssm')
   })
 

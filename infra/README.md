@@ -9,7 +9,7 @@ flowchart LR
   B[Browser] --> CF
   V[Vercel functions, icn1] --> CF
   CF[CloudFront<br/>admits /auth/v1/, /rest/v1/ and /ai/v1/ only] -->|VPC origin, port 80| E
-  B -->|link from /admin/router| CR[CloudFront, 9router<br/>gate function] -->|VPC origin, port 20128| NR
+  B -->|9router dashboard| CR[CloudFront, 9router] -->|VPC origin, port 20128| NR
   subgraph EC2 [EC2 t4g.medium, ap-northeast-2a]
     E[Envoy] --> A[GoTrue]
     E --> R[PostgREST]
@@ -46,8 +46,8 @@ infra/
       instance/              the host: security group, EC2, IAM role, generated
                              secrets, the assets bucket, CloudWatch alarms, cloud-init
       edge/                  CloudFront: the API distribution with its path-allowlist
-                             function, the 9router distribution with its gate function
-                             and key, their VPC origins and ingress rules
+                             function, the 9router distribution, their VPC origins and
+                             ingress rules
       backup/                S3 bucket for the pg_dump files, 30-day expiry
       alerts/                SNS topic, HTTPS subscription, monthly budget
       settings/              SSM parameters carrying the API URL and bucket names
@@ -110,10 +110,9 @@ Studio: `pwsh infra/supabase/bin/studio-tunnel.ps1`, then `http://localhost:8000
 
 9router: the assistant's model router, container `zhesen-9router`. The app calls
 `https://<cloudfront>/ai/v1/` with a 9router API key held in SSM `/zhesen/prod/ai_api_key`.
-To reach its dashboard, press Open dashboard on `/admin/router`. The page shows the password (SSM
-`/zhesen/prod/router_password`) and a link, good for 5 minutes, to the 9router distribution
-(`terraform output router_url`). Its gate function trades the link for a 12-hour cookie and
-refuses anything without one but the web app manifest; 9router then asks for the password. The password reaches 9router
+Its dashboard has its own distribution (`terraform output router_url`), guarded only by
+9router's login. `/admin/router` shows that link, the password (SSM
+`/zhesen/prod/router_password`) and the combo the assistant uses. The password reaches 9router
 as `INITIAL_PASSWORD`, and the service's entrypoint drops any password 9router stored itself on
 every start, so change it on `/admin/secrets`, not in the dashboard. Without the app: `pwsh
 infra/supabase/bin/router-tunnel.ps1`, then `http://localhost:20128/dashboard`. Provider logins

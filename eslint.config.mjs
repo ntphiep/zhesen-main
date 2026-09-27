@@ -17,8 +17,6 @@ const eslintConfig = defineConfig([
     ".vercel/**",
     // Other sessions' checkouts, each with its own .next; they lint themselves.
     ".claude/worktrees/**",
-    // CloudFront Functions code: ES5 with require('crypto'), run by CloudFront, not Node.
-    "infra/terraform/**/*.js",
   ]),
 ]);
 
