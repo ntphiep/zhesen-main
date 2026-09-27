@@ -144,4 +144,14 @@ describe('buildWordView', () => {
     })
     expect(withForms.forms.map((f) => f.text)).toEqual(['takes', 'took', 'taken', 'taking'])
   })
+
+  it('names a spelling the verb and the noun share by the part of speech the entry leads with', () => {
+    const inflections = [
+      { formText: 'takes', formLabel: 'plural' },
+      { formText: 'takes', formLabel: 'present singular third-person' },
+    ]
+    expect(buildWordView({ detail: take, characters: [], siblings: [], inflections }).forms[0].label).toBe('Ngôi thứ ba số ít')
+    const noun = { ...take, senses: take.senses.map((s) => ({ ...s, senseOrder: s.pos === 'noun' ? 0 : s.senseOrder })) }
+    expect(buildWordView({ detail: noun, characters: [], siblings: [], inflections }).forms[0].label).toBe('Số nhiều')
+  })
 })

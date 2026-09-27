@@ -107,6 +107,18 @@ const formRank = (label: string) => {
   return i < 0 ? FORM_ORDER.length : i
 }
 
+/** Inflection labels of each part of speech. A spelling two parts share keeps the label
+ *  it is read with first, so the entry's leading part goes first: takes under take is the
+ *  -s form of the verb, not the plural of the noun. */
+const FORM_POS: Record<string, RegExp> = { verb: /person|past|participle|gerund|infinitive/, noun: /\bplural\b/ }
+
+function leadingForms(inflections: WordForm[], pos: string | undefined): WordForm[] {
+  const mine = pos ? FORM_POS[pos] : undefined
+  if (!mine) return inflections
+  const is = (f: WordForm) => mine.test(f.formLabel ?? '')
+  return [...inflections.filter(is), ...inflections.filter((f) => !is(f))]
+}
+
 /** English endings that follow the rules; anything else changes the stem. */
 const REGULAR_EN = /^(s|es|d|ed|ing|r|er|st|est)$/
 
@@ -164,13 +176,13 @@ export function buildWordView({
   // Spanish verbs get the conjugation table instead of a line of forms, which for them
   // would run to hundreds.
   const conjugation = detail.lang === 'es' ? buildConjugation(inflections) : null
-  const allForms = groupWordForms(inflections)
+  const sections = senseSections(detail.senses)
+  const allForms = groupWordForms(leadingForms(inflections, sections[0]?.key))
   const forms = conjugation ? [] : allForms
     .filter((f) => f.standard && f.text.toLowerCase() !== detail.headword.toLowerCase())
     .sort((a, b) => formRank(a.label) - formRank(b.label))
     .map((f) => ({ text: f.text, label: f.label, ...splitForm(detail.headword, f.text, detail.lang) }))
 
-  const sections = senseSections(detail.senses)
   const glosses = entryGlosses(detail)
   const candidates = knownWordExamples(exampleCandidates(sections, detail.examples), resolvedExamples, detail.lang)
   const plan = planExamples(sections, candidates, glosses)
