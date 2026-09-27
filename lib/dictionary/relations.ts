@@ -30,6 +30,12 @@ export const RELATION_CAP = 8
 
 const uniq = (xs: string[]) => [...new Set(xs)]
 
+/** Wiktionary headings and cross-references the import kept as words: "Informal and slang
+ *  terms" under take, "vasoactive § Related terms", "See: Thesaurus:remote place": 2,003
+ *  production rows over 1,805 entries on 2026-09-27. "see to" and "see red" are real phrases. */
+const WIKTIONARY_NOTE =
+  /§|\b(?:Thesaurus|Appendix):|\bWiktionary\b|^(?:more at|see at|see (?:many )?others|for more see|also:)\s|^(?:Formal|Informal and slang) terms$|^Like other \w+ words$/i
+
 /**
  * Bucket lex relations into UI sections. The WordNet types (hypernym, hyponym, meronym,
  * holonym, coordinate, similar, also) get their own sections; `derived` and any other
@@ -43,7 +49,7 @@ export function classifyRelations(relations: DictRelation[]): ClassifiedRelation
   }
   for (const r of relations) {
     const text = r.relatedText?.trim()
-    if (!text) continue
+    if (!text || WIKTIONARY_NOTE.test(text)) continue
     switch (r.relationType) {
       case 'synonym': out.synonyms.push(text); break
       case 'antonym': out.antonyms.push(text); break

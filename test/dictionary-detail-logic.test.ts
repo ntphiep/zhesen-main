@@ -155,6 +155,15 @@ describe('classifyRelations', () => {
     ])
     expect(c.derived).toEqual(['redevelop'])
   })
+  it('drops Wiktionary headings and cross-references, keeps real phrases that start alike', () => {
+    const texts = [
+      'Informal and slang terms', 'Formal terms', 'vasoactive § Related terms', 'See: Thesaurus:remote place',
+      'Any of Thesaurus:copulate + "with"', 'More: see Wiktionary:Semantic relations', 'more at eleven',
+      'see others at vitamin B complex', 'Like other masculine words', 'see to', 'see red', 'grab',
+    ]
+    const c = classifyRelations(texts.map((relatedText) => ({ relationType: 'synonym', relatedText, relatedEntryId: null })))
+    expect(c.synonyms).toEqual(['see to', 'see red', 'grab'])
+  })
 })
 
 describe('groupWordForms', () => {
