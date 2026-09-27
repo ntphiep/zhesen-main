@@ -179,8 +179,10 @@ export function parseSenseFrequency(raw: string | null | undefined): number | nu
   return /^[1-5]$/.test(t) ? Number(t) : null
 }
 
+/** In sense_order: PostgREST returns embedded rows in heap order, which an update of a
+ *  sense reshuffles, and the page description reads the first three as they come. */
 export function toSenses(rows: SenseRow[] | null): DictSense[] {
-  return (rows ?? []).map((r) => ({
+  return [...(rows ?? [])].sort((a, b) => a.sense_order - b.sense_order).map((r) => ({
     pos: r.pos, glossVi: cleanGlossVi(cleanMtGloss(r.gloss_vi)), glossEn: r.gloss_en, senseOrder: r.sense_order,
     ...(r.id === undefined ? {} : { id: r.id, senseFrequency: parseSenseFrequency(r.sense_frequency) }),
   }))

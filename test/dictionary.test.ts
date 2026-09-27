@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { pickIpa, pickPrimarySense } from '@/lib/dictionary/rows'
+import { pickIpa, pickPrimarySense, toSenses } from '@/lib/dictionary/rows'
 import { searchEntries, searchAllLanguages, searchAllLanguagesVi, suggestNearby, searchOneDirection, getCommonWords } from '@/lib/dictionary/search'
 import { clientReturning } from './helpers/supabase'
 import { getEntryDetail, getCrossLanguage, getCharacters } from '@/lib/dictionary/entryDetail'
@@ -22,6 +22,14 @@ describe('pickPrimarySense', () => {
     ])
     expect(s?.glossVi).toBe('a')
     expect(pickPrimarySense([])).toBeNull()
+  })
+})
+
+describe('toSenses', () => {
+  it('orders senses by sense_order whatever order the rows arrive in', () => {
+    const row = (sense_order: number, gloss_vi: string) => ({ pos: 'noun', gloss_vi, gloss_en: null, sense_order })
+    expect(toSenses([row(6, 'chàng trai'), row(1, 'gà'), row(2, 'thịt gà')]).map((s) => s.glossVi))
+      .toEqual(['Gà', 'Thịt gà', 'Chàng trai'])
   })
 })
 
