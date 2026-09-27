@@ -83,11 +83,13 @@ describe('the 9router gate', () => {
     expect((handler({ request: asCookie }) as GateResponse).statusCode).toBe(403)
   })
 
-  it('refuses every path without the cookie', () => {
+  it('refuses every path without the cookie but the manifest', () => {
     const handler = gate(KEY)
-    for (const uri of ['/', '/dashboard', '/login', '/api/auth/login', '/v1/models', '/__gate']) {
+    for (const uri of ['/', '/dashboard', '/login', '/api/auth/login', '/v1/models', '/__gate', '/manifest.webmanifest/x']) {
       expect((handler({ request: request(uri) }) as GateResponse).statusCode, uri).toBe(403)
     }
+    const manifest = request('/manifest.webmanifest')
+    expect(handler({ request: manifest })).toBe(manifest)
   })
 })
 

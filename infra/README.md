@@ -113,7 +113,7 @@ Studio: `pwsh infra/supabase/bin/studio-tunnel.ps1`, then `http://localhost:8000
 To reach its dashboard, press Open dashboard on `/admin/router`. The page shows the password (SSM
 `/zhesen/prod/router_password`) and a link, good for 5 minutes, to the 9router distribution
 (`terraform output router_url`). Its gate function trades the link for a 12-hour cookie and
-refuses anything without one; 9router then asks for the password. The password reaches 9router
+refuses anything without one but the web app manifest; 9router then asks for the password. The password reaches 9router
 as `INITIAL_PASSWORD`, and the service's entrypoint drops any password 9router stored itself on
 every start, so change it on `/admin/secrets`, not in the dashboard. Without the app: `pwsh
 infra/supabase/bin/router-tunnel.ps1`, then `http://localhost:20128/dashboard`. Provider logins

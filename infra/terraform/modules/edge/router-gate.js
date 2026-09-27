@@ -45,6 +45,8 @@ function handler(event) {
       cookies: cookies
     };
   }
+  // Browsers fetch the web app manifest without cookies; it holds only 9router's name and icons.
+  if (request.uri === '/manifest.webmanifest') return request;
   var c = request.cookies[COOKIE];
   return valid('cookie', c && c.value, now) ? request : refuse();
 }
