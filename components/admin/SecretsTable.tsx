@@ -10,7 +10,7 @@ const PATH = '/api/admin/secrets'
 /** `GET /api/admin/secrets` (lib/admin/secrets.ts buildInventory). */
 const rowSchema = z.object({
   id: z.string(),
-  group: z.enum(['App keys', 'Instance', 'Vercel', 'Elsewhere', 'Config']),
+  group: z.enum(['App keys', 'Instance', 'Vercel', 'Config']),
   purpose: z.string(),
   where: z.string(),
   set: z.boolean(),
@@ -33,7 +33,7 @@ const stateSchema = z.union([
   z.object({ rows: z.array(rowSchema), vercelToken: z.boolean() }),
 ])
 
-const GROUPS = ['App keys', 'Instance', 'Vercel', 'Config', 'Elsewhere'] as const
+const GROUPS = ['App keys', 'Instance', 'Vercel', 'Config'] as const
 
 /** A revealed value goes back into hiding after this. */
 const SHOW_MS = 30_000

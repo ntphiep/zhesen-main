@@ -133,3 +133,104 @@ resource "aws_cloudfront_distribution" "api" {
     }
   }
 }
+
+# The 9router dashboard gets its own distribution: its /_next/ and /api/ paths would
+# collide with the API's under one host. CloudFront reaches 9router's port directly, the
+# gate function admits only a browser holding a link from /admin/router, and 9router then
+# asks for its own password (router_password).
+resource "random_password" "router_gate_key" {
+  length  = 48
+  special = false
+}
+
+# lib/admin/router.ts signs the links with this value and the gate function carries the
+# same one, so it changes only here.
+resource "aws_ssm_parameter" "router_gate_key" {
+  name  = "${var.ssm_prefix}/router_gate_key"
+  type  = "SecureString"
+  value = random_password.router_gate_key.result
+}
+
+resource "aws_cloudfront_vpc_origin" "router" {
+  vpc_origin_endpoint_config {
+    name                   = "${var.name_prefix}-9router"
+    arn                    = var.instance_arn
+    http_port              = 20128
+    https_port             = 443
+    origin_protocol_policy = "http-only"
+
+    origin_ssl_protocols {
+      items    = ["TLSv1.2"]
+      quantity = 1
+    }
+  }
+
+  tags = {
+    Name = "${var.name_prefix}-9router"
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "cloudfront_router" {
+  security_group_id            = var.security_group_id
+  description                  = "9router, from the CloudFront VPC origin only"
+  ip_protocol                  = "tcp"
+  from_port                    = 20128
+  to_port                      = 20128
+  referenced_security_group_id = data.aws_security_group.cloudfront_vpc_origins.id
+}
+
+resource "aws_cloudfront_function" "router_gate" {
+  name    = "${var.name_prefix}-router-gate"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  comment = "Admit only browsers sent by /admin/router"
+  code    = templatefile("${path.module}/router-gate.js", { key = random_password.router_gate_key.result })
+}
+
+resource "aws_cloudfront_distribution" "router" {
+  enabled         = true
+  comment         = "zhesen 9router dashboard"
+  http_version    = "http2and3"
+  price_class     = "PriceClass_200"
+  is_ipv6_enabled = true
+
+  origin {
+    origin_id   = "ec2-9router"
+    domain_name = var.instance_private_dns
+
+    vpc_origin_config {
+      vpc_origin_id            = aws_cloudfront_vpc_origin.router.id
+      origin_read_timeout      = 60
+      origin_keepalive_timeout = 5
+    }
+  }
+
+  default_cache_behavior {
+    target_origin_id       = "ec2-9router"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods         = ["GET", "HEAD"]
+    viewer_protocol_policy = "redirect-to-https"
+
+    # 9router compresses its own responses.
+    compress = false
+
+    cache_policy_id          = data.aws_cloudfront_cache_policy.disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.router_gate.arn
+    }
+  }
+
+  viewer_certificate {
+    cloudfront_default_certificate = true
+    minimum_protocol_version       = "TLSv1"
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+}

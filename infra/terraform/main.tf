@@ -61,6 +61,7 @@ module "edge" {
   instance_arn         = module.instance.instance_arn
   instance_private_dns = module.instance.private_dns
   security_group_id    = module.instance.security_group_id
+  ssm_prefix           = local.ssm_prefix
 }
 
 module "settings" {
@@ -80,6 +81,9 @@ module "settings" {
 
     # bin/backup.sh publishes here when a dump fails.
     alerts_topic_arn = module.alerts.topic_arn
+
+    # Where /admin/router sends the owner (lib/admin/router.ts).
+    router_url = "https://${module.edge.router_domain_name}"
   }
 }
 

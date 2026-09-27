@@ -52,7 +52,7 @@ function details(f: ServiceFacts | null, edge: { host: string; ms: number | null
     ec2: 'zhesen-supabase, details above',
     s3: s3 ? [`${s3.bucket}`, `${s3.dumps} dumps · ${formatBytes(s3.bytes)}`, s3.newest ? `newest ${ago(s3.newest)}` : null, s3.retainDays ? `kept ${s3.retainDays} d` : null].filter(Boolean).join(' · ') : '–',
     cloudfront: `${edge.host}${edge.ms === null ? '' : ` · ${edge.ms} ms`}`,
-    vpc: 'Public IPv4 for outbound traffic; inbound only from CloudFront on port 80',
+    vpc: 'Public IPv4 for outbound traffic; inbound only from CloudFront, on port 80 and 9router\'s 20128',
     cloudwatch: f?.cloudwatch ? `${f.cloudwatch.alarms} alarms · ${f.cloudwatch.firing === 0 ? 'none firing' : `${f.cloudwatch.firing} firing`}` : '–',
     sns: sns ? `${sns.topic} · ${sns.subscriptions.length === 0 ? 'no subscribers' : sns.subscriptions.map((x) => `${x.protocol}${x.pending ? ' (pending)' : ''}`).join(', ')}` : '–',
     ssm: f?.ssm ? `${f.ssm.parameters} parameters under /zhesen/` : '–',

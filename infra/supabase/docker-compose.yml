@@ -357,8 +357,9 @@ services:
       SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
 
   # Not upstream: 9router, the model router behind the assistant (lib/ai/). Envoy serves
-  # its /v1/ API at /ai/v1/, where 9router checks its own API key. The dashboard is bound
-  # to the host's loopback only: bin/router-tunnel.ps1. Its data, provider logins
+  # its /v1/ API at /ai/v1/, where 9router checks its own API key. The dashboard is
+  # reached through its own CloudFront distribution, gated by /admin/router; the security
+  # group admits port 20128 from the CloudFront VPC origin only. Its data, provider logins
   # included, lives outside this folder so the sync's --delete never reaches it.
   ai-router:
     container_name: zhesen-9router
@@ -369,11 +370,35 @@ services:
         limits:
           memory: 512m
     ports:
-      - "127.0.0.1:20128:20128"
+      - "20128:20128"
     volumes:
       - /opt/zhesen/9router:/app/data
+    # 9router prefers a password hash in its own settings (its settings page, a restored backup)
+    # over INITIAL_PASSWORD, so each start drops it and the SSM value on /admin/router holds.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        [ ! -f /app/data/db/data.sqlite ] || node -e '
+          const db = require("/app/node_modules/better-sqlite3")("/app/data/db/data.sqlite", { fileMustExist: true });
+          const row = db.prepare("select data from settings where id = 1").get();
+          const data = row ? JSON.parse(row.data) : {};
+          if ("password" in data) {
+            delete data.password;
+            db.prepare("update settings set data = ? where id = 1").run(JSON.stringify(data));
+            console.log("Dropped the stored dashboard password; INITIAL_PASSWORD applies.");
+          }
+          db.close();
+        ' || echo "Could not drop the stored dashboard password." >&2
+        exec /entrypoint.sh "$$@"
+      - --
+    command: ["node", "custom-server.js"]
     environment:
       DATA_DIR: /app/data
+      # The only dashboard password, since the entrypoint above drops any stored hash.
+      INITIAL_PASSWORD: ${ROUTER_PASSWORD}
+      # CloudFront speaks plain HTTP to the origin, so 9router cannot tell the viewer used HTTPS.
+      AUTH_COOKIE_SECURE: "true"
 
 volumes:
   db-config:

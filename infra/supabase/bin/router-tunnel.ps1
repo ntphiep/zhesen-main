@@ -1,5 +1,5 @@
 # Opens the 9router dashboard at http://localhost:20128/dashboard for as long as this runs.
-# Needs the SSM Session Manager plugin; the dashboard listens on the host's loopback only.
+# The way in when /admin/router cannot be used. Needs the SSM Session Manager plugin.
 #
 #   pwsh infra/supabase/bin/router-tunnel.ps1
 

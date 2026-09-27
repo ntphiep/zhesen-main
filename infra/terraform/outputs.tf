@@ -13,6 +13,11 @@ output "api_url" {
   value       = local.api_url
 }
 
+output "router_url" {
+  description = "The 9router dashboard's distribution; open it from /admin/router."
+  value       = "https://${module.edge.router_domain_name}"
+}
+
 output "assets_bucket" {
   description = "Bucket holding infra/supabase, synced by cloud-init."
   value       = local.assets_bucket

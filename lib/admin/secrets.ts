@@ -28,6 +28,7 @@ export const INSTANCE_SERVICES = {
   PG_META_CRYPTO_KEY: ['studio', 'meta'],
   SECRET_KEY_BASE: [],
   VAULT_ENC_KEY: [],
+  ROUTER_PASSWORD: ['ai-router'],
 } as const satisfies Record<string, readonly string[]>
 
 export type InstanceVariable = keyof typeof INSTANCE_SERVICES
@@ -41,7 +42,7 @@ export type InstanceVariable = keyof typeof INSTANCE_SERVICES
  *  vercel    Vercel env var, then a production redeploy */
 export type Apply = 'app' | 'ssm' | 'instance' | 'postgres' | 'jwt' | 'vercel'
 
-export type Group = 'App keys' | 'Instance' | 'Vercel' | 'Elsewhere'
+export type Group = 'App keys' | 'Instance' | 'Vercel'
 
 export interface SecretDef {
   id: string
@@ -106,6 +107,11 @@ export const SECRETS: SecretDef[] = [
     purpose: 'Rendered into .env; no service here reads it (Realtime or Supavisor would).' },
   { id: 'vault_enc_key', group: 'Instance', parameter: `${PREFIX}/vault_enc_key`, variable: 'VAULT_ENC_KEY', secure: true, apply: 'instance', generate: 32, ...ALNUM(32, 32),
     purpose: 'Rendered into .env; no service here reads it (Supavisor would).' },
+  { id: 'router_password', group: 'Instance', parameter: `${PREFIX}/router_password`, variable: 'ROUTER_PASSWORD', secure: true, apply: 'instance', generate: 32, ...ALNUM(16),
+    purpose: 'Password of the 9router dashboard, shown on /admin/router. Each ai-router start drops any password 9router stored itself, so this one holds.' },
+  { id: 'router_gate_key', group: 'Instance', parameter: `${PREFIX}/router_gate_key`, secure: true, apply: null, revealable: false,
+    locked: 'Terraform builds this value into the gate function of the 9router distribution (infra/terraform, edge module); change it there.',
+    purpose: 'Signs the links /admin/router hands out; the 9router distribution checks them.' },
   { id: 'admin_rescue_secret', group: 'Instance', parameter: `${PREFIX}/admin_rescue_secret`, secure: true, apply: 'ssm', generate: 40, ...ALNUM(16),
     purpose: 'Secret for /rescue, the way in when the database is down.' },
   { id: 'alert_channels', group: 'Instance', parameter: `${PREFIX}/alert_channels`, secure: true, apply: null, locked: 'Edited on /admin/infra under Alerts.',
@@ -118,9 +124,6 @@ export const SECRETS: SecretDef[] = [
   { id: 'AWS_ROLE_ARN', group: 'Vercel', env: 'AWS_ROLE_ARN', secure: false, apply: 'vercel',
     pattern: /^arn:aws:iam::\d{12}:role\/[\w+=,.@/-]+$/, hint: 'An IAM role ARN, arn:aws:iam::<account>:role/<name>.',
     purpose: 'IAM role every function assumes through Vercel OIDC for its AWS calls.' },
-  { id: '9router_dashboard_password', group: 'Elsewhere', secure: true, apply: null, revealable: false,
-    locked: 'Kept only as a hash inside 9router: change it in the 9router dashboard, opened with infra/supabase/bin/router-tunnel.ps1 (SSM tunnel to port 20128).',
-    purpose: 'Password of the 9router dashboard.' },
 ]
 
 export function findSecret(id: string): SecretDef | undefined {
@@ -282,14 +285,13 @@ export function buildInventory(meta: Map<string, ParameterMeta>, values: Map<str
     const fromEnv = s.env ? env[s.env]?.trim() || undefined : undefined
     const effective = ssm ?? fromEnv
     let where: string
-    if (s.group === 'Elsewhere') where = '9router'
-    else if (s.parameter && s.env) {
+    if (s.parameter && s.env) {
       where = ssm && fromEnv ? `SSM ${s.parameter} (in effect), and Vercel ${s.env}`
         : ssm ? `SSM ${s.parameter}` : fromEnv ? `Vercel ${s.env}; no SSM parameter yet` : `Neither SSM ${s.parameter} nor Vercel ${s.env}`
     } else where = s.parameter ? `SSM ${s.parameter}` : `Vercel ${s.env}`
     return {
       id: s.id, group: s.group, purpose: s.purpose, where,
-      set: s.group === 'Elsewhere' || effective !== undefined,
+      set: effective !== undefined,
       changedAt: m?.changedAt ?? null, version: m?.version ?? null,
       last4: effective ? tail(effective) : null, value: null,
       revealable: s.revealable !== false && effective !== undefined,

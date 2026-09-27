@@ -27,6 +27,12 @@ resource "random_password" "vault_enc_key" {
   special = false
 }
 
+# The 9router dashboard's password, handed to it as INITIAL_PASSWORD.
+resource "random_password" "router_password" {
+  length  = 32
+  special = false
+}
+
 # Written once. `ignore_changes` keeps a later apply from rotating a password out
 # from under a running database.
 resource "aws_ssm_parameter" "generated" {
@@ -36,6 +42,7 @@ resource "aws_ssm_parameter" "generated" {
     pg_meta_crypto_key = random_password.pg_meta_crypto_key.result
     secret_key_base    = random_password.secret_key_base.result
     vault_enc_key      = random_password.vault_enc_key.result
+    router_password    = random_password.router_password.result
   }
 
   name  = "${var.ssm_prefix}/${each.key}"

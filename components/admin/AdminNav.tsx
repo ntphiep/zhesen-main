@@ -20,6 +20,7 @@ export const NAV_GROUPS: { label: string; links: { href: string; label: string }
     links: [
       { href: '/admin/infra', label: 'Infrastructure' },
       { href: '/admin/secrets', label: 'Secrets' },
+      { href: '/admin/router', label: '9router' },
       { href: '/admin/users', label: 'Users' },
       { href: '/admin/content', label: 'Content' },
       { href: '/admin/audit', label: 'Audit log' },
