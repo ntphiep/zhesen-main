@@ -46,6 +46,16 @@ describe('AiChatPanel', () => {
     expect(aiEnabled).not.toHaveBeenCalled()
   })
 
+  // At 390x844 the launcher sat on the audio button of the last example row. jsdom lays
+  // nothing out, so the room left under the page is asserted by its class.
+  it('leaves room at the end of the page for the launcher', async () => {
+    const { container } = render(<AiChatPanel enabled />)
+    const launcher = await screen.findByRole('button', { name: 'Hỏi trợ lý' })
+    expect(launcher).toHaveClass('bottom-5')
+    const spacer = container.querySelector('[aria-hidden="true"]')
+    expect(spacer).toHaveClass('h-20', 'shrink-0')
+  })
+
   it('stays closed until the button is pressed', async () => {
     render(<AiChatPanel />)
     expect(await screen.findByRole('button', { name: 'Hỏi trợ lý' })).toBeInTheDocument()

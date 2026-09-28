@@ -85,6 +85,9 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
   // a corner panel, so this shares its hook rather than the component.
   return (
     <>
+      {/* Room under the last row of the page for the launcher: 20px offset plus its
+          44px height, so the bottom control on a phone can scroll clear of it. */}
+      <div aria-hidden="true" className="h-20 shrink-0" />
       <button
         type="button"
         onClick={() => setOpen(true)}
