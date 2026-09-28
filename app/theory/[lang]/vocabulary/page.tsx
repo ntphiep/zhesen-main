@@ -1,14 +1,16 @@
 import { notFound } from 'next/navigation'
-import { LANG_CODES, getLanguage, isLangCode } from '@/lib/languages'
+import { getLanguage, isLangCode } from '@/lib/languages'
 import { getCachedCommonWords, getCachedLevelsForLanguage } from '@/lib/dictionary/cached'
 import { VocabularyHub } from '@/components/vocabulary/VocabularyHub'
 
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
 
-/** The three languages are a fixed list, so their hubs are prerendered at build. */
+/** Empty, so the build never reads the level counts: prerendering them failed the build
+ *  when the anon role's 3 s statement timeout fired (#28). Each language renders on its
+ *  first request and stays in the route cache for `revalidate`. */
 export function generateStaticParams(): { lang: string }[] {
-  return LANG_CODES.map((lang) => ({ lang }))
+  return []
 }
 
 
