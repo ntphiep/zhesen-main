@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/languages'
 import type { Grade, SrsState } from '@/lib/progress/types'
 import { cardStateFromDbValue, cardStateToDbValue, review } from '@/lib/progress/srs'
+import { stripPhraseStop } from '@/lib/dictionary/textQuality'
 
 /** A due wordlist entry plus its spaced-repetition state, ready to review. */
 export interface ReviewCard {
@@ -51,7 +52,7 @@ const CARD_SELECT =
 export function rowToCard(r: CardRow): ReviewCard {
   return {
     id: r.id, lang: r.lang, headword: r.headword, reading: r.reading, ipa: r.ipa,
-    meaningVi: r.meaning_vi, meaningEn: r.meaning_en, example: r.example,
+    meaningVi: r.meaning_vi && stripPhraseStop(r.meaning_vi), meaningEn: r.meaning_en, example: r.example,
     exampleTranslation: r.example_translation, audioUrl: r.audio_url,
     state: {
       vocabId: r.id,
