@@ -13,17 +13,23 @@ import type { DictSense } from './types'
  * run (rin) at sense 118; the eighth is bit (bite).
  */
 const LAST_POINTER_SENSE = 15
-const WORDS = [
+/** Also spelled out in `lex.pointer_lemma` (supabase/migrations/0080_entries_form_of.sql),
+ *  which hides forms from the level lists; test/dictionary-lemma-sql.test.ts keeps both equal. */
+export const POINTER_WORDS = [
   'simple', 'past', 'present', 'future', 'participle', 'gerund', 'comparative', 'superlative',
   'degree', 'first-person', 'second-person', 'third-person', 'singular', 'plural', 'indicative',
   'subjunctive', 'imperative', 'preterite', 'imperfect', 'conditional', 'affirmative', 'negative',
   'formal', 'informal', 'feminine', 'masculine', 'neuter', 'remote', 'inflection', 'and', 'or',
   'form', 'alternative', 'spelling', 'misspelling', 'obsolete', 'archaic', 'dated', 'nonstandard',
   'rare', 'standard', 'british', 'uk', 'us', 'letter-case', 'pronunciation',
-].join('|')
-const POINTER_RE = new RegExp(String.raw`^((?:(?:${WORDS}|\([^)]*\))\s+)+)of\s+([\p{L}][\p{L}''’-]*)`, 'iu')
-const INFLECTION_RE =
-  /\b(?:plural|singular|past|present|future|participle|gerund|comparative|superlative|person|indicative|subjunctive|imperative|preterite|imperfect|conditional|inflection)\b/i
+]
+export const INFLECTION_WORDS = [
+  'plural', 'singular', 'past', 'present', 'future', 'participle', 'gerund', 'comparative',
+  'superlative', 'person', 'indicative', 'subjunctive', 'imperative', 'preterite', 'imperfect',
+  'conditional', 'inflection',
+]
+const POINTER_RE = new RegExp(String.raw`^((?:(?:${POINTER_WORDS.join('|')}|\([^)]*\))\s+)+)of\s+([\p{L}][\p{L}''’-]*)`, 'iu')
+const INFLECTION_RE = new RegExp(String.raw`\b(?:${INFLECTION_WORDS.join('|')})\b`, 'i')
 
 /** The headword this entry is a form of, or null when it is a word in its own right. */
 export function lemmaFromSenses(senses: DictSense[], headword: string): string | null {

@@ -194,7 +194,8 @@ export interface CommonWordsOptions {
   /** Keep only entries carrying a CEFR or HSK level. Those are the curated part of the
    *  corpus, so it drops the scraped single letters and bare inflections that otherwise
    *  sit between the real words: measured at rank 301, "d", "makes" and "using" go and
-   *  important, news, book and friends take their place. */
+   *  important, news, book and friends take their place. A levelled inflection such as
+   *  friends goes too, because its lemma is on the list already (`lex.entries.form_of`). */
   leveled?: boolean
 }
 
@@ -207,7 +208,7 @@ export async function getCommonWords(
     .from('entries')
     .select(PREVIEW_SELECT)
     .eq('lang', lang)
-  if (leveled) query = query.not('level', 'is', null)
+  if (leveled) query = query.not('level', 'is', null).is('form_of', null)
   const { data, error } = await query
     .order('frequency_rank', { ascending: true, nullsFirst: false })
     .range(offset, offset + limit - 1)

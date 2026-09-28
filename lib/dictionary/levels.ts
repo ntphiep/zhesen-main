@@ -7,7 +7,7 @@ import { PREVIEW_SELECT } from './entrySelect'
 
 /**
  * "Browse by level" data for `/theory/[lang]/vocabulary`. Grouped counts must go through the
- * `lex.count_entries_by_level` RPC (supabase/migrations/0021_level_counts.sql): supabase-js
+ * `lex.count_entries_by_level` RPC (defined in 0021, last replaced by 0080_entries_form_of.sql): supabase-js
  * has no GROUP BY, and PostgREST's 1000-row cap rules out counting client-side.
  */
 
@@ -37,14 +37,16 @@ export interface LevelPage {
   total: number
 }
 
-/** One page of entries at a level, ordered by headword for a stable, browsable list. */
+/** One page of entries at a level, ordered by headword for a stable, browsable list.
+ *  An inflected form keeps its level on its own page but is left out here, so villages
+ *  does not repeat village (`lex.entries.form_of`, migration 0080). */
 export async function getEntriesByLevel(
   supabase: SupabaseClient, lang: LangCode, level: string, offset: number, limit = 40,
 ): Promise<LevelPage> {
   const pageSize = Math.min(limit, PAGE_SIZE_CAP)
   const { data, error, count } = await supabase
     .schema('lex').from('entries').select(PREVIEW_SELECT, { count: 'exact' })
-    .eq('lang', lang).eq('level', level)
+    .eq('lang', lang).eq('level', level).is('form_of', null)
     .order('headword_normalized', { ascending: true }).order('id')
     .range(offset, offset + pageSize - 1)
   if (error) throw error
@@ -53,7 +55,7 @@ export async function getEntriesByLevel(
 
 // PostgREST's own max-rows setting (confirmed 1000) caps any single request
 // regardless of the range asked for, so a level with more words than that (e.g.
-// en:B1 has 4789) needs to be paged in chunks to fetch it in full.
+// en:B1 holds 4,179 lemmas) needs to be paged in chunks to fetch it in full.
 const BULK_CHUNK = 1000
 const BULK_MAX_ROWS = 20000 // safety bound; no level in this dataset is anywhere near this size
 

@@ -44,6 +44,16 @@ describe('getEntriesByLevel', () => {
     expect(page.total).toBe(3)
   })
 
+  it('leaves out the inflected forms, which the word page levels but the list does not', async () => {
+    const is = vi.fn()
+    const built = clientReturning([], null, {
+      is: (...args: unknown[]) => { is(...args); return built.builder },
+      range: () => Promise.resolve({ data: [], error: null, count: 0 }),
+    })
+    await getEntriesByLevel(built.client, 'en', 'A1', 0, 40)
+    expect(is).toHaveBeenCalledWith('form_of', null)
+  })
+
   it('caps the requested page size at the server max-rows limit', async () => {
     const { client, range } = mockEntriesClient([])
     await getEntriesByLevel(client, 'en', 'A1', 0, 5000)

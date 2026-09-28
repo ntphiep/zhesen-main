@@ -93,13 +93,13 @@ export const getCachedWordOfDay = unstable_cache(
 export const getCachedCommonWords = unstable_cache(
   (lang: LangCode, options: CommonWordsOptions = {}): Promise<DictEntryPreview[]> =>
     getCommonWords(createContentClient(), lang, options),
-  ['dict-common-words'],
+  ['dict-common-words-v2'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
 export const getCachedLevelsForLanguage = unstable_cache(
   (lang: LangCode): Promise<LevelSummary[]> => getLevelsForLanguage(createContentClient(), lang),
-  ['dict-levels-for-language'],
+  ['dict-levels-for-language-v2'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
@@ -108,7 +108,7 @@ export const getCachedLevelsForLanguage = unstable_cache(
 export const getCachedEntriesByLevel = unstable_cache(
   (lang: LangCode, level: string, offset: number, limit: number): Promise<LevelPage> =>
     getEntriesByLevel(createContentClient(), lang, level, offset, limit),
-  ['dict-entries-by-level'],
+  ['dict-entries-by-level-v2'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 

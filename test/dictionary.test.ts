@@ -488,12 +488,24 @@ describe('getCommonWords', () => {
     expect(not).toHaveBeenCalledWith('level', 'is', null)
   })
 
+  it('drops the inflected forms along with the uncurated rows', async () => {
+    const is = vi.fn()
+    const built = clientReturning([], null, {
+      is: (...args: unknown[]) => { is(...args); return built.builder },
+    })
+    await getCommonWords(built.client, 'es', { leveled: true })
+    expect(is).toHaveBeenCalledWith('form_of', null)
+  })
+
   it('keeps every row when it is not asked to', async () => {
     const not = vi.fn()
     const built = clientReturning([], null, {
       not: (...args: unknown[]) => { not(...args); return built.builder },
     })
+    const is = vi.fn()
+    built.builder.is = (...args: unknown[]) => { is(...args); return built.builder }
     await getCommonWords(built.client, 'en')
     expect(not).not.toHaveBeenCalled()
+    expect(is).not.toHaveBeenCalled()
   })
 })
