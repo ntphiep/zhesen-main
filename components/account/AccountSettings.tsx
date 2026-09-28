@@ -185,7 +185,8 @@ export function AccountSettings({
         <p className="mt-1 text-sm text-black/60">
           Đổi mật khẩu đăng nhập.
         </p>
-        <form onSubmit={savePassword} className="mt-2 flex flex-wrap items-center gap-2">
+        {/* noValidate: the browser's bubble is English; `setPassword` checks in Vietnamese. */}
+        <form onSubmit={savePassword} noValidate className="mt-2 flex flex-wrap items-center gap-2">
           <input
             type="password"
             required

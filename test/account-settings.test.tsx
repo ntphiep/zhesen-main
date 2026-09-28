@@ -104,6 +104,14 @@ describe('AccountSettings', () => {
     expect(await screen.findByText('New password should be different')).toBeInTheDocument()
   })
 
+  // #23: the browser would stop an empty box with an English bubble. `setPassword`
+  // answers it in Vietnamese instead.
+  it('hands an empty password box to the Vietnamese check, not the browser', async () => {
+    show()
+    await userEvent.click(screen.getByRole('button', { name: 'Đặt mật khẩu' }))
+    expect(setPassword).toHaveBeenCalledWith(expect.anything(), '')
+  })
+
   it('reports progress, and the split by status and language', () => {
     show()
     expect(screen.getByText('Tổng số từ')).toBeInTheDocument()

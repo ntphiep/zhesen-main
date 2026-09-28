@@ -97,3 +97,23 @@ describe('AuthForm, signing in', () => {
     expect(push).not.toHaveBeenCalled()
   })
 })
+
+// #23: the browser's own validation bubble is English inside a Vietnamese page.
+describe('AuthForm, sent incomplete', () => {
+  it('asks for the email in Vietnamese when the form is empty', async () => {
+    render(<AuthForm mode="login" localWordCount={0} hasAnonymousSession={false} />)
+    await userEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }))
+
+    expect(await screen.findByText('Nhập email.')).toBeInTheDocument()
+    expect(signInWithPassword).not.toHaveBeenCalled()
+  })
+
+  it('asks for the password in Vietnamese when only the email is filled', async () => {
+    render(<AuthForm mode="register" localWordCount={0} hasAnonymousSession={false} />)
+    await type('Email', 'a@b.com')
+    await userEvent.click(screen.getByRole('button', { name: /Tạo tài khoản/i }))
+
+    expect(await screen.findByText('Nhập mật khẩu.')).toBeInTheDocument()
+    expect(registerWithPassword).not.toHaveBeenCalled()
+  })
+})

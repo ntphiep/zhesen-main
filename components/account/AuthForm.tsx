@@ -81,7 +81,9 @@ export function AuthForm({
   function submit(e: React.FormEvent) {
     e.preventDefault()
     const address = email.trim()
-    if (!address) return
+    // The form is `noValidate`: the browser's own validation bubble is English.
+    if (!address) return setFeedback({ tone: 'bad', text: 'Nhập email.' })
+    if (!password) return setFeedback({ tone: 'bad', text: 'Nhập mật khẩu.' })
     if (upgrading) return run(() => attachEmail(supabase, address, password))
     if (mode === 'register') return run(() => registerWithPassword(supabase, address, password))
     return run(() => signInWithPassword(supabase, address, password, localWordCount))
@@ -107,7 +109,7 @@ export function AuthForm({
         </p>
       )}
 
-      <form onSubmit={submit} className="mt-5 flex flex-col gap-3">
+      <form onSubmit={submit} noValidate className="mt-5 flex flex-col gap-3">
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Email</span>
           <input
