@@ -105,6 +105,82 @@ describe('audioMatchesHeadword', () => {
   })
 })
 
+describe('audioMatchesHeadword with the tags Commons adds to a name', () => {
+  it('accepts a numbered take of the word', () => {
+    expect(audioMatchesHeadword(`${COMMONS}En-us-quatrefoil2.ogg`, 'quatrefoil')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-seine-2.ogg`, 'Seine')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-piquant_01.ogg`, 'piquant')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-a-(1).ogg`, 'a-')).toBe(true)
+  })
+  it('keeps a number that belongs to the name', () => {
+    expect(audioMatchesHeadword(`${COMMONS}En-us-catch-22.ogg`, 'catch')).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-catch-22.ogg`, 'catch-22')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}En-uk-a1.ogg`, 'a')).toBe(false)
+  })
+  it('accepts a part-of-speech tag', () => {
+    expect(audioMatchesHeadword(`${COMMONS}LL-Q1860 (eng)-X-capitate_(verb).wav.ogg`, 'capitate')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-closer-noun.ogg`, 'closer')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-impress-v.ogg`, 'impress')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-profligate-verb2.ogg`, 'profligate')).toBe(true)
+  })
+  it('accepts a pronunciation suffix', () => {
+    expect(audioMatchesHeadword(`${COMMONS}Colloquy_pronunciation.ogg`, 'colloquy')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}En-burundi-pronunciation.ogg`, 'Burundi')).toBe(true)
+  })
+  it('accepts a speaker or accent prefix joined by an underscore', () => {
+    expect(audioMatchesHeadword(`${COMMONS}En-au_ck1_crush.ogg`, 'crush')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}En_us_food.ogg`, 'food')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}En-nyc_brooklyn.ogg`, 'Brooklyn')).toBe(true)
+  })
+  it('accepts a stress, accent or alternative note', () => {
+    expect(audioMatchesHeadword(`${COMMONS}En-us-your_unstressed.ogg`, 'your')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}En-us_should_(stressed).ogg`, 'should')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}LL-Q1860 (eng)-X-hashish_(alt).wav.ogg`, 'hashish')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}Beefeater_(en-uk).ogg`, 'Beefeater')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}Walloon_us.ogg`, 'Walloon')).toBe(true)
+  })
+  it('accepts several part-of-speech tags in a row', () => {
+    expect(audioMatchesHeadword(`${COMMONS}En-us-upset-verb-adj.ogg`, 'upset')).toBe(true)
+  })
+  it('accepts an accent after a dash', () => {
+    expect(audioMatchesHeadword(`${COMMONS}Fart-uk.ogg`, 'fart')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}Hypocrite-us-pron.ogg`, 'hypocrite')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}Greater-pronunciation-us.ogg`, 'greater')).toBe(true)
+  })
+  it('accepts a syllable, flapping or regional variant note', () => {
+    expect(audioMatchesHeadword(`${COMMONS}En-us_what_(flapped).ogg`, 'what')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}LL-Q1860 (eng)-X-colossians_(4_syll).wav.ogg`, 'Colossians')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-yours_(alternate_pronunciation).ogg`, 'yours')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}LL-Q1860 (eng)-X-mana_(nz_english).wav.ogg`, 'mana')).toBe(true)
+  })
+  it('ignores commas, question and exclamation marks, and how an apostrophe is written', () => {
+    expect(audioMatchesHeadword(`${COMMONS}En-us-no_thanks.ogg`, 'no, thanks')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}LL-Q1860 (eng)-X-am_i_under_arrest%3F.wav.ogg`, 'am I under arrest')).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}En-au_ck1_duck_s_guts.ogg`, "duck's guts")).toBe(true)
+    expect(audioMatchesHeadword(`${COMMONS}LL-Q1860 (eng)-X-xi’an.wav.ogg`, "Xi'an")).toBe(true)
+  })
+  it('keeps a period and a leading apostrophe, which can make another word', () => {
+    expect(audioMatchesHeadword(`${COMMONS}LL-Q1860 (eng)-X-imp.wav.ogg`, 'imp.')).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-kay.ogg`, "'kay")).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-!.ogg`, '!')).toBe(false)
+  })
+  it('accepts a headword of more than four hyphenated parts', () => {
+    expect(audioMatchesHeadword(`${COMMONS}En-us-kiss-me-over-the-garden-gate.ogg`, 'kiss-me-over-the-garden-gate')).toBe(true)
+  })
+  it('still rejects a phrase, another word or a homophone', () => {
+    expect(audioMatchesHeadword(`${COMMONS}En-uk-a_cat.ogg`, 'cat')).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En-uk-to_drive.ogg`, 'drive')).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En-au-zero_in_on.ogg`, 'zero in')).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-bale.ogg`, 'bael')).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-lead-metal.ogg`, 'lead')).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En-uk-resound_(sound_again).ogg`, 'resound')).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-mow_(etymology_3).ogg`, 'mow')).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En-us-plan-b.ogg`, 'plan')).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En-uk-let_us.ogg`, 'let')).toBe(false)
+    expect(audioMatchesHeadword(`${COMMONS}En_to_be.ogg`, 'be')).toBe(false)
+  })
+})
+
 describe('pickAccentRows audio filtering', () => {
   it('leaves an accent row without audio rather than playing the wrong clip', () => {
     const rows = pickAccentRows(

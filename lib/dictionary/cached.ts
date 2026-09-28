@@ -29,7 +29,7 @@ import type { LangCode } from '@/lib/languages'
 export const getCachedEntryDetail = unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),
   // v3: carries senseLinks, which a v2 value lacks.
-  ['dict-entry-detail-v3'],
+  ['dict-entry-detail-v4'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
@@ -117,6 +117,6 @@ export const getCachedEntriesByLevel = unstable_cache(
 export const getCachedTappableTexts = unstable_cache(
   (lang: LangCode, texts: string[]): Promise<ResolvedText[]> =>
     resolveTappableTexts(createContentClient(), lang, texts),
-  ['dict-tappable'],
+  ['dict-tappable-v2'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )

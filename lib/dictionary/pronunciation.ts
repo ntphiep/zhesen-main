@@ -22,11 +22,41 @@ export function audioAccent(url: string | null): Accent | null {
   return m[1] === 'gb' ? 'uk' : (m[1] as Accent)
 }
 
+/** Tags around the word that do not change what is said, stripped in this order: a speaker
+ *  or accent prefix (`En-au_ck1_crush`, `En_us_food`), a take number (`quatrefoil2`,
+ *  `seine-2`, `a-(1)`; not `a1`, a code), parts of speech (`capitate_(verb)`,
+ *  `upset-verb-adj`), a stress, accent or variant note (`your_unstressed`, `hashish_(alt)`,
+ *  `what_(flapped)`, `fart-uk`, an untagged `walloon_us`), and a pronunciation suffix.
+ *  Sense and etymology notes (`lead-metal`, `mow_(etymology_3)`) are kept: they can name
+ *  another word. */
+const FILE_TAGS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/^en[-_](au|ca|gb|nyc|nz|uk|us)_(?:ck\d_)?/, 'en-$1-'],
+  [/(?:(?<=[a-z']{2})\d|[-_]0?\d|_?\(\d\))$/, ''],
+  [/(?:(?:-(?:noun|verb|adj|adjective|adv|adverb|n|v))+|_\((?:noun|verb|adj|adjective|adv|adverb)\))$/, ''],
+  [/(?:[-_]\(?(?:un)?stressed\)?|_\((?:alt|alternate_pronunciation|au|uk|us|en-uk|nz_english|new_zealand_english|\d_syll|flapped)\)|-(?:us|uk)(?:-pron)?)$/, ''],
+  [/^(?!en[-_]|ll-)(.+?)(?:_en)?_us$/, '$1'],
+  [/[-_]+pronunciation$/, ''],
+]
+
+/** What is said: underscores are spaces, commas, `?` and `!` are silent, and an apostrophe
+ *  may be written as an underscore (`en-au_ck1_nun_s`). A period is kept: `imp.` is not `imp`. */
+function spoken(s: string): string {
+  return s.replace(/[,!?]/g, '').replace(/’/g, "'").replace(/['_]/g, ' ')
+}
+
+function endsWithWord(base: string, want: string): boolean {
+  const segments = base.split('-')
+  for (let k = 1; k <= segments.length; k += 1) {
+    if (spoken(segments.slice(-k).join('-')) === want) return true
+  }
+  return false
+}
+
 /** Whether a recording is of the headword itself. A Wikimedia filename is dash-separated
  *  tags then the word, spaces written as underscores, so the word must be a suffix of the
- *  segments: `En-uk-a_cat.ogg` says "a cat". Measured over 699 recordings: 631 match, 68
- *  do not, and the 68 include speaker-named files (`En-au_ck1_have`) that are dropped too.
- *  Over the 96,765 English recordings of the full import, 91,015 match. */
+ *  segments, as named or with FILE_TAGS removed: `En-uk-a_cat.ogg` says "a cat". Over the
+ *  96,765 English recordings of the full import, 91,015 matched before FILE_TAGS and
+ *  94,129 match with them. */
 export function audioMatchesHeadword(url: string | null, headword: string): boolean {
   if (!url) return false
   // Guarded: a stray `%` makes decodeURIComponent throw, and the throw escapes through
@@ -35,12 +65,10 @@ export function audioMatchesHeadword(url: string | null, headword: string): bool
   // Commons serves a transcode under the original name plus its own extension:
   // `LL-Q1860 (eng)-Speaker-cat.wav.ogg`.
   const base = file.replace(/(\.(?:wav|flac|ogg|oga|opus|mp3|webm))+$/i, '').toLowerCase()
-  const segments = base.split('-')
-  const want = headword.trim().toLowerCase()
-  for (let k = 1; k <= Math.min(4, segments.length); k += 1) {
-    if (segments.slice(-k).join('-').replace(/_/g, ' ') === want) return true
-  }
-  return false
+  const want = spoken(headword.trim().toLowerCase())
+  if (!want) return false
+  const bare = FILE_TAGS.reduce((b, [tag, to]) => b.replace(tag, to), base)
+  return endsWithWord(base, want) || endsWithWord(bare, want)
 }
 
 /** A transcription with exactly one pair of delimiters. Spanish rows arrive wrapped,
