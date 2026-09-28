@@ -3,9 +3,8 @@ import { redirect } from 'next/navigation'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { accountKind } from '@/lib/auth/account'
 
-/** `auth.getUser()` asks the auth server every call, and /practice asks twice: in the
- *  segment layout and again in the page. Memoised per request against the equally memoised
- *  client from lib/supabase/server.ts, the second ask costs nothing. */
+/** `auth.getUser()` asks the auth server every call. Memoised per request against the
+ *  equally memoised client from lib/supabase/server.ts, a second ask costs nothing. */
 const currentUser = cache(
   async (supabase: SupabaseClient): Promise<User | null> => (await supabase.auth.getUser()).data.user,
 )

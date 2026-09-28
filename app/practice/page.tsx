@@ -13,9 +13,8 @@ export const metadata = pageMetadata({
 })
 
 // Practice hub: progress stats + every study mode, working over the saved
-// wordlist. The guard is also in this segment's layout, which is what covers the
-// six mode pages; it is repeated here so the stats query below is reached only by
-// an account that is allowed to see it.
+// wordlist. Each mode page calls the guard with its own path, so signing in lands
+// back on that mode; a layout cannot, because it never sees the pathname.
 export default async function PracticePage() {
   const supabase = await createClient()
   await requirePermanentAccount(supabase, '/practice')
