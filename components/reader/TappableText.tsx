@@ -7,6 +7,12 @@ import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 import { loadSupabaseClient } from '@/lib/supabase/loadClient'
 
+/** A centred pseudo-element gives a short word a 24 x 24 px hit area (WCAG 2.5.8) and
+ *  leaves the line as it was. Not for Chinese: words there touch, so the neighbour's
+ *  area would cover the edge of this one. */
+const HIT_AREA = 'relative before:absolute before:left-1/2 before:top-1/2 before:h-full before:min-h-6 '
+  + 'before:w-full before:min-w-6 before:-translate-x-1/2 before:-translate-y-1/2'
+
 /**
  * Text with dictionary-known words made tappable, each opening an inline popover;
  * unknown words render as plain text. Resolution happens once per text through the
@@ -117,7 +123,7 @@ export function TappableText({
             <button
               type="button"
               onClick={() => setActive(active === i ? null : i)}
-              className={`rounded underline decoration-dotted hover:bg-blue-50 ${bold} ${
+              className={`rounded underline decoration-dotted hover:bg-blue-50 ${lang === 'zh' ? '' : HIT_AREA} ${bold} ${
                 quiet ? 'decoration-black/25 underline-offset-4 hover:text-blue-700' : 'text-blue-700 underline-offset-2'
               }`}
             >

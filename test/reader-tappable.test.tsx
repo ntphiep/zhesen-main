@@ -84,6 +84,16 @@ describe('TappableText', () => {
     expect(screen.queryByText('con chó')).toBeNull()
   })
 
+  // A short word measured 15.2 x 26 px against the 24 x 24 minimum. jsdom lays nothing
+  // out, so only the class that draws the larger hit area can be asserted.
+  it('gives a short word a hit area of at least 24 px without moving the text', async () => {
+    resolveTokens.mockResolvedValueOnce(new Map([['dog', dog]]))
+    render(<TappableText text="the dog" lang="en" />)
+    const btn = await screen.findByRole('button', { name: 'dog' })
+    expect(btn).toHaveClass('relative', 'before:absolute', 'before:min-w-6', 'before:min-h-6')
+    expect(btn.className).not.toMatch(/(^|\s)(p|px|m|mx)-/)
+  })
+
   it('keeps the popover open while the reader interacts with it', async () => {
     resolveTokens.mockResolvedValueOnce(new Map([['dog', dog]]))
     render(<TappableText text="the dog" lang="en" />)
