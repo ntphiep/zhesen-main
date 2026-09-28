@@ -1,73 +1,143 @@
 'use client'
 import { useSyncExternalStore } from 'react'
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import { BilingualLayout } from './BilingualLayout'
+import { ClassicLayout } from './ClassicLayout'
+import { GlanceLayout } from './GlanceLayout'
+import { MapLayout } from './MapLayout'
 import { OverviewLayout } from './OverviewLayout'
+import { ReadLayout } from './ReadLayout'
 import { CONTAINER } from './WordParts'
-import { WORD_LAYOUTS, wordLayout, type WordLayout } from '@/lib/dictionary/wordLayout'
+import { WORD_LAYOUTS, availableLayouts, resolveLayout, wordLayout, type WordLayout } from '@/lib/dictionary/wordLayout'
+import { AnchorPrefix } from '@/lib/hooks/useAnchor'
 import type { WordView } from '@/lib/dictionary/wordView'
 
-// The page is cached for everyone in the default layout, so only that one is rendered on
-// the server; the other two load when a reader picks them.
-const BilingualLayout = dynamic(() => import('./BilingualLayout').then((m) => m.BilingualLayout), {
-  ssr: false, loading: () => <LayoutLoading />,
-})
-const ClassicLayout = dynamic(() => import('./ClassicLayout').then((m) => m.ClassicLayout), {
-  ssr: false, loading: () => <LayoutLoading />,
-})
-
-function LayoutLoading() {
-  return <p role="status" className="py-10 text-center text-sm text-black/45">Đang đổi bố cục…</p>
-}
+const noop = () => () => {}
+/** False on the server and through hydration, true from the first render after it. */
+const useHydrated = () => useSyncExternalStore(noop, () => true, () => false)
 
 const ICONS: Record<WordLayout, React.ReactNode> = {
   overview: <><rect x="2" y="2" width="7" height="7" rx="1.5" /><rect x="11" y="2" width="7" height="4" rx="1.5" /><rect x="11" y="8" width="7" height="10" rx="1.5" /><rect x="2" y="11" width="7" height="7" rx="1.5" /></>,
   bilingual: <><path d="M10 2v16" /><path d="M3 5h4M3 9h4M3 13h4M13 5h4M13 9h4M13 13h4" /></>,
   classic: <><path d="M2 4h9M2 8h9M2 12h9M2 16h6" /><rect x="14" y="3" width="4" height="14" rx="1" /></>,
+  map: <><rect x="2" y="3" width="5" height="14" rx="1.5" /><rect x="9" y="3" width="9" height="14" rx="1.5" /></>,
+  read: <><path d="M3 5h9M3 9h9M3 13h6" /><rect x="14" y="4" width="3.5" height="12" rx="1" /></>,
+  glance: <><rect x="2" y="3" width="4.5" height="14" rx="1.2" /><rect x="7.8" y="3" width="4.5" height="14" rx="1.2" /><rect x="13.6" y="3" width="4.5" height="14" rx="1.2" /></>,
 }
 
-function LayoutPicker({ value }: { value: WordLayout }) {
+/** `stored` is the choice this browser remembers, marked so the reader knows it sticks.
+ *  Before hydration both are null and `app/globals.css` marks them from the boot script.
+ *  Under 640px the six icons look alike, so a phone gets the names in a native select. */
+function LayoutPicker({ value, stored, options }: {
+  value: WordLayout | null
+  stored: WordLayout | null
+  options: ReturnType<typeof availableLayouts>
+}) {
   return (
-    <div role="group" aria-label="Bố cục" className="flex rounded-lg bg-black/5 p-0.5">
-      {WORD_LAYOUTS.map((l) => (
+    <>
+      <label className="flex items-center gap-2 text-sm sm:hidden">
+        <span className="text-black/60">Bố cục</span>
+        <select
+          value={value ?? 'overview'}
+          onChange={(e) => {
+            const next = options.find((l) => l.key === e.target.value)
+            if (next) wordLayout.set(next.key)
+          }}
+          className="rounded-lg border border-black/15 bg-white px-2.5 py-1.5 text-sm font-medium"
+        >
+          {options.map((l) => (
+            <option key={l.key} value={l.key}>{l.key === stored ? `${l.label} (mặc định)` : l.label}</option>
+          ))}
+        </select>
+      </label>
+      <LayoutButtons value={value} stored={stored} options={options} />
+    </>
+  )
+}
+
+function LayoutButtons({ value, stored, options }: Parameters<typeof LayoutPicker>[0]) {
+  return (
+    <div role="group" aria-label="Bố cục" className="hidden flex-wrap rounded-lg bg-black/5 p-0.5 sm:flex">
+      {options.map((l) => (
         <button
           key={l.key}
           type="button"
+          data-pick={l.key}
           aria-pressed={value === l.key}
           onClick={() => wordLayout.set(l.key)}
           title={l.label}
           className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm font-medium ${
-            value === l.key ? 'bg-white text-black shadow-sm' : 'text-black/55 hover:text-black'
+            value === l.key ? 'bg-white text-black shadow-sm' : 'text-black/60 hover:text-black'
           }`}
         >
           <svg aria-hidden="true" viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
             {ICONS[l.key]}
           </svg>
-          <span className="sr-only sm:not-sr-only">{l.label}</span>
+          <span>{l.label}</span>
+          {(stored === null || l.key === stored) && (
+            <span aria-hidden="true" data-hint={stored === null || undefined} className="text-[10.5px] font-normal text-black/60">mặc định</span>
+          )}
         </button>
       ))}
     </div>
   )
 }
 
-/** The word page in the layout the reader picked, with the picker above it. Each layout
- *  sets its own width; the overview draws on a grey page. */
+const NOTE = 'w-full text-[13px] text-black/60 sm:text-right'
+
+/**
+ * The word page in the layout the reader picked, with the picker above it. Each layout
+ * sets its own width; the overview draws on a grey page.
+ *
+ * The page is cached for everyone, so the server cannot know the stored layout. It draws
+ * every layout the entry offers, each in a panel, and `app/globals.css` shows the one the
+ * boot script marked on <html> before the first paint. Hidden panels prefix their ids.
+ * Hydration keeps the shown panel's DOM by its key and drops the rest.
+ */
 export function WordLayouts({ view }: { view: WordView }) {
-  const layout = useSyncExternalStore(wordLayout.subscribe, wordLayout.snapshot, wordLayout.serverSnapshot)
+  const stored = useSyncExternalStore(wordLayout.subscribe, wordLayout.snapshot, wordLayout.serverSnapshot)
+  const hydrated = useHydrated()
+  const ctx = { learner: view.learner !== null }
+  const layout = resolveLayout(stored, ctx)
+  const options = availableLayouts(ctx)
+  const label = (key: WordLayout) => WORD_LAYOUTS.find((l) => l.key === key)?.label ?? key
+  const panels = hydrated ? [layout] : options.map((l) => l.key)
+  const missing = WORD_LAYOUTS.filter((l) => !options.includes(l))
   return (
     <main
+      data-boot={hydrated ? undefined : ''}
       data-rendered-layout={layout}
-      className={`flex w-full flex-col gap-5 pt-5 pb-16 ${layout === 'overview' ? 'bg-black/[0.035]' : ''}`}
+      data-layouts={options.map((l) => l.key).join(' ')}
+      className="flex w-full flex-col gap-5 pt-5 pb-16"
     >
-      <div className={`${CONTAINER} flex items-center justify-between gap-3`}>
-        <Link href="/dictionary" className="text-sm text-black/50 hover:underline">← Dịch</Link>
-        <LayoutPicker value={layout} />
+      <div className={`${CONTAINER} flex flex-wrap items-center justify-between gap-x-3 gap-y-2`}>
+        <Link href="/dictionary" className="text-sm text-black/60 hover:underline">← Dịch</Link>
+        <LayoutPicker value={hydrated ? layout : null} stored={hydrated ? stored : null} options={options} />
+        {hydrated ? layout !== stored && (
+          <p className={NOTE}>Từ này chưa có bố cục {label(stored)}, đang hiện {label(layout)}.</p>
+        ) : missing.map((l) => (
+          <p key={l.key} data-note={l.key} className={NOTE}>Từ này chưa có bố cục {l.label}, đang hiện {label('classic')}.</p>
+        ))}
       </div>
-      {layout === 'bilingual'
-        ? <BilingualLayout view={view} />
-        : layout === 'classic'
-          ? <ClassicLayout view={view} />
-          : <OverviewLayout view={view} />}
+      {panels.map((key) => (
+        <div key={key} data-panel={key}>
+          <AnchorPrefix value={hydrated || key === 'overview' ? '' : `${key}-`}>
+            <LayoutBody layout={key} view={view} />
+          </AnchorPrefix>
+        </div>
+      ))}
     </main>
   )
+}
+
+function LayoutBody({ layout, view }: { layout: WordLayout; view: WordView }) {
+  const layer = view.learner
+  switch (layout) {
+    case 'bilingual': return <BilingualLayout view={view} />
+    case 'classic': return <ClassicLayout view={view} />
+    case 'map': return layer ? <MapLayout view={view} layer={layer} /> : <ClassicLayout view={view} />
+    case 'read': return layer ? <ReadLayout view={view} layer={layer} /> : <ClassicLayout view={view} />
+    case 'glance': return layer ? <GlanceLayout view={view} layer={layer} /> : <ClassicLayout view={view} />
+    default: return <OverviewLayout view={view} />
+  }
 }

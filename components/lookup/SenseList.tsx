@@ -6,6 +6,7 @@ import { senseSections, SHOWN_SENSES, type SenseSection } from '@/lib/dictionary
 import { findWordClass } from '@/lib/theory/content'
 import { wordClassPath } from '@/lib/theory/path'
 import { AudioButton } from '@/components/ui/AudioButton'
+import { useAnchor } from '@/lib/hooks/useAnchor'
 import { TappableText } from '@/components/reader/TappableText'
 import { Badge, MoreButton, PivotMark, WordLink } from './WordParts'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
@@ -68,8 +69,9 @@ function PosSection({ section, ...shared }: Shared & { section: SenseSection }) 
   const { shown, hiddenCount } = pickSenses(section.senses, SHOWN_SENSES)
   const visible = expanded ? section.senses : shown
   const documented = section.key && findWordClass(shared.lang, section.key)
+  const anchor = useAnchor()
   return (
-    <section id={section.anchor} className="flex flex-col gap-4">
+    <section id={anchor(section.anchor)} className="flex flex-col gap-4">
       <div className="flex items-baseline gap-2.5 border-b border-black/10 pb-2.5">
         <h2 className="text-lg font-bold">
           {documented

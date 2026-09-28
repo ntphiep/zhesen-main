@@ -51,6 +51,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'console.sql': 'Write SQL',
   'console.shell': 'Shell command',
   'console.restore': 'Restore dump',
+  'console.learner_status': 'Hide or publish learner layer',
   'secret.reveal': 'Reveal secret',
   'secret.update': 'Change secret',
 }

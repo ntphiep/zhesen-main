@@ -4,7 +4,9 @@ import { CharacterPanel } from './CharacterPanel'
 import { ConjugationTable } from './ConjugationTable'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { LemmaLink } from './LemmaLink'
+import { Backlinks } from './LearnerParts'
 import { SenseList } from './SenseList'
+import { useAnchor } from '@/lib/hooks/useAnchor'
 import {
   AiCorner, Badge, CONTAINER, ChipRow, ExampleRows, FormCells, GlossChips, GrammarList, LevelChip, SectionLabel, WordTable,
   baseFormLabel, frequencyBars,
@@ -30,6 +32,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
   const pinyin = typeof head.attributes.pinyin === 'string' ? head.attributes.pinyin : null
   const showPinyin = pinyin !== null && !head.pronunciations.some((p) => p.ipa?.trim())
 
+  const anchor = useAnchor()
   const parts = [
     ...sections.map((s) => ({ href: `#${s.anchor}`, label: s.labelVi, count: s.senses.length })),
     view.phrases.length > 0 && { href: '#phrases', label: 'Cụm từ', count: view.phrases.length },
@@ -37,7 +40,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
     view.antonyms.length > 0 && { href: '#antonyms', label: 'Trái nghĩa', count: view.antonyms.length },
     view.synonyms.length > 0 && { href: '#synonyms', label: view.senseSynonyms.length > 0 ? 'Đồng nghĩa khác' : 'Đồng nghĩa', count: view.synonyms.length },
     examples.length > 0 && { href: '#examples', label: 'Ví dụ khác', count: examples.length },
-  ].filter((p) => p !== false)
+  ].filter((p) => p !== false).map((p) => ({ ...p, href: `#${anchor(p.href.slice(1))}` }))
 
   return (
     <div className={`${CONTAINER} grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-12 xl:grid-cols-[minmax(0,1fr)_380px]`}>
@@ -64,7 +67,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
           {view.summary && <p className="text-lg leading-snug sm:text-[19px]">{view.summary}</p>}
           {view.lemma && <LemmaLink lemma={view.lemma} preview={view.lemmaPreview ?? undefined} lang={lang} />}
           {view.forms.length > 0 && (
-            <section id="forms" className="mt-3 flex flex-col gap-3">
+            <section id={anchor('forms')} className="mt-3 flex flex-col gap-3">
               <div className="flex items-center gap-2.5">
                 <h2 className="text-[15px] font-bold">Dạng từ</h2>
                 {irregular && <Badge>{baseLabel === 'Nguyên thể' ? 'Động từ bất quy tắc' : 'Bất quy tắc'}</Badge>}
@@ -145,6 +148,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
             <GrammarList points={view.grammarPoints} />
           </section>
         )}
+        <Backlinks view={view} className={`flex flex-col gap-3 ${RAIL_CARD}`} />
         <AiCorner lang={lang} headword={head.headword} meaningVi={view.meaningVi} className="rounded-[10px] bg-black/[0.04] p-4" />
       </aside>
     </div>
@@ -152,8 +156,9 @@ export function ClassicLayout({ view }: { view: WordView }) {
 }
 
 function Section({ id, title, note, children }: { id: string; title: string; note?: string; children: React.ReactNode }) {
+  const anchor = useAnchor()
   return (
-    <section id={id} className="flex flex-col gap-3">
+    <section id={anchor(id)} className="flex flex-col gap-3">
       <div className="flex items-baseline gap-2.5">
         <h2 className="text-lg font-bold">{title}</h2>
         {note && <span className="text-[13px] text-black/45">{note}</span>}

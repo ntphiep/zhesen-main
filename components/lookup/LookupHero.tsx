@@ -14,6 +14,13 @@ const headwordSize =(word: string) => SIZES.find(([n]) => word.length <= n)?.[1]
 
 const CHIP = 'rounded-full bg-black/[0.05] px-[9px] py-[3px] text-xs text-black/60'
 
+/** Everything handed to a client component is serialised into the page. The save reads
+ *  the entry fields and a translated example, not every sense, relation and sense-linked
+ *  row: passed whole, take's was 136 kB of the page's 326 kB. */
+export function saveableEntry(detail: DictEntryDetail): DictEntryDetail {
+  return { ...detail, senses: [], relations: [], pronunciations: [], senseLinks: [], examples: detail.examples.filter((e) => e.translationVi) }
+}
+
 export function LookupHero({ detail, hanViet, summary, stats = [], posLabels = [] }: {
   detail: DictEntryDetail
   hanViet?: string | null
@@ -60,14 +67,8 @@ export function LookupHero({ detail, hanViet, summary, stats = [], posLabels = [
           {stats.map((s) => <span key={s.label}><b className="font-semibold text-black">{s.n}</b> {s.label}</span>)}
         </p>
       )}
-      {/* Everything handed to a client component is serialised into the page. The save
-          reads the entry fields and a translated example, not every sense, relation and
-          sense-linked row: passed whole, take's was 136 kB of the page's 326 kB. */}
       <div className="mt-auto pt-1">
-        <AddToWordlistButton
-          size="lg"
-          entry={{ ...detail, senses: [], relations: [], pronunciations: [], senseLinks: [], examples: detail.examples.filter((e) => e.translationVi) }}
-        />
+        <AddToWordlistButton size="lg" entry={saveableEntry(detail)} />
       </div>
     </header>
   )

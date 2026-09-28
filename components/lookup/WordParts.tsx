@@ -6,6 +6,7 @@ import { PosTag } from '@/components/ui/PosTag'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { AiCoach } from '@/components/ai/AiCoach'
 import { TappableText } from '@/components/reader/TappableText'
+import { useAnchor } from '@/lib/hooks/useAnchor'
 import { searchPath } from '@/lib/dictionary/entryId'
 import { grammarPointPath } from '@/lib/grammar/path'
 import { posGroups, splitPos } from '@/lib/dictionary/pos'
@@ -34,8 +35,12 @@ export function WordLink({ word, className = '', children }: {
   )
 }
 
-export function SectionLabel({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <h2 className={`text-[11.5px] font-semibold uppercase tracking-[0.07em] text-black/55 ${className}`}>{children}</h2>
+export function SectionLabel({ children, className = '', as: Heading = 'h2' }: {
+  children: React.ReactNode
+  className?: string
+  as?: 'h2' | 'h3'
+}) {
+  return <Heading className={`text-[11.5px] font-semibold uppercase tracking-[0.07em] text-black/55 ${className}`}>{children}</Heading>
 }
 
 export const CARD = 'rounded-[18px] border border-black/[0.08] bg-white'
@@ -49,8 +54,9 @@ export function Card({ label, id, action, className = '', children }: {
   className?: string
   children: React.ReactNode
 }) {
+  const anchor = useAnchor()
   return (
-    <section id={id} className={`flex min-w-0 flex-col gap-3.5 p-5 max-lg:scroll-mt-16 sm:p-6 ${CARD} ${className}`}>
+    <section id={id && anchor(id)} className={`flex min-w-0 flex-col gap-3.5 p-5 max-lg:scroll-mt-16 sm:p-6 ${CARD} ${className}`}>
       {(label || action) && (
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           {typeof label === 'string' ? <SectionLabel>{label}</SectionLabel> : label}
@@ -441,17 +447,19 @@ export function PhrasesCard({ headword, lang, phrases }: { headword: string; lan
 export function FamilyRows({ family, related, shown = 6 }: { family: FamilyWord[]; related: ViewWord[]; shown?: number }) {
   const [expanded, setExpanded] = useState(false)
   const rows = expanded ? family : family.slice(0, shown)
+  // A card under 20rem, as in the side panels of the map and the reading page, stacks each
+  // word above its meaning.
   return (
-    <div className="flex flex-col gap-3">
+    <div className="@container flex flex-col gap-3">
       {family.length > 0 && (
         <ul className="flex flex-col">
           {rows.map((w) => (
             <li key={w.text} className="border-t border-black/[0.06] first:border-0">
-              <WordLink word={w} className="flex items-center gap-3 py-2 hover:bg-black/[0.02]">
-                <span className="min-w-[7.25rem] shrink-0 text-lg"><MorphText word={w} /></span>
+              <WordLink word={w} className="flex flex-col items-start gap-0.5 py-2 hover:bg-black/[0.02] @xs:flex-row @xs:items-center @xs:gap-3">
+                <span className="text-lg @xs:min-w-[7.25rem] @xs:shrink-0"><MorphText word={w} /></span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className={`text-sm ${w.gloss ? '' : 'text-black/35'}`}>{w.gloss ?? 'Chưa có nghĩa'}</span>
-                  <PosTag full value={w.pos} className="text-xs text-black/55" />
+                  <span className={`text-sm ${w.gloss ? '' : 'text-black/60'}`}>{w.gloss ?? 'Chưa có nghĩa'}</span>
+                  <PosTag full value={w.pos} className="text-xs text-black/60" />
                 </span>
                 <LevelChip level={w.level} />
               </WordLink>
@@ -464,7 +472,7 @@ export function FamilyRows({ family, related, shown = 6 }: { family: FamilyWord[
       )}
       {related.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs text-black/45">Cùng gốc</span>
+          <span className="text-xs text-black/60">Cùng gốc</span>
           <ChipRow words={related} />
         </div>
       )}
@@ -539,8 +547,9 @@ export function AiCorner({ lang, headword, meaningVi, className = `${CARD} p-5 s
   meaningVi: string | null
   className?: string
 }) {
+  const anchor = useAnchor()
   return (
-    <section id="assistant" className={`flex flex-col gap-2 [&:has(>div:empty)]:hidden ${className}`}>
+    <section id={anchor('assistant')} className={`flex flex-col gap-2 [&:has(>div:empty)]:hidden ${className}`}>
       <SectionLabel>Trợ lý</SectionLabel>
       <div>
         <AiCoach lang={lang} headword={headword} meaningVi={meaningVi} />

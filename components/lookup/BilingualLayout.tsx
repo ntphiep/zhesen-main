@@ -5,11 +5,13 @@ import { AddToWordlistButton } from './AddToWordlistButton'
 import { CharacterPanel } from './CharacterPanel'
 import { ConjugationTable } from './ConjugationTable'
 import { LemmaLink } from './LemmaLink'
+import { BACKLINKS_LABEL, BacklinkList } from './LearnerParts'
 import {
   AiCorner, Badge, CONTAINER, FormCells, FrequencyMeter, GrammarList, LevelChip, MorphText, MoreButton, PivotMark, PosChip, WordChip,
   WordLink, baseFormLabel,
 } from './WordParts'
 import { AudioButton } from '@/components/ui/AudioButton'
+import { useAnchor } from '@/lib/hooks/useAnchor'
 import { TappableText } from '@/components/reader/TappableText'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
@@ -39,6 +41,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
   const examples = cleanExamples(view.examples, view.resolved, lang)
   const mark = headwordForms(view)
   const irregular = view.forms.some((f) => f.irregular)
+  const anchor = useAnchor()
 
   const wordRows = (words: (ViewWord | FamilyWord)[], family = false): Row[] =>
     words.map((w) => ({
@@ -117,6 +120,9 @@ export function BilingualLayout({ view }: { view: WordView }) {
     ...(view.grammarPoints.length > 0 ? [{
       id: 'grammar', title: 'Ngữ pháp', count: 0, node: <GrammarList points={view.grammarPoints} />,
     }] : []),
+    ...(view.backlinks.length > 0 ? [{
+      id: 'backlinks', title: BACKLINKS_LABEL, count: view.backlinks.length, node: <BacklinkList view={view} />,
+    }] : []),
     ...(view.siblings.length > 0 ? [{
       id: 'other-languages', title: 'Ngôn ngữ khác', count: view.siblings.length,
       node: (
@@ -148,14 +154,14 @@ export function BilingualLayout({ view }: { view: WordView }) {
               const sec = sections.find((s) => s.anchor === b.id)
               return (
                 <li key={b.id} className="flex flex-col gap-1.5">
-                  <a href={`#${b.id}`} className="font-medium hover:underline">
+                  <a href={`#${anchor(b.id)}`} className="font-medium hover:underline">
                     {b.title}
                     {b.count > 0 && <span className="ml-1 font-normal text-black/35">{b.count}</span>}
                   </a>
                   {sec && (
                     <ul className="flex flex-col gap-1 border-l border-black/10 pl-3 text-black/60">
                       {sec.senses.slice(0, SHOWN_SENSES).map((s, i) => (
-                        <li key={s.id ?? i}><a href={`#${sec.anchor}-${i + 1}`} className="block truncate hover:text-black">{senseLabel(s)}</a></li>
+                        <li key={s.id ?? i}><a href={`#${anchor(`${sec.anchor}-${i + 1}`)}`} className="block truncate hover:text-black">{senseLabel(s)}</a></li>
                       ))}
                       {sec.senses.length > SHOWN_SENSES && (
                         <li className="text-black/35">+ {sec.senses.length - SHOWN_SENSES} nghĩa</li>
@@ -175,7 +181,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
               <span className="pl-5">Tiếng Việt</span>
             </div>
             {blocks.map((b) => (
-              <section key={b.id} id={b.id} className="flex flex-col gap-4 md:scroll-mt-24">
+              <section key={b.id} id={anchor(b.id)} className="flex flex-col gap-4 md:scroll-mt-24">
                 <h2 className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[22px] font-bold tracking-[-0.01em]">
                   {b.title}
                   {b.note}
@@ -268,6 +274,7 @@ function MeaningSection({ section, lang, byText, glosses, mark, examples, synony
   const [expanded, setExpanded] = useState(false)
   const visible = expanded ? section.senses : section.senses.slice(0, SHOWN_SENSES)
   const hidden = section.senses.length - SHOWN_SENSES
+  const anchor = useAnchor()
   return (
     <div className="flex flex-col">
       <ol className="flex flex-col border-b border-black/10">
@@ -276,7 +283,7 @@ function MeaningSection({ section, lang, byText, glosses, mark, examples, synony
           const synonyms = synonymsBySense.get(s.senseOrder) ?? []
           const cells = example ? exampleCells(example, lang, byText, glosses, mark) : null
           return (
-            <li key={s.id ?? `${s.senseOrder}-${i}`} id={`${section.anchor}-${i + 1}`} className={`${ROW_GRID} gap-y-2.5 py-4 md:scroll-mt-24`}>
+            <li key={s.id ?? `${s.senseOrder}-${i}`} id={anchor(`${section.anchor}-${i + 1}`)} className={`${ROW_GRID} gap-y-2.5 py-4 md:scroll-mt-24`}>
               <div className="flex min-w-0 gap-3">
                 <span className="w-4 shrink-0 pt-0.5 text-sm tabular-nums text-black/35">{i + 1}</span>
                 <div className="flex min-w-0 flex-col gap-2.5">

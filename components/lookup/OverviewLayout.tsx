@@ -5,6 +5,7 @@ import { LemmaLink } from './LemmaLink'
 import { CharacterPanel } from './CharacterPanel'
 import { ConjugationTable } from './ConjugationTable'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
+import { BACKLINKS_LABEL, BacklinkList } from './LearnerParts'
 import {
   AiCorner, Badge, CARD, CONTAINER, Card, ExampleRows, FamilyRows, FormLegend, FormTimeline, GrammarList, IrregularNote,
   PhrasesCard, PivotMark, PosChip, SectionLabel, SynonymsRows, baseFormLabel, hasSynonyms,
@@ -108,6 +109,10 @@ export function OverviewLayout({ view }: { view: WordView }) {
     view.grammarPoints.length > 0 && {
       key: 'grammar', wide: false, rows: 1 + 2 * view.grammarPoints.length,
       node: <Card label="Ngữ pháp"><GrammarList points={view.grammarPoints} /></Card>,
+    },
+    view.backlinks.length > 0 && {
+      key: 'backlinks', wide: false, rows: 1 + 2 * view.backlinks.length,
+      node: <Card id="backlinks" label={BACKLINKS_LABEL}><BacklinkList view={view} /></Card>,
     },
   ] satisfies (TileSpec | false)[]).filter((t) => t !== false)
   const sides = balanceColumns(tiles.map((t) => t.rows), tiles.map((t) => t.wide))

@@ -252,6 +252,17 @@ header nav .link-pending {
   margin: 0;
   transform: translateY(-50%);
 }
+/* A word inside a sentence or a comma list (components/lookup/LearnerParts.tsx Mention):
+   in flow the dot left 0.8em before the comma after a link and none after plain text. */
+.mention {
+  position: relative;
+}
+.mention .link-pending {
+  position: absolute;
+  left: 100%;
+  top: 0.1em;
+  margin-left: 0.1em;
+}
 @keyframes link-pending-pulse {
   0%, 100% { opacity: 0.6; }
   50% { opacity: 0.15; }
@@ -290,16 +301,61 @@ header nav .link-pending {
   .chip-rotate { animation: none; }
 }
 
-/* The word page is cached for everyone in the overview layout. When another one is
-   stored, the boot script in app/layout.tsx marks <html> before paint and the overview
-   stays hidden until the client renders the stored layout, instead of drawing one layout
-   and then jumping to another. The delayed reveal keeps the page readable if that render
-   never comes. */
-html[data-word-layout="bilingual"] [data-rendered-layout="overview"],
-html[data-word-layout="classic"] [data-rendered-layout="overview"] {
-  visibility: hidden;
-  animation: word-layout-reveal 0s 1.5s forwards;
+/* The word page is cached for everyone, so the server draws every layout the entry offers,
+   each in a [data-panel] of components/lookup/WordLayouts.tsx, with no stored choice
+   known. Until hydration drops the rest (main[data-boot]), these rules show the panel,
+   the picker state and the note the boot script in app/layout.tsx chose on <html> before
+   the first paint: the stored layout when the entry lists it in data-layouts, the classic
+   page when it lacks a learner layer, the overview when nothing is stored. */
+main[data-boot] > [data-panel],
+main[data-boot] [data-note],
+main[data-boot] [data-hint] {
+  display: none;
 }
-@keyframes word-layout-reveal {
-  to { visibility: visible; }
+html:not([data-word-layout]) main[data-boot] > [data-panel="overview"],
+html[data-word-layout="overview"] main[data-boot] > [data-panel="overview"],
+html[data-word-layout="bilingual"] main[data-boot] > [data-panel="bilingual"],
+html[data-word-layout="classic"] main[data-boot] > [data-panel="classic"],
+html[data-word-layout="map"] main[data-boot]:not([data-layouts~="map"]) > [data-panel="classic"],
+html[data-word-layout="read"] main[data-boot]:not([data-layouts~="read"]) > [data-panel="classic"],
+html[data-word-layout="glance"] main[data-boot]:not([data-layouts~="glance"]) > [data-panel="classic"],
+html[data-word-layout="map"] main[data-boot][data-layouts~="map"] > [data-panel="map"],
+html[data-word-layout="read"] main[data-boot][data-layouts~="read"] > [data-panel="read"],
+html[data-word-layout="glance"] main[data-boot][data-layouts~="glance"] > [data-panel="glance"] {
+  display: block;
 }
+html[data-word-layout="map"] main[data-boot]:not([data-layouts~="map"]) [data-note="map"],
+html[data-word-layout="read"] main[data-boot]:not([data-layouts~="read"]) [data-note="read"],
+html[data-word-layout="glance"] main[data-boot]:not([data-layouts~="glance"]) [data-note="glance"] {
+  display: block;
+}
+html:not([data-word-layout]) main[data-boot] [data-pick="overview"] [data-hint],
+html[data-word-layout="overview"] main[data-boot] [data-pick="overview"] [data-hint],
+html[data-word-layout="bilingual"] main[data-boot] [data-pick="bilingual"] [data-hint],
+html[data-word-layout="classic"] main[data-boot] [data-pick="classic"] [data-hint],
+html[data-word-layout="map"] main[data-boot] [data-pick="map"] [data-hint],
+html[data-word-layout="read"] main[data-boot] [data-pick="read"] [data-hint],
+html[data-word-layout="glance"] main[data-boot] [data-pick="glance"] [data-hint] {
+  display: inline;
+}
+html:not([data-word-layout]) main[data-boot] [data-pick="overview"],
+html[data-word-layout="overview"] main[data-boot] [data-pick="overview"],
+html[data-word-layout="bilingual"] main[data-boot] [data-pick="bilingual"],
+html[data-word-layout="classic"] main[data-boot] [data-pick="classic"],
+html[data-word-layout="map"] main[data-boot]:not([data-layouts~="map"]) [data-pick="classic"],
+html[data-word-layout="read"] main[data-boot]:not([data-layouts~="read"]) [data-pick="classic"],
+html[data-word-layout="glance"] main[data-boot]:not([data-layouts~="glance"]) [data-pick="classic"],
+html[data-word-layout="map"] main[data-boot][data-layouts~="map"] [data-pick="map"],
+html[data-word-layout="read"] main[data-boot][data-layouts~="read"] [data-pick="read"],
+html[data-word-layout="glance"] main[data-boot][data-layouts~="glance"] [data-pick="glance"] {
+  background-color: var(--color-white);
+  color: var(--color-black);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+/* The overview draws on a grey page. */
+main[data-rendered-layout="overview"]:not([data-boot]),
+html:not([data-word-layout]) main[data-boot],
+html[data-word-layout="overview"] main[data-boot] {
+  background-color: color-mix(in oklab, var(--color-black) 3.5%, transparent);
+}
+

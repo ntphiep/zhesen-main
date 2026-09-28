@@ -1,4 +1,5 @@
 import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections, getCachedEntriesContaining, getCachedTermPreviews, getCachedTappableTexts, getCachedWordKin } from './cached'
+import { getCachedLearnerBacklinks, getCachedLearnerLayer } from './learnerCached'
 import { getCachedGrammarPointsForEntry } from '@/lib/grammar/cached'
 import { groupWordForms } from './family'
 import { lemmaFromSenses } from './lemma'
@@ -17,7 +18,7 @@ export async function loadWordPage(entryId: string): Promise<WordViewInput | nul
   const lemma = lemmaFromSenses(detail.senses, detail.headword)
   const sections = senseSections(detail.senses)
 
-  const [characters, siblings, inflections, grammarPoints, containing, kin, resolvedExamples] = await Promise.all([
+  const [characters, siblings, inflections, grammarPoints, containing, kin, resolvedExamples, learner, backlinks] = await Promise.all([
     detail.lang === 'zh' ? getCachedCharacters(detail.headword) : Promise.resolve([]),
     getCachedCrossLanguage(entryId),
     getCachedInflections(entryId),
@@ -41,6 +42,8 @@ export async function loadWordPage(entryId: string): Promise<WordViewInput | nul
     //
     // Every sentence the page can show, so none resolves itself from the browser.
     getCachedTappableTexts(detail.lang, exampleCandidates(sections, detail.examples).map((e) => e.text)),
+    getCachedLearnerLayer(entryId),
+    getCachedLearnerBacklinks(entryId),
   ])
 
   // The related words are stored as bare text, so one more call gives the meaning and
@@ -59,5 +62,5 @@ export async function loadWordPage(entryId: string): Promise<WordViewInput | nul
   const previewRows = await getCachedTermPreviews(detail.lang, terms)
   const previews = Object.fromEntries(previewRows.map((p) => [p.matchText.toLowerCase(), p]))
 
-  return { detail, lemma, characters, siblings, inflections, grammarPoints, containing, kin, previews, resolvedExamples }
+  return { detail, lemma, characters, siblings, inflections, grammarPoints, containing, kin, previews, resolvedExamples, learner, backlinks }
 }

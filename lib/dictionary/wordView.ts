@@ -13,6 +13,7 @@ import type {
   WordForm,
 } from './types'
 import type { GrammarPoint } from '@/lib/grammar/types'
+import type { LearnerBacklink, LearnerLayer } from './learner'
 
 /** Everything the three word-page layouts draw, as plain data, built once on the server. */
 
@@ -77,6 +78,10 @@ export interface WordView {
   /** The entry's own meanings, which a copied "translation" repeats. */
   glosses: (string | null)[]
   grammarPoints: GrammarPoint[]
+  /** The learner layer, when the entry has a published one. */
+  learner: LearnerLayer | null
+  /** The layers that mention this entry. */
+  backlinks: LearnerBacklink[]
 }
 
 export interface WordViewInput {
@@ -90,6 +95,8 @@ export interface WordViewInput {
   kin?: DictEntryPreview[]
   previews?: Record<string, TermPreview>
   resolvedExamples?: ResolvedText[]
+  learner?: LearnerLayer | null
+  backlinks?: LearnerBacklink[]
 }
 
 const toWord = ({ text, href, id, gloss, pos, level }: RelatedItem): ViewWord => ({ text, href, id, gloss, pos, level })
@@ -171,7 +178,7 @@ export function senseLabel(s: DictSense): string {
 
 export function buildWordView({
   detail, lemma = null, characters, siblings, inflections = [], grammarPoints = [], containing = [], kin = [],
-  previews = {}, resolvedExamples = [],
+  previews = {}, resolvedExamples = [], learner = null, backlinks = [],
 }: WordViewInput): WordView {
   // Spanish verbs get the conjugation table instead of a line of forms, which for them
   // would run to hundreds.
@@ -247,6 +254,8 @@ export function buildWordView({
     resolved: resolvedExamples,
     glosses,
     grammarPoints,
+    learner,
+    backlinks,
   }
 }
 
