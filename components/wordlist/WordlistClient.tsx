@@ -50,7 +50,10 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     sortKey, sortDir, toggleSort, view, toggleView, visible,
   } = useWordlistFilters(words)
 
-  const { prefs, columns, toggleColumn, togglePin, reset: resetColumns } = useWordlistColumns()
+  const {
+    prefs, layout, columns, allColumns, toggleColumn, togglePin, move: moveColumn,
+    resize: resizeColumn, reset: resetColumns,
+  } = useWordlistColumns()
 
   // tagFilter is a Set and must be spelled out: interpolated it gives "[object Set]"
   // for every combination, so the reader would stay on page 7 of a filter that now
@@ -305,8 +308,10 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         columnControls={
           <ColumnMenu
             prefs={prefs}
+            columns={allColumns}
             onToggleColumn={toggleColumn}
             onTogglePin={togglePin}
+            onMove={moveColumn}
             onReset={resetColumns}
           />
         }
@@ -336,6 +341,9 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
           words={shown}
           columns={columns}
           pinned={prefs.pinned}
+          widths={layout.widths}
+          onResizeColumn={resizeColumn}
+          onMoveColumn={moveColumn}
           sortKey={sortKey}
           sortDir={sortDir}
           onToggleSort={toggleSort}

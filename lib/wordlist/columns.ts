@@ -57,9 +57,9 @@ export const DEFAULT_PREFS: ColumnPrefs = {
   pinned: ['headword'],
 }
 
-/** A pinned column is 160px wide and never scrolls, so three of them plus the checkbox
- *  already hold 524px. On a 390px phone a fourth would leave no width in which any
- *  unpinned column could be scrolled into view. */
+/** A pinned column is 160px wide unless resized and never scrolls, so three of them plus
+ *  the checkbox already hold 524px. On a 390px phone a fourth would leave no width in
+ *  which any unpinned column could be scrolled into view. */
 export const MAX_PINNED = 3
 
 /** Preferences read back from storage. Anything unrecognised is dropped rather than
@@ -105,15 +105,93 @@ function keyList(value: unknown, options: { skipRequired?: boolean } = {}): Colu
 }
 
 /**
- * The columns to render, pinned ones first and each in the declared order. Pinned
+ * The columns to render, pinned ones first and each in the reader's order. Pinned
  * columns lead because a sticky column can only hold the left edge of the table if
  * nothing unpinned sits before it.
  */
-export function orderedColumns(prefs: ColumnPrefs): ColumnDef[] {
-  const shown = COLUMNS.filter((c) => c.required || !prefs.hidden.includes(c.key))
-  const pinned = shown.filter((c) => prefs.pinned.includes(c.key))
-  const rest = shown.filter((c) => !prefs.pinned.includes(c.key))
+export function orderedColumns(prefs: ColumnPrefs, layout: ColumnLayout = DEFAULT_LAYOUT): ColumnDef[] {
+  return menuColumns(prefs, layout).filter((c) => c.required || !prefs.hidden.includes(c.key))
+}
+
+/** Every column, hidden ones included, in the order the table would draw them. */
+export function menuColumns(prefs: ColumnPrefs, layout: ColumnLayout = DEFAULT_LAYOUT): ColumnDef[] {
+  const all = fullOrder(layout).map((k) => BY_KEY.get(k)!)
+  const pinned = all.filter((c) => prefs.pinned.includes(c.key))
+  const rest = all.filter((c) => !prefs.pinned.includes(c.key))
   return [...pinned, ...rest]
+}
+
+/** Where the reader dragged the columns and how wide they made them. Kept apart from
+ *  `ColumnPrefs` because it is stored under its own key and has its own defaults. */
+export interface ColumnLayout {
+  /** Empty until the reader moves a column; then every column, in their order. */
+  order: ColumnKey[]
+  /** Pixels, only for the columns the reader resized. */
+  widths: Partial<Record<ColumnKey, number>>
+}
+
+export const DEFAULT_LAYOUT: ColumnLayout = { order: [], widths: {} }
+
+/** Narrower than this hides even a two-letter level; wider than this pushes three
+ *  pinned columns past a laptop screen. */
+export const MIN_COLUMN_WIDTH = 60
+export const MAX_COLUMN_WIDTH = 480
+/** Three pinned columns at 320px plus the checkbox hold 1,004px, which leaves a 1,392px
+ *  laptop table room to scroll the rest. At 480px they would hold 1,484px and cover it. */
+export const MAX_PINNED_WIDTH = 320
+
+export function clampWidth(px: number): number {
+  return Math.round(Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, px)))
+}
+
+/** A column missing from a stored order, because it shipped later, goes last. */
+function fullOrder(layout: ColumnLayout): ColumnKey[] {
+  const known = layout.order.filter((k) => BY_KEY.has(k))
+  return [...known, ...COLUMNS.map((c) => c.key).filter((k) => !known.includes(k))]
+}
+
+/** Put `key` where `target` stands, shifting the columns between them by one. */
+export function moveColumn(layout: ColumnLayout, key: ColumnKey, target: ColumnKey): ColumnLayout {
+  const order = fullOrder(layout)
+  const from = order.indexOf(key)
+  const to = order.indexOf(target)
+  if (from === -1 || to === -1 || from === to) return layout
+  order.splice(from, 1)
+  order.splice(to, 0, key)
+  return { ...layout, order }
+}
+
+/** null forgets the width, so the column sizes to its content again. */
+export function setColumnWidth(layout: ColumnLayout, key: ColumnKey, px: number | null): ColumnLayout {
+  if (!BY_KEY.has(key)) return layout
+  const widths = { ...layout.widths }
+  if (px === null) delete widths[key]
+  else widths[key] = clampWidth(px)
+  return { ...layout, widths }
+}
+
+export function parseColumnLayout(raw: string | null): ColumnLayout {
+  if (!raw) return DEFAULT_LAYOUT
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return DEFAULT_LAYOUT
+    const { order, widths } = parsed as { order?: unknown; widths?: unknown }
+    const outWidths: Partial<Record<ColumnKey, number>> = {}
+    if (typeof widths === 'object' && widths !== null && !Array.isArray(widths)) {
+      for (const [k, v] of Object.entries(widths)) {
+        if (BY_KEY.has(k as ColumnKey) && typeof v === 'number' && Number.isFinite(v)) {
+          outWidths[k as ColumnKey] = clampWidth(v)
+        }
+      }
+    }
+    return { order: keyList(order), widths: outWidths }
+  } catch {
+    return DEFAULT_LAYOUT
+  }
+}
+
+export function serializeColumnLayout(layout: ColumnLayout): string {
+  return JSON.stringify(layout)
 }
 
 export function isVisible(prefs: ColumnPrefs, key: ColumnKey): boolean {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { WordTable } from '@/components/wordlist/WordTable'
 import { DEFAULT_PREFS, orderedColumns, togglePinned, toggleHidden } from '@/lib/wordlist/columns'
@@ -137,5 +137,72 @@ describe('WordTable', () => {
     show(DEFAULT_PREFS, { expandedId: 'dog' })
     const detail = document.querySelector('td[colspan]')
     expect(detail?.getAttribute('colspan')).toBe(String(orderedColumns(DEFAULT_PREFS).length + 2))
+  })
+
+  it('draws a column at the width the reader gave it', () => {
+    show(DEFAULT_PREFS, { widths: { meaningVi: 300 } })
+    expect(screen.getByText('Con chó').closest('td')?.style.width).toBe('300px')
+  })
+
+  // A resized pinned column pushes the next pinned one along, or the two overlap.
+  it('offsets the next pinned column by the resized width', () => {
+    show(togglePinned(DEFAULT_PREFS, 'meaningVi'), { widths: { headword: 200 } })
+    expect(screen.getByText('Con chó').closest('td')?.style.left).toBe('244px')
+  })
+
+  it('resizes a column from the keyboard', () => {
+    const onResizeColumn = vi.fn()
+    show(DEFAULT_PREFS, { widths: { ipa: 100 }, onResizeColumn })
+    const handle = screen.getByRole('separator', { name: /độ rộng cột IPA/ })
+    fireEvent.keyDown(handle, { key: 'ArrowRight' })
+    expect(onResizeColumn).toHaveBeenCalledWith('ipa', 116)
+    fireEvent.doubleClick(handle)
+    expect(onResizeColumn).toHaveBeenLastCalledWith('ipa', null)
+  })
+
+  it('moves a column dropped on another header', () => {
+    const onMoveColumn = vi.fn()
+    show(DEFAULT_PREFS, { onMoveColumn })
+    const from = screen.getByRole('columnheader', { name: /Trình độ/ })
+    const to = screen.getByRole('columnheader', { name: /IPA/ })
+    const dataTransfer = { setData: vi.fn(), effectAllowed: '', dropEffect: '' }
+    fireEvent.dragStart(from, { dataTransfer })
+    fireEvent.dragOver(to, { dataTransfer })
+    fireEvent.drop(to, { dataTransfer })
+    expect(onMoveColumn).toHaveBeenCalledWith('level', 'ipa')
+  })
+
+  // Pinned columns always lead, so a drop across that line would change nothing.
+  it('refuses a drop between a pinned and an unpinned column', () => {
+    const onMoveColumn = vi.fn()
+    show(DEFAULT_PREFS, { onMoveColumn })
+    const dataTransfer = { setData: vi.fn(), effectAllowed: '', dropEffect: '' }
+    fireEvent.dragStart(screen.getByRole('columnheader', { name: /Trình độ/ }), { dataTransfer })
+    fireEvent.drop(screen.getByRole('columnheader', { name: /^Từ$/ }), { dataTransfer })
+    expect(onMoveColumn).not.toHaveBeenCalled()
+  })
+
+  // Three wide pinned columns would cover a laptop table and leave nothing to scroll.
+  it('caps a pinned column narrower than an unpinned one', () => {
+    show(DEFAULT_PREFS, { widths: { headword: 480 } })
+    expect(screen.getByText('dog').closest('td')?.style.width).toBe('320px')
+  })
+
+  // A plain click on the handle must not freeze the measured width into storage.
+  it('saves nothing when the handle is clicked without a drag', () => {
+    const onResizeColumn = vi.fn()
+    show(DEFAULT_PREFS, { onResizeColumn })
+    const handle = screen.getByRole('separator', { name: /độ rộng cột IPA/ })
+    handle.setPointerCapture = vi.fn()
+    fireEvent.pointerDown(handle, { button: 0, pointerId: 1, clientX: 100 })
+    fireEvent.pointerUp(handle, { button: 0, pointerId: 1, clientX: 100 })
+    expect(onResizeColumn).not.toHaveBeenCalled()
+  })
+
+  it('forgets a width from the keyboard', () => {
+    const onResizeColumn = vi.fn()
+    show(DEFAULT_PREFS, { widths: { ipa: 100 }, onResizeColumn })
+    fireEvent.keyDown(screen.getByRole('separator', { name: /độ rộng cột IPA/ }), { key: 'Delete' })
+    expect(onResizeColumn).toHaveBeenCalledWith('ipa', null)
   })
 })

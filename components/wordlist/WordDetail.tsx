@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { fetchEntryDetail } from '@/lib/dictionary/entryResponse'
+import { entryPath, searchPath } from '@/lib/dictionary/entryId'
 import { AiCoach } from '@/components/ai/AiCoach'
 import { Pronunciation } from '@/components/lookup/Pronunciation'
 import { classifyRelations, RELATION_CAP, RELATION_SECTIONS } from '@/lib/dictionary/relations'
@@ -25,7 +27,23 @@ export function resetDetailCache(): void {
   detailCache.clear()
 }
 
+/** The expanded row, with a way out to the word's own page. A word typed in by hand has
+ *  no entry, so it opens the lookup for its headword instead. */
 export function WordDetail({ word }: { word: UserWord }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <Link
+        href={word.entryId ? entryPath(word.entryId) : searchPath(word.lang, word.headword)}
+        className="self-start rounded-lg border border-black/15 px-3 py-1.5 text-xs font-medium hover:bg-black/5"
+      >
+        {word.entryId ? 'Mở trang từ' : 'Tra từ này'}
+      </Link>
+      <DetailBody word={word} />
+    </div>
+  )
+}
+
+function DetailBody({ word }: { word: UserWord }) {
   const [state, setState] = useState<DetailState>(() => {
     const id = word.entryId
     return id && detailCache.has(id)

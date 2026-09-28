@@ -81,4 +81,15 @@ describe('WordDetail', () => {
     render(<WordDetail word={base} />)
     expect(await screen.findByText('Con chó sủa.')).toBeInTheDocument()
   })
+
+  it('links to the word page of a dictionary word', () => {
+    render(<WordDetail word={base} />)
+    expect(screen.getByRole('link', { name: 'Mở trang từ' })).toHaveAttribute('href', '/dictionary/en/dog')
+  })
+
+  // A word typed in by hand has no entry to open, so it opens the lookup instead.
+  it('links a manual word to the lookup for its headword', () => {
+    render(<WordDetail word={{ ...base, entryId: null }} />)
+    expect(screen.getByRole('link', { name: 'Tra từ này' })).toHaveAttribute('href', '/dictionary?q=dog&lang=en')
+  })
 })

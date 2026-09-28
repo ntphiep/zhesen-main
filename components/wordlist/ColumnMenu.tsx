@@ -1,18 +1,22 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { COLUMNS, MAX_PINNED, type ColumnKey, type ColumnPrefs } from '@/lib/wordlist/columns'
+import { COLUMNS, MAX_PINNED, type ColumnDef, type ColumnKey, type ColumnPrefs } from '@/lib/wordlist/columns'
 import { useNarrowViewport } from '@/lib/hooks/useNarrowViewport'
 
 interface Props {
   prefs: ColumnPrefs
+  /** Every column, hidden ones included, in the table's order. */
+  columns: ColumnDef[]
   onToggleColumn: (key: ColumnKey) => void
   onTogglePin: (key: ColumnKey) => void
+  onMove: (key: ColumnKey, target: ColumnKey) => void
   onReset: () => void
 }
 
-/** Which columns the table shows, and which stay against the left edge while the rest
- *  scroll sideways. */
-export function ColumnMenu({ prefs, onToggleColumn, onTogglePin, onReset }: Props) {
+/** Which columns the table shows, in what order, and which stay against the left edge
+ *  while the rest scroll sideways. The arrows are the way to reorder on a touch screen,
+ *  where dragging a header does nothing. */
+export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove, onReset }: Props) {
   const [open, setOpen] = useState(false)
   const hiddenCount = prefs.hidden.length
   const pinsLeft = MAX_PINNED - prefs.pinned.length
@@ -20,6 +24,15 @@ export function ColumnMenu({ prefs, onToggleColumn, onTogglePin, onReset }: Prop
   // A phone holds one column at the left edge whatever is pinned, so offering the
   // control there would spend the reader's three slots on nothing.
   const narrow = useNarrowViewport()
+
+  const isShown = (c: ColumnDef) => c.required === true || !prefs.hidden.includes(c.key)
+  // A column only trades places with a shown neighbour in its own group: pinned columns
+  // always lead, so a move across that line would change nothing on screen.
+  function neighbour(c: ColumnDef, step: -1 | 1): ColumnKey | null {
+    const pinned = prefs.pinned.includes(c.key)
+    const peers = columns.filter((d) => isShown(d) && prefs.pinned.includes(d.key) === pinned)
+    return peers[peers.indexOf(c) + step]?.key ?? null
+  }
 
   // A dropdown that only closes by pressing its own button traps the reader on a phone,
   // where it covers the table it is meant to configure.
@@ -59,9 +72,11 @@ export function ColumnMenu({ prefs, onToggleColumn, onTogglePin, onReset }: Prop
             <span>Hiện</span>
             {!narrow && <span>Ghim (tối đa {MAX_PINNED})</span>}
           </div>
-          {COLUMNS.map((c) => {
-            const shown = c.required || !prefs.hidden.includes(c.key)
+          {columns.map((c) => {
+            const shown = isShown(c)
             const isPinned = prefs.pinned.includes(c.key)
+            const up = shown ? neighbour(c, -1) : null
+            const down = shown ? neighbour(c, 1) : null
             return (
               <div key={c.key} className="flex items-center gap-2 rounded px-3 py-1.5 hover:bg-black/5">
                 <input
@@ -77,6 +92,24 @@ export function ColumnMenu({ prefs, onToggleColumn, onTogglePin, onReset }: Prop
                 <label htmlFor={`col-${c.key}`} className="flex-1 text-sm">
                   {c.label}
                 </label>
+                <button
+                  role="menuitem"
+                  className="rounded px-1.5 py-0.5 text-xs text-black/50 hover:bg-black/5 disabled:opacity-30"
+                  onClick={() => up && onMove(c.key, up)}
+                  disabled={!up}
+                  aria-label={`Chuyển cột ${c.label} lên`}
+                >
+                  ↑
+                </button>
+                <button
+                  role="menuitem"
+                  className="rounded px-1.5 py-0.5 text-xs text-black/50 hover:bg-black/5 disabled:opacity-30"
+                  onClick={() => down && onMove(c.key, down)}
+                  disabled={!down}
+                  aria-label={`Chuyển cột ${c.label} xuống`}
+                >
+                  ↓
+                </button>
                 {!narrow && (
                   <button
                     role="menuitemcheckbox"

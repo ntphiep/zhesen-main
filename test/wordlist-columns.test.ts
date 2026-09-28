@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import {
-  COLUMNS, DEFAULT_PREFS, MAX_PINNED, columnValue, isVisible, orderedColumns,
-  parseColumnPrefs, serializeColumnPrefs, toggleHidden, togglePinned, type ColumnPrefs,
+  COLUMNS, DEFAULT_LAYOUT, DEFAULT_PREFS, MAX_COLUMN_WIDTH, MAX_PINNED, MIN_COLUMN_WIDTH, columnValue,
+  isVisible, menuColumns, moveColumn, orderedColumns, parseColumnLayout, parseColumnPrefs,
+  serializeColumnLayout, serializeColumnPrefs, setColumnWidth, toggleHidden, togglePinned,
+  type ColumnPrefs,
 } from '@/lib/wordlist/columns'
 import type { UserWord } from '@/lib/wordlist/types'
 
@@ -142,5 +144,61 @@ describe('columnValue', () => {
     expect(columnValue(mk({ status: 'new' }), 'status')).toBe(0)
     expect(columnValue(mk({ status: 'learning' }), 'status')).toBe(1)
     expect(columnValue(mk({ status: 'known' }), 'status')).toBe(2)
+  })
+})
+
+describe('column layout', () => {
+  const keys = (prefs: ColumnPrefs, layout = DEFAULT_LAYOUT) => orderedColumns(prefs, layout).map((c) => c.key)
+
+  it('moves a column to where another one stands', () => {
+    const layout = moveColumn(DEFAULT_LAYOUT, 'createdAt', 'ipa')
+    expect(keys(DEFAULT_PREFS, layout)).toEqual(['headword', 'createdAt', 'ipa', 'pos', 'meaningVi', 'level', 'tags', 'audio'])
+    const back = moveColumn(layout, 'createdAt', 'tags')
+    expect(keys(DEFAULT_PREFS, back)).toEqual(['headword', 'ipa', 'pos', 'meaningVi', 'level', 'tags', 'createdAt', 'audio'])
+  })
+
+  // A hidden column between two shown ones must not swallow the move.
+  it('moves past a hidden column in one step', () => {
+    const layout = moveColumn(DEFAULT_LAYOUT, 'level', 'meaningVi')
+    expect(keys(DEFAULT_PREFS, layout)).toEqual(['headword', 'ipa', 'pos', 'level', 'meaningVi', 'tags', 'createdAt', 'audio'])
+  })
+
+  it('keeps pinned columns in front whatever the order says', () => {
+    const layout = moveColumn(DEFAULT_LAYOUT, 'audio', 'headword')
+    expect(keys(DEFAULT_PREFS, layout)[0]).toBe('headword')
+    expect(keys(DEFAULT_PREFS, layout)[1]).toBe('audio')
+  })
+
+  it('lists hidden columns in the menu in the same order as the table', () => {
+    const layout = moveColumn(DEFAULT_LAYOUT, 'notes', 'ipa')
+    const menu = menuColumns(DEFAULT_PREFS, layout).map((c) => c.key)
+    expect(menu).toHaveLength(COLUMNS.length)
+    expect(menu.indexOf('notes')).toBe(menu.indexOf('ipa') - 1)
+  })
+
+  it('holds a width inside the limits, and forgets it on null', () => {
+    let layout = setColumnWidth(DEFAULT_LAYOUT, 'meaningVi', 5000)
+    expect(layout.widths.meaningVi).toBe(MAX_COLUMN_WIDTH)
+    layout = setColumnWidth(layout, 'meaningVi', 3)
+    expect(layout.widths.meaningVi).toBe(MIN_COLUMN_WIDTH)
+    layout = setColumnWidth(layout, 'meaningVi', null)
+    expect(layout.widths).toEqual({})
+  })
+
+  it('reads a layout back, and drops what it does not recognise', () => {
+    const layout = setColumnWidth(moveColumn(DEFAULT_LAYOUT, 'pos', 'ipa'), 'ipa', 200)
+    expect(parseColumnLayout(serializeColumnLayout(layout))).toEqual(layout)
+    expect(parseColumnLayout('{"order":["gone","pos"],"widths":{"gone":100,"ipa":"wide","pos":90}}'))
+      .toEqual({ order: ['pos'], widths: { pos: 90 } })
+    expect(parseColumnLayout('not json')).toEqual(DEFAULT_LAYOUT)
+    expect(parseColumnLayout('[]')).toEqual(DEFAULT_LAYOUT)
+  })
+
+  // A column shipped after the order was stored is not named in it, and must still show.
+  it('puts a column missing from a stored order last', () => {
+    const layout = parseColumnLayout(JSON.stringify({ order: ['ipa', 'headword'], widths: {} }))
+    const all = menuColumns({ hidden: [], pinned: [] }, layout).map((c) => c.key)
+    expect(all.slice(0, 2)).toEqual(['ipa', 'headword'])
+    expect(all).toHaveLength(COLUMNS.length)
   })
 })
