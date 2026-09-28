@@ -17,7 +17,7 @@ const TD = 'py-2 pr-4 align-top'
 function Role({ sense }: { sense: AuditSense }) {
   const l = sense.label
   if (!l) return <span className="text-rose-700">unlabelled</span>
-  if (l.coreSenseOrder !== null) return <span>core {l.coreSenseOrder}{l.coreTerms && <span className="block text-black/50">{l.coreTerms}</span>}</span>
+  if (l.coreSenseOrder !== null) return <span>core {l.coreSenseOrder}{l.coreTerms && <span className="block text-black/55">{l.coreTerms}</span>}</span>
   return <span>{l.isInflection ? `form of ${l.lemma ?? '?'}` : 'minor'}</span>
 }
 
@@ -53,7 +53,7 @@ export default async function AdminLearnerAuditPage({ params }: { params: Params
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-black/10 text-left text-xs uppercase tracking-wide text-black/45">
+              <tr className="border-b border-black/10 text-left text-xs uppercase tracking-wide text-black/55">
                 <th className={TH}>Sense</th>
                 <th className={TH}>Wiktionary</th>
                 <th className={TH}>Vietnamese now</th>
@@ -67,9 +67,9 @@ export default async function AdminLearnerAuditPage({ params }: { params: Params
                 const l = s.label
                 return (
                   <tr key={s.id} className="border-b border-black/5">
-                    <td className={`${TD} whitespace-nowrap font-mono text-xs`}>{s.id}{s.pos && <span className="block text-black/45">{s.pos}</span>}</td>
+                    <td className={`${TD} whitespace-nowrap font-mono text-xs`}>{s.id}{s.pos && <span className="block text-black/55">{s.pos}</span>}</td>
                     <td className={`${TD} min-w-64 text-black/70`}>{s.glossEn}</td>
-                    <td className={`${TD} min-w-48`}>{s.glossVi ?? <span className="text-black/40">empty</span>}</td>
+                    <td className={`${TD} min-w-48`}>{s.glossVi ?? <span className="text-black/55">empty</span>}</td>
                     <td className={`${TD} whitespace-nowrap`}><Role sense={s} /></td>
                     <td className={`${TD} text-xs text-black/60`}>
                       {l && [l.viTerms.join(', '), l.domain, l.register].filter(Boolean).join(' · ')}
@@ -77,9 +77,9 @@ export default async function AdminLearnerAuditPage({ params }: { params: Params
                     <td className={`${TD} min-w-64 text-xs`}>
                       {l?.fixVi && (
                         <>
-                          {l.previousGlossVi !== null && <span className="block text-black/45 line-through">{l.previousGlossVi}</span>}
+                          {l.previousGlossVi !== null && <span className="block text-black/55 line-through">{l.previousGlossVi}</span>}
                           <span className="block">{l.fixVi}</span>
-                          <span className="block text-black/45">{l.fixedAt ? `applied ${when(l.fixedAt)}` : 'not applied: a person wrote the gloss, or it already matched'}</span>
+                          <span className="block text-black/55">{l.fixedAt ? `applied ${when(l.fixedAt)}` : 'not applied: a person wrote the gloss, or it already matched'}</span>
                           {l.fixReason && <span className="block text-black/55">{l.fixReason}</span>}
                         </>
                       )}

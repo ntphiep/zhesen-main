@@ -282,7 +282,7 @@ export function LearnerHeader({ view, layer, minor, forms }: { view: WordView; l
         {layer.gistVi.length > 0 && (
           <p className="text-[21px] font-semibold leading-snug tracking-[-0.01em] text-balance sm:text-2xl">
             {layer.gistVi.map((g, i) => (
-              <span key={g}>{i > 0 && <span aria-hidden="true" className="font-normal text-black/40"> · </span>}{g}</span>
+              <span key={g}>{i > 0 && <span aria-hidden="true" className="font-normal text-black/55"> · </span>}{g}</span>
             ))}
           </p>
         )}

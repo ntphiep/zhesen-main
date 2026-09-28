@@ -24,7 +24,7 @@ export default async function AdminLearnerPage() {
         <div className="mt-6 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-black/10 text-left text-xs uppercase tracking-wide text-black/45">
+              <tr className="border-b border-black/10 text-left text-xs uppercase tracking-wide text-black/55">
                 <th className={TH}>Entry</th>
                 <th className={TH}>Status</th>
                 <th className={TH}>Model</th>
@@ -42,10 +42,10 @@ export default async function AdminLearnerPage() {
                 <tr key={l.entryId} className="border-b border-black/5">
                   <td className={TD}>
                     <Link href={auditHref(l.entryId)} prefetch={false} className="font-medium hover:underline">{l.headword}</Link>
-                    <span className="ml-1.5 font-mono text-xs text-black/45">{l.lang}</span>
+                    <span className="ml-1.5 font-mono text-xs text-black/55">{l.lang}</span>
                   </td>
                   <td className={TD}><Status tone={l.status === 'published' ? 'ok' : 'idle'}>{l.status}</Status></td>
-                  <td className={`${TD} font-mono text-xs`}>{l.model}{l.reviewer && <span className="block text-black/45">reviewed by {l.reviewer}</span>}</td>
+                  <td className={`${TD} font-mono text-xs`}>{l.model}{l.reviewer && <span className="block text-black/55">reviewed by {l.reviewer}</span>}</td>
                   <td className={`${TD} font-mono text-xs`}>{l.promptVersion}</td>
                   <td className={NUM}>{l.senses}</td>
                   <td className={NUM}>{l.links}</td>
