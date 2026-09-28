@@ -177,7 +177,8 @@ in `lib/supabase/env.ts`, so sessions carried over.
 
 Rollback until 2026-10-23: point the two Vercel variables back at the Cloud project and
 the `sb_publishable_` key and redeploy. Rows written after the cutover stay on the
-instance. The migration role and `/zhesen/migration/cloud_db_url` were removed, so
+instance. The Cloud project's legacy `anon` and `service_role` JWTs were disabled on
+2026-09-28 (#32); the rollback does not use them. The migration role and `/zhesen/migration/cloud_db_url` were removed, so
 `migrate.sh` can no longer read Cloud without recreating both.
 
 ## Cost
