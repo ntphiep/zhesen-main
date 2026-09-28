@@ -83,6 +83,8 @@ describe('cleanGlossVi', () => {
     expect(cleanGlossVi('Một bác sĩ.')).toBe('Một bác sĩ')
     expect(cleanGlossVi('nước.')).toBe('Nước')
     expect(cleanGlossVi('Một chuyến đi, đặc biệt là dưới nước.')).toBe('Một chuyến đi, đặc biệt là dưới nước')
+    // "co" is a Vietnamese word (shrink), not the abbreviation Co.
+    expect(cleanGlossVi('Sự co.')).toBe('Sự co')
   })
   it('keeps the full stop that closes a sentence', () => {
     const sentence = 'Một cộng đồng nhỏ chưa hợp nhất thuộc quận Montezuma, Colorado.'

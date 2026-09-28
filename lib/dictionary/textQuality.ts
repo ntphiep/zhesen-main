@@ -23,8 +23,8 @@ export function cleanMtGloss(gloss: string | null): string | null {
  *  from 10 up, 14,234 do and 4,181 do not. */
 const SENTENCE_WORDS = 10
 
-/** Abbreviations whose one dot is part of the word. */
-const ABBREVIATIONS = new Set(['vv', 'tp', 'inc', 'ltd', 'co', 'corp', 'jr', 'sr', 'dr', 'mr', 'mrs', 'ms', 'st', 'etc'])
+/** Abbreviations whose one dot is part of the word. Not "co": it is a Vietnamese word. */
+const ABBREVIATIONS = new Set(['vv', 'tp', 'inc', 'ltd', 'corp', 'jr', 'sr', 'dr', 'mr', 'mrs', 'ms', 'st', 'etc'])
 
 /** Drop the full stop that closes a phrase; a sentence keeps it. "v.v.", "vv." and "..."
  *  are abbreviations and an ellipsis, not a closing stop. */
