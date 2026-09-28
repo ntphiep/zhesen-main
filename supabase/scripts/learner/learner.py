@@ -18,12 +18,15 @@ from datetime import datetime, timezone
 
 from prompts import DOMAINS as DOMAIN_LIST, FIX, LANG_NAME, REGISTERS as REGISTER_LIST, REVIEW, SCHEMA_HINT, SYSTEM, core_range
 
-PROMPT_VERSION = 'v3'
-WRITER = 'ag/claude-opus-4-6-thinking'
+PROMPT_VERSION = 'v4'
+# Writers in order of preference. Antigravity refused Claude with HTTP 403 for every call from
+# 11:00 to 17:20 UTC on 2026-09-28, so the batch falls back rather than stall.
+WRITER = 'ag/claude-opus-4-6-thinking,ag/gemini-3.1-pro-low'
 REVIEWER = 'ag/gemini-3.1-pro-low'
 CACHE_DIR = os.path.expanduser(os.environ.get('LEARNER_CACHE', '~/.cache/zhesen/learner'))
 MAX_EXAMPLES = 40
 MAX_RELATIONS = 150
+FLUSH_EVERY = 1800
 
 DOMAINS, REGISTERS = set(DOMAIN_LIST), set(REGISTER_LIST)
 CEFR = {'A1', 'A2', 'B1', 'B2', 'C1', 'C2'}
@@ -131,12 +134,17 @@ def reset_after(body):
     return int(m.group(1)) * {'s': 1, 'm': 60, 'h': 3600}[m.group(2)] if m else None
 
 
-def ask(model, system, user):
+class Busy(RuntimeError):
+    """The router refused an impatient call for quota; the caller moves to its next model."""
+
+
+def ask(model, system, user, patient=True):
     """Streamed, because CloudFront cuts a response that sends nothing for 60 s. Waits out a
     router that answers 429 or 503 instead of switching to another model: until the quota
     window the router names reopens, else with a doubling backoff. Another job sharing the
     quota retries every second, so a fixed long backoff kept losing the window. A reply cut
-    at the token limit, or one with no JSON twice running, fails the entry instead."""
+    at the token limit, or one with no JSON twice running, fails the entry instead. Without
+    `patient` the first quota refusal raises Busy."""
     body = json.dumps({'model': model, 'max_tokens': 32000, 'stream': True, 'system': system,
                        'messages': [{'role': 'user', 'content': user}]}).encode()
     key = os.environ['AI_API_KEY']
@@ -174,6 +182,8 @@ def ask(model, system, user):
             text = e.read()[:400].decode('utf-8', 'replace')
             if e.code not in (429, 500, 502, 503, 504, 529):
                 raise RuntimeError(f'{model}: HTTP {e.code} {text[:200]!r}')
+            if not patient:
+                raise Busy(f'{model}: HTTP {e.code}')
             reopen = reset_after(text)
             if reopen is not None:
                 pause = min(reopen, 900) + random.uniform(1, 6)
@@ -319,9 +329,17 @@ def validate(layer, raw, trad):
         if not reading:
             errs.append(f'{where}: no pinyin')
 
+    pos_of = {s['id']: s.get('pos') for s in raw['senses']}
     for i, c in enumerate(core):
         if not c.get('source_sense_ids'):
             errs.append(f'core {i}: no source sense')
+        kinds = {pos_of.get(sid) for sid in c.get('source_sense_ids') or []} - {None}
+        if len(kinds) > 1:
+            errs.append(f'core {i}: merges raw senses of different parts of speech {sorted(kinds)}')
+        for lang_, terms in (c.get('equivalents') or {}).items():
+            for t in terms if lang_ == 'zh' and isinstance(terms, list) else []:
+                if isinstance(t, str) and (re.search(r'[()（）]', t) or (len(t) >= 3 and t.endswith('的'))):
+                    errs.append(f'core {i}: Chinese equivalent {t!r} is not a headword; drop the 的 or the brackets')
         for sid in c.get('source_sense_ids') or []:
             if sid not in ids:
                 errs.append(f'core {i}: unknown sense id {sid}')
@@ -346,6 +364,11 @@ def validate(layer, raw, trad):
         for j, k in enumerate(c.get('collocations') or []):
             if not k.get('text') or not k.get('vi'):
                 errs.append(f'core {i}: collocation {j} without text or vi')
+            # Each collocation text becomes a headword, so "take a shower/bath" became a page title.
+            if re.search(r'[/()+]|\.\.\.|…', k.get('text') or ''):
+                errs.append(f'core {i} collocation {j}: {k.get("text")!r} is not one combination in dictionary form')
+            if zh and k.get('example') and not k.get('example_reading'):
+                errs.append(f'core {i} collocation {j}: no example_reading')
             if zh:
                 chinese(f'core {i} collocation {j}', (k.get('text') or '') + (k.get('example') or ''), k.get('reading'))
                 if k.get('reading') and k.get('example_reading') and is_sentence_reading(k.get('text'), k['reading']):
@@ -375,11 +398,22 @@ def write_user(raw):
             f'Return JSON of this shape:\n{json.dumps(SCHEMA_HINT, ensure_ascii=False)}')
 
 
-def build(entry_id, trad, writer, reviewer):
-    """Write, check, review and correct one entry. Returns the cache record."""
+def first_answer(models, system, user):
+    """(model, answer, seconds) from the first model the router serves; it waits only on the last."""
+    for m in models[:-1]:
+        try:
+            return (m, *ask(m, system, user, patient=False))
+        except Busy:
+            continue
+    return (models[-1], *ask(models[-1], system, user))
+
+
+def build(entry_id, trad, writers, reviewer):
+    """Write, check, review and correct one entry with the first writer the router serves,
+    which also makes the corrections. Returns the cache record."""
     raw = raw_entry(entry_id)
+    writer, layer, secs = first_answer(writers.split(','), SYSTEM, write_user(raw))
     rec = {'raw': raw, 'report': {'id': entry_id, 'writer': writer, 'reviewer': reviewer}}
-    layer, secs = ask(writer, SYSTEM, write_user(raw))
     errs = validate(layer, raw, trad)
     rec['report']['seconds_write'] = secs
     if errs:
@@ -467,8 +501,9 @@ def payload(rec, version):
     for n, c in enumerate(layer['core_senses'], 1):
         links = []
         for k in c.get('collocations') or []:
+            # A model has written pinyin for English collocations ("bank account yínháng zhànghù").
             reading, example_reading = collocation_readings(k['text'], k.get('example'), k.get('reading'),
-                                                            k.get('example_reading'))
+                                                            k.get('example_reading')) if lang == 'zh' else (None, None)
             links.append({'kind': 'collocation', 'text': k['text'], 'pattern': k.get('pattern'), 'vi': k.get('vi'),
                           'example': k.get('example'), 'example_vi': k.get('example_vi'), 'reading': reading,
                           'example_reading': example_reading})
@@ -482,7 +517,7 @@ def payload(rec, version):
         examples = []
         for x in c.get('examples') or []:
             src = raw_text.get(x.get('source_example_id'))
-            examples.append({'text': x['text'], 'reading': x.get('reading'), 'vi': x['vi'],
+            examples.append({'text': x['text'], 'reading': x.get('reading') if lang == 'zh' else None, 'vi': x['vi'],
                              'from_source': bool(src) and src.strip() == x['text'].strip()})
         senses.append({'pos': c.get('pos'), 'vi_terms': c['vi_terms'], 'vi_definition': c['vi_definition'],
                        'en_definition': c.get('en_definition'), 'domain': c.get('domain'),
@@ -559,6 +594,8 @@ def cmd_run(a):
         result = load(rec, PROMPT_VERSION)
         return 'loaded', result
 
+    # A flush drops every cached dictionary page, so it runs on a clock, not per entry count.
+    flushed = time.time()
     with ThreadPoolExecutor(a.workers) as pool:
         futs = {pool.submit(one, i): i for i in ids}
         for n, f in enumerate(as_completed(futs), 1):
@@ -569,8 +606,9 @@ def cmd_run(a):
                 status, detail = 'failed', f'{type(e).__name__}: {str(e)[:200]}'
             totals[status] += 1
             log(f'{n}/{len(ids)}', status, entry_id, json.dumps(detail, ensure_ascii=False)[:200])
-            if not a.dry_run and n % 50 == 0:
+            if not a.dry_run and status == 'loaded' and time.time() - flushed > FLUSH_EVERY:
                 revalidate()
+                flushed = time.time()
     if not a.dry_run:
         revalidate()
     log('finished', json.dumps(totals))

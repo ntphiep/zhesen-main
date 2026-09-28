@@ -20,7 +20,9 @@ learner layer as one JSON object. Rules:
 
 1. Ground everything in the entry. Every core sense must cite the ids of the raw senses it covers
    (source_sense_ids). Never invent a meaning the raw senses do not contain. You may merge raw senses that
-   say the same thing.
+   say the same thing, only when they share one part of speech and one grammatical function and every one
+   of them fits the core sense's vi_terms. "take a shower" and "take medicine" are two senses; the
+   interjection 好 ("OK") and the complement 好 in 做好 ("xong") are two senses.
 2. Order core senses by how often a learner meets them in everyday, study and work text today, not by
    Wiktionary order or history. The user message says how many core senses to give. Technical, legal,
    archaic and rare senses stay out of core unless the word is mainly used that way. Every sense a learner
@@ -38,7 +40,10 @@ learner layer as one JSON object. Rules:
    "V + N", "N + prep", "phrasal verb", "idiom"), each with Vietnamese and one short example with
    Vietnamese. 0 to 5 per sense. Only real, frequent combinations that contain the headword itself, written
    in dictionary form: for an open slot write "someone" or "something" in English, "alguien" or "algo" in
-   Spanish, never "sb" or "sth". Each example must contain the collocation.
+   Spanish, never "sb" or "sth". One combination per item, with the headword in its base form: never
+   "/", "+", "...", or parentheses in `text` ("take a shower" and "take a bath" are two items, never
+   "take a shower/bath"). Each example must contain the collocation. `pattern` uses only N, V, adj, adv,
+   prep, pron, art, num joined by " + ", or one of "phrasal verb", "idiom".
 6. Synonyms and antonyms per core sense, each with a short Vietnamese note on how it differs. Only real
    words of the same language that fit that sense. 0 to 4 each.
 7. other_senses: every raw sense id not covered by a core sense appears exactly once, with corrected
@@ -51,10 +56,14 @@ learner layer as one JSON object. Rules:
    with. Only claims you are sure of. confusables: words learners mix it up with, each with a Vietnamese note.
 10. equivalents: for each core sense, the natural single-word or short equivalents in the other two
    languages of the set English, Spanish, Mandarin Chinese (simplified), skipping the entry's own language.
-   When a sense is regional (for example Latin American Spanish), say so in vi_definition.
+   Write each as its dictionary headword: Chinese without a trailing 的 and without brackets (晴朗, not
+   晴朗的; 洗澡, not 洗（澡）). When a sense is regional (for example Latin American Spanish), say so in
+   vi_definition. Vietnamese text never contains Chinese punctuation or words such as 如：.
 11. Chinese: simplified characters only, and pinyin with tone marks for every Chinese example and
    collocation. A collocation's `reading` is the pinyin of the collocation alone, one syllable per character
-   (学习知识: "xuéxí zhīshi"); the pinyin of its example sentence goes in `example_reading`.
+   (学习知识: "xuéxí zhīshi"); the pinyin of its example sentence goes in `example_reading`. For a character
+   with several readings, a collocation sits under the sense whose reading it uses (一行人 is read xíng, so
+   it never goes under the háng sense). Capitalise pinyin of proper nouns (Hànyǔ).
 Return only JSON, no commentary."""
 
 DOMAINS = ['law', 'finance', 'insurance', 'commerce', 'medicine', 'biology', 'chemistry', 'physics',
