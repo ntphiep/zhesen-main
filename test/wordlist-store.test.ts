@@ -19,6 +19,9 @@ describe('parseUserWordRow', () => {
     const w = parseUserWordRow(row)
     expect(w).toMatchObject({ id: row.id, entryId: 'en:dog', meaningVi: 'con chó', exampleTranslation: 'Con chó sủa.', audioUrl: 'x.ogg', status: 'new' })
   })
+  it('ends a saved meaning the way the dictionary does', () => {
+    expect(parseUserWordRow({ ...row, meaning_vi: 'Nước.' }).meaningVi).toBe('Nước')
+  })
 })
 
 describe('draftFromDictEntry', () => {
@@ -450,6 +453,13 @@ describe('listPracticeWords', () => {
     expect(seen.columns).toBe('id, lang, headword, ipa, meaning_vi, audio_url')
     expect((seen.to ?? 0) - (seen.from ?? 0) + 1).toBe(PRACTICE_POOL)
     expect(res[0]).toEqual({ id: 'w1', lang: 'en', headword: 'dog', ipa: '/dɔːɡ/', meaningVi: 'con chó', audioUrl: null })
+  })
+
+  // One quiz round showed "Nước." and "Nước" as two answers.
+  it('ends a practice meaning the way the dictionary does', async () => {
+    const { client } = mockClient(1, [{ ...practiceRow, meaning_vi: 'Nước.' }])
+    const res = await listPracticeWords(client, { rand: () => 0 })
+    expect(res[0].meaningVi).toBe('Nước')
   })
 
   // Otherwise the same sixty words come up every session.

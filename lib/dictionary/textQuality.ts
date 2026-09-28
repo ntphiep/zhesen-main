@@ -18,6 +18,19 @@ export function cleanMtGloss(gloss: string | null): string | null {
   return t
 }
 
+/** Words at which a meaning counts as a sentence and keeps its closing full stop. Counted
+ *  over 109,182 English senses: under 10 words 13,461 end in a stop and 77,306 do not;
+ *  from 10 up, 14,234 do and 4,181 do not. */
+const SENTENCE_WORDS = 10
+
+/** Drop the full stop that closes a phrase; a sentence keeps it. "v.v." and "..." are an
+ *  abbreviation and an ellipsis, not a closing stop. */
+export function stripPhraseStop(gloss: string): string {
+  const words = gloss.trim().split(/\s+/)
+  if (words.length >= SENTENCE_WORDS) return gloss
+  return /^[^.]*[^.]\.$/.test(words[words.length - 1]) ? gloss.trimEnd().slice(0, -1) : gloss
+}
+
 /**
  * One casing for every Vietnamese meaning on screen. The source carries three:
  * sampled over 4,000 English senses on 2026-09-20, 2,118 began with a capital and the
@@ -33,8 +46,9 @@ export function cleanMtGloss(gloss: string | null): string | null {
  * carries them ("holding" -> "CÔNG TY CỔ PHẦN") and they are not emphasis.
  */
 export function cleanGlossVi(gloss: string | null): string | null {
-  const t = gloss?.trim()
-  if (!t) return null
+  const trimmed = gloss?.trim()
+  if (!trimmed) return null
+  const t = stripPhraseStop(trimmed)
   const body = /\p{Lu}/u.test(t) && t === t.toLocaleUpperCase('vi') ? t.toLocaleLowerCase('vi') : t
   // A capital inside the first word is the word's own spelling ("iPhone", "eBay"), so
   // the whole gloss is left as written.

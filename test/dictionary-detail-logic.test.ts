@@ -78,6 +78,21 @@ describe('cleanGlossVi', () => {
     expect(cleanGlossVi(null)).toBeNull()
     expect(cleanGlossVi('   ')).toBeNull()
   })
+  it('drops the full stop that closes a phrase', () => {
+    // /dictionary?q=dog put "Một bác sĩ." beside "Con chó"; a quiz showed "Nước." beside "Nước".
+    expect(cleanGlossVi('Một bác sĩ.')).toBe('Một bác sĩ')
+    expect(cleanGlossVi('nước.')).toBe('Nước')
+    expect(cleanGlossVi('Một chuyến đi, đặc biệt là dưới nước.')).toBe('Một chuyến đi, đặc biệt là dưới nước')
+  })
+  it('keeps the full stop that closes a sentence', () => {
+    const sentence = 'Một cộng đồng nhỏ chưa hợp nhất thuộc quận Montezuma, Colorado.'
+    expect(cleanGlossVi(sentence)).toBe(sentence)
+  })
+  it('leaves a meaning that already ends cleanly', () => {
+    expect(cleanGlossVi('Con chó')).toBe('Con chó')
+    expect(cleanGlossVi('Sách, báo, v.v.')).toBe('Sách, báo, v.v.')
+    expect(cleanGlossVi('Chờ đã...')).toBe('Chờ đã...')
+  })
 })
 
 describe('fillPivotVi', () => {

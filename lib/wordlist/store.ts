@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { DictEntryDetail, DictEntryPreview, DictExample } from '@/lib/dictionary/types'
-import { isCleanExample } from '@/lib/dictionary/textQuality'
+import { isCleanExample, stripPhraseStop } from '@/lib/dictionary/textQuality'
 import type { LangCode } from '@/lib/languages'
 import { userWordRow, type UserWord, type WordDraft, type WordStatus } from './types'
 import { z } from '@/lib/zod'
@@ -13,7 +13,7 @@ export function parseUserWordRow(r: unknown): UserWord {
   const x = userWordRow.parse(r)
   return {
     id: x.id, lang: x.lang, entryId: x.entry_id, headword: x.headword, reading: x.reading,
-    ipa: x.ipa, pos: x.pos, meaningVi: x.meaning_vi, meaningEn: x.meaning_en, level: x.level,
+    ipa: x.ipa, pos: x.pos, meaningVi: x.meaning_vi && stripPhraseStop(x.meaning_vi), meaningEn: x.meaning_en, level: x.level,
     example: x.example, exampleTranslation: x.example_translation, audioUrl: x.audio_url,
     notes: x.notes, status: x.status, tags: x.tags, createdAt: x.created_at, updatedAt: x.updated_at,
     fsrsDueAt: x.fsrs_due_at, fsrsLapses: x.fsrs_lapses,
@@ -155,7 +155,7 @@ export async function listPracticeWords(
 
   return practiceWordRow.array().parse(data ?? []).map((r) => ({
     id: r.id, lang: r.lang, headword: r.headword, ipa: r.ipa,
-    meaningVi: r.meaning_vi, audioUrl: r.audio_url,
+    meaningVi: r.meaning_vi && stripPhraseStop(r.meaning_vi), audioUrl: r.audio_url,
   }))
 }
 
