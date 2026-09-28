@@ -28,7 +28,7 @@ import type { LangCode } from '@/lib/languages'
 
 export const getCachedEntryDetail = unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),
-  // v3: carries senseLinks, which a v2 value lacks.
+  // v4: keeps the recordings audioMatchesHeadword now accepts, which a v3 value dropped.
   ['dict-entry-detail-v4'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
