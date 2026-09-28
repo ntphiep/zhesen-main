@@ -74,13 +74,13 @@ export function SpeakSession() {
     return () => { active = false; recognitionRef.current?.stop() }
   }, [supabase, round])
 
-  if (queue === null) return <main className="p-12 text-center text-black/50">Đang tải…</main>
+  if (queue === null) return <main className="p-12 text-center text-black/55">Đang tải…</main>
 
   if (!supported) {
     return (
       <main className="mx-auto max-w-md px-6 py-16 text-center">
         <div className="text-xl font-semibold">Trình duyệt chưa hỗ trợ luyện nói</div>
-        <p className="mt-2 text-black/50">Mở trang này bằng Chrome hoặc Edge trên máy tính.</p>
+        <p className="mt-2 text-black/55">Mở trang này bằng Chrome hoặc Edge trên máy tính.</p>
         <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">Về luyện tập</Link>
       </main>
     )
@@ -145,7 +145,7 @@ export function SpeakSession() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
-      <div className="mb-4 flex items-center justify-between text-sm text-black/50">
+      <div className="mb-4 flex items-center justify-between text-sm text-black/55">
         <Link href="/practice" className="hover:underline">← Thoát</Link>
         <span>Luyện nói · {index + 1}/{queue.length} · Đúng {score}</span>
       </div>
@@ -156,8 +156,8 @@ export function SpeakSession() {
           <AudioButton text={current.headword} lang={current.lang} audioUrl={current.audioUrl} />
           <SourceLink url={current.audioUrl} />
         </div>
-        {current.meaningVi && <div className="mt-1 text-black/50">{current.meaningVi}</div>}
-        <p className="mt-2 text-sm text-black/40">Nghe mẫu rồi đọc lại</p>
+        {current.meaningVi && <div className="mt-1 text-black/55">{current.meaningVi}</div>}
+        <p className="mt-2 text-sm text-black/55">Nghe mẫu rồi đọc lại</p>
 
         {result === null && (
           <button
@@ -176,7 +176,7 @@ export function SpeakSession() {
             {result === 'correct' && <p className="font-medium text-emerald-700">Đúng</p>}
             {result === 'close' && <p className="font-medium text-amber-700">Gần đúng</p>}
             {result === 'wrong' && <p className="font-medium text-rose-700">Chưa khớp. Thử lại sau.</p>}
-            {heard && <p className="mt-1 text-sm text-black/50">Nghe được: “{heard}”</p>}
+            {heard && <p className="mt-1 text-sm text-black/55">Nghe được: “{heard}”</p>}
             <button onClick={next} className="mt-4 w-full rounded-lg bg-black py-2 text-white">Tiếp</button>
           </div>
         )}

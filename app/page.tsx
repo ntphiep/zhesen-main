@@ -42,7 +42,7 @@ export default async function Home() {
         ))}
       </div>
 
-      <h2 className="mt-10 mb-3 text-sm font-semibold uppercase tracking-wide text-black/40">Học theo ngôn ngữ</h2>
+      <h2 className="mt-10 mb-3 text-sm font-semibold uppercase tracking-wide text-black/55">Học theo ngôn ngữ</h2>
       <div className="grid gap-4 sm:grid-cols-3">
         {languages.map((l) => (
           <LanguageCard key={l.code} language={l} />

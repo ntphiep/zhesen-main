@@ -39,7 +39,7 @@ export function ExampleList({
               </span>
               <AudioButton text={e.text} lang={lang} />
             </div>
-            {isSentenceTranslation(e.translationVi, glosses) && <p className="text-sm text-black/50">{e.translationVi}</p>}
+            {isSentenceTranslation(e.translationVi, glosses) && <p className="text-sm text-black/55">{e.translationVi}</p>}
           </li>
         ))}
       </ul>

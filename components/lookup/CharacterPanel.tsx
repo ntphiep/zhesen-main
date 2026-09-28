@@ -26,7 +26,7 @@ export function CharacterPanel({ characters }: { characters: CharInfo[] }) {
                 <div className="flex flex-wrap items-baseline gap-x-3 text-black/70">
                   {c.pinyin.length > 0 && <span className="font-medium">{c.pinyin.join(', ')}</span>}
                   {c.hanViet.length > 0 && <span className="italic">{c.hanViet.join(', ')}</span>}
-                  {times > 1 && <span className="text-xs text-black/50">xuất hiện {times} lần</span>}
+                  {times > 1 && <span className="text-xs text-black/55">xuất hiện {times} lần</span>}
                 </div>
                 <div className="flex flex-wrap gap-x-3 text-xs text-black/55">
                   {c.radical && (

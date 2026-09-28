@@ -10,7 +10,7 @@ export function LanguageCard({ language }: { language: Language }) {
     >
       <div className="text-3xl font-semibold">{language.nativeName}</div>
       <div className="mt-1 text-sm text-black/60">{language.name}</div>
-      <div className="mt-4 text-sm font-medium text-black/40 transition group-hover:text-black/70">Vào học →</div>
+      <div className="mt-4 text-sm font-medium text-black/55 transition group-hover:text-black/70">Vào học →</div>
     </Link>
   )
 }

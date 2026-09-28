@@ -31,7 +31,7 @@ function SenseForm({ sense, onSaved, notify }: { sense: AdminSense; onSaved: () 
 
   return (
     <form onSubmit={save} className="rounded-xl border border-black/10 px-4 py-3">
-      <div className="flex flex-wrap items-center gap-2 text-xs text-black/50">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-black/55">
         <span className="font-medium text-black/70">Sense {sense.senseOrder}</span>
         {sense.pos && <span>{sense.pos}</span>}
         {sense.glossViIsMt && (
@@ -133,7 +133,7 @@ export function EntryEditor({ entry }: { entry: AdminEntry }) {
     <div>
       <div className="flex flex-wrap items-baseline gap-3">
         <h3 className="text-2xl font-semibold">{entry.headword}</h3>
-        <span className="font-mono text-xs text-black/50">{entry.id}</span>
+        <span className="font-mono text-xs text-black/55">{entry.id}</span>
         <Link href={entryPath(entry.id)} prefetch={false} className="text-sm text-black/60 hover:underline">
           Open entry page
         </Link>

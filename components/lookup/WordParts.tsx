@@ -393,10 +393,10 @@ export function WordTable({ words, head, family = false, level = false, shown = 
                   <WordLink word={w} className={`font-semibold hover:underline ${family ? '' : 'text-blue-700'}`}>
                     {family && 'stem' in w ? <MorphText word={w} /> : w.text}
                   </WordLink>
-                  <PosTag full value={w.pos} className="block text-xs text-black/45 sm:hidden" />
+                  <PosTag full value={w.pos} className="block text-xs text-black/55 sm:hidden" />
                 </td>
                 <td className="hidden whitespace-nowrap px-3.5 py-2.5 text-black/55 sm:table-cell"><PosTag full value={w.pos} /></td>
-                <td className={`px-3.5 py-2.5 ${w.gloss ? 'text-black/80' : 'text-black/35'}`}>{w.gloss ?? 'Chưa có nghĩa'}</td>
+                <td className={`px-3.5 py-2.5 ${w.gloss ? 'text-black/80' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}</td>
                 {level && <td className="px-3.5 py-2.5 text-right"><LevelChip level={w.level} /></td>}
               </tr>
             ))}
@@ -439,7 +439,7 @@ export function PhrasesCard({ headword, lang, phrases }: { headword: string; lan
                 <WordLink word={w} className="flex h-full flex-col gap-0.5 rounded-[14px] bg-black/[0.04] p-3.5 hover:bg-black/[0.07]">
                   <span className="text-xs text-black/55">{headword}</span>
                   <span className="text-2xl font-bold leading-tight tracking-[-0.02em] text-blue-700">{w.particle}</span>
-                  <span className={`line-clamp-2 text-[13px] leading-[1.35] ${w.gloss ? '' : 'text-black/35'}`}>{w.gloss ?? 'Chưa có nghĩa'}</span>
+                  <span className={`line-clamp-2 text-[13px] leading-[1.35] ${w.gloss ? '' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}</span>
                 </WordLink>
               </li>
             ))}
@@ -543,7 +543,7 @@ export function GrammarList({ points }: { points: GrammarPoint[] }) {
             href={grammarPointPath(p.id)}
             className="flex items-baseline gap-2 rounded-lg border border-black/10 px-3 py-2.5 text-sm hover:bg-black/[0.03]"
           >
-            <span className="shrink-0 text-xs font-semibold text-black/45">{p.level}</span>
+            <span className="shrink-0 text-xs font-semibold text-black/55">{p.level}</span>
             {p.titleVi}
           </Link>
         </li>

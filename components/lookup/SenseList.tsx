@@ -29,14 +29,14 @@ function Sense({ s, n, lang, examples, byText, glosses, synonyms, mark }: Shared
   const vi = s.glossVi ?? s.pivotVi
   return (
     <li className="flex gap-2.5">
-      <span className="w-5 shrink-0 text-[15px] font-semibold text-black/35">{n}.</span>
+      <span className="w-5 shrink-0 text-[15px] font-semibold text-black/55">{n}.</span>
       <div className="flex min-w-0 flex-col gap-1.5">
         {/* 25.3% of English senses have no Vietnamese gloss. There the English is the
             meaning, so it takes the meaning's place, marked as English. */}
         {vi || s.glossEn
           ? <span className="font-semibold">{vi ?? s.glossEn}{!s.glossVi && s.pivotVi && <PivotMark />}{!vi && <EnglishMark />}</span>
-          : <span className="italic text-black/35">(chưa có nghĩa)</span>}
-        {s.glossEn && vi && <span className="text-xs text-black/45">{s.glossEn}</span>}
+          : <span className="italic text-black/55">(chưa có nghĩa)</span>}
+        {s.glossEn && vi && <span className="text-xs text-black/55">{s.glossEn}</span>}
         {example && (
           <div className="mt-1 flex flex-col gap-0.5 border-l-2 border-blue-600/60 pl-3">
             <span className="flex items-center gap-1 text-[15px]">
@@ -78,7 +78,7 @@ function PosSection({ section, ...shared }: Shared & { section: SenseSection }) 
             ? <Link href={wordClassPath(shared.lang, section.key)} className="hover:underline">{section.labelVi}</Link>
             : section.labelVi}
         </h2>
-        <span className="text-[13px] text-black/45">{section.senses.length} nghĩa</span>
+        <span className="text-[13px] text-black/55">{section.senses.length} nghĩa</span>
       </div>
       <ol className="flex flex-col gap-5">
         {visible.map((s, i) => <Sense key={s.id ?? `${s.senseOrder}-${i}`} s={s} n={i + 1} {...shared} />)}
@@ -126,7 +126,7 @@ export function SenseList({ senses, lang, examples = {}, resolved = [], glosses 
       ))}
       {classifiers.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-xs font-semibold uppercase tracking-wide text-black/40">Lượng từ</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-black/55">Lượng từ</span>
           {classifiers.map((c) => (
             <span key={c} className="rounded-full bg-black/5 px-3 py-1 font-medium text-black/80">{c}</span>
           ))}

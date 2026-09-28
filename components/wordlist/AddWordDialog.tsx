@@ -186,7 +186,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
         <button
           role="tab"
           aria-selected={tab === 'dict'}
-          className={`px-3 py-1.5 text-sm rounded-t-lg font-medium transition-colors ${tab === 'dict' ? 'bg-black text-white' : 'text-black/50 hover:text-black/80'}`}
+          className={`px-3 py-1.5 text-sm rounded-t-lg font-medium transition-colors ${tab === 'dict' ? 'bg-black text-white' : 'text-black/55 hover:text-black/80'}`}
           onClick={() => setTab('dict')}
         >
           Từ điển
@@ -194,7 +194,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
         <button
           role="tab"
           aria-selected={tab === 'manual'}
-          className={`px-3 py-1.5 text-sm rounded-t-lg font-medium transition-colors ${tab === 'manual' ? 'bg-black text-white' : 'text-black/50 hover:text-black/80'}`}
+          className={`px-3 py-1.5 text-sm rounded-t-lg font-medium transition-colors ${tab === 'manual' ? 'bg-black text-white' : 'text-black/55 hover:text-black/80'}`}
           onClick={() => setTab('manual')}
         >
           Thủ công
@@ -240,11 +240,11 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                     >
                       <div>
                         <span className="font-medium">{entry.headword}</span>
-                        <Ipa value={entry.ipa} lang={entry.lang} className="ml-2 text-xs text-black/50" />
+                        <Ipa value={entry.ipa} lang={entry.lang} className="ml-2 text-xs text-black/55" />
                         {entry.glossVi && <span className="ml-2 text-sm text-black/60">{entry.glossVi}</span>}
                       </div>
                       {saved ? (
-                        <span className="ml-3 shrink-0 text-sm text-black/40">Đã có</span>
+                        <span className="ml-3 shrink-0 text-sm text-black/55">Đã có</span>
                       ) : (
                         <button
                           className="ml-3 shrink-0 rounded-lg bg-black px-3 py-1 text-sm text-white"
@@ -260,7 +260,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
             )}
 
             {query.trim() && results.length === 0 && (
-              <p className="text-sm text-black/40">
+              <p className="text-sm text-black/55">
                 {searching ? 'Đang tìm…' : refusal ?? 'Không tìm thấy từ này.'}
               </p>
             )}
@@ -271,7 +271,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
           <div className="flex flex-col gap-3">
             <div className="flex gap-2">
               <label className="flex flex-col gap-1 flex-1 min-w-0">
-                <span className="text-xs text-black/50">Ngôn ngữ</span>
+                <span className="text-xs text-black/55">Ngôn ngữ</span>
                 <select
                   value={manualLang}
                   onChange={(e) => setManualLang(e.target.value as LangCode)}
@@ -283,7 +283,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                 </select>
               </label>
               <label className="flex flex-col gap-1 flex-1 min-w-0">
-                <span className="text-xs text-black/50">Từ gốc *</span>
+                <span className="text-xs text-black/55">Từ gốc *</span>
                 <input
                   type="text"
                   placeholder="Ví dụ: dog"
@@ -295,7 +295,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
             </div>
             <div className="flex gap-2">
               <label className="flex flex-col gap-1 flex-1 min-w-0">
-                <span className="text-xs text-black/50">IPA</span>
+                <span className="text-xs text-black/55">IPA</span>
                 <input
                   type="text"
                   placeholder="/dɔːɡ/"
@@ -305,7 +305,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                 />
               </label>
               <label className="flex flex-col gap-1 flex-1 min-w-0">
-                <span className="text-xs text-black/50">Từ loại</span>
+                <span className="text-xs text-black/55">Từ loại</span>
                 <input
                   type="text"
                   placeholder="noun, verb..."
@@ -325,14 +325,14 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                 >
                   {filling ? 'Đang điền…' : 'Điền bằng trợ lý'}
                 </button>
-                <span className="text-xs text-black/40">
+                <span className="text-xs text-black/55">
                   {fillError ?? 'Chỉ điền ô còn trống.'}
                 </span>
               </div>
             )}
 
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-black/50">Nghĩa tiếng Việt</span>
+              <span className="text-xs text-black/55">Nghĩa tiếng Việt</span>
               <input
                 type="text"
                 placeholder="con chó"
@@ -342,7 +342,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-black/50">Nghĩa tiếng Anh</span>
+              <span className="text-xs text-black/55">Nghĩa tiếng Anh</span>
               <input
                 type="text"
                 placeholder="a domesticated carnivore"
@@ -352,7 +352,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-black/50">Câu ví dụ</span>
+              <span className="text-xs text-black/55">Câu ví dụ</span>
               <input
                 type="text"
                 placeholder="The dog barked."
@@ -362,7 +362,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs text-black/50">Trạng thái</span>
+              <span className="text-xs text-black/55">Trạng thái</span>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as WordStatus)}

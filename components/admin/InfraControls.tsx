@@ -78,7 +78,7 @@ function Ring({ label, share, note }: { label: string; share: number | null; not
         </span>
       </div>
       <div className="text-sm text-black/60">{label}</div>
-      {note && <div className="-mt-1 text-xs text-black/45 tabular-nums">{note}</div>}
+      {note && <div className="-mt-1 text-xs text-black/55 tabular-nums">{note}</div>}
     </div>
   )
 }
@@ -196,8 +196,8 @@ export function InfraControls() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 px-4 py-3">
             <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
               <span className="font-mono text-sm font-medium">{i?.name ?? INSTANCE_NAME}</span>
-              {i && <span className="font-mono text-xs text-black/45">{i.id}</span>}
-              <span className="text-sm">{state ? <Status tone={TONE[state] ?? 'idle'}>{state}</Status> : <span className="text-black/45">reading</span>}</span>
+              {i && <span className="font-mono text-xs text-black/55">{i.id}</span>}
+              <span className="text-sm">{state ? <Status tone={TONE[state] ?? 'idle'}>{state}</Status> : <span className="text-black/55">reading</span>}</span>
             </div>
             <div className="flex flex-wrap gap-2">
               <button type="button" className={button} disabled={state !== 'stopped'} onClick={() => setPending({ kind: 'power', op: 'start' })}>Start</button>
@@ -238,7 +238,7 @@ export function InfraControls() {
             </p>
           )}
         </div>
-        <p className="mt-2 text-xs text-black/50">If the instance is stopped this page cannot load; start it from /rescue.</p>
+        <p className="mt-2 text-xs text-black/55">If the instance is stopped this page cannot load; start it from /rescue.</p>
       </Section>
 
       <Section title="Backup">
@@ -298,7 +298,7 @@ export function InfraControls() {
                           checked={chosen === t.type} onChange={() => setChosen(t.type)} />
                         <span className="flex items-baseline justify-between gap-2">
                           <span className="font-mono text-sm font-medium text-black">{t.type}</span>
-                          {current && <span className="text-xs text-black/50">current</span>}
+                          {current && <span className="text-xs text-black/55">current</span>}
                         </span>
                         <span className="text-xs text-black/60 tabular-nums">{spec(t) || '–'}</span>
                         <span className="text-xs text-black/60 tabular-nums">{t.usdPerMonth === null ? '–' : `~${usd(t.usdPerMonth)}/month`}</span>

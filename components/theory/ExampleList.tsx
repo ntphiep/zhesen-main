@@ -9,7 +9,7 @@ export function ExampleList({ examples }: { examples: readonly Example[] }) {
       {examples.map((e) => (
         <li key={e.en} className="border-l-2 border-black/10 pl-3">
           <p className="text-black/85">{e.en}</p>
-          <p className="text-sm text-black/50">{e.vi}</p>
+          <p className="text-sm text-black/55">{e.vi}</p>
         </li>
       ))}
     </ul>

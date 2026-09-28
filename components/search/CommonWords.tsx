@@ -56,11 +56,11 @@ export function CommonWords({ pools }: { pools: Record<LangCode, WordChip[]> }) 
       onFocusCapture={() => setHeld(true)}
       onBlurCapture={() => setHeld(false)}
     >
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-black/40">Từ thông dụng</h2>
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-black/55">Từ thông dụng</h2>
       <div className="mt-3 flex flex-col gap-2">
         {LANG_CODES.map((l) => (
           <div key={l} className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span className="w-24 shrink-0 text-xs text-black/40">{LANG_LABELS[l]}</span>
+            <span className="w-24 shrink-0 text-xs text-black/55">{LANG_LABELS[l]}</span>
             {page(pools[l], from).map((e) => (
               <Link
                 // The index is part of the key so React replaces the chip rather than

@@ -28,18 +28,18 @@ export function WordReviewCard({
         <AudioButton text={card.headword} lang={card.lang} audioUrl={card.audioUrl} />
         <SourceLink url={card.audioUrl} />
       </div>
-      {card.reading && <div className="mt-1 text-black/50">{card.reading}</div>}
-      <Ipa value={card.ipa} lang={card.lang} className="mt-1 block text-black/40" />
+      {card.reading && <div className="mt-1 text-black/55">{card.reading}</div>}
+      <Ipa value={card.ipa} lang={card.lang} className="mt-1 block text-black/55" />
 
       {revealed ? (
         <>
           <div role="status" aria-live="polite" className="mt-6 border-t border-black/10 pt-6">
             {card.meaningVi && <div className="text-xl">{card.meaningVi}</div>}
-            {card.meaningEn && <div className="mt-1 text-sm text-black/50">{card.meaningEn}</div>}
+            {card.meaningEn && <div className="mt-1 text-sm text-black/55">{card.meaningEn}</div>}
             {card.example && (
               <div className="mt-4 text-sm">
                 <span className="text-black/70">{card.example}</span>
-                {card.exampleTranslation && <span className="block text-black/45">{card.exampleTranslation}</span>}
+                {card.exampleTranslation && <span className="block text-black/55">{card.exampleTranslation}</span>}
               </div>
             )}
           </div>

@@ -77,7 +77,7 @@ function Card({ c, role, points, now, sampler, onLogs, onRestart }: {
           </span>
         </div>
         {role && <p className="mt-1 text-sm text-black/70">{role}</p>}
-        <p className="mt-1 font-mono text-xs text-black/45 wrap-anywhere">{c.image}</p>
+        <p className="mt-1 font-mono text-xs text-black/55 wrap-anywhere">{c.image}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 border-t border-black/10 px-4 py-3">

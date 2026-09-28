@@ -16,7 +16,7 @@ export function GrammarLinks({ points }: { points: GrammarPoint[] }) {
             href={grammarPointPath(p.id)}
             className="rounded-lg border border-black/10 px-3 py-3 text-sm hover:bg-black/5"
           >
-            <span className="text-black/40">{p.level}</span> {p.titleVi}
+            <span className="text-black/55">{p.level}</span> {p.titleVi}
           </Link>
         ))}
       </div>

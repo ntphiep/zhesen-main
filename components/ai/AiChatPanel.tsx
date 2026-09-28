@@ -112,7 +112,7 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Đóng trợ lý"
-                className="rounded-lg px-2 py-1 text-sm text-black/50 hover:bg-black/5"
+                className="rounded-lg px-2 py-1 text-sm text-black/55 hover:bg-black/5"
               >
                 Đóng
               </button>
@@ -120,7 +120,7 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
 
             <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 text-sm">
               {turns.length === 0 && (
-                <p className="text-black/50">
+                <p className="text-black/55">
                   Hỏi về từ đang xem, nhờ sửa câu hoặc hỏi nên ôn gì. Câu trả lời do trợ lý viết, chưa qua từ điển.
                 </p>
               )}
@@ -138,7 +138,7 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
               ))}
               {busy && (partial
                 ? <p className="mr-6 rounded-xl bg-black/5 px-3 py-2 whitespace-pre-wrap">{partial}</p>
-                : <p className="text-black/50">Đang trả lời…</p>)}
+                : <p className="text-black/55">Đang trả lời…</p>)}
               {error && <p className="text-red-700">{error}</p>}
               <div ref={endRef} />
             </div>

@@ -24,7 +24,7 @@ function Grid({ tenses }: { tenses: ConjTense[] }) {
       <table className="w-full min-w-[28rem] border-collapse text-sm">
         <thead>
           <tr>
-            <th className="px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-black/40"></th>
+            <th className="px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-black/55"></th>
             {tenses.map((t) => (
               <th key={t.key} className="px-3 py-1.5 text-left font-semibold text-black/70">{TENSE_LABELS[t.key]}</th>
             ))}
@@ -33,7 +33,7 @@ function Grid({ tenses }: { tenses: ConjTense[] }) {
         <tbody>
           {PERSONS.map((p) => (
             <tr key={p.key} className="border-t border-black/5">
-              <td className="px-2 py-1.5 text-xs text-black/40">{p.label}</td>
+              <td className="px-2 py-1.5 text-xs text-black/55">{p.label}</td>
               {tenses.map((t) => (
                 <td key={t.key} className="px-3 py-1.5 font-medium text-black/80">{t.forms[p.key] ?? '—'}</td>
               ))}
@@ -59,9 +59,9 @@ export function ConjugationTable({ conjugation: c }: { conjugation: Conjugation 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-        {c.infinitive && <span><span className="text-black/40">Nguyên thể </span><span className="font-medium">{c.infinitive}</span></span>}
-        {c.gerund && <span><span className="text-black/40">Gerundio </span><span className="font-medium">{c.gerund}</span></span>}
-        {c.pastParticiple && <span><span className="text-black/40">Phân từ </span><span className="font-medium">{c.pastParticiple}</span></span>}
+        {c.infinitive && <span><span className="text-black/55">Nguyên thể </span><span className="font-medium">{c.infinitive}</span></span>}
+        {c.gerund && <span><span className="text-black/55">Gerundio </span><span className="font-medium">{c.gerund}</span></span>}
+        {c.pastParticiple && <span><span className="text-black/55">Phân từ </span><span className="font-medium">{c.pastParticiple}</span></span>}
       </div>
 
       {!expanded && <Grid tenses={present} />}
@@ -69,27 +69,27 @@ export function ConjugationTable({ conjugation: c }: { conjugation: Conjugation 
       {expanded && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold uppercase tracking-wide text-black/40">Lối trình bày (Indicativo)</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-black/55">Lối trình bày (Indicativo)</span>
             <Grid tenses={c.indicative} />
           </div>
           {c.subjunctive.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold uppercase tracking-wide text-black/40">Lối giả định (Subjuntivo)</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-black/55">Lối giả định (Subjuntivo)</span>
               <Grid tenses={c.subjunctive} />
             </div>
           )}
           {(c.imperativeAffirmative.length > 0 || c.imperativeNegative.length > 0) && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold uppercase tracking-wide text-black/40">Mệnh lệnh (Imperativo)</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-black/55">Mệnh lệnh (Imperativo)</span>
               {c.imperativeAffirmative.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-black/40">Khẳng định</span>
+                  <span className="text-xs text-black/55">Khẳng định</span>
                   {c.imperativeAffirmative.map((f, i) => <Chip key={i} text={f} />)}
                 </div>
               )}
               {c.imperativeNegative.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-black/40">Phủ định</span>
+                  <span className="text-xs text-black/55">Phủ định</span>
                   {c.imperativeNegative.map((f, i) => <Chip key={i} text={f} />)}
                 </div>
               )}

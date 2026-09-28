@@ -19,7 +19,7 @@ const KIND_LABEL: Record<ImportPreviewRow['kind'], string> = {
 
 const KIND_CLASS: Record<ImportPreviewRow['kind'], string> = {
   ok: 'text-green-700 bg-green-50',
-  duplicate: 'text-black/50 bg-black/5',
+  duplicate: 'text-black/55 bg-black/5',
   error: 'text-red-700 bg-red-50',
 }
 
@@ -78,7 +78,7 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
         </p>
 
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-black/50">File CSV</span>
+          <span className="text-xs text-black/55">File CSV</span>
           <input
             type="file"
             accept=".csv,text/csv"
@@ -95,7 +95,7 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
           <>
             <div className="flex gap-3 text-sm">
               <span className="text-green-700">{okRows.length} sẽ nhập</span>
-              {duplicateCount > 0 && <span className="text-black/50">{duplicateCount} trùng</span>}
+              {duplicateCount > 0 && <span className="text-black/55">{duplicateCount} trùng</span>}
               {errorCount > 0 && <span className="text-red-700">{errorCount} lỗi</span>}
             </div>
 
@@ -104,7 +104,7 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
                 <tbody>
                   {rows.map((r) => (
                     <tr key={r.line} className="border-b border-black/5 last:border-0">
-                      <td className="px-2 py-1 text-black/40">{r.line}</td>
+                      <td className="px-2 py-1 text-black/55">{r.line}</td>
                       <td className="px-2 py-1">
                         {r.kind === 'error' ? r.message : `${r.draft.headword} (${r.draft.lang})`}
                       </td>
@@ -120,7 +120,7 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
         )}
 
         {fileName && rows.length === 0 && (
-          <p className="text-sm text-black/40">File trống.</p>
+          <p className="text-sm text-black/55">File trống.</p>
         )}
 
         {error && (

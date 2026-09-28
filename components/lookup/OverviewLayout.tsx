@@ -86,7 +86,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
           label={
             <span className="flex items-baseline gap-2">
               <SectionLabel>Họ từ</SectionLabel>
-              {view.family.length > 0 && <span className="text-xs text-black/45">cùng gốc <b className="font-semibold text-black">{view.lemma ?? head.headword}</b></span>}
+              {view.family.length > 0 && <span className="text-xs text-black/55">cùng gốc <b className="font-semibold text-black">{view.lemma ?? head.headword}</b></span>}
             </span>
           }
         >
@@ -168,7 +168,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
             <ol className="flex flex-col">
               {main.flatMap((g) => g.senses).map((s, i) => (
                 <li key={s.id ?? `${s.senseOrder}-${i}`} className="flex gap-3.5 border-t border-black/[0.06] py-3 first:border-0 first:pt-0 last:pb-0">
-                  <span aria-hidden="true" className="w-3 shrink-0 pt-0.5 text-sm font-medium tabular-nums text-black/35">{i + 1}</span>
+                  <span aria-hidden="true" className="w-3 shrink-0 pt-0.5 text-sm font-medium tabular-nums text-black/55">{i + 1}</span>
                   <div className="flex min-w-0 flex-col gap-1">
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span className="font-semibold">
@@ -186,7 +186,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
             <UntranslatedNote senses={view.senses} />
             {classifiers.length > 0 && (
               <p className="flex flex-wrap items-center gap-2 border-t border-black/[0.06] pt-3 text-sm">
-                <span className="text-xs text-black/45">Lượng từ</span>
+                <span className="text-xs text-black/55">Lượng từ</span>
                 {classifiers.map((c) => <span key={c} className="rounded-full bg-black/[0.05] px-2.5 py-0.5 font-medium">{c}</span>)}
               </p>
             )}
@@ -235,7 +235,7 @@ function SenseExplorer({ sections }: { sections: SenseSection[] }) {
         return (
           <div key={sec.key} className="flex flex-wrap items-center gap-1.5">
             <span className="mr-1.5 text-sm font-semibold">
-              {sec.labelVi} <span className="font-normal text-black/35">{sec.senses.length}</span>
+              {sec.labelVi} <span className="font-normal text-black/55">{sec.senses.length}</span>
             </span>
             {(all ? groups : groups.slice(0, SHOWN_GROUPS)).map((g, gi) => {
               const on = picked.row === ri && picked.group === gi

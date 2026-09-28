@@ -69,7 +69,7 @@ export function SystemStrip({ checks }: { checks: SystemCheck[] }) {
     <ul className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
       {checks.map((c) => (
         <li key={c.label} className="min-w-0 rounded-lg border border-black/10 px-3 py-2">
-          <div className="text-[11px] font-semibold tracking-wide text-black/50 uppercase">{c.label}</div>
+          <div className="text-[11px] font-semibold tracking-wide text-black/55 uppercase">{c.label}</div>
           <div className="mt-0.5 text-sm"><Status tone={c.tone}><span className="text-black/75">{c.text}</span></Status></div>
         </li>
       ))}

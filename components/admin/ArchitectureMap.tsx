@@ -44,7 +44,7 @@ function Box({ name, meta, live, children }: { name: string; meta?: string; live
         <span className="text-sm font-semibold">{name}</span>
         {live && <Dot tone={live.tone} label={live.text} />}
       </div>
-      {meta && <div className="mt-0.5 font-mono text-[11px] break-all text-black/50">{meta}</div>}
+      {meta && <div className="mt-0.5 font-mono text-[11px] break-all text-black/55">{meta}</div>}
       {live && <div className="mt-1 text-xs text-black/60">{live.text}</div>}
       {children}
     </div>
@@ -55,9 +55,9 @@ function Box({ name, meta, live, children }: { name: string; meta?: string; live
 function Wire({ label }: { label: string }) {
   return (
     <div aria-hidden className="flex shrink-0 items-center justify-center py-1 lg:w-16 lg:flex-col lg:self-center lg:py-0">
-      <span className="text-[10px] text-black/45 lg:order-first lg:mb-1">{label}</span>
-      <svg viewBox="0 0 10 24" className="mx-2 h-6 w-2.5 text-black/35 lg:hidden"><path d="M5 0v20M1 16l4 6 4-6" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
-      <svg viewBox="0 0 48 10" className="hidden h-2.5 w-full text-black/35 lg:block" preserveAspectRatio="none"><path d="M0 5h44M40 1l6 4-6 4" fill="none" stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" /></svg>
+      <span className="text-[10px] text-black/55 lg:order-first lg:mb-1">{label}</span>
+      <svg viewBox="0 0 10 24" className="mx-2 h-6 w-2.5 text-black/55 lg:hidden"><path d="M5 0v20M1 16l4 6 4-6" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
+      <svg viewBox="0 0 48 10" className="hidden h-2.5 w-full text-black/55 lg:block" preserveAspectRatio="none"><path d="M0 5h44M40 1l6 4-6 4" fill="none" stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" /></svg>
     </div>
   )
 }
@@ -92,7 +92,7 @@ export function ArchitectureMap({ s }: { s: MapState }) {
               <div className="rounded-lg border border-black/10 bg-white px-3 py-2.5">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                   <span className="text-sm font-semibold">EC2</span>
-                  <span className="font-mono text-[11px] text-black/50">{PLACEMENT.instanceType} · Docker</span>
+                  <span className="font-mono text-[11px] text-black/55">{PLACEMENT.instanceType} · Docker</span>
                 </div>
                 <ul className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                   {CONTAINERS.map((c) => {
@@ -151,7 +151,7 @@ export function versionRows(s: MapState): VersionRow[] {
   ]
 }
 
-const th = 'px-3 py-2 text-left text-[11px] font-semibold tracking-wide text-black/50 uppercase'
+const th = 'px-3 py-2 text-left text-[11px] font-semibold tracking-wide text-black/55 uppercase'
 
 export function VersionTable({ rows }: { rows: VersionRow[] }) {
   return (

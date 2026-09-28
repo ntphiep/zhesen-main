@@ -85,7 +85,7 @@ export function GuardDialog({
         )}
         {reauth && (
           <label className="flex flex-col gap-1 text-sm">
-            <span>Password <span className="text-black/50">· last sign-in was over 10 minutes ago</span></span>
+            <span>Password <span className="text-black/55">· last sign-in was over 10 minutes ago</span></span>
             <input
               type="password"
               value={password}

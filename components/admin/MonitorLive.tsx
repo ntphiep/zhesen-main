@@ -47,7 +47,7 @@ function Reading({ label, value, note, trail }: { label: string; value: string; 
     <div className="min-w-0 rounded-lg border border-black/10 px-4 pt-3 pb-2">
       <div className="text-2xl font-semibold tabular-nums">{value}</div>
       <div className="text-sm text-black/60">{label}</div>
-      {note && <div className="text-xs text-black/45">{note}</div>}
+      {note && <div className="text-xs text-black/55">{note}</div>}
       {trail && <div className="mt-1"><Trail values={trail} label={`${label}, last 10 minutes`} /></div>}
     </div>
   )
@@ -107,7 +107,7 @@ export function LivePanel() {
               trail={trail.map((t) => t.r.rowsWrittenPerSec)}
             />
           </div>
-          {!last && <p className="mt-2 text-xs text-black/45">Rates appear after the second sample, in 10 s.</p>}
+          {!last && <p className="mt-2 text-xs text-black/55">Rates appear after the second sample, in 10 s.</p>}
 
           <h3 className="mt-5 mb-2 text-sm font-medium">Running queries ({live.running.length})</h3>
           {live.running.length === 0 ? (
@@ -146,7 +146,7 @@ function Meter({ label, used, total, format }: { label: string; used: number; to
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/[0.06]" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)}>
         <div className={`h-full ${tone}`} style={{ width: `${Math.min(100, share * 100)}%` }} />
       </div>
-      <div className="mt-1.5 text-xs text-black/50 tabular-nums">{format(used)} of {format(total)}</div>
+      <div className="mt-1.5 text-xs text-black/55 tabular-nums">{format(used)} of {format(total)}</div>
     </div>
   )
 }
@@ -187,7 +187,7 @@ export function HostPanel() {
               <div className="min-w-0 rounded-lg border border-black/10 px-4 py-3">
                 <div className="text-2xl font-semibold tabular-nums">{host.load[0].toLocaleString('en-US')}</div>
                 <div className="text-sm text-black/60">Load average, 1 min</div>
-                <div className="text-xs text-black/45 tabular-nums">
+                <div className="text-xs text-black/55 tabular-nums">
                   5 min {host.load[1].toLocaleString('en-US')} · 15 min {host.load[2].toLocaleString('en-US')}
                   {host.cpus ? ` · ${host.cpus} vCPU` : ''}
                 </div>
@@ -204,7 +204,7 @@ export function HostPanel() {
           <div className="mt-4 overflow-x-auto rounded-lg border border-black/10">
             <table className="w-full min-w-[40rem] text-sm">
               <thead>
-                <tr className="border-b border-black/10 text-left text-xs text-black/50">
+                <tr className="border-b border-black/10 text-left text-xs text-black/55">
                   <th className="px-4 py-2 font-medium">Container</th>
                   <th className="px-4 py-2 font-medium">Status</th>
                   <th className="px-4 py-2 text-right font-medium">CPU</th>
@@ -217,7 +217,7 @@ export function HostPanel() {
                   <tr key={c.name}>
                     <td className="px-4 py-2">
                       <div className="font-mono">{c.name}</div>
-                      <div className="font-mono text-xs text-black/45">{c.image}</div>
+                      <div className="font-mono text-xs text-black/55">{c.image}</div>
                     </td>
                     <td className="px-4 py-2">
                       <Status tone={containerTone(c.status, c.health)}>
@@ -228,7 +228,7 @@ export function HostPanel() {
                     <td className="px-4 py-2 text-right tabular-nums">{c.cpuPercent !== null ? pct(c.cpuPercent) : '–'}</td>
                     <td className="px-4 py-2 text-right tabular-nums">
                       {c.memBytes !== null ? formatBytes(c.memBytes) : '–'}
-                      {c.memLimitBytes !== null && <div className="text-xs text-black/45">limit {formatBytes(c.memLimitBytes)}</div>}
+                      {c.memLimitBytes !== null && <div className="text-xs text-black/55">limit {formatBytes(c.memLimitBytes)}</div>}
                     </td>
                     <td className="px-4 py-2 text-black/70 tabular-nums">{c.startedAt ? duration(Math.max(0, (now - Date.parse(c.startedAt)) / 1000)) : '–'}</td>
                   </tr>
@@ -319,7 +319,7 @@ export function LogViewer({ fixed }: { fixed?: Service } = {}) {
       {data && 'enabled' in data && <p className="mt-3 text-sm text-black/60">AWS read not configured (AWS_ROLE_ARN).</p>}
       {data && !('enabled' in data) && (
         <div className="mt-3">
-          <p className="mb-1.5 text-xs text-black/50">
+          <p className="mb-1.5 text-xs text-black/55">
             supabase-{data.service} · {num(data.lines.length)} lines · read {clock(data.at)} · newest last
             {data.truncated && ' · oldest lines cut at the SSM limit'}
           </p>
@@ -329,7 +329,7 @@ export function LogViewer({ fixed }: { fixed?: Service } = {}) {
             <pre ref={box} className="max-h-[28rem] overflow-auto rounded-lg border border-black/10 bg-black/[0.03] p-3 font-mono text-xs leading-relaxed">
               {data.lines.map((l, i) => (
                 <div key={i} className="whitespace-pre-wrap break-all">
-                  {l.at && <span className="text-black/40 select-none">{clock(l.at)} </span>}
+                  {l.at && <span className="text-black/55 select-none">{clock(l.at)} </span>}
                   {l.text}
                 </div>
               ))}

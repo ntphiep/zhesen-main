@@ -9,13 +9,13 @@ import type { Language } from '@/lib/languages'
 export function GrammarPointList({ language, levels }: { language: Language; levels: GrammarLevelGroup[] }) {
   return (
     <main className="mx-auto max-w-page px-6 py-10">
-      <Link href={theoryLangPath(language.code)} className="text-sm text-black/50 hover:underline">← Lý thuyết {language.name}</Link>
+      <Link href={theoryLangPath(language.code)} className="text-sm text-black/55 hover:underline">← Lý thuyết {language.name}</Link>
       <div className="mt-3 flex items-center gap-3">
         <span className="text-xl font-medium text-black/70">{language.nativeName}</span>
         <h1 className="text-3xl font-bold">Ngữ pháp {language.name}</h1>
       </div>
 
-      {levels.length === 0 && <p className="mt-6 text-sm text-black/50">Chưa có điểm ngữ pháp nào.</p>}
+      {levels.length === 0 && <p className="mt-6 text-sm text-black/55">Chưa có điểm ngữ pháp nào.</p>}
 
       <div className="mt-8 flex flex-col gap-10">
         {levels.map((lvl) => (
@@ -24,7 +24,7 @@ export function GrammarPointList({ language, levels }: { language: Language; lev
             <div className="flex flex-col gap-6">
               {lvl.categories.map((cat) => (
                 <div key={cat.categoryVi}>
-                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-black/40">{cat.categoryVi}</h3>
+                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-black/55">{cat.categoryVi}</h3>
                   <div className="flex flex-col gap-2">
                     {cat.points.map((p) => (
                       <Link
@@ -33,7 +33,7 @@ export function GrammarPointList({ language, levels }: { language: Language; lev
                         className="rounded-lg border border-black/10 px-4 py-3 hover:bg-black/5"
                       >
                         <div className="font-medium">{p.titleVi}</div>
-                        <div className="mt-0.5 truncate text-sm text-black/50">{p.pattern}</div>
+                        <div className="mt-0.5 truncate text-sm text-black/55">{p.pattern}</div>
                       </Link>
                     ))}
                   </div>

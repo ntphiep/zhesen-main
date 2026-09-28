@@ -231,13 +231,13 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
           className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-lg px-3 py-2 hover:bg-black/5"
         >
           <span className="font-medium">{e.headword}</span>
-          <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/40" />
+          <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/55" />
           {e.level && (
-            <span className="rounded-full border border-black/15 px-1.5 py-0.5 text-[0.65rem] text-black/50">
+            <span className="rounded-full border border-black/15 px-1.5 py-0.5 text-[0.65rem] text-black/55">
               {e.level}
             </span>
           )}
-          <PosTag value={e.pos} className="text-xs text-black/45" />
+          <PosTag value={e.pos} className="text-xs text-black/55" />
           {e.glossVi && <span className="text-sm text-black/60">{e.glossVi}</span>}
           <LinkPending />
         </Link>
@@ -262,14 +262,14 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
           <>
             {/* Found through the machine translation of the query, not a Vietnamese
                 meaning in the dictionary, so it says which translation it came from. */}
-            <p className={`px-4 pt-2 text-xs text-black/40 ${list.length > 0 ? 'border-t border-black/10' : ''}`}>
+            <p className={`px-4 pt-2 text-xs text-black/55 ${list.length > 0 ? 'border-t border-black/10' : ''}`}>
               Dịch máy: {translated?.[l]?.text}
             </p>
             <ul className="flex flex-col gap-0.5 py-1">{more.map(renderRow)}</ul>
           </>
         )}
         {list.length === 0 && more.length === 0 && (
-          <p className="px-4 py-3 text-sm text-black/35">Chưa có từ khớp</p>
+          <p className="px-4 py-3 text-sm text-black/55">Chưa có từ khớp</p>
         )}
       </section>
     )
@@ -303,7 +303,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
           <legend className="sr-only">
             {direction === 'vi' ? 'Ngôn ngữ cần dịch sang' : 'Ngôn ngữ cần tìm'}
           </legend>
-          <span aria-hidden className="text-xs uppercase tracking-wide text-black/40">
+          <span aria-hidden className="text-xs uppercase tracking-wide text-black/55">
             {direction === 'vi' ? 'Dịch sang' : 'Tìm trong'}
           </span>
           <div className="inline-flex overflow-hidden rounded-lg border border-black/15">
@@ -336,7 +336,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
 
       {showRecent && (
         <div className="flex flex-wrap gap-2">
-          <span className="text-xs uppercase tracking-wide text-black/40">Tra gần đây</span>
+          <span className="text-xs uppercase tracking-wide text-black/55">Tra gần đây</span>
           {recent.map((r) => (
             <button
               key={r}
@@ -352,7 +352,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
 
       {isPassage && <PassageBlock text={trimmed} direction={direction} targets={targets} />}
 
-      {loading && <p className="text-sm text-black/40">Đang dịch…</p>}
+      {loading && <p className="text-sm text-black/55">Đang dịch…</p>}
       {refusal && (
         <div className="flex items-center gap-3">
           <p className="text-sm text-red-600">{refusal}</p>
@@ -369,13 +369,13 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
       {total > 0 && (
         <div className="flex flex-col gap-3">{shown.map(([l, list, more]) => renderCard(l, list, more))}</div>
       )}
-      {showFilteredEmpty && <p className="text-sm text-black/40">Không có từ nào khớp bộ lọc. Đổi bộ lọc.</p>}
+      {showFilteredEmpty && <p className="text-sm text-black/55">Không có từ nào khớp bộ lọc. Đổi bộ lọc.</p>}
 
       {showEmpty && (
         data.suggestions.length > 0
           ? (
             <div className="flex flex-col gap-2">
-              <span className="text-xs uppercase tracking-wide text-black/40">Có phải là</span>
+              <span className="text-xs uppercase tracking-wide text-black/55">Có phải là</span>
               <div className="flex flex-wrap gap-2">
                 {data.suggestions.map((s) => (
                   <Link
@@ -385,14 +385,14 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
                     className="rounded-full border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5"
                   >
                     <span className="font-medium">{s.headword}</span>
-                    {s.glossVi && <span className="ml-2 text-black/50">{s.glossVi}</span>}
+                    {s.glossVi && <span className="ml-2 text-black/55">{s.glossVi}</span>}
                     <LinkPending />
                   </Link>
                 ))}
               </div>
             </div>
           )
-          : <p className="text-sm text-black/40">Không tìm thấy từ nào.</p>
+          : <p className="text-sm text-black/55">Không tìm thấy từ nào.</p>
       )}
       {/* Renders nothing where `aiConfig()` is null, which is every deployment that
           cannot reach the router. */}
@@ -402,7 +402,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
           to filter, and the chips depend on what came back. */}
       {(levelOptions.length > 0 || posOptions.length > 0) && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs uppercase tracking-wide text-black/40">Lọc</span>
+          <span className="text-xs uppercase tracking-wide text-black/55">Lọc</span>
           {levelOptions.map((l) => (
             <button
               key={l}
@@ -410,7 +410,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
               aria-pressed={levelFilter === l}
               onClick={() => setLevelFilter(levelFilter === l ? null : l)}
               className={`rounded-full border px-3 py-1 text-xs ${
-                levelFilter === l ? 'border-black/40 bg-black/5 font-medium' : 'border-black/15 text-black/50'
+                levelFilter === l ? 'border-black/40 bg-black/5 font-medium' : 'border-black/15 text-black/55'
               }`}
             >
               {l}
@@ -423,7 +423,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
               aria-pressed={posFilter === g.key}
               onClick={() => setPosFilter(posFilter === g.key ? null : g.key)}
               className={`rounded-full border px-3 py-1 text-xs ${
-                posFilter === g.key ? 'border-black/40 bg-black/5 font-medium' : 'border-black/15 text-black/50'
+                posFilter === g.key ? 'border-black/40 bg-black/5 font-medium' : 'border-black/15 text-black/55'
               }`}
             >
               {g.labelVi}

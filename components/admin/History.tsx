@@ -25,7 +25,7 @@ export function Chart({ s, range }: { s: Series; range: Range }) {
     return (
       <figure className="rounded-lg border border-black/10 px-4 py-3">
         <figcaption className="text-sm text-black/60">{s.label}</figcaption>
-        <p className="mt-2 text-sm text-black/45">No CloudWatch datapoints in this range.</p>
+        <p className="mt-2 text-sm text-black/55">No CloudWatch datapoints in this range.</p>
       </figure>
     )
   }
@@ -44,7 +44,7 @@ export function Chart({ s, range }: { s: Series; range: Range }) {
         <span className="text-sm text-black/60">{s.label}</span>
         <span className="text-sm tabular-nums">
           <span className="font-semibold">{show(s.unit, last.v)}</span>
-          <span className="text-black/45">{per} · peak {show(s.unit, peak.v)}</span>
+          <span className="text-black/55">{per} · peak {show(s.unit, peak.v)}</span>
         </span>
       </figcaption>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="mt-2 h-20 w-full" role="img"
@@ -53,7 +53,7 @@ export function Chart({ s, range }: { s: Series; range: Range }) {
         <path d={`${line} L${W},${H} L0,${H} Z`} className="fill-black/[0.06]" />
         <path d={line} fill="none" className="stroke-black/70" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
       </svg>
-      <div className="mt-1 flex justify-between text-xs text-black/40 tabular-nums">
+      <div className="mt-1 flex justify-between text-xs text-black/55 tabular-nums">
         <span>{edge(s.points[0].t)}</span>
         {s.unit === '%' && <span>dashed line 80%</span>}
         <span>{edge(last.t)}</span>

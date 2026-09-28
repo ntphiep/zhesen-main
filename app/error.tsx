@@ -52,7 +52,7 @@ export default function Error({
         </Link>
       </div>
       {error.digest && (
-        <p className="mt-6 text-xs text-black/40">Mã lỗi: {error.digest}</p>
+        <p className="mt-6 text-xs text-black/55">Mã lỗi: {error.digest}</p>
       )}
     </main>
   )

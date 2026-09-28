@@ -15,7 +15,7 @@ export function TagFilterBar({ words, activeTags, onToggle }: Props) {
   if (counts.length === 0) return null
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-xs text-black/40">Thẻ:</span>
+      <span className="text-xs text-black/55">Thẻ:</span>
       {counts.map(({ tag, count }) => {
         const on = activeTags.has(tag)
         return (

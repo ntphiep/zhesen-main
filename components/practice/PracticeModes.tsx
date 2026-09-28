@@ -18,7 +18,7 @@ export function PracticeModes({ due }: { due: number }) {
           className={`flex flex-col rounded-xl border px-4 py-3 transition ${m.primary ? 'border-black bg-black text-white' : 'border-black/10 hover:bg-black/5'}`}
         >
           <span className="font-medium">{m.label}</span>
-          <span className={`text-xs ${m.primary ? 'text-white/70' : 'text-black/50'}`}>{m.sub}</span>
+          <span className={`text-xs ${m.primary ? 'text-white/70' : 'text-black/55'}`}>{m.sub}</span>
         </Link>
       ))}
     </div>

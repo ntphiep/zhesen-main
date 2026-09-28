@@ -10,7 +10,7 @@ function Bar({ label, count, total }: { label: string; count: number; total: num
       <div className="h-2 flex-1 rounded-full bg-black/5">
         <div className="h-2 rounded-full bg-black/70" style={{ width: `${pct}%` }} />
       </div>
-      <span className="w-10 shrink-0 text-right text-black/50">{count}</span>
+      <span className="w-10 shrink-0 text-right text-black/55">{count}</span>
     </div>
   )
 }

@@ -59,7 +59,7 @@ export function AiCoach({ lang, headword, meaningVi }: {
   }
 
   if (state.status === 'loading') {
-    return <p className="text-xs text-black/40">Trợ lý đang soạn…</p>
+    return <p className="text-xs text-black/55">Trợ lý đang soạn…</p>
   }
 
   const { mnemonic, collocations, examples, confusables } = state.data
@@ -67,14 +67,14 @@ export function AiCoach({ lang, headword, meaningVi }: {
     <div className="flex flex-col gap-3 rounded-lg bg-black/3 p-3 text-sm">
       {mnemonic && (
         <div>
-          <h4 className="text-xs font-semibold uppercase text-black/40">Mẹo nhớ</h4>
+          <h4 className="text-xs font-semibold uppercase text-black/55">Mẹo nhớ</h4>
           <p className="mt-0.5 text-black/80">{mnemonic}</p>
         </div>
       )}
 
       {collocations.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold uppercase text-black/40">Cụm hay đi kèm</h4>
+          <h4 className="text-xs font-semibold uppercase text-black/55">Cụm hay đi kèm</h4>
           <ul className="mt-1 flex flex-wrap gap-1.5">
             {collocations.map((c) => (
               <li key={c} className="rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/70">{c}</li>
@@ -85,12 +85,12 @@ export function AiCoach({ lang, headword, meaningVi }: {
 
       {examples.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold uppercase text-black/40">Ví dụ</h4>
+          <h4 className="text-xs font-semibold uppercase text-black/55">Ví dụ</h4>
           <ul className="mt-1 flex flex-col gap-1.5 border-l-2 border-black/10 pl-3">
             {examples.map((e) => (
               <li key={e.text}>
                 <p className="italic text-black/75">{e.text}</p>
-                <p className="text-black/50">{e.vi}</p>
+                <p className="text-black/55">{e.vi}</p>
               </li>
             ))}
           </ul>
@@ -99,7 +99,7 @@ export function AiCoach({ lang, headword, meaningVi }: {
 
       {confusables.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold uppercase text-black/40">Dễ nhầm với</h4>
+          <h4 className="text-xs font-semibold uppercase text-black/55">Dễ nhầm với</h4>
           <ul className="mt-1 flex flex-col gap-1">
             {confusables.map((c) => (
               <li key={c.word} className="text-black/75">
@@ -113,7 +113,7 @@ export function AiCoach({ lang, headword, meaningVi }: {
 
       {/* The model is asked not to guess, so an answer can legitimately be empty. */}
       {!mnemonic && collocations.length === 0 && examples.length === 0 && confusables.length === 0 && (
-        <p className="text-xs text-black/40">Trợ lý không có gì thêm cho từ này.</p>
+        <p className="text-xs text-black/55">Trợ lý không có gì thêm cho từ này.</p>
       )}
     </div>
   )

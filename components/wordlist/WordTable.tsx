@@ -152,7 +152,7 @@ export function WordTable({
     <div className="overflow-x-auto">
       <table className="w-full border-separate border-spacing-0 text-sm">
         <thead>
-          <tr className="text-left text-xs font-medium uppercase tracking-wide text-black/45 [&_th]:border-b [&_th]:border-black/10">
+          <tr className="text-left text-xs font-medium uppercase tracking-wide text-black/55 [&_th]:border-b [&_th]:border-black/10">
             <th
               className="sticky left-0 z-20 bg-white px-3 py-2.5"
               style={{ width: SELECT_WIDTH, minWidth: SELECT_WIDTH }}
@@ -281,24 +281,24 @@ export function WordTable({
 function Cell({ word: w, column }: { word: UserWord; column: ColumnKey }) {
   switch (column) {
     case 'headword': return <span className="font-medium">{w.headword}</span>
-    case 'lang': return <span className="text-black/50">{LANG_NAME.get(w.lang) ?? w.lang}</span>
-    case 'ipa': return <Ipa value={w.ipa} lang={w.lang} className="text-black/50" />
-    case 'pos': return <PosTag value={w.pos} className="text-black/50" />
+    case 'lang': return <span className="text-black/55">{LANG_NAME.get(w.lang) ?? w.lang}</span>
+    case 'ipa': return <Ipa value={w.ipa} lang={w.lang} className="text-black/55" />
+    case 'pos': return <PosTag value={w.pos} className="text-black/55" />
     case 'meaningVi': return <>{w.meaningVi ?? ''}</>
     case 'meaningEn': return <span className="text-black/60">{w.meaningEn ?? ''}</span>
-    case 'level': return <span className="text-black/50">{w.level ?? ''}</span>
-    case 'status': return <span className="text-black/50">{STATUS_LABELS[w.status]}</span>
+    case 'level': return <span className="text-black/55">{w.level ?? ''}</span>
+    case 'status': return <span className="text-black/55">{STATUS_LABELS[w.status]}</span>
     case 'tags': return <TagChips tags={w.tags} />
-    case 'example': return <span className="italic text-black/50">{w.example ?? ''}</span>
-    case 'notes': return <span className="text-black/50">{w.notes ?? ''}</span>
-    case 'createdAt': return <span className="whitespace-nowrap text-black/40">{formatWordDate(w.createdAt)}</span>
+    case 'example': return <span className="italic text-black/55">{w.example ?? ''}</span>
+    case 'notes': return <span className="text-black/55">{w.notes ?? ''}</span>
+    case 'createdAt': return <span className="whitespace-nowrap text-black/55">{formatWordDate(w.createdAt)}</span>
     case 'fsrsDueAt':
       return (
-        <span className="whitespace-nowrap text-black/40">
+        <span className="whitespace-nowrap text-black/55">
           {isDueAt(w.fsrsDueAt) ? DUE_LABEL : formatWordDate(w.fsrsDueAt)}
         </span>
       )
-    case 'fsrsLapses': return <span className="text-black/50">{w.fsrsLapses}</span>
+    case 'fsrsLapses': return <span className="text-black/55">{w.fsrsLapses}</span>
     case 'audio':
       return (
         <span className="inline-flex items-center gap-1 whitespace-nowrap">

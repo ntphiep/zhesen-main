@@ -77,14 +77,14 @@ function DetailBody({ word }: { word: UserWord }) {
       <div className="flex flex-col gap-3 text-sm text-black/80">
         {word.meaningVi && <p>{word.meaningVi}</p>}
         {word.example && <p className="italic text-black/60">{word.example}</p>}
-        {word.notes && <p className="text-black/50">{word.notes}</p>}
+        {word.notes && <p className="text-black/55">{word.notes}</p>}
         <AiCoach lang={word.lang} headword={word.headword} meaningVi={word.meaningVi} />
       </div>
     )
   }
 
   if (state.status === 'loading') {
-    return <p className="text-sm text-black/40">Đang tải…</p>
+    return <p className="text-sm text-black/55">Đang tải…</p>
   }
 
   if (state.status === 'error') {
@@ -106,9 +106,9 @@ function DetailBody({ word }: { word: UserWord }) {
         <div className="flex flex-col gap-1">
           {detail.senses.map((s, i) => (
             <div key={i} className="flex gap-2 items-baseline">
-              <PosTag value={s.pos} className="text-xs font-medium text-black/40" />
+              <PosTag value={s.pos} className="text-xs font-medium text-black/55" />
               {s.glossVi && <span className="text-black/80">{s.glossVi}</span>}
-              {s.glossEn && <span className="text-black/50">{s.glossEn}</span>}
+              {s.glossEn && <span className="text-black/55">{s.glossEn}</span>}
             </div>
           ))}
         </div>
@@ -126,7 +126,7 @@ function DetailBody({ word }: { word: UserWord }) {
             <div key={i} className="flex flex-col gap-0.5">
               <p className="italic text-black/70">{e.text}</p>
               {isSentenceTranslation(e.translationVi, glosses) && (
-                <p className="text-black/50">{e.translationVi}</p>
+                <p className="text-black/55">{e.translationVi}</p>
               )}
             </div>
           ))}
@@ -137,7 +137,7 @@ function DetailBody({ word }: { word: UserWord }) {
         <div className="flex flex-col gap-1">
           {relationGroups.map((s) => (
             <div key={s.key} className="flex gap-2 items-baseline flex-wrap">
-              <span className="text-xs font-medium text-black/40 uppercase">{s.label}</span>
+              <span className="text-xs font-medium text-black/55 uppercase">{s.label}</span>
               {relations[s.key].slice(0, RELATION_CAP).map((w) => (
                 <span key={w} className="text-black/70">{w}</span>
               ))}

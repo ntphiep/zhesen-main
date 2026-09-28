@@ -36,7 +36,7 @@ export default function GlobalError({
             Tải lại
           </button>
           {error.digest && (
-            <p className="mt-6 text-xs text-black/40">Mã lỗi: {error.digest}</p>
+            <p className="mt-6 text-xs text-black/55">Mã lỗi: {error.digest}</p>
           )}
         </main>
       </body>

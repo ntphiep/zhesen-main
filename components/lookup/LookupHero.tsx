@@ -43,7 +43,7 @@ export function LookupHero({ detail, hanViet, summary, stats = [], posLabels = [
           {detail.headword}
         </h1>
         {detail.traditional && detail.traditional !== detail.headword && (
-          <span className="text-4xl text-black/40">{detail.traditional}</span>
+          <span className="text-4xl text-black/55">{detail.traditional}</span>
         )}
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap gap-1.5">

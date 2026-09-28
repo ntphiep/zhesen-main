@@ -67,7 +67,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
       <div className="relative overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-black/10 text-left text-xs font-medium uppercase tracking-wide text-black/45">
+            <tr className="border-b border-black/10 text-left text-xs font-medium uppercase tracking-wide text-black/55">
               <th className="py-2 pr-4">Account</th>
               <th className="py-2 pr-4">Kind</th>
               <th className="py-2 pr-4 text-right">Saved words</th>
@@ -81,7 +81,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
               <tr key={a.id} className="border-b border-black/5">
                 <td className="py-2 pr-4">
                   <div className="font-medium">{name(a)}</div>
-                  {a.displayName && <div className="text-xs text-black/50">{a.displayName}</div>}
+                  {a.displayName && <div className="text-xs text-black/55">{a.displayName}</div>}
                 </td>
                 <td className="whitespace-nowrap py-2 pr-4">
                   {a.kind === 'permanent' ? 'Email' : 'Anonymous'}

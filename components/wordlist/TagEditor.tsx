@@ -30,7 +30,7 @@ export function TagEditor({ tags, onChange }: Props) {
             {t}
             <button
               type="button"
-              className="text-black/40 hover:text-black/80"
+              className="text-black/55 hover:text-black/80"
               onClick={() => onChange(removeTag(tags, t))}
               aria-label={`Bỏ thẻ ${t}`}
             >
@@ -38,7 +38,7 @@ export function TagEditor({ tags, onChange }: Props) {
             </button>
           </span>
         ))}
-        {tags.length === 0 && <span className="text-xs text-black/30">Chưa có thẻ</span>}
+        {tags.length === 0 && <span className="text-xs text-black/55">Chưa có thẻ</span>}
       </div>
       <div className="flex gap-2">
         <input

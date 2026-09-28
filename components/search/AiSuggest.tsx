@@ -63,16 +63,16 @@ export function AiSuggest({ query }: { query: string }) {
     )
   }
 
-  if (state.kind === 'loading') return <p className="text-sm text-black/40">Đang hỏi trợ lý…</p>
+  if (state.kind === 'loading') return <p className="text-sm text-black/55">Đang hỏi trợ lý…</p>
   if (state.kind === 'error') return <p className="text-sm text-red-600">{state.message}</p>
 
   if (state.words.length === 0) {
-    return <p className="text-sm text-black/40">Trợ lý cũng không nghĩ ra từ nào.</p>
+    return <p className="text-sm text-black/55">Trợ lý cũng không nghĩ ra từ nào.</p>
   }
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-semibold uppercase tracking-wide text-black/40">
+      <span className="text-xs font-semibold uppercase tracking-wide text-black/55">
         Trợ lý gợi ý, chưa qua từ điển
       </span>
       <ul className="flex flex-col gap-1">
@@ -83,7 +83,7 @@ export function AiSuggest({ query }: { query: string }) {
               className="group flex flex-wrap items-baseline gap-2 rounded-lg px-2 py-1 hover:bg-black/5"
             >
               <span className="font-medium group-hover:underline">{w.headword}</span>
-              <span className="text-xs text-black/40">{LANG_LABELS[w.lang]}</span>
+              <span className="text-xs text-black/55">{LANG_LABELS[w.lang]}</span>
               <span className="text-sm text-black/60">{w.meaningVi}</span>
             </Link>
           </li>

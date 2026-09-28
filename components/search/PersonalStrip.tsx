@@ -59,7 +59,7 @@ export function PersonalStrip() {
     <div className="flex flex-col gap-6">
       {recent.length > 0 && (
         <div>
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-black/40">Tra gần đây</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-black/55">Tra gần đây</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {recent.map((e) => (
               <Link
@@ -82,9 +82,9 @@ export function PersonalStrip() {
 
       <div>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-black/40">Sổ tay</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-black/55">Sổ tay</h2>
           {saved && book.due > 0 && (
-            <span className="text-xs text-black/50">{book.due} từ đến hạn ôn</span>
+            <span className="text-xs text-black/55">{book.due} từ đến hạn ôn</span>
           )}
         </div>
         {saved ? (
@@ -114,7 +114,7 @@ export function PersonalStrip() {
             </Link>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-black/45">
+          <p className="mt-3 text-sm text-black/55">
             Chưa có từ. Tra một từ để lưu.
           </p>
         )}

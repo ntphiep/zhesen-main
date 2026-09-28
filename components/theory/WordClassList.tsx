@@ -23,7 +23,7 @@ export function WordClassList({ language, classes }: { language: Language; class
           >
             <div className="flex items-baseline gap-2">
               <span className="font-semibold">{c.titleVi}</span>
-              <span className="text-sm text-black/40">{c.abbr}</span>
+              <span className="text-sm text-black/55">{c.abbr}</span>
             </div>
             <p className="mt-1 text-sm text-black/60">{c.oneLineVi}</p>
           </Link>

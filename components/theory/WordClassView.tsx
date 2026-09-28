@@ -18,19 +18,19 @@ export function WordClassView({ language, wordClass: c, grammar }: {
       <div>
         <Link
           href={theoryBlockPath(language.code, 'word-class')}
-          className="text-sm text-black/50 hover:underline"
+          className="text-sm text-black/55 hover:underline"
         >
           ← Từ loại
         </Link>
         <div className="mt-3 flex items-baseline gap-3">
           <h1 className="text-3xl font-bold">{c.titleVi}</h1>
-          <span className="text-lg text-black/40">{c.abbr}</span>
+          <span className="text-lg text-black/55">{c.abbr}</span>
         </div>
         <p className="mt-2 text-black/70">{c.oneLineVi}</p>
       </div>
 
       <section className="rounded-2xl bg-black/5 px-5 py-4">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-black/40">Vai trò trong câu</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-black/55">Vai trò trong câu</h2>
         <p className="mt-1 text-black/80">{c.roleVi}</p>
       </section>
 

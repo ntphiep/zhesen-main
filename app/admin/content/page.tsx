@@ -39,7 +39,7 @@ export default async function AdminContentPage({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-black/10 text-left text-xs font-medium uppercase tracking-wide text-black/45">
+              <tr className="border-b border-black/10 text-left text-xs font-medium uppercase tracking-wide text-black/55">
                 <th className="py-2 pr-4">Language</th>
                 <th className="py-2 pr-4 text-right">Entries</th>
                 <th className="py-2 pr-4 text-right">Senses</th>
@@ -69,7 +69,7 @@ export default async function AdminContentPage({
                 <Link href={editHref(f.entryId)} prefetch={false} className="font-medium hover:underline">
                   {f.headword}
                 </Link>
-                <span className="text-black/50"> · {f.lang} · {f.reason}</span>
+                <span className="text-black/55"> · {f.lang} · {f.reason}</span>
               </li>
             ))}
           </ul>
@@ -107,7 +107,7 @@ export default async function AdminContentPage({
                 <Link href={editHref(r.id)} prefetch={false} className="font-medium hover:underline">
                   {r.headword}
                 </Link>
-                <span className="text-black/50"> · {r.lang}{r.glossVi ? ` · ${r.glossVi}` : ''}</span>
+                <span className="text-black/55"> · {r.lang}{r.glossVi ? ` · ${r.glossVi}` : ''}</span>
               </li>
             ))}
           </ul>

@@ -24,7 +24,7 @@ export function CollocationView({ language, patterns, sets }: {
             <div>
               <div className="flex flex-wrap items-baseline gap-x-3">
                 <h2 className="text-xl font-semibold">{p.titleVi}</h2>
-                <span className="font-mono text-sm text-black/50">{p.formula}</span>
+                <span className="font-mono text-sm text-black/55">{p.formula}</span>
               </div>
               <p className="mt-1 text-black/75">{p.explainVi}</p>
             </div>
@@ -46,7 +46,7 @@ export function CollocationView({ language, patterns, sets }: {
                   {s.items.map((i) => (
                     <li key={i.en}>
                       <span className="font-medium text-black/85">{i.en}</span>
-                      <span className="text-black/45"> · {i.vi}</span>
+                      <span className="text-black/55"> · {i.vi}</span>
                     </li>
                   ))}
                 </ul>

@@ -17,7 +17,7 @@ export function BlockPage({ language, block, titleVi, leadVi, children }: {
     <main className="mx-auto max-w-page px-6 py-10">
       {/* No prefetch: the hub is one level up and the header already carries the section,
           so this only duplicated a speculative request that hung for 40s before aborting. */}
-      <Link href={theoryLangPath(language.code)} prefetch={false} className="text-sm text-black/50 hover:underline">
+      <Link href={theoryLangPath(language.code)} prefetch={false} className="text-sm text-black/55 hover:underline">
         ← Lý thuyết {language.name}
       </Link>
       <h1 className="mt-3 text-3xl font-bold">{titleVi}</h1>

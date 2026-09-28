@@ -68,7 +68,7 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
           // on the button and never wider than the screen.
           className="absolute right-0 z-30 mt-1 w-72 rounded-lg border border-black/10 bg-white p-1 shadow-lg max-sm:left-1/2 max-sm:right-auto max-sm:w-[calc(100vw-3rem)] max-sm:-translate-x-1/2"
         >
-          <div className="flex items-center justify-between px-3 py-1.5 text-xs uppercase tracking-wide text-black/40">
+          <div className="flex items-center justify-between px-3 py-1.5 text-xs uppercase tracking-wide text-black/55">
             <span>Hiện</span>
             {!narrow && <span>Ghim (tối đa {MAX_PINNED})</span>}
           </div>
@@ -94,7 +94,7 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
                 </label>
                 <button
                   role="menuitem"
-                  className="rounded px-1.5 py-0.5 text-xs text-black/50 hover:bg-black/5 disabled:opacity-30"
+                  className="rounded px-1.5 py-0.5 text-xs text-black/55 hover:bg-black/5 disabled:opacity-30"
                   onClick={() => up && onMove(c.key, up)}
                   disabled={!up}
                   aria-label={`Chuyển cột ${c.label} lên`}
@@ -103,7 +103,7 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
                 </button>
                 <button
                   role="menuitem"
-                  className="rounded px-1.5 py-0.5 text-xs text-black/50 hover:bg-black/5 disabled:opacity-30"
+                  className="rounded px-1.5 py-0.5 text-xs text-black/55 hover:bg-black/5 disabled:opacity-30"
                   onClick={() => down && onMove(c.key, down)}
                   disabled={!down}
                   aria-label={`Chuyển cột ${c.label} xuống`}
@@ -113,7 +113,7 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
                 {!narrow && (
                   <button
                     role="menuitemcheckbox"
-                    className={`rounded px-2 py-0.5 text-xs disabled:opacity-40 ${isPinned ? 'bg-black text-white' : 'border border-black/15 text-black/50 hover:bg-black/5'}`}
+                    className={`rounded px-2 py-0.5 text-xs disabled:opacity-40 ${isPinned ? 'bg-black text-white' : 'border border-black/15 text-black/55 hover:bg-black/5'}`}
                     onClick={() => onTogglePin(c.key)}
                     aria-checked={isPinned}
                     disabled={!isPinned && pinsLeft <= 0}

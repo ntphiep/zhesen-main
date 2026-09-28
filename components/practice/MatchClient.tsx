@@ -45,13 +45,13 @@ export function MatchClient() {
     return () => clearInterval(id)
   }, [tiles, done])
 
-  if (tiles === null) return <main className="p-12 text-center text-black/50">Đang tải…</main>
+  if (tiles === null) return <main className="p-12 text-center text-black/55">Đang tải…</main>
 
   if (tiles.length === 0) {
     return (
       <main className="mx-auto max-w-md px-6 py-16 text-center">
         <div className="text-xl font-semibold">Chưa đủ từ để chơi</div>
-        <p className="mt-2 text-black/50">Lưu thêm vài từ có nghĩa tiếng Việt.</p>
+        <p className="mt-2 text-black/55">Lưu thêm vài từ có nghĩa tiếng Việt.</p>
         <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">Về luyện tập</Link>
       </main>
     )
@@ -80,7 +80,7 @@ export function MatchClient() {
 
   return (
     <main className="mx-auto max-w-xl px-6 py-12">
-      <div className="mb-4 flex items-center justify-between text-sm text-black/50">
+      <div className="mb-4 flex items-center justify-between text-sm text-black/55">
         <Link href="/practice" className="hover:underline">← Thoát</Link>
         <span>Ghép cặp · {seconds}s · {matched.size / 2}/{tiles.length / 2}</span>
       </div>

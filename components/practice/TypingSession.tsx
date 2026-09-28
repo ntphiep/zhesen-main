@@ -38,13 +38,13 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
     return () => { active = false }
   }, [supabase, mode, round])
 
-  if (queue === null) return <main className="p-12 text-center text-black/50">Đang tải…</main>
+  if (queue === null) return <main className="p-12 text-center text-black/55">Đang tải…</main>
 
   if (queue.length === 0) {
     return (
       <main className="mx-auto max-w-md px-6 py-16 text-center">
         <div className="text-xl font-semibold">Chưa đủ từ để luyện</div>
-        <p className="mt-2 text-black/50">
+        <p className="mt-2 text-black/55">
           {mode === 'write' ? 'Lưu thêm vài từ có nghĩa tiếng Việt.' : 'Lưu thêm vài từ vào sổ tay.'}
         </p>
         <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">Về luyện tập</Link>
@@ -84,7 +84,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
-      <div className="mb-4 flex items-center justify-between text-sm text-black/50">
+      <div className="mb-4 flex items-center justify-between text-sm text-black/55">
         <Link href="/practice" className="hover:underline">← Thoát</Link>
         <span>{title} · {index + 1}/{queue.length} · Đúng {score}</span>
       </div>

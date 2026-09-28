@@ -44,7 +44,7 @@ export function AdminNav() {
       <div className="flex gap-1 lg:flex-col lg:gap-6">
         {NAV_GROUPS.map((g) => (
           <div key={g.label} className="flex shrink-0 gap-1 lg:flex-col lg:gap-0.5">
-            <div className="hidden px-3 pb-1 text-xs font-medium text-black/40 lg:block">{g.label}</div>
+            <div className="hidden px-3 pb-1 text-xs font-medium text-black/55 lg:block">{g.label}</div>
             {g.links.map((l) => {
               const on = l.href === active
               return (

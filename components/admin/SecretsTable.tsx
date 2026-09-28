@@ -86,7 +86,7 @@ export function SecretsTable() {
 
   if (state === 'disabled') return <p className="mt-6 text-sm text-black/60">AWS access is not configured for this deployment (AWS_ROLE_ARN).</p>
   if (state === 'error') return <p className="mt-6 text-sm text-rose-700">The secrets could not be read.</p>
-  if (state === null) return <p className="mt-6 text-sm text-black/50">Reading…</p>
+  if (state === null) return <p className="mt-6 text-sm text-black/55">Reading…</p>
 
   const note = (id: string, tone: 'ok' | 'bad', text: string) => setNotes((n) => ({ ...n, [id]: { tone, text } }))
 
@@ -140,7 +140,7 @@ export function SecretsTable() {
                       <div className="min-w-0 flex-1">
                         <code className="font-mono font-bold wrap-anywhere">{r.id}</code>
                         <p className="text-black/60">{r.purpose}</p>
-                        <p className="text-xs text-black/50 wrap-anywhere">{r.where}</p>
+                        <p className="text-xs text-black/55 wrap-anywhere">{r.where}</p>
                       </div>
                       <div className="text-right">
                         {r.group === 'Config' ? (
@@ -149,7 +149,7 @@ export function SecretsTable() {
                           <Status tone={r.set ? 'ok' : 'idle'}>{r.set ? (r.last4 ? `Set, ends …${r.last4}` : 'Set') : 'Not set'}</Status>
                         )}
                         {r.version !== null && r.changedAt && (
-                          <div className="text-xs text-black/45">v{r.version} · changed {ago(r.changedAt)}</div>
+                          <div className="text-xs text-black/55">v{r.version} · changed {ago(r.changedAt)}</div>
                         )}
                       </div>
                     </div>
@@ -162,7 +162,7 @@ export function SecretsTable() {
                       </div>
                     )}
                     {n && <p role="status" className={`text-xs ${n.tone === 'ok' ? 'text-emerald-800' : 'text-rose-700'}`}>{n.text}</p>}
-                    {blocked && r.group !== 'Config' && <p className="text-xs text-black/50">{blocked}</p>}
+                    {blocked && r.group !== 'Config' && <p className="text-xs text-black/55">{blocked}</p>}
 
                     {(r.revealable || r.test || !blocked) && (
                       <div className="flex flex-wrap gap-2">
@@ -227,7 +227,7 @@ export function SecretsTable() {
               <label className="flex flex-col gap-1">
                 <span>New value</span>
                 <input value={draft} onChange={(e) => setDraft(e.target.value)} autoComplete="off" spellCheck={false} className={input} />
-                {editing.hint && <span className="text-xs text-black/50">{editing.hint}</span>}
+                {editing.hint && <span className="text-xs text-black/55">{editing.hint}</span>}
               </label>
             )}
           </div>

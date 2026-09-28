@@ -72,7 +72,7 @@ export function RescuePanel({ unlocked }: { unlocked: boolean }) {
       <div className="rounded-lg border border-black/10 px-4 py-3">
         <div className="font-mono text-sm">zhesen-supabase</div>
         <div className="mt-1 text-lg font-semibold">{state ? LABEL[state.state] ?? state.state : 'Loading'}</div>
-        {state?.launchedAt && <div className="text-xs text-black/50">{state.type}, last started {when(state.launchedAt)}</div>}
+        {state?.launchedAt && <div className="text-xs text-black/55">{state.type}, last started {when(state.launchedAt)}</div>}
       </div>
       {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
       <div className="flex flex-wrap gap-2">

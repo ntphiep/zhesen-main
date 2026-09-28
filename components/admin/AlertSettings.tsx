@@ -120,7 +120,7 @@ export function AlertSettings() {
               placeholder={saved?.telegram?.chatId ?? '-1001234567890'} className={input} />
           </label>
         </div>
-        <p className="text-xs text-black/50">An empty field keeps what is saved.</p>
+        <p className="text-xs text-black/55">An empty field keeps what is saved.</p>
         {message && <p role="alert" className="text-sm text-rose-700">{message}</p>}
         <div className="flex flex-wrap justify-end gap-2">
           <button type="button" className={button} disabled={testing || !(saved?.slack || saved?.telegram)} onClick={() => void test()}>

@@ -17,7 +17,7 @@ export function WordlistStats({ stats }: { stats: Stats }) {
       {CARDS.map((c) => (
         <div key={c.key} className="rounded-xl border border-black/10 px-4 py-3">
           <div className="text-2xl font-semibold">{stats[c.key]}{c.suffix ?? ''}</div>
-          <div className="text-xs text-black/50">{c.label}</div>
+          <div className="text-xs text-black/55">{c.label}</div>
         </div>
       ))}
     </div>

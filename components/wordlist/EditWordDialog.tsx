@@ -96,7 +96,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
       {word && (
         <div className="p-5 flex flex-col gap-3">
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/50">Nghĩa tiếng Việt</span>
+            <span className="text-xs text-black/55">Nghĩa tiếng Việt</span>
             <input
               type="text"
               value={meaningVi}
@@ -105,7 +105,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/50">Nghĩa tiếng Anh</span>
+            <span className="text-xs text-black/55">Nghĩa tiếng Anh</span>
             <input
               type="text"
               value={meaningEn}
@@ -115,7 +115,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
           </label>
           <div className="flex gap-2">
             <label className="flex flex-col gap-1 flex-1 min-w-0">
-              <span className="text-xs text-black/50">Từ loại</span>
+              <span className="text-xs text-black/55">Từ loại</span>
               <input
                 type="text"
                 value={pos}
@@ -124,7 +124,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
               />
             </label>
             <label className="flex flex-col gap-1 flex-1 min-w-0">
-              <span className="text-xs text-black/50">IPA</span>
+              <span className="text-xs text-black/55">IPA</span>
               <input
                 type="text"
                 value={ipa}
@@ -134,7 +134,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
             </label>
           </div>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/50">Trình độ</span>
+            <span className="text-xs text-black/55">Trình độ</span>
             <input
               type="text"
               value={level}
@@ -143,7 +143,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/50">Câu ví dụ</span>
+            <span className="text-xs text-black/55">Câu ví dụ</span>
             <input
               type="text"
               value={example}
@@ -152,7 +152,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/50">Dịch câu ví dụ</span>
+            <span className="text-xs text-black/55">Dịch câu ví dụ</span>
             <input
               type="text"
               value={exampleTranslation}
@@ -161,7 +161,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/50">Ghi chú</span>
+            <span className="text-xs text-black/55">Ghi chú</span>
             <input
               type="text"
               value={notes}
@@ -170,7 +170,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/50">Trạng thái</span>
+            <span className="text-xs text-black/55">Trạng thái</span>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as WordStatus)}
@@ -182,7 +182,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/50">Thẻ</span>
+            <span className="text-xs text-black/55">Thẻ</span>
             <TagEditor tags={tags} onChange={setTags} />
           </label>
 

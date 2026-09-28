@@ -30,7 +30,7 @@ export function CrossLanguagePanel({ siblings, className = '' }: {
       <SectionLabel>Ngôn ngữ khác</SectionLabel>
       {byLang.map(({ lang, rows }, i) => (
         <div key={lang} className={`flex flex-col gap-2 ${i > 0 ? 'border-t border-black/[0.06] pt-4' : ''}`}>
-          <span className="text-xs text-black/45">{LANG_LABELS[lang]}</span>
+          <span className="text-xs text-black/55">{LANG_LABELS[lang]}</span>
           <ul className="flex flex-col gap-1">
             {rows.map((s) => {
               const gender = genderFromCode(s.gender)
@@ -41,11 +41,11 @@ export function CrossLanguagePanel({ siblings, className = '' }: {
                     {lang === 'zh' && <span className="shrink-0 text-[28px] leading-none text-blue-700">{s.headword}</span>}
                     <span className="flex min-w-0 flex-col">
                       {lang === 'zh'
-                        ? s.reading && <span className="text-xs text-black/45">{s.reading}</span>
+                        ? s.reading && <span className="text-xs text-black/55">{s.reading}</span>
                         : (
                           <span className="flex flex-wrap items-baseline gap-x-2">
                             <span className="text-lg font-semibold text-blue-700">{s.headword}</span>
-                            {gender && <span className="text-xs text-black/45">{gender}</span>}
+                            {gender && <span className="text-xs text-black/55">{gender}</span>}
                           </span>
                         )}
                       {gloss && <span className="text-sm">{gloss}</span>}

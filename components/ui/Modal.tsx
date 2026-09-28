@@ -30,7 +30,7 @@ export function Modal({
       <div className="flex items-center justify-between px-5 pt-4 pb-0">
         <h2 id={titleId} className="text-lg font-semibold">{title}</h2>
         <button
-          className="text-black/40 hover:text-black/70 text-xl leading-none"
+          className="text-black/55 hover:text-black/70 text-xl leading-none"
           onClick={onClose}
           aria-label="Đóng"
         >

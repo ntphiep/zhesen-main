@@ -329,7 +329,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       />
 
       {visible.length === 0 && (
-        <p className="text-center text-sm text-black/40 py-12">
+        <p className="text-center text-sm text-black/55 py-12">
           {words.length === 0
             ? 'Chưa có từ. Tra một từ để lưu.'
             : 'Không có từ nào khớp bộ lọc. Đổi bộ lọc.'}
@@ -375,7 +375,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                     aria-label={`Chọn từ ${w.headword}`}
                   />
                   <span className="font-semibold">{w.headword}</span>
-                  <Ipa value={w.ipa} lang={w.lang} className="text-xs text-black/50" />
+                  <Ipa value={w.ipa} lang={w.lang} className="text-xs text-black/55" />
                 </div>
                 <span className="inline-flex items-center gap-1">
                   <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
@@ -386,15 +386,15 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
               <PosTag value={w.pos} className="text-xs text-black/55" />
               {w.meaningVi && <p className="text-sm text-black/80">{w.meaningVi}</p>}
               {w.level && (
-                <span className="self-start rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/50">
+                <span className="self-start rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/55">
                   {w.level}
                 </span>
               )}
-              {w.example && <p className="text-xs italic text-black/50">{w.example}</p>}
+              {w.example && <p className="text-xs italic text-black/55">{w.example}</p>}
               <TagChips tags={w.tags} />
 
               <div className="flex items-center justify-between mt-1">
-                <span className="text-xs text-black/30">
+                <span className="text-xs text-black/55">
                   {isDueAt(w.fsrsDueAt) ? DUE_LABEL : formatWordDate(w.createdAt)}
                 </span>
                 <WordRowActions

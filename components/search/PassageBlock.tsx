@@ -146,15 +146,15 @@ export function PassageBlock({ text, direction, targets }: {
   return (
     <section className="flex flex-col gap-3 rounded-xl border border-black/10 p-4">
       {(nearLimit || tooLong) && (
-        <span className={`text-xs ${tooLong ? 'text-red-600' : 'text-black/35'}`}>
+        <span className={`text-xs ${tooLong ? 'text-red-600' : 'text-black/55'}`}>
           {trimmed.length}/{MAX_PASSAGE_CHARS} ký tự
         </span>
       )}
 
       {tooLong && <p className="text-sm text-red-600">Đoạn này quá dài để dịch.</p>}
-      {state.kind === 'loading' && <p className="text-sm text-black/40">Đang dịch…</p>}
+      {state.kind === 'loading' && <p className="text-sm text-black/55">Đang dịch…</p>}
       {state.kind === 'disabled' && (
-        <p className="text-sm text-black/40">Chưa hỗ trợ dịch cả đoạn.</p>
+        <p className="text-sm text-black/55">Chưa hỗ trợ dịch cả đoạn.</p>
       )}
       {state.kind === 'error' && <p className="text-sm text-red-600">{state.message}</p>}
 
@@ -169,9 +169,9 @@ export function PassageBlock({ text, direction, targets }: {
             const untouched = state.from === l
             return (
               <div key={l} className="flex flex-col gap-0.5">
-                <dt className="text-xs uppercase tracking-wide text-black/40">
+                <dt className="text-xs uppercase tracking-wide text-black/55">
                   {l === 'vi' ? 'Tiếng Việt' : LANG_LABELS[l]}
-                  {untouched && <span className="ml-2 normal-case text-black/30">nguyên văn</span>}
+                  {untouched && <span className="ml-2 normal-case text-black/55">nguyên văn</span>}
                 </dt>
                 <dd className="m-0 whitespace-pre-wrap text-base">
                   {/* Every word the dictionary holds is tappable, the same popover the
@@ -183,7 +183,7 @@ export function PassageBlock({ text, direction, targets }: {
                 </dd>
                 {l !== 'vi' && found[l]?.text === value && found[l].entries.length > 0 && (
                   <dd className="m-0 mt-1 flex flex-col gap-0.5">
-                    <span className="text-xs text-black/40">Dịch máy: {value}</span>
+                    <span className="text-xs text-black/55">Dịch máy: {value}</span>
                     <ul className="flex flex-col gap-0.5">
                       {found[l].entries.map((e) => (
                         <li key={e.id}>
@@ -193,8 +193,8 @@ export function PassageBlock({ text, direction, targets }: {
                             className="flex flex-wrap items-baseline gap-2 rounded-lg px-2 py-1.5 hover:bg-black/5"
                           >
                             <span className="font-medium">{e.headword}</span>
-                            <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/40" />
-                            <PosTag value={e.pos} className="text-xs text-black/45" />
+                            <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/55" />
+                            <PosTag value={e.pos} className="text-xs text-black/55" />
                             {e.glossVi && <span className="text-sm text-black/60">{e.glossVi}</span>}
                             <LinkPending />
                           </Link>
@@ -223,16 +223,16 @@ export function PassageBlock({ text, direction, targets }: {
                       className="flex flex-wrap items-baseline gap-2 rounded-lg px-2 py-1.5 hover:bg-black/5"
                     >
                       <span className="font-medium">{w.text}</span>
-                      <Ipa value={w.entry.ipa} lang={w.entry.lang} className="text-xs text-black/40" />
-                      <PosTag value={w.entry.pos} className="text-xs text-black/45" />
+                      <Ipa value={w.entry.ipa} lang={w.entry.lang} className="text-xs text-black/55" />
+                      <PosTag value={w.entry.pos} className="text-xs text-black/55" />
                       {w.entry.glossVi && <span className="text-sm text-black/60">{w.entry.glossVi}</span>}
                       <LinkPending />
                     </Link>
                   )
                   : (
                     <div className="flex flex-wrap items-baseline gap-2 px-2 py-1.5">
-                      <span className="font-medium text-black/45">{w.text}</span>
-                      <span className="text-sm text-black/35">Không có trong từ điển</span>
+                      <span className="font-medium text-black/55">{w.text}</span>
+                      <span className="text-sm text-black/55">Không có trong từ điển</span>
                     </div>
                   )}
               </li>

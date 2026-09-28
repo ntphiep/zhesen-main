@@ -11,7 +11,7 @@ export const metadata = { title: 'Không tìm thấy trang' }
 export default function NotFound() {
   return (
     <main className="mx-auto flex min-h-[calc(100dvh-8rem)] max-w-xl flex-col items-center justify-center px-6 py-12 text-center">
-      <p className="text-sm font-medium tracking-wide text-black/40">404</p>
+      <p className="text-sm font-medium tracking-wide text-black/55">404</p>
       <h1 className="mt-2 text-3xl font-bold">Không có trang này</h1>
       <p className="mt-3 text-black/60">
         Địa chỉ sai hoặc trang không còn.

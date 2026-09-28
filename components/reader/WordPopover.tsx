@@ -22,8 +22,8 @@ export function WordPopover({ entry, charInfo }: { entry?: DictEntryPreview; cha
       <span className={CARD}>
         <span className="flex items-baseline gap-2">
           <span className="text-lg font-semibold">{entry.headword}</span>
-          <Ipa value={entry.ipa} lang={entry.lang} className="text-xs text-black/40" />
-          <PosTag value={entry.pos} className="text-xs text-black/40" />
+          <Ipa value={entry.ipa} lang={entry.lang} className="text-xs text-black/55" />
+          <PosTag value={entry.pos} className="text-xs text-black/55" />
         </span>
         {entry.glossVi && <span className="mt-1 block text-sm text-black/70">{entry.glossVi}</span>}
         <span className="mt-2 flex items-center gap-3">
@@ -46,11 +46,11 @@ export function WordPopover({ entry, charInfo }: { entry?: DictEntryPreview; cha
               {charInfo.pinyin.length > 0 && <span className="font-medium">{charInfo.pinyin.join(', ')}</span>}
               {charInfo.hanViet.length > 0 && <span className="italic">{charInfo.hanViet.join(', ')}</span>}
             </span>
-            <span className="flex gap-2 text-xs text-black/50">
+            <span className="flex gap-2 text-xs text-black/55">
               {charInfo.radical && <span>Bộ: {charInfo.radical}</span>}
               {charInfo.strokeCount != null && <span>{charInfo.strokeCount} nét</span>}
             </span>
-            {charInfo.gloss && <span className="text-xs text-black/50">{charInfo.gloss}</span>}
+            {charInfo.gloss && <span className="text-xs text-black/55">{charInfo.gloss}</span>}
           </span>
         </span>
       </span>

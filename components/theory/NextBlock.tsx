@@ -15,7 +15,7 @@ export function NextBlock({ lang, block }: { lang: LangCode; block: TheoryBlockK
       href={theoryBlockPath(lang, next.key)}
       className="mt-14 flex items-baseline justify-between rounded-2xl border border-black/10 px-5 py-4 transition hover:border-black/30 hover:bg-black/5"
     >
-      <span className="text-sm text-black/45">Tiếp theo</span>
+      <span className="text-sm text-black/55">Tiếp theo</span>
       <span className="font-semibold">{next.titleVi} →</span>
     </Link>
   )

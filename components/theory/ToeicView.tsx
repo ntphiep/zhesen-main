@@ -52,7 +52,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-black/50">
+              <thead className="text-black/55">
                 <tr className="border-b border-black/10">
                   <th className="py-2 pr-3 font-medium">Part</th>
                   <th className="py-2 pr-3 font-medium">Dạng</th>
@@ -70,7 +70,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
                         <a href={`#part-${p.number}`} className="font-medium hover:underline">Part {p.number}</a>
                       </th>
                       <td className="py-2 pr-3 align-top">
-                        {p.titleVi} <span className="text-black/45">{p.nameEn}</span>
+                        {p.titleVi} <span className="text-black/55">{p.nameEn}</span>
                       </td>
                       <td className="py-2 text-right align-top tabular-nums">{p.questions}</td>
                     </tr>
@@ -86,7 +86,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <caption className="pb-2 text-left text-black/60">Điểm tối thiểu của từng trình độ CEFR theo ETS</caption>
-              <thead className="text-black/50">
+              <thead className="text-black/55">
                 <tr className="border-b border-black/10">
                   <th className="py-2 pr-3 font-medium">Trình độ</th>
                   <th className="py-2 pr-3 text-right font-medium">Listening</th>
@@ -125,7 +125,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
               <p className="mt-2 text-black/80">{g.explainVi}</p>
               <div className="mt-3 border-l-2 border-black/10 pl-3">
                 <p className="text-black/85">{g.example.en}</p>
-                <p className="text-sm text-black/50">{g.example.vi}</p>
+                <p className="text-sm text-black/55">{g.example.vi}</p>
               </div>
               {g.grammarKey && (
                 <Link
@@ -152,7 +152,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
               <li key={p.heard} className="rounded-xl border border-black/10 px-4 py-3 text-sm">
                 <p className="text-black/85">{p.heard}</p>
                 <p className="font-medium text-emerald-700">{p.answer}</p>
-                <p className="text-black/50">{p.vi}</p>
+                <p className="text-black/55">{p.vi}</p>
               </li>
             ))}
           </ul>
@@ -179,7 +179,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
                     >
                       {w.word}
                     </Link>
-                    <span className="text-black/45"> · {w.vi}</span>
+                    <span className="text-black/55"> · {w.vi}</span>
                   </li>
                 ))}
               </ul>
@@ -239,7 +239,7 @@ function PartCard({ part: p }: { part: ToeicPart }) {
       <div>
         <div className="flex flex-wrap items-baseline gap-x-3">
           <h3 className="text-xl font-semibold">Part {p.number}. {p.titleVi}</h3>
-          <span className="text-sm text-black/45">{p.nameEn}, {p.questions} câu</span>
+          <span className="text-sm text-black/55">{p.nameEn}, {p.questions} câu</span>
         </div>
         <p className="mt-1 text-black/75">{p.formatVi}</p>
       </div>
@@ -274,7 +274,7 @@ function TipList({ tips }: { tips: readonly ToeicTip[] }) {
           {t.example && (
             <div className="mt-2 border-l-2 border-black/10 pl-3 text-sm">
               <p className="text-black/85">{t.example.en}</p>
-              <p className="text-black/50">{t.example.vi}</p>
+              <p className="text-black/55">{t.example.vi}</p>
             </div>
           )}
         </li>

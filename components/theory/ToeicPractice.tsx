@@ -46,7 +46,7 @@ export function ToeicPractice({ questions }: { questions: readonly ToeicQuestion
 
   return (
     <div className="rounded-2xl border border-black/10 p-6">
-      <div className="flex items-baseline justify-between text-sm text-black/45">
+      <div className="flex items-baseline justify-between text-sm text-black/55">
         <span>Câu {index + 1}/{questions.length}</span>
         <span>{q.skillVi}</span>
       </div>
@@ -68,7 +68,7 @@ export function ToeicPractice({ questions }: { questions: readonly ToeicQuestion
               onClick={() => select(i)}
               className={`rounded-lg border px-4 py-3 text-left transition ${cls}`}
             >
-              <span className="mr-2 text-black/45">({LETTERS[i]})</span>{opt}
+              <span className="mr-2 text-black/55">({LETTERS[i]})</span>{opt}
             </button>
           )
         })}
@@ -81,7 +81,7 @@ export function ToeicPractice({ questions }: { questions: readonly ToeicQuestion
             {selected === q.answer ? 'Đúng.' : `Sai. Đáp án (${LETTERS[q.answer]}) ${q.options[q.answer]}.`}
           </p>
           <p className="mt-1 text-black/80">{q.whyVi}</p>
-          <p className="mt-1 text-black/50">{q.vi}</p>
+          <p className="mt-1 text-black/55">{q.vi}</p>
         </div>
       )}
 

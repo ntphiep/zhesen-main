@@ -81,13 +81,13 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
 
   return (
     <main className="mx-auto max-w-page px-6 py-10">
-      <Link href={theoryBlockPath(language.code, 'vocabulary')} className="text-sm text-black/50 hover:underline">← Từ vựng {language.name}</Link>
+      <Link href={theoryBlockPath(language.code, 'vocabulary')} className="text-sm text-black/55 hover:underline">← Từ vựng {language.name}</Link>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <span className="text-xl font-medium text-black/70">{language.nativeName}</span>
         <h1 className="text-3xl font-bold">{level}</h1>
-        <span className="text-sm text-black/40">{total} từ</span>
+        <span className="text-sm text-black/55">{total} từ</span>
         {pages > 1 && (
-          <label className="ml-auto flex items-center gap-2 text-sm text-black/50">
+          <label className="ml-auto flex items-center gap-2 text-sm text-black/55">
             Trang
             <select
               value={Math.floor(start / pageSize) + 1}
@@ -139,7 +139,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
             className="flex items-baseline gap-2 rounded-lg border border-black/10 px-4 py-2 hover:bg-black/5"
           >
             <span className="font-medium">{e.headword}</span>
-            <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/40" />
+            <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/55" />
             {e.glossVi && <span className="truncate text-sm text-black/55">{e.glossVi}</span>}
             <LinkPending />
           </Link>

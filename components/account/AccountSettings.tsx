@@ -118,7 +118,7 @@ export function AccountSettings({
           </button>
         </div>
         {joinedAt && (
-          <p className="mt-1 text-xs text-black/40">Tham gia {formatWordDate(joinedAt)}</p>
+          <p className="mt-1 text-xs text-black/55">Tham gia {formatWordDate(joinedAt)}</p>
         )}
       </section>
 

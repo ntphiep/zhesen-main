@@ -150,7 +150,7 @@ export function AuthForm({
             />
           </label>
           {mode === 'register' && (
-            <p id="password-hint" className="text-xs text-black/50">Ít nhất {MIN_PASSWORD} ký tự.</p>
+            <p id="password-hint" className="text-xs text-black/55">Ít nhất {MIN_PASSWORD} ký tự.</p>
           )}
         </div>
 

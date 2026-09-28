@@ -83,7 +83,7 @@ export function LookupPair({ lang, initialQuery = '', autoFocus = false }: {
       <div className="flex flex-wrap items-center gap-3">
         <fieldset className="flex items-center gap-2 border-0 p-0">
           <legend className="sr-only">Dịch từ ngôn ngữ nào</legend>
-          <span aria-hidden className="text-xs text-black/50">Dịch từ:</span>
+          <span aria-hidden className="text-xs text-black/55">Dịch từ:</span>
           <div className="inline-flex overflow-hidden rounded-lg border border-black/15">
             {MODES.map((m, i) => (
               <button

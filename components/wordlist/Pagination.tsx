@@ -22,12 +22,12 @@ export function Pagination({
 
   return (
     <nav className="flex flex-wrap items-center justify-between gap-3 py-2 text-sm" aria-label="Phân trang">
-      <span className="text-black/50">
+      <span className="text-black/55">
         {total === 0 ? 'Không có từ nào' : `${from}-${to} trong ${total} từ`}
       </span>
 
       <div className="flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-2 whitespace-nowrap text-black/50">
+        <label className="flex items-center gap-2 whitespace-nowrap text-black/55">
           Mỗi trang
           <select
             value={pageSize}

@@ -106,7 +106,7 @@ export function SqlConsole() {
         <button type="button" className={button} disabled={busy || !sql.trim()} onClick={() => (mode === 'read' ? void runRead() : setGuard({ reauthFirst: false }))}>
           {busy ? 'Running' : mode === 'read' ? 'Run' : 'Run write'}
         </button>
-        <span className="font-mono text-xs text-black/45">supabase_admin · postgres</span>
+        <span className="font-mono text-xs text-black/55">supabase_admin · postgres</span>
       </div>
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
       {run && <Output run={run.run} at={run.at} />}
@@ -157,7 +157,7 @@ export function ShellConsole() {
             className="w-20 rounded-lg border border-black/15 px-2 py-1 tabular-nums" />
           s
         </label>
-        <span className="text-xs text-black/45">root via SSM</span>
+        <span className="text-xs text-black/55">root via SSM</span>
       </div>
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
       {run && <Output run={run.run} at={run.at} />}

@@ -51,7 +51,7 @@ export function PronunciationView({ language, phonemes, notes }: {
         return (
           <section key={kind} className="mt-10">
             <h2 className="text-xl font-semibold">
-              {KIND_TITLE[kind]} <span className="text-base font-normal text-black/40">{ofKind.length} âm</span>
+              {KIND_TITLE[kind]} <span className="text-base font-normal text-black/55">{ofKind.length} âm</span>
             </h2>
             <div className="mt-4 flex flex-col gap-3">
               {ofKind.map((p) => <PhonemeCard key={p.symbol} phoneme={p} lang={language.code} />)}
@@ -76,7 +76,7 @@ export function PronunciationView({ language, phonemes, notes }: {
                 {n.examples.map((e) => (
                   <li key={e.en} className="border-l-2 border-black/10 pl-3 text-sm">
                     <span className="text-black/80">{e.en}</span>
-                    <span className="text-black/45"> · {e.vi}</span>
+                    <span className="text-black/55"> · {e.vi}</span>
                   </li>
                 ))}
               </ul>
@@ -96,9 +96,9 @@ function PhonemeCard({ phoneme: p, lang }: { phoneme: Phoneme; lang: Language['c
     >
       <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="ipa text-2xl font-semibold">/{p.symbol}/</span>
-        {p.gaSymbol && <span className="ipa text-sm text-black/45">Mỹ: /{p.gaSymbol}/</span>}
-        <span className="text-sm uppercase tracking-wide text-black/40">{p.keyword}</span>
-        <span className="ml-auto text-sm text-black/45">{p.groupVi}</span>
+        {p.gaSymbol && <span className="ipa text-sm text-black/55">Mỹ: /{p.gaSymbol}/</span>}
+        <span className="text-sm uppercase tracking-wide text-black/55">{p.keyword}</span>
+        <span className="ml-auto text-sm text-black/55">{p.groupVi}</span>
       </header>
 
       <p className="mt-2 text-black/80">{p.howVi}</p>
@@ -109,10 +109,10 @@ function PhonemeCard({ phoneme: p, lang }: { phoneme: Phoneme; lang: Language['c
             {/* The lookup rather than the entry: an example is chosen for its sound, and
                 a word the dictionary happens not to hold would otherwise 404. */}
             <Link href={searchPath(lang, e.word)} className="font-medium hover:underline">{e.word}</Link>
-            <span className="ipa text-sm text-black/45">{e.ipa}</span>
+            <span className="ipa text-sm text-black/55">{e.ipa}</span>
             {/* The letters that make the sound in this word, which is what the reader is
                 matching the symbol against. */}
-            <span className="rounded bg-black/5 px-1.5 text-xs text-black/50">{e.spelling}</span>
+            <span className="rounded bg-black/5 px-1.5 text-xs text-black/55">{e.spelling}</span>
             <AudioButton text={e.word} lang={lang} />
           </span>
         ))}

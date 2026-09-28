@@ -55,7 +55,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
           <LevelChip level={w.level} />
         </span>
       ),
-      right: <span className={`text-[15px] ${w.gloss ? '' : 'text-black/35'}`}>{w.gloss ?? 'Chưa có nghĩa'}</span>,
+      right: <span className={`text-[15px] ${w.gloss ? '' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}</span>,
     }))
 
   const blocks: { id: string; title: string; note?: React.ReactNode; count: number; node: React.ReactNode }[] = [
@@ -72,7 +72,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
       id: sec.anchor,
       title: sec.labelVi,
       count: sec.senses.length,
-      note: <span className="text-[13px] text-black/45">{sec.senses.length} nghĩa</span>,
+      note: <span className="text-[13px] text-black/55">{sec.senses.length} nghĩa</span>,
       node: (
         <MeaningSection
           section={sec} lang={lang} byText={byText} glosses={view.glosses} mark={mark}
@@ -82,12 +82,12 @@ export function BilingualLayout({ view }: { view: WordView }) {
     })),
     ...(view.phrases.length > 0 ? [{
       id: 'phrases', title: 'Cụm từ', count: view.phrases.length,
-      note: <span className="text-[13px] text-black/45">{view.phrases.length} cụm</span>,
+      note: <span className="text-[13px] text-black/55">{view.phrases.length} cụm</span>,
       node: <RowList rows={wordRows(view.phrases)} shown={6} more={(n) => `Xem thêm ${n} cụm từ`} />,
     }] : []),
     ...(view.family.length + view.related.length > 0 ? [{
       id: 'family', title: 'Họ từ', count: view.family.length + view.related.length,
-      note: view.family.length > 0 && <span className="text-[13px] text-black/45">cùng gốc {view.lemma ?? head.headword}</span>,
+      note: view.family.length > 0 && <span className="text-[13px] text-black/55">cùng gốc {view.lemma ?? head.headword}</span>,
       node: <RowList rows={[...wordRows(view.family, true), ...wordRows(view.related)]} shown={6} more={(n) => `Xem thêm ${n} từ`} />,
     }] : []),
     ...(view.synonyms.length + view.antonyms.length > 0 ? [{
@@ -99,7 +99,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
             ...view.antonyms.map((w) => ({
               key: `anti-${w.text}`,
               left: <span className="flex items-center gap-2"><WordChip word={w} tone="rose" /><span className="text-xs text-rose-700">trái nghĩa</span></span>,
-              right: <span className={`text-[15px] ${w.gloss ? '' : 'text-black/35'}`}>{w.gloss ?? 'Chưa có nghĩa'}</span>,
+              right: <span className={`text-[15px] ${w.gloss ? '' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}</span>,
             })),
           ]}
           shown={6}
@@ -131,9 +131,9 @@ export function BilingualLayout({ view }: { view: WordView }) {
             key: s.id,
             left: (
               <span className="flex flex-wrap items-baseline gap-x-2.5">
-                <span className="text-xs text-black/45">{LANG_LABELS[s.lang]}</span>
+                <span className="text-xs text-black/55">{LANG_LABELS[s.lang]}</span>
                 <Link href={entryPath(s.id)} className="text-base font-semibold text-blue-700 hover:underline">{s.headword}</Link>
-                {s.reading && <span className="text-sm text-black/50">{s.reading}</span>}
+                {s.reading && <span className="text-sm text-black/55">{s.reading}</span>}
               </span>
             ),
             right: <span className="text-[15px]">{s.glossVi || s.glossEn}</span>,
@@ -156,7 +156,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
                 <li key={b.id} className="flex flex-col gap-1.5">
                   <a href={`#${anchor(b.id)}`} className="font-medium hover:underline">
                     {b.title}
-                    {b.count > 0 && <span className="ml-1 font-normal text-black/35">{b.count}</span>}
+                    {b.count > 0 && <span className="ml-1 font-normal text-black/55">{b.count}</span>}
                   </a>
                   {sec && (
                     <ul className="flex flex-col gap-1 border-l border-black/10 pl-3 text-black/60">
@@ -164,7 +164,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
                         <li key={s.id ?? i}><a href={`#${anchor(`${sec.anchor}-${i + 1}`)}`} className="block truncate hover:text-black">{senseLabel(s)}</a></li>
                       ))}
                       {sec.senses.length > SHOWN_SENSES && (
-                        <li className="text-black/35">+ {sec.senses.length - SHOWN_SENSES} nghĩa</li>
+                        <li className="text-black/55">+ {sec.senses.length - SHOWN_SENSES} nghĩa</li>
                       )}
                     </ul>
                   )}
@@ -209,14 +209,14 @@ function WordBar({ view }: { view: WordView }) {
     <div className="z-20 border-b border-black/[0.08] bg-white/95 backdrop-blur md:sticky md:top-[var(--header-h)]">
       <div className={`${CONTAINER} flex flex-wrap items-center gap-x-4 gap-y-2.5 py-3.5`}>
         <h1 className="text-4xl font-bold leading-none tracking-[-0.035em] sm:text-[44px]">{head.headword}</h1>
-        {head.traditional && head.traditional !== head.headword && <span className="text-2xl text-black/40">{head.traditional}</span>}
+        {head.traditional && head.traditional !== head.headword && <span className="text-2xl text-black/55">{head.traditional}</span>}
         <Pronunciation headword={head.headword} prons={head.pronunciations} lang={head.lang} pill />
         <LevelChip level={head.level} strong />
         <FrequencyMeter rank={head.frequencyRank} small />
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 lg:ml-auto">
           {firsts.map((s) => (
             <Link key={s.id} href={entryPath(s.id)} className="flex items-baseline gap-1.5 text-[13px] hover:underline">
-              <span className="text-black/45">{LANG_LABELS[s.lang]}</span>
+              <span className="text-black/55">{LANG_LABELS[s.lang]}</span>
               <span className={s.lang === 'zh' ? 'text-lg text-blue-700' : 'text-[15px] font-semibold text-blue-700'}>{s.headword}</span>
               {s.reading && <span className="text-black/55">{s.reading}</span>}
             </Link>
@@ -286,12 +286,12 @@ function MeaningSection({ section, lang, byText, glosses, mark, examples, synony
           return (
             <li key={s.id ?? `${s.senseOrder}-${i}`} id={anchor(`${section.anchor}-${i + 1}`)} className={`${ROW_GRID} gap-y-2.5 py-4 md:scroll-mt-24`}>
               <div className="flex min-w-0 gap-3">
-                <span className="w-4 shrink-0 pt-0.5 text-sm tabular-nums text-black/35">{i + 1}</span>
+                <span className="w-4 shrink-0 pt-0.5 text-sm tabular-nums text-black/55">{i + 1}</span>
                 <div className="flex min-w-0 flex-col gap-2.5">
                   {s.glossEn && <span className="text-base leading-normal">{s.glossEn}</span>}
                   {synonyms.length > 0 && (
                     <span className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-xs text-black/40" title="Đồng nghĩa">≈</span>
+                      <span className="text-xs text-black/55" title="Đồng nghĩa">≈</span>
                       {synonyms.map((w) => <WordChip key={w.text} word={w} />)}
                     </span>
                   )}
@@ -300,7 +300,7 @@ function MeaningSection({ section, lang, byText, glosses, mark, examples, synony
               <div className={`${RIGHT} pl-7`}>
                 {s.glossVi || s.pivotVi
                   ? <span className="text-lg font-semibold leading-snug md:text-xl">{s.glossVi ?? s.pivotVi}{!s.glossVi && <PivotMark />}</span>
-                  : <span className="text-black/35">Chưa có nghĩa tiếng Việt</span>}
+                  : <span className="text-black/55">Chưa có nghĩa tiếng Việt</span>}
               </div>
               {cells && (
                 <>

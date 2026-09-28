@@ -44,7 +44,7 @@ function Tag({ children, tone = 'plain', title }: { children: string; tone?: 'pl
 }
 
 const chip = 'rounded-full border border-black/10 px-2 py-0.5 text-xs text-black/60 tabular-nums'
-const th = 'px-4 py-2 text-xs font-medium text-black/50'
+const th = 'px-4 py-2 text-xs font-medium text-black/55'
 
 /** A table's columns, one compact line each, shown when its row is expanded. */
 function ColumnGrid({ t }: { t: DictTable }) {
@@ -54,13 +54,13 @@ function ColumnGrid({ t }: { t: DictTable }) {
         {t.columns.map((c) => (
           <li key={c.name} className="grid gap-x-4 gap-y-0.5 py-1.5 sm:grid-cols-[minmax(0,13rem)_minmax(0,10rem)_7rem_minmax(0,1fr)] sm:items-baseline">
             <span className="font-mono text-xs font-medium break-all">{c.name}</span>
-            <span className="font-mono text-xs text-black/50 break-all">{c.type}</span>
+            <span className="font-mono text-xs text-black/55 break-all">{c.type}</span>
             <span className="flex flex-wrap gap-1">
               {c.primaryKey && <Tag tone="key">PK</Tag>}
               {c.references && <Tag title={`${c.references.table}.${c.references.column}`}>FK</Tag>}
               {c.nullable && <Tag>nullable</Tag>}
             </span>
-            <span className="text-xs text-black/65">{c.comment ?? <span className="text-black/40">No description.</span>}</span>
+            <span className="text-xs text-black/65">{c.comment ?? <span className="text-black/55">No description.</span>}</span>
           </li>
         ))}
       </ul>
@@ -101,7 +101,7 @@ function SchemaTable({ tables }: { tables: DictTable[] }) {
                       onClick={() => setOpen(expanded ? null : t.id)}
                       className="flex w-full min-w-0 items-center gap-1.5 rounded px-2 py-1 text-left"
                     >
-                      <span aria-hidden className={`text-[10px] text-black/40 transition-transform ${expanded ? 'rotate-90' : ''}`}>▶</span>
+                      <span aria-hidden className={`text-[10px] text-black/55 transition-transform ${expanded ? 'rotate-90' : ''}`}>▶</span>
                       <span className="min-w-0 font-mono text-[13px] font-medium break-all">{t.name}</span>
                     </button>
                   </td>
@@ -164,22 +164,22 @@ function Column({ c }: { c: DictColumn }) {
     <li className="grid gap-x-6 gap-y-1 px-4 py-3 sm:grid-cols-[15rem_1fr]">
       <div className="min-w-0">
         <div className="font-mono text-sm font-medium break-all">{c.name}</div>
-        <div className="font-mono text-xs text-black/50 break-all">{c.type}</div>
+        <div className="font-mono text-xs text-black/55 break-all">{c.type}</div>
       </div>
       <div className="min-w-0">
-        <p className="text-sm">{c.comment ?? <span className="text-black/45">No description.</span>}</p>
+        <p className="text-sm">{c.comment ?? <span className="text-black/55">No description.</span>}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           {c.primaryKey && <Tag tone="key">PK</Tag>}
           <Tag>{c.nullable ? 'nullable' : 'not null'}</Tag>
           {c.generated && <Tag>generated</Tag>}
           {c.identity && <Tag>identity</Tag>}
           {c.default && (
-            <span className="text-xs text-black/50">
+            <span className="text-xs text-black/55">
               default <code className="font-mono break-all text-black/70">{c.default}</code>
             </span>
           )}
           {c.references && (
-            <span className="text-xs text-black/50">
+            <span className="text-xs text-black/55">
               references{' '}
               <TableName id={c.references.table}>{`${c.references.table}.${c.references.column}`}</TableName>
               , on delete {c.references.onDelete}
@@ -196,7 +196,7 @@ function Links({ title, links }: { title: string; links: DictLink[] }) {
     <div className="rounded-lg border border-black/10 px-4 py-3">
       <h3 className="text-sm font-medium">{title}</h3>
       {links.length === 0 ? (
-        <p className="mt-1 text-sm text-black/50">None</p>
+        <p className="mt-1 text-sm text-black/55">None</p>
       ) : (
         <ul className="mt-1.5 flex flex-col gap-1 text-sm">
           {links.map((l) => (
@@ -246,7 +246,7 @@ export function TableDetail({ t }: { t: DictTable }) {
           <li key={i.name} className="px-4 py-2.5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="font-mono text-sm break-all">{i.name}</span>
-              <span className="text-xs text-black/50 tabular-nums">
+              <span className="text-xs text-black/55 tabular-nums">
                 {/pgroonga/i.test(i.definition) ? 'stored outside Postgres' : formatBytes(i.bytes)}
               </span>
             </div>

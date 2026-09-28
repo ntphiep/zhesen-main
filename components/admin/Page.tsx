@@ -16,7 +16,7 @@ const TEXT: Record<Tone, string> = {
   ok: 'text-emerald-800',
   warn: 'text-amber-800',
   bad: 'text-rose-700',
-  idle: 'text-black/50',
+  idle: 'text-black/55',
 }
 
 export function clock(d: Date | string): string {
@@ -57,7 +57,7 @@ export function PageHeader({ title, lead, readAt }: { title: string; lead?: stri
         {lead && <p className="mt-1 max-w-2xl text-sm text-black/60">{lead}</p>}
       </div>
       {readAt && (
-        <p className="text-xs text-black/45 tabular-nums">Read at {clock(readAt)}</p>
+        <p className="text-xs text-black/55 tabular-nums">Read at {clock(readAt)}</p>
       )}
     </header>
   )
@@ -81,7 +81,7 @@ export function Figure({ label, value, note }: { label: string; value: string; n
     <div className="min-w-0 rounded-lg border border-black/10 px-4 py-3">
       <div className="text-2xl font-semibold tabular-nums">{value}</div>
       <div className="text-sm text-black/60">{label}</div>
-      {note && <div className="mt-0.5 text-xs text-black/45">{note}</div>}
+      {note && <div className="mt-0.5 text-xs text-black/55">{note}</div>}
     </div>
   )
 }

@@ -88,7 +88,7 @@ function ServicesTable({ c, f, edge }: { c: Costs | null | 'error'; f: ServiceFa
             </tr>
           ))}
           {costs?.other.map((o) => (
-            <tr key={o.service} className="text-black/50">
+            <tr key={o.service} className="text-black/55">
               <td className={cell}>{o.service}</td>
               <td className={cell}>Elsewhere in the account, not zhesen</td>
               <td className={`${cell} text-right tabular-nums`}>{usd(o.usage)}</td>

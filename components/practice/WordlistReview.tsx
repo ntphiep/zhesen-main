@@ -27,13 +27,13 @@ export function WordlistReview() {
     listDueCards(supabase, Date.now()).then(setQueue).catch(() => setQueue([]))
   }, [supabase])
 
-  if (queue === null) return <main className="p-12 text-center text-black/50">Đang tải…</main>
+  if (queue === null) return <main className="p-12 text-center text-black/55">Đang tải…</main>
 
   if (queue.length === 0) {
     return (
       <main className="mx-auto max-w-md px-6 py-16 text-center">
         <div className="text-2xl font-semibold">Hết từ cần ôn.</div>
-        {reviewed > 0 && <p className="mt-2 text-black/50">Đã ôn {reviewed} từ trong phiên này.</p>}
+        {reviewed > 0 && <p className="mt-2 text-black/55">Đã ôn {reviewed} từ trong phiên này.</p>}
         <GradeSyncWarning failed={syncFailed} />
         <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">
           Về luyện tập
@@ -69,7 +69,7 @@ export function WordlistReview() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
-      <div className="mb-4 flex items-center justify-between text-sm text-black/50">
+      <div className="mb-4 flex items-center justify-between text-sm text-black/55">
         <Link href="/practice" className="hover:underline">← Thoát</Link>
         <span>Còn lại: {queue.length}</span>
       </div>

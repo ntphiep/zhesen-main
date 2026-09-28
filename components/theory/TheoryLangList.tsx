@@ -10,7 +10,7 @@ export function TheoryLangList({ languages, grammarCounts }: {
 }) {
   return (
     <main className="mx-auto max-w-page px-6 py-10">
-      <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>
+      <Link href="/" className="text-sm text-black/55 hover:underline">← Trang chủ</Link>
       <h1 className="mt-3 text-3xl font-bold">Lý thuyết</h1>
       <p className="mt-1 text-sm text-black/60">
         Học phần không đổi của một ngôn ngữ: âm, từ loại, cấu trúc câu, ngữ pháp và những từ đi với nhau.
