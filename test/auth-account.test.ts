@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { AuthApiError, AuthSessionMissingError, type SupabaseClient, type User } from '@supabase/supabase-js'
 import {
   accountKind, attachEmail, passwordProblem, registerWithPassword, setPassword,
@@ -10,16 +10,11 @@ const asUser = (over: Partial<User>) => ({ id: 'u1', ...over }) as User
 
 function fakeAuth() {
   const updateUser = vi.fn(async () => ({ error: null }))
-  const signInWithOtp = vi.fn(async () => ({ error: null }))
   const signUp = vi.fn(async () => ({ data: { session: { access_token: 't' } }, error: null }))
   const signInWithPassword = vi.fn(async () => ({ error: null }))
-  const auth = { updateUser, signInWithOtp, signUp, signInWithPassword }
-  return { client: { auth } as unknown as SupabaseClient, updateUser, signInWithOtp, signUp, signInWithPassword }
+  const auth = { updateUser, signUp, signInWithPassword }
+  return { client: { auth } as unknown as SupabaseClient, updateUser, signUp, signInWithPassword }
 }
-
-beforeEach(() => {
-  vi.stubGlobal('window', { location: { origin: 'https://zhesen.test' } })
-})
 
 describe('accountKind', () => {
   it('distinguishes no session, an anonymous one, and a permanent one', () => {
