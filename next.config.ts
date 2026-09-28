@@ -84,6 +84,10 @@ const nextConfig: NextConfig = {
       { source: '/grammar', destination: '/theory', permanent: true },
       { source: '/grammar/:lang', destination: '/theory/:lang/grammar', permanent: true },
       { source: '/grammar/:lang/:id', destination: '/theory/:lang/grammar/:id', permanent: true },
+      // A grammar key's colon became `_` in the URL (lib/grammar/path.ts, #25). Sources
+      // match the raw pathname, so the encoded form needs its own; matching ignores case.
+      { source: '/theory/:lang/grammar/:level([a-z0-9]+)\\::slug', destination: '/theory/:lang/grammar/:level([a-z0-9]+)_:slug', permanent: true },
+      { source: '/theory/:lang/grammar/:level([a-z0-9]+)%3A:slug', destination: '/theory/:lang/grammar/:level([a-z0-9]+)_:slug', permanent: true },
       // /learn itself never had a page and answered 404 (#20).
       { source: '/learn', destination: '/theory', permanent: true },
       { source: '/learn/:lang', destination: '/theory/:lang/vocabulary', permanent: true },

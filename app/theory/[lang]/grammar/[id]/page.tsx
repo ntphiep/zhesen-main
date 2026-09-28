@@ -1,9 +1,8 @@
 import { notFound } from 'next/navigation'
 import { getLanguage, isLangCode } from '@/lib/languages'
-import { percentDecode } from '@/lib/http/percentDecode'
 import { getCachedGrammarPointDetail } from '@/lib/grammar/cached'
 import { getCachedTappableTexts } from '@/lib/dictionary/cached'
-import { buildGrammarPointId, grammarPointPath } from '@/lib/grammar/path'
+import { buildGrammarPointId, grammarKeyFromPath, grammarPointPath } from '@/lib/grammar/path'
 import { GrammarPointDetailView } from '@/components/grammar/GrammarPointDetailView'
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
@@ -46,7 +45,7 @@ type Params = Promise<{ lang: string; id: string }>
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { lang, id } = await params
   if (!isLangCode(lang)) return {}
-  const point = await getCachedGrammarPointDetail(buildGrammarPointId(lang, percentDecode(id)))
+  const point = await getCachedGrammarPointDetail(buildGrammarPointId(lang, grammarKeyFromPath(id)))
   if (!point) return {}
   const language = getLanguage(lang)
   return pageMetadata({
@@ -59,7 +58,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function GrammarPointPage({ params }: { params: Params }) {
   const { lang, id } = await params
   if (!isLangCode(lang)) notFound()
-  const pointId = buildGrammarPointId(lang, percentDecode(id))
+  const pointId = buildGrammarPointId(lang, grammarKeyFromPath(id))
 
   const point = await getCachedGrammarPointDetail(pointId)
   if (!point) notFound()
