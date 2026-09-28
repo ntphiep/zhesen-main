@@ -276,7 +276,9 @@ function SenseExplorer({ sections }: { sections: SenseSection[] }) {
               return (
                 <li key={s.id ?? `${s.senseOrder}-${i}`} className="flex flex-col text-sm">
                   {vi && vi !== current.label && <span>{vi}{!s.glossVi && <PivotMark />}</span>}
-                  {s.glossEn && <span className="text-black/60">{s.glossEn}</span>}
+                  {s.glossEn && (vi
+                    ? <span className="text-black/60">{s.glossEn}</span>
+                    : <span>{s.glossEn}<EnglishMark /></span>)}
                 </li>
               )
             })}
