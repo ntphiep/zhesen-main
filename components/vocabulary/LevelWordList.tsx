@@ -132,16 +132,16 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
         )
       )}
 
-      <div className="mt-6 grid gap-2 sm:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
         {items.map((e) => (
           <Link
             key={e.id}
             href={entryPath(e.id)}
-            className="flex items-baseline gap-2 rounded-lg border border-black/10 px-4 py-2 hover:bg-black/5"
+            className="flex min-w-0 items-baseline gap-2 rounded-lg border border-black/10 px-4 py-2 hover:bg-black/5"
           >
             <span className="font-medium">{e.headword}</span>
             <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/55" />
-            {e.glossVi && <span className="truncate text-sm text-black/55">{e.glossVi}</span>}
+            {e.glossVi && <span className="min-w-0 truncate text-sm text-black/55">{e.glossVi}</span>}
             <LinkPending />
           </Link>
         ))}
