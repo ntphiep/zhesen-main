@@ -1,8 +1,9 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { callAi } from '@/lib/ai/browser'
 import { useAiEnabled } from '@/lib/hooks/useAiEnabled'
+import { useModalDialog } from '@/lib/hooks/useModalDialog'
 
 /** Turns are re-sent on every question, so this cap bounds the cost of one long
  *  session. Matches `chatInput` in `lib/ai/tasks.ts`. */
@@ -31,6 +32,13 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const dialogRef = useModalDialog(open)
+
+  // After useModalDialog's effect, so showModal() has run and cannot move focus again.
+  useEffect(() => {
+    if (open) inputRef.current?.focus()
+  }, [open])
 
   if (!enabled) return null
 
@@ -61,8 +69,11 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
     endRef.current?.scrollIntoView({ block: 'end' })
   }
 
-  if (!open) {
-    return (
+  // The launcher and the dialog both stay mounted: close() returns focus to the
+  // launcher only while both are in the document. Modal's centred layout does not fit
+  // a corner panel, so this shares its hook rather than the component.
+  return (
+    <>
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -70,74 +81,81 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
       >
         Hỏi trợ lý
       </button>
-    )
-  }
-
-  return (
-    <aside
-      aria-label="Trợ lý Zhesen"
-      className="fixed bottom-5 right-5 z-40 flex max-h-[min(32rem,80vh)] w-[min(24rem,calc(100vw-2.5rem))] flex-col rounded-2xl border border-black/10 bg-white shadow-xl"
-    >
-      <header className="flex items-center gap-2 border-b border-black/10 px-4 py-3">
-        <span className="mr-auto text-sm font-semibold">Trợ lý Zhesen</span>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          aria-label="Đóng trợ lý"
-          className="rounded-lg px-2 py-1 text-sm text-black/50 hover:bg-black/5"
-        >
-          Đóng
-        </button>
-      </header>
-
-      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 text-sm">
-        {turns.length === 0 && (
-          <p className="text-black/50">
-            Hỏi về từ đang xem, nhờ sửa câu hoặc hỏi nên ôn gì. Câu trả lời do trợ lý viết, chưa qua từ điển.
-          </p>
-        )}
-        {turns.map((t, i) => (
-          <p
-            key={i}
-            className={
-              t.role === 'user'
-                ? 'ml-6 rounded-xl bg-blue-50 px-3 py-2 whitespace-pre-wrap'
-                : 'mr-6 rounded-xl bg-black/5 px-3 py-2 whitespace-pre-wrap'
-            }
-          >
-            {t.text}
-          </p>
-        ))}
-        {busy && <p className="text-black/50">Đang trả lời…</p>}
-        {error && <p className="text-red-700">{error}</p>}
-        <div ref={endRef} />
-      </div>
-
-      <form
-        className="flex items-end gap-2 border-t border-black/10 px-3 py-3"
-        onSubmit={(e) => { e.preventDefault(); void send() }}
+      <dialog
+        ref={dialogRef}
+        aria-label="Trợ lý Zhesen"
+        onClose={() => setOpen(false)}
+        // No display utility on the dialog itself: `flex` would beat the UA's
+        // `display: none` for a closed dialog. `top-auto left-auto` undo the UA's
+        // `inset: 0`, which otherwise pins it to the top-left corner.
+        className="fixed top-auto left-auto bottom-5 right-5 w-[min(24rem,calc(100vw-2.5rem))] rounded-2xl border border-black/10 bg-white p-0 shadow-xl"
       >
-        <textarea
-          rows={2}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            // Enter sends, Shift+Enter breaks the line: questions here run one or
-            // two lines, and reaching for the button by mouse costs more.
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send() }
-          }}
-          aria-label="Câu hỏi cho trợ lý"
-          placeholder="Nhập câu hỏi…"
-          className="flex-1 resize-none rounded-xl border border-black/15 px-3 py-2 text-sm outline-none focus:border-blue-600"
-        />
-        <button
-          type="submit"
-          disabled={busy || draft.trim() === ''}
-          className="rounded-xl bg-blue-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
-        >
-          Gửi
-        </button>
-      </form>
-    </aside>
+        {open && (
+          <div className="flex max-h-[min(32rem,80vh)] flex-col">
+            <header className="flex items-center gap-2 border-b border-black/10 px-4 py-3">
+              <span className="mr-auto text-sm font-semibold">Trợ lý Zhesen</span>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Đóng trợ lý"
+                className="rounded-lg px-2 py-1 text-sm text-black/50 hover:bg-black/5"
+              >
+                Đóng
+              </button>
+            </header>
+
+            <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 text-sm">
+              {turns.length === 0 && (
+                <p className="text-black/50">
+                  Hỏi về từ đang xem, nhờ sửa câu hoặc hỏi nên ôn gì. Câu trả lời do trợ lý viết, chưa qua từ điển.
+                </p>
+              )}
+              {turns.map((t, i) => (
+                <p
+                  key={i}
+                  className={
+                    t.role === 'user'
+                      ? 'ml-6 rounded-xl bg-blue-50 px-3 py-2 whitespace-pre-wrap'
+                      : 'mr-6 rounded-xl bg-black/5 px-3 py-2 whitespace-pre-wrap'
+                  }
+                >
+                  {t.text}
+                </p>
+              ))}
+              {busy && <p className="text-black/50">Đang trả lời…</p>}
+              {error && <p className="text-red-700">{error}</p>}
+              <div ref={endRef} />
+            </div>
+
+            <form
+              className="flex items-end gap-2 border-t border-black/10 px-3 py-3"
+              onSubmit={(e) => { e.preventDefault(); void send() }}
+            >
+              <textarea
+                ref={inputRef}
+                rows={2}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  // Enter sends, Shift+Enter breaks the line: questions here run one or
+                  // two lines, and reaching for the button by mouse costs more.
+                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send() }
+                }}
+                aria-label="Câu hỏi cho trợ lý"
+                placeholder="Nhập câu hỏi…"
+                className="flex-1 resize-none rounded-xl border border-black/15 px-3 py-2 text-sm outline-none focus:border-blue-600"
+              />
+              <button
+                type="submit"
+                disabled={busy || draft.trim() === ''}
+                className="rounded-xl bg-blue-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
+              >
+                Gửi
+              </button>
+            </form>
+          </div>
+        )}
+      </dialog>
+    </>
   )
 }

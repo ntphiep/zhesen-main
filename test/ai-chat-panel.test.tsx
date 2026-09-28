@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AiChatPanel } from '@/components/ai/AiChatPanel'
 import { resetAiEnabledCache } from '@/lib/hooks/useAiEnabled'
@@ -96,5 +96,27 @@ describe('AiChatPanel', () => {
     await openPanel()
     expect(screen.getByRole('button', { name: 'Gửi' })).toBeDisabled()
     expect(callAi).not.toHaveBeenCalled()
+  })
+
+  // A modal <dialog> is what gives Escape, the focus trap and focus restore; jsdom
+  // implements none of the three, so what is checkable here is that it is one.
+  it('opens as a modal dialog with focus in the question box', async () => {
+    const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal')
+    await openPanel()
+    expect(showModal).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('dialog', { name: 'Trợ lý Zhesen' })).toHaveAttribute('open')
+    expect(screen.getByLabelText('Câu hỏi cho trợ lý')).toHaveFocus()
+    showModal.mockRestore()
+  })
+
+  // Escape closes a modal dialog in the browser before React hears of it, so the panel
+  // has to follow the dialog's close event or the next open finds it already open.
+  it('follows the browser closing it, as Escape does, and opens again', async () => {
+    await openPanel()
+    const dialog = screen.getByRole('dialog', { name: 'Trợ lý Zhesen' }) as HTMLDialogElement
+    act(() => dialog.close())
+    expect(screen.queryByLabelText('Câu hỏi cho trợ lý')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Hỏi trợ lý' }))
+    expect(dialog).toHaveAttribute('open')
   })
 })

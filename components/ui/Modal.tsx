@@ -1,13 +1,8 @@
 'use client'
-import { useEffect, useRef, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import { useModalDialog } from '@/lib/hooks/useModalDialog'
 
-/**
- * A native <dialog> driven by an `open` prop, with the shared header.
- *
- * The `el.open` guard is the point: showModal() throws if the dialog is already
- * open, which React Strict Mode causes by invoking the effect twice. The `open`
- * attribute must not be set in JSX either, as that opens the dialog non-modally.
- */
+/** A native <dialog> driven by an `open` prop, with the shared header. */
 export function Modal({
   open, onClose, title, titleId, widthClass = 'max-w-lg', children,
 }: {
@@ -19,14 +14,7 @@ export function Modal({
   widthClass?: string
   children: ReactNode
 }) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
-
-  useEffect(() => {
-    const el = dialogRef.current
-    if (!el) return
-    if (open && !el.open) el.showModal()
-    else if (!open && el.open) el.close()
-  }, [open])
+  const dialogRef = useModalDialog(open)
 
   return (
     <dialog
