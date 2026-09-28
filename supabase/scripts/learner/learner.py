@@ -12,7 +12,7 @@ usage:
 env: AI_BASE_URL, AI_API_KEY, SUPABASE_URL (the site's /rest/v1 host), SUPABASE_SERVICE_ROLE_KEY,
      SITE_URL and REVALIDATE_SECRET (optional, to flush the site cache after loading)
 """
-import argparse, json, os, re, sys, threading, time, unicodedata, urllib.error, urllib.parse, urllib.request
+import argparse, json, os, random, re, sys, threading, time, unicodedata, urllib.error, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
@@ -124,19 +124,30 @@ def raw_entry(entry_id):
 
 # ---------------------------------------------------------------- model
 
+def reset_after(body):
+    """Seconds until the provider's quota window reopens, from 9router's error text
+    ("[antigravity/gemini-3.8-flash] [403]: HTTP 403 (reset after 2m)"), or None."""
+    m = re.search(r'reset after (\d+)\s*(s|m|h)', body)
+    return int(m.group(1)) * {'s': 1, 'm': 60, 'h': 3600}[m.group(2)] if m else None
+
+
 def ask(model, system, user):
     """Streamed, because CloudFront cuts a response that sends nothing for 60 s. Waits out a
-    router that answers 429 or 503 instead of switching to another model. A reply cut at the
-    token limit, or one with no JSON twice running, fails the entry instead."""
+    router that answers 429 or 503 instead of switching to another model: until the quota
+    window the router names reopens, else with a doubling backoff. Another job sharing the
+    quota retries every second, so a fixed long backoff kept losing the window. A reply cut
+    at the token limit, or one with no JSON twice running, fails the entry instead."""
     body = json.dumps({'model': model, 'max_tokens': 32000, 'stream': True, 'system': system,
                        'messages': [{'role': 'user', 'content': user}]}).encode()
     key = os.environ['AI_API_KEY']
     headers = {'content-type': 'application/json', 'x-api-key': key, 'authorization': f'Bearer {key}',
                'anthropic-version': '2023-06-01', 'accept': 'text/event-stream'}
     url = os.environ['AI_BASE_URL'].rstrip('/') + '/messages'
-    wait, unparsable = 30, 0
-    for attempt in range(40):
+    wait, unparsable, backoffs = 30, 0, 0
+    deadline = time.time() + 6 * 3600
+    while backoffs < 40 and time.time() < deadline:
         t = time.time()
+        pause = None
         parts, stop = [], None
         try:
             with urllib.request.urlopen(urllib.request.Request(url, body, headers), timeout=900) as r:
@@ -160,9 +171,13 @@ def ask(model, system, user):
                         parts.append((choice.get('delta') or {}).get('content') or '')
                         stop = choice.get('finish_reason') or stop
         except urllib.error.HTTPError as e:
+            text = e.read()[:400].decode('utf-8', 'replace')
             if e.code not in (429, 500, 502, 503, 504, 529):
-                raise RuntimeError(f'{model}: HTTP {e.code} {e.read()[:200]!r}')
-            log('wait', model, e.code, f'{wait}s')
+                raise RuntimeError(f'{model}: HTTP {e.code} {text[:200]!r}')
+            reopen = reset_after(text)
+            if reopen is not None:
+                pause = min(reopen, 900) + random.uniform(1, 6)
+            log('wait', model, e.code, f'{round(pause or wait)}s')
         except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
             log('wait', model, type(e).__name__, str(e)[:80], f'{wait}s')
         else:
@@ -176,6 +191,10 @@ def ask(model, system, user):
                     raise RuntimeError(f'{model}: no JSON in the reply: {e}')
                 log('unparsable reply, asking again', model)
                 continue
+        if pause is not None:
+            time.sleep(pause)
+            continue
+        backoffs += 1
         time.sleep(wait)
         wait = min(wait * 2, 900)
     raise RuntimeError(f'{model}: unavailable')
