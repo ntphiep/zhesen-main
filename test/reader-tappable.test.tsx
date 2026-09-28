@@ -86,11 +86,12 @@ describe('TappableText', () => {
 
   // A short word measured 15.2 x 26 px against the 24 x 24 minimum. jsdom lays nothing
   // out, so only the class that draws the larger hit area can be asserted.
-  it('gives a short word a hit area of at least 24 px without moving the text', async () => {
+  it('gives a word a 24 px tall hit area that stops half a space short of its neighbours', async () => {
     resolveTokens.mockResolvedValueOnce(new Map([['dog', dog]]))
     render(<TappableText text="the dog" lang="en" />)
     const btn = await screen.findByRole('button', { name: 'dog' })
-    expect(btn).toHaveClass('relative', 'before:absolute', 'before:min-w-6', 'before:min-h-6')
+    expect(btn).toHaveClass('relative', 'before:absolute', 'before:inset-x-[-0.125em]', 'before:min-h-6')
+    expect(btn).not.toHaveClass('before:min-w-6')
     expect(btn.className).not.toMatch(/(^|\s)(p|px|m|mx)-/)
   })
 
