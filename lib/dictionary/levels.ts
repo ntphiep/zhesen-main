@@ -19,12 +19,29 @@ export interface LevelSummary {
   levelIsEstimated: boolean
 }
 
+const CEFR = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const
+
+/** Every value `lex.entries.level` takes per language (0061_data_dictionary.sql). Fixed, so a
+ *  level page rejects an unknown level without a read whose failure it could cache as a 404. */
+const LEVELS: Record<LangCode, readonly string[]> = {
+  en: CEFR,
+  es: CEFR,
+  zh: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6', 'HSK7-9'],
+}
+
+export function isLevel(lang: LangCode, level: string): boolean {
+  return LEVELS[lang].includes(level)
+}
+
 const levelCountRow = z.object({ level: z.string(), level_is_estimated: z.boolean(), cnt: z.number() })
 
 export async function getLevelsForLanguage(supabase: SupabaseClient, lang: LangCode): Promise<LevelSummary[]> {
   const { data, error } = await supabase.schema('lex').rpc('count_entries_by_level', { p_lang: lang })
   if (error) throw error
-  return levelCountRow.array().parse(data ?? []).map((r) => ({ level: r.level, count: r.cnt, levelIsEstimated: r.level_is_estimated }))
+  // postgrest-js reports an empty 2xx body, and an empty-bodied 404, as `data: null` with no
+  // error. Every language has levels, so no rows is a failed read, and a throw is not cached.
+  if (!Array.isArray(data) || data.length === 0) throw new Error(`count_entries_by_level returned no rows for ${lang}`)
+  return levelCountRow.array().parse(data).map((r) => ({ level: r.level, count: r.cnt, levelIsEstimated: r.level_is_estimated }))
 }
 
 // Matches the PostgREST max-rows cap on this project (confirmed 1000 by

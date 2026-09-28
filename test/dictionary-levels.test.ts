@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { getLevelsForLanguage, getEntriesByLevel, getAllEntriesByLevel } from '@/lib/dictionary/levels'
+import { getLevelsForLanguage, getEntriesByLevel, getAllEntriesByLevel, isLevel } from '@/lib/dictionary/levels'
 import { clientReturning } from './helpers/supabase'
 
 function previewRow(headword: string) {
@@ -22,6 +22,28 @@ describe('getLevelsForLanguage', () => {
       { level: 'A1', count: 2302, levelIsEstimated: false },
       { level: 'A2', count: 1200, levelIsEstimated: false },
     ])
+  })
+
+  // postgrest-js answers an empty 2xx body, and an empty-bodied 404, with
+  // `data: null, error: null`. Returned as an empty list, `unstable_cache` keeps it.
+  it('throws on an answer with no rows instead of returning an empty list', async () => {
+    for (const data of [null, []]) {
+      const rpc = vi.fn(() => Promise.resolve({ data, error: null }))
+      const client = { schema: vi.fn(() => ({ rpc })) } as unknown as import('@supabase/supabase-js').SupabaseClient
+      await expect(getLevelsForLanguage(client, 'en')).rejects.toThrow()
+    }
+  })
+})
+
+describe('isLevel', () => {
+  it('knows every level each language uses, and nothing else', () => {
+    expect(isLevel('en', 'A1')).toBe(true)
+    expect(isLevel('es', 'C2')).toBe(true)
+    expect(isLevel('zh', 'HSK7-9')).toBe(true)
+    expect(isLevel('en', 'a1')).toBe(false)
+    expect(isLevel('en', 'HSK1')).toBe(false)
+    expect(isLevel('zh', 'A1')).toBe(false)
+    expect(isLevel('en', 'zzz')).toBe(false)
   })
 })
 
