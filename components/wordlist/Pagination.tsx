@@ -26,8 +26,8 @@ export function Pagination({
         {total === 0 ? 'Không có từ nào' : `${from}-${to} trong ${total} từ`}
       </span>
 
-      <div className="flex items-center gap-2">
-        <label className="flex items-center gap-2 text-black/50">
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-2 whitespace-nowrap text-black/50">
           Mỗi trang
           <select
             value={pageSize}
@@ -45,7 +45,7 @@ export function Pagination({
         <div className="flex items-center gap-1">
           <button className={BUTTON} onClick={() => onPageChange(1)} disabled={first} aria-label="Trang đầu">«</button>
           <button className={BUTTON} onClick={() => onPageChange(page - 1)} disabled={first} aria-label="Trang trước">‹</button>
-          <span className="px-2 text-black/60" aria-live="polite">Trang {page} / {pageCount}</span>
+          <span className="whitespace-nowrap px-2 text-black/60" aria-live="polite">Trang {page} / {pageCount}</span>
           <button className={BUTTON} onClick={() => onPageChange(page + 1)} disabled={last} aria-label="Trang sau">›</button>
           <button className={BUTTON} onClick={() => onPageChange(pageCount)} disabled={last} aria-label="Trang cuối">»</button>
         </div>
