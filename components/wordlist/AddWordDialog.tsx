@@ -30,6 +30,10 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
   const [lang, setLang] = useState<LangCode>('en')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<DictEntryPreview[]>([])
+  const [searching, setSearching] = useState(false)
+  // The route answered with a status and no result set: saying "not found" would be a
+  // claim about a dictionary that was never asked.
+  const [refusal, setRefusal] = useState<string | null>(null)
 
   // Manual tab state
   const [manualLang, setManualLang] = useState<LangCode>('en')
@@ -49,9 +53,14 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
 
   // Adjust state during render, not in an effect: react.dev/learn/you-might-not-need-an-effect.
   const [prevQuery, setPrevQuery] = useState(query)
-  if (query !== prevQuery) {
+  const [prevLang, setPrevLang] = useState(lang)
+  if (query !== prevQuery || lang !== prevLang) {
     setPrevQuery(query)
+    setPrevLang(lang)
     if (!query.trim()) setResults([])
+    // Until both directions answer, an empty list means "not yet", not "not found".
+    setSearching(query.trim() !== '')
+    setRefusal(null)
   }
 
   // Modal keeps its children mounted while closed, so without clearing on reopen the
@@ -59,7 +68,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
   const [prevOpen, setPrevOpen] = useState(open)
   if (open !== prevOpen) {
     setPrevOpen(open)
-    if (open) { setQuery(''); setPrevQuery(''); setResults([]); setFillError(null) }
+    if (open) { setQuery(''); setPrevQuery(''); setResults([]); setSearching(false); setFillError(null) }
   }
 
   useEffect(() => {
@@ -68,23 +77,47 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
     // fast one for "cats" and overwrite the list.
     const ctrl = new AbortController()
     const id = setTimeout(async () => {
-      try {
-        // Through the cached route: straight to Supabase costs a cross-region round trip
-        // per keystroke and skips both the shared cache and the per-address budget.
-        const outcome = await fetchSearch(query, ctrl.signal)
-        if (outcome.status !== 'ok') { setResults([]); return }
-        // Both directions, because the learner may type either the word or its Vietnamese
-        // meaning, and the route now answers one per call. Keyed by id so the foreign
-        // direction, which is the cheaper and more likely answer, keeps first place.
-        const vi = await fetchSearch(query, ctrl.signal, { dir: 'vi' })
+      // Both directions, because the learner may type either the word or its Vietnamese
+      // meaning, and the route answers one per call. In parallel and for the chosen
+      // language only: in sequence and for all three, a new word took 0.5 to 1.4 s.
+      // Through the cached route: straight to Supabase costs a cross-region round trip
+      // per keystroke and skips both the shared cache and the per-address budget.
+      let foreign: DictEntryPreview[] | null = null
+      let native: DictEntryPreview[] | null = null
+      let foreignDone = false
+      let refused: string | null = null
+      // Keyed by id so the foreign direction, the cheaper and more likely answer, keeps
+      // first place. The Vietnamese direction is held until the foreign one settles, so
+      // it only ever appends below and never moves a row the learner is about to click.
+      function show() {
+        if (!foreignDone) return
         const byId = new Map<string, DictEntryPreview>()
-        for (const e of [...outcome.data.entries[lang], ...(vi.status === 'ok' ? vi.data.entries[lang] : [])]) {
-          if (!byId.has(e.id)) byId.set(e.id, e)
-        }
+        for (const e of [...(foreign ?? []), ...(native ?? [])]) if (!byId.has(e.id)) byId.set(e.id, e)
         setResults([...byId.values()])
-      } catch (e) {
-        if ((e as Error).name !== 'AbortError') setResults([])
       }
+      const opts = { langs: [lang] }
+      const ask = (dir: 'fw' | 'vi') =>
+        fetchSearch(query, ctrl.signal, dir === 'vi' ? { ...opts, dir } : opts).then((o) => {
+          if (o.status === 'ok') return o.data.entries[lang]
+          refused = o.message
+          return null
+        })
+      await Promise.allSettled([
+        ask('fw').then((found) => { foreign = found }).finally(() => {
+          foreignDone = true
+          if (!ctrl.signal.aborted) show()
+        }),
+        ask('vi').then((found) => {
+          native = found
+          if (!ctrl.signal.aborted) show()
+        }),
+      ])
+      if (ctrl.signal.aborted) return
+      if (foreign === null && native === null) {
+        setResults([])
+        setRefusal(refused ?? 'Chưa tìm được. Thử lại.')
+      }
+      setSearching(false)
     }, 250)
     return () => { clearTimeout(id); ctrl.abort() }
   }, [query, lang])
@@ -227,7 +260,9 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
             )}
 
             {query.trim() && results.length === 0 && (
-              <p className="text-sm text-black/40">Không tìm thấy từ này.</p>
+              <p className="text-sm text-black/40">
+                {searching ? 'Đang tìm…' : refusal ?? 'Không tìm thấy từ này.'}
+              </p>
             )}
           </div>
         )}

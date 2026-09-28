@@ -12,7 +12,7 @@ const fetchSearch = vi.hoisted(() => vi.fn())
 vi.mock('@/lib/dictionary/searchClient', () => ({ fetchSearch }))
 vi.mock('@/lib/ai/browser', () => ({ callAi: vi.fn(), aiEnabled: vi.fn(async () => false) }))
 
-// AddWordDialog now makes one call per direction: fw with no opts, vi with { dir: 'vi' }.
+// AddWordDialog makes one call per direction: fw with { langs }, vi with { langs, dir: 'vi' }.
 // The mock dispatches on that third argument the same way the route dispatches on `dir`.
 function answer(forwardEn: unknown[], reverseEn: unknown[] = []) {
   fetchSearch.mockImplementation(async (_q: string, _signal: unknown, opts?: { dir?: string }) => ({
@@ -125,5 +125,66 @@ describe('AddWordDialog', () => {
     await userEvent.type(screen.getByPlaceholderText('Ví dụ: dog'), 'dog')
     await userEvent.click(await screen.findByRole('button', { name: /Điền bằng trợ lý/i }))
     expect(await screen.findByText('Trợ lý gặp lỗi.')).toBeInTheDocument()
+  })
+
+  // Both directions for the chosen language only, sent together rather than one after
+  // the other.
+  it('asks both directions at once, for the chosen language only', async () => {
+    const pending: Array<() => void> = []
+    fetchSearch.mockImplementation((_q: string, _s: unknown, opts?: { dir?: string }) =>
+      new Promise((resolve) => pending.push(() => resolve({
+        status: 'ok',
+        data: { entries: opts?.dir === 'vi' ? { en: [], es: [], zh: [] } : { en: [dog], es: [], zh: [] }, suggestions: [] },
+      }))))
+    render(<AddWordDialog open onClose={() => {}} onAdd={vi.fn()} />)
+    await userEvent.type(screen.getByPlaceholderText(/Tìm từ/i), 'dog')
+    await vi.waitFor(() => expect(pending).toHaveLength(2))
+    expect(fetchSearch).toHaveBeenCalledWith('dog', expect.anything(), { langs: ['en'] })
+    expect(fetchSearch).toHaveBeenCalledWith('dog', expect.anything(), { langs: ['en'], dir: 'vi' })
+    // An empty list while waiting is not a miss.
+    expect(screen.getByText('Đang tìm…')).toBeInTheDocument()
+    expect(screen.queryByText('Không tìm thấy từ này.')).toBeNull()
+    pending.forEach((settle) => settle())
+    expect(await screen.findByText('con chó')).toBeInTheDocument()
+  })
+
+  it('says nothing was found once both directions come back empty', async () => {
+    answer([], [])
+    render(<AddWordDialog open onClose={() => {}} onAdd={vi.fn()} />)
+    await userEvent.type(screen.getByPlaceholderText(/Tìm từ/i), 'zzq')
+    expect(await screen.findByText('Không tìm thấy từ này.')).toBeInTheDocument()
+  })
+
+  // A refusal is not an empty dictionary, so it must not read as "not found".
+  it('passes on the route refusal instead of saying nothing was found', async () => {
+    fetchSearch.mockResolvedValue({ status: 'refused', message: 'Quá nhiều lượt dịch. Thử lại sau ít giây.' })
+    render(<AddWordDialog open onClose={() => {}} onAdd={vi.fn()} />)
+    await userEvent.type(screen.getByPlaceholderText(/Tìm từ/i), 'dog')
+    expect(await screen.findByText('Quá nhiều lượt dịch. Thử lại sau ít giây.')).toBeInTheDocument()
+    expect(screen.queryByText('Không tìm thấy từ này.')).toBeNull()
+  })
+
+  // Rows drawn from the Vietnamese direction first would move when the foreign ones
+  // arrived, under a click meant for the row that was there.
+  it('keeps the foreign results on top however the answers arrive', async () => {
+    const settle: Record<string, () => void> = {}
+    fetchSearch.mockImplementation((_q: string, _s: unknown, opts?: { dir?: string }) =>
+      new Promise((resolve) => {
+        settle[opts?.dir ?? 'fw'] = () => resolve({
+          status: 'ok',
+          data: { entries: opts?.dir === 'vi' ? { en: [cat], es: [], zh: [] } : { en: [dog], es: [], zh: [] }, suggestions: [] },
+        })
+      }))
+    render(<AddWordDialog open onClose={() => {}} onAdd={vi.fn()} />)
+    await userEvent.type(screen.getByPlaceholderText(/Tìm từ/i), 'x')
+    await vi.waitFor(() => expect(Object.keys(settle)).toHaveLength(2))
+    settle.vi()
+    await new Promise((r) => setTimeout(r, 20))
+    expect(screen.queryByText('cat')).toBeNull()
+    settle.fw()
+    await screen.findByText('dog')
+    const rows = screen.getAllByRole('listitem').map((li) => li.textContent ?? '')
+    expect(rows[0]).toContain('dog')
+    expect(rows[1]).toContain('cat')
   })
 })
