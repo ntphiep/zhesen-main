@@ -189,12 +189,13 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   async function deleteMany(ids: string[]) {
     const snapshot = words
     setWords((prev) => prev.filter((w) => !ids.includes(w.id)))
-    setSelected(new Set())
+    // Only the deleted ids leave the selection: the hidden ones wait for the filter to clear.
+    setSelected((prev) => new Set([...prev].filter((id) => !ids.includes(id))))
     try {
       await deleteWords(supabase, ids)
     } catch {
       setWords(snapshot)
-      setSelected(new Set(ids))
+      setSelected((prev) => new Set([...prev, ...ids]))
       notify('Chưa xóa được từ. Thử lại.')
     }
   }
@@ -336,7 +337,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
           sortKey={sortKey}
           sortDir={sortDir}
           onToggleSort={toggleSort}
-          selected={selected}
+          // The header box reads its size, which must not count rows the filter hid.
+          selected={new Set(selectedIds)}
           allSelected={allSelected}
           onToggleSelectAll={toggleSelectAll}
           onToggleSelect={toggleSelect}

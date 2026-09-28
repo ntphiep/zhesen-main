@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
+import { formatPos, parsePos } from '@/lib/dictionary/pos'
 import { fetchSearch } from '@/lib/dictionary/searchClient'
 import { draftFromDictEntry } from '@/lib/wordlist/store'
 import { callAi } from '@/lib/ai/browser'
@@ -102,7 +103,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
       headword: headword.trim(),
       reading: null,
       ipa: ipa.trim() || null,
-      pos: pos.trim() || null,
+      pos: parsePos(pos),
       meaningVi: meaningVi.trim() || null,
       meaningEn: meaningEn.trim() || null,
       level: null,
@@ -131,7 +132,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
         const d = outcome.data
         setMeaningVi((v) => v || d.meaningVi)
         setIpa((v) => v || d.ipa)
-        setPos((v) => v || d.pos)
+        setPos((v) => v || formatPos(d.pos))
         setExample((v) => v || d.example)
         setExampleVi((v) => v || d.exampleVi)
       } else {
@@ -234,7 +235,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
         {tab === 'manual' && (
           <div className="flex flex-col gap-3">
             <div className="flex gap-2">
-              <label className="flex flex-col gap-1 flex-1">
+              <label className="flex flex-col gap-1 flex-1 min-w-0">
                 <span className="text-xs text-black/50">Ngôn ngữ</span>
                 <select
                   value={manualLang}
@@ -246,7 +247,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                   ))}
                 </select>
               </label>
-              <label className="flex flex-col gap-1 flex-1">
+              <label className="flex flex-col gap-1 flex-1 min-w-0">
                 <span className="text-xs text-black/50">Từ gốc *</span>
                 <input
                   type="text"
@@ -258,7 +259,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
               </label>
             </div>
             <div className="flex gap-2">
-              <label className="flex flex-col gap-1 flex-1">
+              <label className="flex flex-col gap-1 flex-1 min-w-0">
                 <span className="text-xs text-black/50">IPA</span>
                 <input
                   type="text"
@@ -268,7 +269,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                   className="rounded-lg border border-black/15 px-3 py-2 text-sm"
                 />
               </label>
-              <label className="flex flex-col gap-1 flex-1">
+              <label className="flex flex-col gap-1 flex-1 min-w-0">
                 <span className="text-xs text-black/50">Từ loại</span>
                 <input
                   type="text"

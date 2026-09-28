@@ -229,6 +229,17 @@ describe('WordlistClient', () => {
 
     await userEvent.clear(screen.getByPlaceholderText(/Tìm trong sổ tay/i))
     expect(screen.getByText('alpha')).toBeInTheDocument()
+    expect(screen.getByLabelText('Chọn từ alpha')).toBeChecked()
+  })
+
+  // A hidden selection is not one the reader can see, so the header box ignores it too.
+  it('leaves the select-all box clear when only a hidden word is selected', async () => {
+    render(<WordlistClient initialWords={[mk('x', { headword: 'alpha' }), mk('y', { headword: 'beta' })]} />)
+    await userEvent.click(screen.getByLabelText('Chọn từ alpha'))
+    await userEvent.type(screen.getByPlaceholderText(/Tìm trong sổ tay/i), 'beta')
+    const all = screen.getByLabelText<HTMLInputElement>('Chọn tất cả')
+    expect(all.indeterminate).toBe(false)
+    expect(all).not.toBeChecked()
   })
 
   it('offers no bulk delete once the filter hides every selected word', async () => {

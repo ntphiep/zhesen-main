@@ -81,6 +81,17 @@ describe('AddWordDialog', () => {
     expect(screen.queryByRole('button', { name: /Điền bằng trợ lý/i })).toBeNull()
   })
 
+  // The table shows "n. · v.", so that is what a learner types; the column stores "noun,verb".
+  it('stores a part of speech typed as the table shows it', async () => {
+    const onAdd = vi.fn()
+    render(<AddWordDialog open onClose={() => {}} onAdd={onAdd} />)
+    await userEvent.click(screen.getByRole('tab', { name: /Thủ công/i }))
+    await userEvent.type(screen.getByPlaceholderText('Ví dụ: dog'), 'dog')
+    await userEvent.type(screen.getByLabelText(/Từ loại/i), 'n. · v.')
+    await userEvent.click(screen.getByRole('button', { name: /Lưu từ/i }))
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ headword: 'dog', pos: 'noun,verb' }))
+  })
+
   it('fills the empty manual fields from the assistant and leaves typed ones alone', async () => {
     vi.mocked(aiEnabled).mockResolvedValue(true)
     vi.mocked(callAi).mockResolvedValue({
@@ -98,7 +109,7 @@ describe('AddWordDialog', () => {
 
     // The learner's own wording outranks the model's.
     expect(screen.getByPlaceholderText('con chó')).toHaveValue('chó nhà')
-    expect(screen.getByPlaceholderText('noun, verb...')).toHaveValue('noun')
+    expect(screen.getByPlaceholderText('noun, verb...')).toHaveValue('n.')
 
     await userEvent.click(screen.getByRole('button', { name: /Lưu từ/i }))
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({
