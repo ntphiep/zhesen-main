@@ -117,6 +117,36 @@ describe('LookupPanel', () => {
     expect(screen.queryByText('Không tìm thấy từ nào.')).toBeNull()
   })
 
+  it('retries a refused search with the same query', async () => {
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'Từ điển đang khởi động chậm.' }) } as Response)
+      .mockResolvedValue({ ok: true, json: async () => ({ entries: { ...EMPTY, en: [entry({ glossVi: 'Con chó' })] }, suggestions: [] }) } as Response)
+    vi.stubGlobal('fetch', fetchMock)
+    render(<LookupPanel direction="fw" label="FW" />)
+    await userEvent.type(screen.getByLabelText('FW'), 'dog')
+    await screen.findByText('Từ điển đang khởi động chậm.')
+    await userEvent.click(screen.getByRole('button', { name: 'Thử lại' }))
+    expect(await screen.findByText('Con chó')).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(String(fetchMock.mock.calls[1][0])).toBe(String(fetchMock.mock.calls[0][0]))
+  })
+
+  it('reports a thrown search as a failure, not an empty result, and retries it', async () => {
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValue({ ok: true, json: async () => ({ entries: { ...EMPTY, en: [entry({ glossVi: 'Con chó' })] }, suggestions: [] }) } as Response)
+    vi.stubGlobal('fetch', fetchMock)
+    render(<LookupPanel direction="fw" label="FW" />)
+    await userEvent.type(screen.getByLabelText('FW'), 'dog')
+    expect(await screen.findByText('Chưa tra được.')).toBeInTheDocument()
+    expect(screen.queryByText('Không tìm thấy từ nào.')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Thử lại' }))
+    expect(await screen.findByText('Con chó')).toBeInTheDocument()
+    expect(screen.queryByText('Chưa tra được.')).toBeNull()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(String(fetchMock.mock.calls[1][0])).toBe(String(fetchMock.mock.calls[0][0]))
+  })
+
   it('shows language chips on both panels, naming the question each one answers', () => {
     stubFetch({ entries: EMPTY, suggestions: [] })
     const { unmount } = render(<LookupPanel direction="vi" label="VN" />)

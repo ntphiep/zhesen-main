@@ -49,10 +49,12 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
   // no hits was still on screen.
   const [dataKey, setDataKey] = useState('')
   const [loading, setLoading] = useState(false)
-  // The route answered with a status rather than a result set, so "không tìm thấy" would
-  // be a claim about a dictionary that was never asked. Holds the route's own wording,
-  // because a rate limit and a cold database are different things to be told.
+  // The route answered with a status rather than a result set, or the request threw, so
+  // "không tìm thấy" would be a claim about a dictionary that was never asked. Holds the
+  // route's own wording, because a rate limit and a cold database are different things.
   const [refusal, setRefusal] = useState<string | null>(null)
+  // Bumped by "Thử lại" to reissue the same query; neither failure is cached.
+  const [attempt, setAttempt] = useState(0)
   const [levelFilter, setLevelFilter] = useState<string | null>(null)
   const [posFilter, setPosFilter] = useState<string | null>(null)
   // One store per direction: the Vietnamese box picks what to translate into, the foreign
@@ -103,7 +105,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     // synchronous form, and a cache hit still answers within one microtask.
     async function run() {
       const cached = cache.current.get(key)
-      if (cached) { setData(cached); setDataKey(key); setLoading(false); return }
+      if (cached) { setData(cached); setDataKey(key); setLoading(false); setRefusal(null); return }
       setLoading(true)
       id = setTimeout(async () => {
         try {
@@ -126,7 +128,11 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
           setData(outcome.data)
           setDataKey(key)
         } catch (e) {
-          if ((e as Error).name !== 'AbortError') { setData(EMPTY_SEARCH_RESPONSE); setDataKey(key) }
+          if ((e as Error).name !== 'AbortError') {
+            setRefusal('Chưa tra được.')
+            setData(EMPTY_SEARCH_RESPONSE)
+            setDataKey(key)
+          }
         } finally {
           setLoading(false)
         }
@@ -134,7 +140,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     }
     void run()
     return () => { if (id) clearTimeout(id); ctrl.abort() }
-  }, [trimmed, isPassage, targets, direction])
+  }, [trimmed, isPassage, targets, direction, attempt])
 
   const entries = data.entries
   const translated = data.translated
@@ -347,7 +353,18 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
       {isPassage && <PassageBlock text={trimmed} direction={direction} targets={targets} />}
 
       {loading && <p className="text-sm text-black/40">Đang dịch…</p>}
-      {refusal && <p className="text-sm text-red-600">{refusal}</p>}
+      {refusal && (
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-red-600">{refusal}</p>
+          <button
+            type="button"
+            onClick={() => setAttempt((n) => n + 1)}
+            className="rounded-lg border border-black/15 px-3 py-1.5 text-xs font-medium text-black/70 hover:bg-black/5"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
 
       {total > 0 && (
         <div className="flex flex-col gap-3">{shown.map(([l, list, more]) => renderCard(l, list, more))}</div>
