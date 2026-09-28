@@ -28,9 +28,12 @@ export default async function Home() {
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {SECTIONS.map((s) => (
+          // The header links the same four sections and owns their prefetch: from here
+          // /practice and /wordlist, which read the session, were prefetched as well.
           <Link
             key={s.href}
             href={s.href}
+            prefetch={false}
             className="group rounded-2xl border border-black/10 p-5 transition hover:border-black/30 hover:shadow-lg hover:-translate-y-0.5"
           >
             <div className="text-lg font-semibold">{s.title}</div>
