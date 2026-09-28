@@ -130,6 +130,18 @@ describe('AiChatPanel', () => {
     expect(screen.queryByText('Chưa gửi được câu hỏi. Thử lại.')).toBeNull()
   })
 
+  // Dừng unmounts itself, which dropped focus to the page behind the modal.
+  it('returns focus to the question box after Dừng', async () => {
+    vi.mocked(callAi).mockImplementation((_task, _input, s) => new Promise((_, reject) => {
+      s?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+    }))
+    await openPanel()
+    await ask('từ này nghĩa gì')
+    await userEvent.click(await screen.findByRole('button', { name: 'Dừng' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Dừng' })).toBeNull())
+    expect(screen.getByLabelText('Câu hỏi cho trợ lý')).toHaveFocus()
+  })
+
   // A modal <dialog> is what gives Escape, the focus trap and focus restore; jsdom
   // implements none of the three, so what is checkable here is that it is one.
   it('opens as a modal dialog with focus in the question box', async () => {

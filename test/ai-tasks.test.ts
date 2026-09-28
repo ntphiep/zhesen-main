@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { coachOutput, enrichInput, ERASED_TASKS, isTaskName } from '@/lib/ai/tasks'
+import { chatInput, chatOutput, coachOutput, enrichInput, ERASED_TASKS, isTaskName } from '@/lib/ai/tasks'
 
 describe('coachOutput', () => {
   // Nothing stops a model repeating itself, and the lists are keyed by their own
@@ -57,5 +57,16 @@ describe('task inputs', () => {
   it('builds a prompt only for input the task accepts', () => {
     expect(ERASED_TASKS.enrich.promptFor({ lang: 'en', headword: 'dog' })).toContain('dog')
     expect(ERASED_TASKS.enrich.promptFor({ lang: 'fr', headword: 'chien' })).toBeNull()
+  })
+})
+
+describe('chat', () => {
+  // Every reply goes back as history, so the longest reply must be an accepted turn.
+  it('accepts its own longest reply as a history turn', () => {
+    const reply = 'x'.repeat(1500)
+    expect(chatOutput.safeParse({ reply }).success).toBe(true)
+    expect(chatInput.safeParse({
+      messages: [{ role: 'user', text: 'hỏi' }, { role: 'assistant', text: reply }, { role: 'user', text: 'tiếp' }],
+    }).success).toBe(true)
   })
 })

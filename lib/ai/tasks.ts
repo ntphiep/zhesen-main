@@ -108,11 +108,14 @@ export type TagsOutput = z.infer<typeof tagsOutput>
 
 // ---------------------------------------------------------------- chat
 
+/** The longest reply, and so the longest turn: every reply goes back as history. */
+const REPLY_MAX = 1500
+
 /** One turn of the conversation. Long enough for a paragraph the learner pasted
  *  in, short enough that a dozen of them stay inside the model's budget. */
 const chatTurn = z.object({
   role: z.enum(['user', 'assistant']),
-  text: z.string().trim().min(1).max(1000),
+  text: z.string().trim().min(1).max(REPLY_MAX),
 })
 
 export const chatInput = z.object({
@@ -125,7 +128,7 @@ export const chatInput = z.object({
 })
 
 export const chatOutput = z.object({
-  reply: z.string().min(1).max(1500),
+  reply: z.string().min(1).max(REPLY_MAX),
 })
 
 export type ChatOutput = z.infer<typeof chatOutput>
@@ -159,6 +162,8 @@ export interface TaskSpec<I, O> {
   /** Present when the model answers in plain text rather than JSON, which is what lets
    *  the route stream it; turns the whole text into what `output` checks. */
   fromText?: (text: string) => unknown
+  /** With `fromText`: the longest text `output` accepts. The route stops the stream there. */
+  maxChars?: number
 }
 
 export const TASKS = {
@@ -258,6 +263,7 @@ export const TASKS = {
         'Viết câu trả lời của gia sư cho lượt cuối.',
       ].filter(Boolean).join('\n'),
     fromText: (text) => ({ reply: text.trim() }),
+    maxChars: REPLY_MAX,
   } satisfies TaskSpec<z.infer<typeof chatInput>, ChatOutput>,
 } as const
 
@@ -279,6 +285,8 @@ export interface ErasedTask {
   parseOutput(value: unknown): unknown | null
   /** See `TaskSpec.fromText`. */
   fromText?: (text: string) => unknown
+  /** See `TaskSpec.maxChars`. */
+  maxChars?: number
 }
 
 function erase<I, O>(spec: TaskSpec<I, O>): ErasedTask {
@@ -294,6 +302,7 @@ function erase<I, O>(spec: TaskSpec<I, O>): ErasedTask {
       return parsed.success ? parsed.data : null
     },
     fromText: spec.fromText,
+    maxChars: spec.maxChars,
   }
 }
 

@@ -81,6 +81,7 @@ async function streamed(
   })
   const encoder = new TextEncoder()
   const line = (value: unknown) => encoder.encode(`${JSON.stringify(value)}\n`)
+  const cap = spec.maxChars ?? Infinity
   let whole = ''
 
   const body = new ReadableStream<Uint8Array>({
@@ -88,9 +89,12 @@ async function streamed(
       try {
         const { done, value } = await pieces.next()
         if (!done) {
-          whole += value
-          controller.enqueue(line({ text: value }))
-          return
+          const piece = value.slice(0, cap - whole.length)
+          whole += piece
+          controller.enqueue(line({ text: piece }))
+          if (whole.length < cap) return
+          // The schema would refuse anything longer: stop the model and answer with what was sent.
+          gone.abort()
         }
         const data = spec.parseOutput(fromText(whole))
         controller.enqueue(line(data === null ? { error: UNAVAILABLE } : { data }))
@@ -161,15 +165,16 @@ export async function POST(request: Request) {
     )
   }
 
-  const timeout = AbortSignal.timeout(TIMEOUT_MS)
+  // The browser leaving, Dừng included, stops the model call as the deadline does.
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(TIMEOUT_MS)])
   try {
-    if (spec.fromText) return await streamed(cfg, spec, spec.fromText, prompt, timeout)
+    if (spec.fromText) return await streamed(cfg, spec, spec.fromText, prompt, signal)
     const data = await askJson(cfg, {
       system: spec.system,
       user: prompt,
       parse: spec.parseOutput,
       maxTokens: spec.maxTokens,
-      signal: timeout,
+      signal,
     })
     return Response.json({ data })
   } catch (e) {

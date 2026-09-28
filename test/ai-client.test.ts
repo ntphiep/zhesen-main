@@ -119,6 +119,23 @@ describe('streamText', () => {
     await expect(collect(await streamText(cfg, opts))).rejects.toThrow(AiUnavailableError)
   })
 
+  // `message_stop` closes a reply cut by the token limit too; only `stop_reason` tells them apart.
+  it('fails on a reply cut by the token limit', async () => {
+    globalThis.fetch = vi.fn(async () => anthropicStream(['Hoãn '], [
+      { type: 'message_delta', delta: { stop_reason: 'max_tokens', stop_sequence: null }, usage: { output_tokens: 900 } },
+      { type: 'message_stop' },
+    ]))
+    await expect(collect(await streamText(cfg, opts))).rejects.toThrow(AiUnavailableError)
+  })
+
+  it('accepts a reply that ended on its own', async () => {
+    globalThis.fetch = vi.fn(async () => anthropicStream(['Hoãn.'], [
+      { type: 'message_delta', delta: { stop_reason: 'end_turn', stop_sequence: null }, usage: { output_tokens: 3 } },
+      { type: 'message_stop' },
+    ]))
+    expect(await collect(await streamText(cfg, opts))).toEqual(['Hoãn.'])
+  })
+
   it('reports a non-OK response before yielding anything', async () => {
     globalThis.fetch = reply({ error: 'nope' }, false)
     await expect(streamText(cfg, opts)).rejects.toThrow(AiUnavailableError)

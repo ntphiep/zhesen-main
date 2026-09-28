@@ -94,6 +94,24 @@ describe('/api/ai', () => {
     await expect(res.json()).resolves.toMatchObject({ data: { meaningVi: 'con chó', level: 'A1' } })
   })
 
+  // Dừng before the first byte arrives must stop the model call, not only the page's read.
+  it('stops the model call when the browser abandons the request', async () => {
+    let modelSignal: AbortSignal | undefined
+    globalThis.fetch = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      modelSignal = init?.signal ?? undefined
+      return new Response(JSON.stringify({ choices: [{ message: { content: '{}' } }] }), { status: 200 })
+    })
+    const browser = new AbortController()
+    await POST(new Request('http://localhost/api/ai', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ task: 'enrich', input: { lang: 'en', headword: 'dog' } }),
+      signal: browser.signal,
+    }))
+    browser.abort()
+    expect(modelSignal?.aborted).toBe(true)
+  })
+
   it('turns a model that answers nonsense into 502, not a crash', async () => {
     modelReplies('Tôi không chắc lắm.')
     expect((await post({ task: 'enrich', input: { lang: 'en', headword: 'dog' } })).status).toBe(502)
@@ -206,6 +224,19 @@ describe('/api/ai', () => {
       const lines = await ndjsonLines(await post(chat))
       expect(lines.at(-1)).toEqual({ error: 'Trợ lý chưa trả lời được. Thử lại sau.' })
       expect(lines.some((l) => typeof l === 'object' && l !== null && 'data' in l)).toBe(false)
+    })
+
+    // A reply past the schema's cap once streamed in full, then vanished into an error.
+    it('stops the reply at the cap and keeps the text already sent as the answer', async () => {
+      let modelSignal: AbortSignal | undefined
+      globalThis.fetch = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+        modelSignal = init?.signal ?? undefined
+        return anthropicStream(['a'.repeat(1000), 'b'.repeat(1000), 'c'])
+      })
+      const lines = await ndjsonLines(await post(chat))
+      const reply = `${'a'.repeat(1000)}${'b'.repeat(500)}`
+      expect(lines).toEqual([{ text: 'a'.repeat(1000) }, { text: 'b'.repeat(500) }, { data: { reply } }])
+      expect(modelSignal?.aborted).toBe(true)
     })
 
     it('still holds the reply to the task schema', async () => {

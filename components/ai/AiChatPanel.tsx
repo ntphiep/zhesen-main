@@ -161,7 +161,8 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
               {busy && (
                 <button
                   type="button"
-                  onClick={() => stopRef.current?.abort()}
+                  // The button unmounts once stopped, which would drop focus to the page.
+                  onClick={() => { stopRef.current?.abort(); inputRef.current?.focus() }}
                   className="rounded-xl border border-black/15 px-3 py-2 text-sm font-medium"
                 >
                   Dừng
