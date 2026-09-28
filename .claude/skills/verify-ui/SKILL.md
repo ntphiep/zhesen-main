@@ -19,6 +19,12 @@ the previous version, which is the most repeated mistake in this project's histo
    } | Select-Object -First 1
    ```
 
+   On macOS and Linux (`/dev/tcp` is bash's, so the probe runs in bash even from zsh):
+
+   ```bash
+   port=$(bash -c 'for p in $(seq 3000 3020); do (: </dev/tcp/127.0.0.1/$p) 2>/dev/null || { echo $p; break; }; done')
+   ```
+
 2. `npm run build`. A build failure is the answer; stop and report it with its output.
 3. `npm run start -- -p $port` in the background, and browse `http://localhost:$port`.
 4. Drive the browser with `mcp__plugin_playwright_playwright__browser_*`. It launches its

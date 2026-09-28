@@ -65,8 +65,12 @@ Never commit, push or open an issue under another account.
 A failing test is a finding, not an obstacle. Report it with its output. Never edit,
 loosen or delete a test to make it pass.
 
-`.claude/hooks/verify-gate.ps1` enforces step 1 at the end of every turn that touches
+`.claude/hooks/verify-gate.sh` enforces step 1 at the end of every turn that touches
 `.ts` or `.tsx`. A missing tool makes it block, not skip.
+
+`settings.json` runs every hook as `bash .claude/hooks/<name>.sh`, so Windows needs Git Bash:
+without it Claude Code runs hook commands in PowerShell, which has no `bash`. On Windows the `.sh` hands over to its `.ps1` twin; on macOS and Linux it does the
+work itself. The two copies hold the same rules, so a change to one goes into both.
 
 ## One session, one worktree
 
@@ -82,16 +86,19 @@ The main checkout is therefore read-only for sessions:
 3. Ship with `/ship`: rebase onto `origin/master`, verify, `git push origin HEAD:master`,
    carry new subagent notes back to the main checkout, then `ExitWorktree` with `remove`.
 
-`.claude/hooks/worktree-guard.ps1` refuses an `Edit` or `Write` in the main checkout, and
+`.claude/hooks/worktree-guard.sh` refuses an `Edit` or `Write` in the main checkout, and
 inside a worktree Claude Code's own isolation refuses the same. The verify gate reads the
 hook input's `cwd` and judges only a linked worktree, never the main checkout. Hook
 commands run the main checkout's copy of each script, because `${CLAUDE_PROJECT_DIR}` stays
 there after `EnterWorktree`, so a hook change takes effect once that checkout is updated.
 
-`.claude/hooks/session-digest.ps1` runs at startup, resume and clear. It fast-forwards the
+`.claude/hooks/session-digest.sh` runs at startup, resume and clear. It fast-forwards the
 main checkout, then prints the open board items by priority, each worktree with its
 sessions and uncommitted files, and the commits, issues and wiki pages that changed since
-the previous session started. Read it before choosing what to work on.
+the previous session started. Read it before choosing what to work on. The board belongs
+to `ntphiep`. On macOS and Linux the digest reads it through `gh` when gh answers as
+`ntphiep`, otherwise through Composio's `github` toolkit when `composio` is installed, and never
+switches gh's account.
 
 ## Code style
 

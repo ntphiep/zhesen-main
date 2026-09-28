@@ -53,9 +53,12 @@ if (-not (Test-Path (Join-Path $root 'package.json'))) {
 Set-Location $root
 
 # -z gives NUL-separated, unquoted paths. Without it git escapes non-ASCII names
-# (core.quotepath) and Test-Path silently misses them.
+# (core.quotepath) and Test-Path silently misses them. --untracked-files=all lists the files
+# inside a new folder, which otherwise shows only as the folder itself.
+# A deleted file still counts: its importers break, and tsc is what sees that.
 $changed = @()
-$fields = (git status --porcelain -z 2>$null) -split "`0" | Where-Object { $_ -ne '' }
+$deleted = $false
+$fields = (git status --porcelain -z --untracked-files=all 2>$null) -split "`0" | Where-Object { $_ -ne '' }
 for ($i = 0; $i -lt $fields.Count; $i++) {
   $entry = $fields[$i]
   if ($entry.Length -lt 4) { continue }
@@ -63,11 +66,11 @@ for ($i = 0; $i -lt $fields.Count; $i++) {
   $path = $entry.Substring(3)
   # A rename emits the old path as the next field. Consume it.
   if ($status -match '[RC]') { $i++ }
-  if ($path -match '\.(ts|tsx|mts)$' -and (Test-Path -LiteralPath $path)) {
-    $changed += $path
+  if ($path -match '\.(ts|tsx|mts)$') {
+    if (Test-Path -LiteralPath $path) { $changed += $path } else { $deleted = $true }
   }
 }
-if ($changed.Count -eq 0) { exit 0 }
+if ($changed.Count -eq 0 -and -not $deleted) { exit 0 }
 
 # Mirrors `npm run verify`, minus the whole-suite run: `vitest related` walks the module
 # graph so only tests that import a changed file run.
@@ -84,11 +87,13 @@ $problems = @()
 $out = (& (Tool 'tsc') --noEmit 2>&1 | Out-String)
 if ($LASTEXITCODE -ne 0) { $problems += "[tsc --noEmit] FAIL`n$out" }
 
-$out = (& (Tool 'eslint') @changed 2>&1 | Out-String)
-if ($LASTEXITCODE -ne 0) { $problems += "[eslint] FAIL`n$out" }
+if ($changed.Count -gt 0) {
+  $out = (& (Tool 'eslint') @changed 2>&1 | Out-String)
+  if ($LASTEXITCODE -ne 0) { $problems += "[eslint] FAIL`n$out" }
 
-$out = (& (Tool 'vitest') related --run @changed 2>&1 | Out-String)
-if ($LASTEXITCODE -ne 0) { $problems += "[vitest related] FAIL`n$out" }
+  $out = (& (Tool 'vitest') related --run @changed 2>&1 | Out-String)
+  if ($LASTEXITCODE -ne 0) { $problems += "[vitest related] FAIL`n$out" }
+}
 
 if ($problems.Count -gt 0) {
   Deny (@(

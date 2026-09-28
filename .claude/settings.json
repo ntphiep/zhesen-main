@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\" -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PROJECT_DIR}\\.claude\\hooks\\session-digest.ps1\"",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/session-digest.sh\"",
             "timeout": 30,
             "statusMessage": "session digest: board, worktrees, changes"
           }
@@ -40,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\" -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PROJECT_DIR}\\.claude\\hooks\\worktree-guard.ps1\"",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/worktree-guard.sh\"",
             "timeout": 10
           }
         ]
@@ -51,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\" -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PROJECT_DIR}\\.claude\\hooks\\verify-gate.ps1\"",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/verify-gate.sh\"",
             "timeout": 180,
             "statusMessage": "verify gate: types, lint, related tests"
           }

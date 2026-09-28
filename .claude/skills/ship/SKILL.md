@@ -78,8 +78,16 @@ $main = Split-Path (git rev-parse --path-format=absolute --git-common-dir) -Pare
 git diff --no-index --stat -- "$main\.claude\agent-memory" .claude\agent-memory
 ```
 
-Copy each new note across with `Copy-Item`. A changed `MEMORY.md` gets only its new lines,
-appended to the main copy with `Add-Content`, since another session may have added its own.
+On macOS and Linux, from bash in the worktree:
+
+```bash
+main=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+git diff --no-index --stat -- "$main/.claude/agent-memory" .claude/agent-memory
+```
+
+Copy each new note across with `Copy-Item` or `cp`. A changed `MEMORY.md` gets only its new
+lines, appended to the main copy with `Add-Content` or `>>`, since another session may have
+added its own.
 
 ## 6. Report
 
