@@ -8,7 +8,7 @@ import { LemmaLink } from './LemmaLink'
 import { BACKLINKS_LABEL, BacklinkList } from './LearnerParts'
 import {
   AiCorner, Badge, CONTAINER, FormCells, FrequencyMeter, GrammarList, LevelChip, MorphText, MoreButton, PivotMark, PosChip, WordChip,
-  WordLink, baseFormLabel,
+  UntranslatedNote, WordLink, baseFormLabel,
 } from './WordParts'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { useAnchor } from '@/lib/hooks/useAnchor'
@@ -175,6 +175,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
         </nav>
         <div className="flex min-w-0 flex-col gap-12">
           {view.lemma && <LemmaLink lemma={view.lemma} preview={view.lemmaPreview ?? undefined} lang={lang} />}
+          <UntranslatedNote senses={view.senses} />
           <div className="flex flex-col gap-10">
             <div aria-hidden="true" className="hidden grid-cols-2 gap-x-10 border-b-2 border-black pb-2 text-[11.5px] font-semibold uppercase tracking-[0.07em] text-black/55 md:grid">
               <span>{lang === 'en' ? LANG_LABELS.en : `${LANG_LABELS[lang]}, tiếng Anh`}</span>

@@ -8,7 +8,7 @@ import { wordClassPath } from '@/lib/theory/path'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { useAnchor } from '@/lib/hooks/useAnchor'
 import { TappableText } from '@/components/reader/TappableText'
-import { Badge, MoreButton, PivotMark, WordLink } from './WordParts'
+import { Badge, EnglishMark, MoreButton, PivotMark, UntranslatedNote, WordLink } from './WordParts'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
 import type { DictExample, DictSense } from '@/lib/dictionary/types'
 import type { SenseSynonyms, ViewWord } from '@/lib/dictionary/wordView'
@@ -32,9 +32,9 @@ function Sense({ s, n, lang, examples, byText, glosses, synonyms, mark }: Shared
       <span className="w-5 shrink-0 text-[15px] font-semibold text-black/35">{n}.</span>
       <div className="flex min-w-0 flex-col gap-1.5">
         {/* 25.3% of English senses have no Vietnamese gloss. There the English is the
-            meaning, so it takes the meaning's place. */}
+            meaning, so it takes the meaning's place, marked as English. */}
         {vi || s.glossEn
-          ? <span className="font-semibold">{vi ?? s.glossEn}{!s.glossVi && s.pivotVi && <PivotMark />}</span>
+          ? <span className="font-semibold">{vi ?? s.glossEn}{!s.glossVi && s.pivotVi && <PivotMark />}{!vi && <EnglishMark />}</span>
           : <span className="italic text-black/35">(chưa có nghĩa)</span>}
         {s.glossEn && vi && <span className="text-xs text-black/45">{s.glossEn}</span>}
         {example && (
@@ -117,6 +117,7 @@ export function SenseList({ senses, lang, examples = {}, resolved = [], glosses 
 
   return (
     <div className="flex flex-col gap-10">
+      <UntranslatedNote senses={senses} />
       {sections.map((sec) => (
         <PosSection
           key={sec.key} section={sec} lang={lang} examples={examples} byText={byText} glosses={glosses}

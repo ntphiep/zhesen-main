@@ -26,6 +26,16 @@ const dog: DictEntryDetail = {
   senseLinks: [{ text: 'hound', senseOrder: 1, targetId: 'en:hound' }],
 }
 
+// /dictionary/en/lime printed "1. vôi" then two English definitions with nothing marking them.
+const lime: DictEntryDetail = {
+  ...dog, id: 'en:lime', headword: 'lime', glossVi: 'vôi', glossEn: 'calcium oxide', relations: [], senseLinks: [],
+  senses: [
+    { pos: 'noun', glossVi: 'vôi', glossEn: 'calcium oxide', senseOrder: 1, id: 'en:lime#1' },
+    { pos: 'noun', glossVi: null, glossEn: 'Any gluey or adhesive substance', senseOrder: 2, id: 'en:lime#2' },
+    { pos: 'noun', glossVi: null, glossEn: 'A limelight; any spotlight.', senseOrder: 3, id: 'en:lime#3' },
+  ],
+}
+
 beforeEach(() => {
   localStorage.clear()
   wordLayout.reset()
@@ -58,6 +68,20 @@ describe('word page layouts', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'dog' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'hound' })).toHaveAttribute('href', '/dictionary/en/hound')
     expect(localStorage.getItem('zhesen:word-layout')).toBe('classic')
+  })
+
+  it.each([['Tổng quan'], ['Song ngữ'], ['Cổ điển']])('says in %s how many meanings are not yet translated', async (name) => {
+    render(<LookupView detail={lime} characters={[]} siblings={[]} />)
+    await userEvent.click(screen.getByRole('button', { name }))
+    expect(await screen.findByText('2 nghĩa chưa dịch sang tiếng Việt.')).toBeInTheDocument()
+  })
+
+  it.each([['Tổng quan'], ['Cổ điển']])('marks an English meaning in %s as not yet translated', async (name) => {
+    render(<LookupView detail={lime} characters={[]} siblings={[]} />)
+    await userEvent.click(screen.getByRole('button', { name }))
+    const english = await screen.findByText('A limelight; any spotlight.')
+    expect(english).toHaveTextContent(/chưa dịch/)
+    for (const vi of screen.getAllByText('vôi')) expect(vi).not.toHaveTextContent(/chưa dịch/)
   })
 
   it('falls back to the overview for a stored layout that no longer exists', () => {

@@ -60,6 +60,11 @@ export function cleanGlossVi(gloss: string | null): string | null {
 /** Whether a sense carries any Vietnamese gloss (direct or via the English pivot). */
 const hasVi = (s: DictSense): boolean => Boolean(s.glossVi || s.pivotVi)
 
+/** Senses that print their English definition because no Vietnamese meaning exists. */
+export function untranslatedCount(senses: DictSense[]): number {
+  return senses.filter((s) => !hasVi(s) && s.glossEn && !isClassifierGloss(s.glossEn)).length
+}
+
 /** Most relevant first: a ranked sense by its `senseFrequency`, then a sense with a
  *  Vietnamese gloss (direct or pivot-derived) ahead of an English-only one, then sense_order. */
 export function rankSenses(senses: DictSense[]): DictSense[] {

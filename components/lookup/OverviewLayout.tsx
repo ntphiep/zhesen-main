@@ -7,8 +7,8 @@ import { ConjugationTable } from './ConjugationTable'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { BACKLINKS_LABEL, BacklinkList } from './LearnerParts'
 import {
-  AiCorner, Badge, CARD, CONTAINER, Card, ExampleRows, FamilyRows, FormLegend, FormTimeline, GrammarList, IrregularNote,
-  PhrasesCard, PivotMark, PosChip, SectionLabel, SynonymsRows, baseFormLabel, hasSynonyms,
+  AiCorner, Badge, CARD, CONTAINER, Card, EnglishMark, ExampleRows, FamilyRows, FormLegend, FormTimeline, GrammarList, IrregularNote,
+  PhrasesCard, PivotMark, PosChip, SectionLabel, SynonymsRows, UntranslatedNote, baseFormLabel, hasSynonyms,
 } from './WordParts'
 import { parseClassifiers } from '@/lib/dictionary/textQuality'
 import { senseSections, type SenseSection } from '@/lib/dictionary/wordPage'
@@ -174,6 +174,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
                       <span className="font-semibold">
                         {s.glossVi ?? s.pivotVi ?? s.glossEn}
                         {!s.glossVi && s.pivotVi && <PivotMark />}
+                        {!s.glossVi && !s.pivotVi && <EnglishMark />}
                       </span>
                       <PosChip value={s.pos} />
                     </span>
@@ -182,6 +183,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
                 </li>
               ))}
             </ol>
+            <UntranslatedNote senses={view.senses} />
             {classifiers.length > 0 && (
               <p className="flex flex-wrap items-center gap-2 border-t border-black/[0.06] pt-3 text-sm">
                 <span className="text-xs text-black/45">Lượng từ</span>

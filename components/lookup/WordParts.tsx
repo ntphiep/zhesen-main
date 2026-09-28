@@ -10,10 +10,10 @@ import { useAnchor } from '@/lib/hooks/useAnchor'
 import { searchPath } from '@/lib/dictionary/entryId'
 import { grammarPointPath } from '@/lib/grammar/path'
 import { posGroups, splitPos } from '@/lib/dictionary/pos'
-import { isSentenceTranslation } from '@/lib/dictionary/textQuality'
+import { isSentenceTranslation, untranslatedCount } from '@/lib/dictionary/textQuality'
 import { splitPhrasalVerbs, type FamilyWord, type ViewForm, type ViewWord, type WordView } from '@/lib/dictionary/wordView'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
-import type { DictExample } from '@/lib/dictionary/types'
+import type { DictExample, DictSense } from '@/lib/dictionary/types'
 import type { GrammarPoint } from '@/lib/grammar/types'
 import type { LangCode } from '@/lib/languages'
 
@@ -98,6 +98,20 @@ export function PivotMark() {
       qua tiếng Anh
     </span>
   )
+}
+
+/** An English definition standing in a meaning's slot. */
+export function EnglishMark() {
+  return (
+    <span className="ml-1 align-middle text-[10px] font-normal uppercase tracking-wide text-black/55" title="Nghĩa tiếng Anh">
+      chưa dịch
+    </span>
+  )
+}
+
+export function UntranslatedNote({ senses }: { senses: DictSense[] }) {
+  const n = untranslatedCount(senses)
+  return n > 0 ? <p className="text-[13px] text-black/55">{n} nghĩa chưa dịch sang tiếng Việt.</p> : null
 }
 
 /** A part of speech spelled out, as a small grey chip. */
