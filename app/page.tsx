@@ -16,7 +16,7 @@ export default async function Home() {
   const languages = LANGUAGES
   const wordOfDay = await getCachedWordOfDay()
   return (
-    <main className="mx-auto max-w-3xl px-6 py-16">
+    <main className="mx-auto max-w-page px-6 py-16">
       <h1 className="text-4xl font-bold">Zhesen</h1>
       <p className="mt-2 text-black/60">Học tiếng Trung, Tây Ban Nha và Anh.</p>
       <div className="mt-8">

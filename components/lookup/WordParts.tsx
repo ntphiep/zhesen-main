@@ -18,8 +18,8 @@ import type { LangCode } from '@/lib/languages'
 
 /** Pieces the three word-page layouts share. Sizes and colours follow the drawn designs. */
 
-/** 1248px of content at 1440px, as drawn. */
-export const CONTAINER = 'mx-auto w-full max-w-[1296px] px-4 sm:px-6'
+/** The same width as every other page and the header. */
+export const CONTAINER = 'mx-auto w-full max-w-page px-4 sm:px-6'
 
 export function WordLink({ word, className = '', children }: {
   word: Pick<ViewWord, 'text' | 'href'> & { gloss?: string | null }

@@ -74,7 +74,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
     : `+ Thêm cả ${level} vào sổ tay (${total} từ)`
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <main className="mx-auto max-w-page px-6 py-10">
       <Link href={theoryBlockPath(language.code, 'vocabulary')} className="text-sm text-black/50 hover:underline">← Từ vựng {language.name}</Link>
       <div className="mt-3 flex items-center gap-3">
         <span className="text-xl font-medium text-black/70">{language.nativeName}</span>

@@ -21,7 +21,7 @@ export default async function PracticePage() {
   await requirePermanentAccount(supabase, '/practice')
   const stats = await getWordlistStats(supabase)
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <main className="mx-auto max-w-page px-6 py-10">
       <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>
       <h1 className="mt-3 text-3xl font-bold">Luyện tập</h1>
       <p className="mt-1 text-sm text-black/60">Ôn từ đã lưu bằng nhiều cách.</p>

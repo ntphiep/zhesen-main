@@ -9,7 +9,7 @@ export function TheoryLangList({ languages, grammarCounts }: {
   grammarCounts: Record<LangCode, number>
 }) {
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <main className="mx-auto max-w-page px-6 py-10">
       <Link href="/" className="text-sm text-black/50 hover:underline">← Trang chủ</Link>
       <h1 className="mt-3 text-3xl font-bold">Lý thuyết</h1>
       <p className="mt-1 text-sm text-black/60">

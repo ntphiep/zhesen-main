@@ -22,7 +22,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
   // related word or an inflected form already knows which language it came from.
   const lang = sp.lang && isLangCode(sp.lang) ? sp.lang : undefined
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <main className="mx-auto max-w-page px-6 py-10">
       <h1 className="text-3xl font-bold">Dịch</h1>
       <div className="mt-6">
         <LookupPair lang={lang} initialQuery={sp.q ?? ''} autoFocus />

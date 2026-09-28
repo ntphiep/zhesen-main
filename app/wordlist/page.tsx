@@ -29,7 +29,7 @@ export default async function WordlistPage({
 
   const [words, due] = await Promise.all([listWords(supabase), countDueCards(supabase)])
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <main className="mx-auto max-w-page px-6 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold">Sổ tay</h1>
         {words.length > 0 && (

@@ -10,7 +10,7 @@ export function TheoryHub({ language, blocks, counts }: {
   counts: Partial<Record<TheoryBlockKey, string>>
 }) {
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <main className="mx-auto max-w-page px-6 py-10">
       <Link href={THEORY_PATH} className="text-sm text-black/50 hover:underline">← Lý thuyết</Link>
       <div className="mt-3 flex items-baseline gap-3">
         <span className="text-xl font-medium text-black/70">{language.nativeName}</span>

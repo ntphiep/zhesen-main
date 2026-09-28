@@ -7,6 +7,9 @@
    is a surface, and -700 text, -600 borders and solid buttons move to the
    -300/-400 end to stay legible on the dark ground. */
 @theme {
+  /* One width for every page and the header, so their edges line up. */
+  --container-page: 96rem;
+
   --color-black: var(--ink);
   --color-white: var(--paper);
 

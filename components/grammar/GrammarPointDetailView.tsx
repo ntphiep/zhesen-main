@@ -15,7 +15,7 @@ export function GrammarPointDetailView({ point, resolved = [] }: {
 }) {
   const byText = new Map(resolved.map((r) => [r.text, r]))
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
+    <main className="mx-auto flex max-w-page flex-col gap-6 px-6 py-10">
       <Link href={grammarLangPath(point.lang)} className="text-sm text-black/50 hover:underline">← Ngữ pháp {point.level}</Link>
 
       <div>
