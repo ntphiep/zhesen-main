@@ -178,6 +178,8 @@ export async function POST(request: Request) {
     })
     return Response.json({ data })
   } catch (e) {
+    // Next aborts request.signal with ResponseAborted once the tab is gone: nobody to answer.
+    if (request.signal.aborted) return new Response(null, { status: 499 })
     const f = failure(e)
     if (!f) throw e
     return Response.json({ error: f.error }, { status: f.status })

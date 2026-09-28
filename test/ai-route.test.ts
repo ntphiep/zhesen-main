@@ -112,6 +112,23 @@ describe('/api/ai', () => {
     expect(modelSignal?.aborted).toBe(true)
   })
 
+  // Next aborts request.signal with ResponseAborted; rethrowing it logged an error for a closed tab.
+  it('ends quietly when the browser leaves during a JSON task', async () => {
+    globalThis.fetch = vi.fn((_url: string | URL | Request, init?: RequestInit) => new Promise<Response>((_, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(init.signal?.reason))
+    }))
+    const browser = new AbortController()
+    const res = POST(new Request('http://localhost/api/ai', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ task: 'enrich', input: { lang: 'en', headword: 'dog' } }),
+      signal: browser.signal,
+    }))
+    await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalled())
+    browser.abort(Object.assign(new Error('aborted'), { name: 'ResponseAborted' }))
+    await expect(res).resolves.toBeInstanceOf(Response)
+  })
+
   it('turns a model that answers nonsense into 502, not a crash', async () => {
     modelReplies('Tôi không chắc lắm.')
     expect((await post({ task: 'enrich', input: { lang: 'en', headword: 'dog' } })).status).toBe(502)
@@ -237,6 +254,17 @@ describe('/api/ai', () => {
       const reply = `${'a'.repeat(1000)}${'b'.repeat(500)}`
       expect(lines).toEqual([{ text: 'a'.repeat(1000) }, { text: 'b'.repeat(500) }, { data: { reply } }])
       expect(modelSignal?.aborted).toBe(true)
+    })
+
+    // 900 tokens of dense Chinese end before 1500 characters; that cut is the same as the cap.
+    it('keeps a reply cut by the token limit as the answer', async () => {
+      globalThis.fetch = vi.fn(async () => anthropicStream(['Hoãn ', 'lại'], [
+        { type: 'message_delta', delta: { stop_reason: 'max_tokens', stop_sequence: null }, usage: { output_tokens: 900 } },
+        { type: 'message_stop' },
+      ]))
+      expect(await ndjsonLines(await post(chat))).toEqual([
+        { text: 'Hoãn ' }, { text: 'lại' }, { data: { reply: 'Hoãn lại' } },
+      ])
     })
 
     it('still holds the reply to the task schema', async () => {

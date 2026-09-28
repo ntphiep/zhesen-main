@@ -119,13 +119,13 @@ describe('streamText', () => {
     await expect(collect(await streamText(cfg, opts))).rejects.toThrow(AiUnavailableError)
   })
 
-  // `message_stop` closes a reply cut by the token limit too; only `stop_reason` tells them apart.
-  it('fails on a reply cut by the token limit', async () => {
+  // A reply cut by the token limit is kept like one cut at the character cap: the learner saw it.
+  it('keeps the text of a reply cut by the token limit', async () => {
     globalThis.fetch = vi.fn(async () => anthropicStream(['Hoãn '], [
       { type: 'message_delta', delta: { stop_reason: 'max_tokens', stop_sequence: null }, usage: { output_tokens: 900 } },
       { type: 'message_stop' },
     ]))
-    await expect(collect(await streamText(cfg, opts))).rejects.toThrow(AiUnavailableError)
+    expect(await collect(await streamText(cfg, opts))).toEqual(['Hoãn '])
   })
 
   it('accepts a reply that ended on its own', async () => {
@@ -139,6 +139,11 @@ describe('streamText', () => {
   it('reports a non-OK response before yielding anything', async () => {
     globalThis.fetch = reply({ error: 'nope' }, false)
     await expect(streamText(cfg, opts)).rejects.toThrow(AiUnavailableError)
+  })
+
+  it('keeps the text of a one-body reply cut by the token limit', async () => {
+    globalThis.fetch = reply({ choices: [{ message: { content: 'Hoãn' }, finish_reason: 'length' }] })
+    expect(await collect(await streamText(cfg, opts))).toEqual(['Hoãn'])
   })
 
   it('takes the text whole from a router that answers one body', async () => {

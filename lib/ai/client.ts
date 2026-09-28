@@ -16,11 +16,10 @@ const anthropicShape = z.object({
   content: z.array(z.object({ type: z.string(), text: z.string().optional() })).min(1),
 })
 
-/** The server-sent events that matter; only `message_stop` after a `stop_reason` other than
- *  `max_tokens` proves the text is whole. */
+/** The server-sent events that matter; only `message_stop` proves the stream ended. A
+ *  `max_tokens` stop is kept like the route's character cap: the learner already saw it. */
 const streamEvent = z.discriminatedUnion('type', [
   z.object({ type: z.literal('content_block_delta'), delta: z.object({ type: z.string(), text: z.string().optional() }) }),
-  z.object({ type: z.literal('message_delta'), delta: z.object({ stop_reason: z.string().nullish() }) }),
   z.object({ type: z.literal('message_stop') }),
   z.object({ type: z.literal('error') }),
 ])
@@ -112,8 +111,8 @@ export async function askJson<T>(cfg: AiConfig, opts: AskOptions<T>): Promise<T>
 /**
  * The reply as it is written. Resolves once the model has accepted the request, so a
  * refusal throws before the caller commits to a streamed response; the pieces that
- * follow throw AiUnavailableError on an `error` event, a reply cut by the token limit,
- * or a stream cut before `message_stop`.
+ * follow throw AiUnavailableError on an `error` event or a stream cut before
+ * `message_stop`.
  */
 export async function streamText(cfg: AiConfig, opts: TextOptions): Promise<AsyncGenerator<string>> {
   const res = await send(cfg, opts, true)
@@ -129,7 +128,6 @@ async function* deltas(body: ReadableStream<Uint8Array>): AsyncGenerator<string>
   const reader = body.getReader()
   const decoder = new TextDecoder()
   let buffered = ''
-  let stopReason: string | null | undefined
   try {
     for (;;) {
       const { done, value } = await reader.read()
@@ -148,11 +146,7 @@ async function* deltas(body: ReadableStream<Uint8Array>): AsyncGenerator<string>
         const event = streamEvent.safeParse(json)
         if (!event.success) continue
         if (event.data.type === 'error') throw new AiUnavailableError('error event in the stream')
-        if (event.data.type === 'message_delta') { stopReason = event.data.delta.stop_reason; continue }
-        if (event.data.type === 'message_stop') {
-          if (stopReason === 'max_tokens') throw new AiUnavailableError('reply cut by max_tokens')
-          return
-        }
+        if (event.data.type === 'message_stop') return
         if (event.data.delta.type === 'text_delta' && event.data.delta.text) yield event.data.delta.text
       }
     }
