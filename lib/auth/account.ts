@@ -1,4 +1,4 @@
-import type { SupabaseClient, User } from '@supabase/supabase-js'
+import type { AuthError, SupabaseClient, User } from '@supabase/supabase-js'
 
 /**
  * An anonymous account lives in one browser's cookie, so clearing site data strands the
@@ -31,6 +31,37 @@ export function passwordProblem(password: string): string | null {
 const SWITCH_WOULD_STRAND =
   'Trình duyệt này còn từ chưa gắn email. Gắn email cho sổ tay này trước.'
 
+const RATE_LIMITED = 'Thử quá nhiều lần. Chờ vài phút rồi thử lại.'
+const SESSION_GONE = 'Phiên đăng nhập đã hết. Đăng nhập lại.'
+
+/** Keyed on GoTrue's `code`, never its English `message`. Codes are `ErrorCode` in
+ *  @supabase/auth-js (`dist/module/lib/error-codes.d.ts`). */
+const AUTH_ERRORS = new Map<string, string>([
+  ['invalid_credentials', 'Sai email hoặc mật khẩu.'],
+  ['email_not_confirmed', 'Email này chưa xác nhận.'],
+  ['user_already_exists', 'Email này đã có tài khoản.'],
+  ['email_exists', 'Email này đã có tài khoản.'],
+  ['email_address_invalid', 'Email không hợp lệ.'],
+  ['validation_failed', 'Email hoặc mật khẩu không hợp lệ.'],
+  ['weak_password', 'Mật khẩu quá yếu. Chọn mật khẩu khác.'],
+  ['same_password', 'Mật khẩu mới trùng mật khẩu cũ. Chọn mật khẩu khác.'],
+  ['over_request_rate_limit', RATE_LIMITED],
+  ['over_email_send_rate_limit', RATE_LIMITED],
+  ['signup_disabled', 'Tạm ngừng tạo tài khoản mới.'],
+  ['user_banned', 'Tài khoản này đang bị khóa.'],
+  ['session_not_found', SESSION_GONE],
+  ['session_expired', SESSION_GONE],
+  ['refresh_token_not_found', SESSION_GONE],
+  ['bad_jwt', SESSION_GONE],
+  ['user_not_found', SESSION_GONE],
+  ['request_timeout', 'Chưa kết nối được. Thử lại.'],
+])
+
+/** An unmapped or missing code gets `fallback`: the English text never reaches the page. */
+function failed(error: AuthError, fallback: string): AuthOutcome {
+  return { status: 'error', message: (error.code && AUTH_ERRORS.get(error.code)) || fallback }
+}
+
 /**
  * Put an email and a password on the anonymous account holding this browser's words.
  * Supabase keeps the user id, so every row stays attached. GoTrue confirms the address
@@ -46,7 +77,7 @@ export async function attachEmail(
   const problem = passwordProblem(password)
   if (problem) return { status: 'error', message: problem }
   const { error } = await supabase.auth.updateUser({ email, password })
-  return error ? { status: 'error', message: error.message } : { status: 'active' }
+  return error ? failed(error, 'Chưa gắn được email. Thử lại.') : { status: 'active' }
 }
 
 /** Create an account from scratch. No mail is sent, so a missing session is a failure. */
@@ -59,7 +90,7 @@ export async function registerWithPassword(
   if (problem) return { status: 'error', message: problem }
 
   const { data, error } = await supabase.auth.signUp({ email, password })
-  if (error) return { status: 'error', message: error.message }
+  if (error) return failed(error, 'Chưa tạo được tài khoản. Thử lại.')
   if (!data.session) return { status: 'error', message: 'Tài khoản chưa sẵn sàng. Đăng nhập để tiếp tục.' }
   return { status: 'active' }
 }
@@ -74,7 +105,7 @@ export async function signInWithPassword(
 ): Promise<AuthOutcome> {
   if (localWordCount > 0) return { status: 'error', message: SWITCH_WOULD_STRAND }
   const { error } = await supabase.auth.signInWithPassword({ email, password })
-  return error ? { status: 'error', message: error.message } : { status: 'active' }
+  return error ? failed(error, 'Chưa đăng nhập được. Thử lại.') : { status: 'active' }
 }
 
 /** Set or replace the password on the account signed in. */
@@ -85,7 +116,7 @@ export async function setPassword(
   const problem = passwordProblem(password)
   if (problem) return { status: 'error', message: problem }
   const { error } = await supabase.auth.updateUser({ password })
-  return error ? { status: 'error', message: error.message } : { status: 'active' }
+  return error ? failed(error, 'Chưa đặt được mật khẩu. Thử lại.') : { status: 'active' }
 }
 
 export async function signOut(supabase: SupabaseClient): Promise<void> {

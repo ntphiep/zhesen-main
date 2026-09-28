@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { SupabaseClient, User } from '@supabase/supabase-js'
+import { AuthApiError, type SupabaseClient, type User } from '@supabase/supabase-js'
 import {
   accountKind, attachEmail, passwordProblem, registerWithPassword, setPassword,
   signInWithPassword, MIN_PASSWORD,
@@ -53,7 +53,7 @@ describe('attachEmail', () => {
     const { client, updateUser } = fakeAuth()
     updateUser.mockResolvedValue({ error: { message: 'Email rate limit exceeded' } } as never)
     await expect(attachEmail(client, 'a@b.com', 'longenough1'))
-      .resolves.toEqual({ status: 'error', message: 'Email rate limit exceeded' })
+      .resolves.toEqual({ status: 'error', message: 'Chưa gắn được email. Thử lại.' })
   })
 })
 
@@ -106,6 +106,56 @@ describe('signInWithPassword', () => {
     const outcome = await signInWithPassword(client, 'a@b.com', 'longenough1', 12)
     expect(outcome.status).toBe('error')
     expect(call).not.toHaveBeenCalled()
+  })
+})
+
+// GoTrue answers in English. The code, not the message, picks what the learner reads.
+describe('auth failures', () => {
+  const refuse = (message: string, status: number, code: string) =>
+    ({ data: { session: null, user: null }, error: new AuthApiError(message, status, code) }) as never
+
+  it('says in Vietnamese that the new password matches the old one', async () => {
+    const { client, updateUser } = fakeAuth()
+    updateUser.mockResolvedValue(refuse('New password should be different from the old password.', 422, 'same_password'))
+    await expect(setPassword(client, 'longenough1')).resolves
+      .toEqual({ status: 'error', message: 'Mật khẩu mới trùng mật khẩu cũ. Chọn mật khẩu khác.' })
+  })
+
+  it('says in Vietnamese that the email or password is wrong', async () => {
+    const { client, signInWithPassword: call } = fakeAuth()
+    call.mockResolvedValue(refuse('Invalid login credentials', 400, 'invalid_credentials'))
+    await expect(signInWithPassword(client, 'a@b.com', 'longenough1', 0)).resolves
+      .toEqual({ status: 'error', message: 'Sai email hoặc mật khẩu.' })
+  })
+
+  it.each([
+    ['over_email_send_rate_limit', 429, 'email rate limit exceeded', 'Thử quá nhiều lần. Chờ vài phút rồi thử lại.'],
+    ['over_request_rate_limit', 429, 'Request rate limit reached', 'Thử quá nhiều lần. Chờ vài phút rồi thử lại.'],
+    ['weak_password', 422, 'Password is known to be weak', 'Mật khẩu quá yếu. Chọn mật khẩu khác.'],
+    ['user_already_exists', 422, 'User already registered', 'Email này đã có tài khoản.'],
+    ['email_address_invalid', 400, 'Email address is invalid', 'Email không hợp lệ.'],
+  ])('maps %s on sign-up to Vietnamese', async (code, status, english, vietnamese) => {
+    const { client, signUp } = fakeAuth()
+    signUp.mockResolvedValue(refuse(english, status, code))
+    await expect(registerWithPassword(client, 'a@b.com', 'longenough1')).resolves
+      .toEqual({ status: 'error', message: vietnamese })
+  })
+
+  // #59: this is what production answered while mail delivery was broken.
+  it('falls back to Vietnamese for a code it does not know, never the English text', async () => {
+    const { client, signUp, updateUser, signInWithPassword: call } = fakeAuth()
+    signUp.mockResolvedValue(refuse('Error sending confirmation email', 500, 'unexpected_failure'))
+    updateUser.mockResolvedValue(refuse('Something new', 400, 'a_code_from_a_newer_gotrue'))
+    call.mockResolvedValue(refuse('Something new', 400, 'a_code_from_a_newer_gotrue'))
+
+    await expect(registerWithPassword(client, 'a@b.com', 'longenough1')).resolves
+      .toEqual({ status: 'error', message: 'Chưa tạo được tài khoản. Thử lại.' })
+    await expect(setPassword(client, 'longenough1')).resolves
+      .toEqual({ status: 'error', message: 'Chưa đặt được mật khẩu. Thử lại.' })
+    await expect(attachEmail(client, 'a@b.com', 'longenough1')).resolves
+      .toEqual({ status: 'error', message: 'Chưa gắn được email. Thử lại.' })
+    await expect(signInWithPassword(client, 'a@b.com', 'longenough1', 0)).resolves
+      .toEqual({ status: 'error', message: 'Chưa đăng nhập được. Thử lại.' })
   })
 })
 
