@@ -157,6 +157,17 @@ describe('auth failures', () => {
       .toEqual({ status: 'error', message: 'Phiên đăng nhập đã hết. Đăng nhập lại.' })
   })
 
+  // An anonymous learner has no password to sign in with, so the way on is a fresh account.
+  it.each([
+    ['no session at all', new AuthSessionMissingError()],
+    ['session_not_found', new AuthApiError('Session not found', 403, 'session_not_found')],
+  ])('sends a learner attaching an email with %s to reload and create the account', async (_, error) => {
+    const { client, updateUser } = fakeAuth()
+    updateUser.mockResolvedValue({ data: { user: null }, error } as never)
+    await expect(attachEmail(client, 'a@b.com', 'longenough1')).resolves
+      .toEqual({ status: 'error', message: 'Phiên đăng nhập đã hết. Tải lại trang rồi tạo tài khoản.' })
+  })
+
   // #59: this is what production answered while mail delivery was broken.
   it('falls back to Vietnamese for a code it does not know, never the English text', async () => {
     const { client, signUp, updateUser, signInWithPassword: call } = fakeAuth()

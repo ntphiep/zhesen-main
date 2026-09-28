@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from '@/lib/zod'
-import { SESSION_GONE } from '@/lib/auth/account'
+import { SESSION_GONE, sessionMissing } from '@/lib/auth/account'
 
 /**
  * Display name and role, in `public.profiles` (migration 0032) because `auth.users` is not
@@ -46,6 +46,8 @@ export async function getProfile(
 
 export type SaveOutcome = { ok: true } | { ok: false; message: string }
 
+const SAVE_FAILED = 'Chưa lưu được tên. Thử lại.'
+
 /** Rename the account. Empty means "no name", a real choice, so it is stored as null. */
 export async function setDisplayName(
   supabase: SupabaseClient,
@@ -55,11 +57,12 @@ export async function setDisplayName(
   if (trimmed.length > 60) return { ok: false, message: 'Tên hiển thị tối đa 60 ký tự.' }
   // Said here rather than falling back to an empty id: `id=eq.` against a uuid column
   // raises 22P02, showing raw Postgres text for what is really an expired session.
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { ok: false, message: SESSION_GONE }
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  // Offline or a GoTrue 5xx also leaves no user, and a retry fixes those.
+  if (!user) return { ok: false, message: !authError || sessionMissing(authError) ? SESSION_GONE : SAVE_FAILED }
   const { error } = await supabase
     .from('profiles')
     .update({ display_name: trimmed || null })
     .eq('id', user.id)
-  return error ? { ok: false, message: 'Chưa lưu được tên. Thử lại.' } : { ok: true }
+  return error ? { ok: false, message: SAVE_FAILED } : { ok: true }
 }

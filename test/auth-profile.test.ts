@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { AuthRetryableFetchError, AuthSessionMissingError, type SupabaseClient } from '@supabase/supabase-js'
 import { getProfile, setDisplayName } from '@/lib/auth/profile'
 import { clientReturning, queryBuilder } from './helpers/supabase'
 
@@ -36,11 +36,11 @@ describe('getProfile', () => {
 })
 
 describe('setDisplayName', () => {
-  function client(user: { id: string } | null, error: unknown = null) {
+  function client(user: { id: string } | null, error: unknown = null, authError: unknown = null) {
     const builder = queryBuilder({ data: null, error })
     builder.update = vi.fn(() => builder)
     return {
-      auth: { getUser: vi.fn(async () => ({ data: { user } })) },
+      auth: { getUser: vi.fn(async () => ({ data: { user }, error: authError })) },
       from: vi.fn(() => builder),
     } as unknown as SupabaseClient
   }
@@ -48,6 +48,17 @@ describe('setDisplayName', () => {
   it('says the session is gone in the words the sign-in forms use', async () => {
     await expect(setDisplayName(client(null), 'Hiệp')).resolves
       .toEqual({ ok: false, message: 'Phiên đăng nhập đã hết. Đăng nhập lại.' })
+  })
+
+  it('says the session is gone when GoTrue reports it missing', async () => {
+    await expect(setDisplayName(client(null, null, new AuthSessionMissingError()), 'Hiệp')).resolves
+      .toEqual({ ok: false, message: 'Phiên đăng nhập đã hết. Đăng nhập lại.' })
+  })
+
+  // Offline or a GoTrue 5xx also answers with no user; that is not an expired session.
+  it('asks for a retry when GoTrue could not be reached', async () => {
+    await expect(setDisplayName(client(null, null, new AuthRetryableFetchError('Failed to fetch', 0)), 'Hiệp')).resolves
+      .toEqual({ ok: false, message: 'Chưa lưu được tên. Thử lại.' })
   })
 
   it('shows Vietnamese, never the database text, when the save fails', async () => {

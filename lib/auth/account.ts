@@ -57,10 +57,15 @@ const AUTH_ERRORS = new Map<string, string>([
   ['request_timeout', 'Chưa kết nối được. Thử lại.'],
 ])
 
-/** An unmapped or missing code gets `fallback`: the English text never reaches the page.
- *  AuthSessionMissingError has no code, only its name. */
-function failed(error: AuthError, fallback: string): AuthOutcome {
-  if (isAuthSessionMissingError(error)) return { status: 'error', message: SESSION_GONE }
+/** The session is gone, not merely unreachable. AuthSessionMissingError has no code, only
+ *  its name. */
+export function sessionMissing(error: AuthError): boolean {
+  return isAuthSessionMissingError(error) || (!!error.code && AUTH_ERRORS.get(error.code) === SESSION_GONE)
+}
+
+/** An unmapped or missing code gets `fallback`: the English text never reaches the page. */
+function failed(error: AuthError, fallback: string, sessionGone = SESSION_GONE): AuthOutcome {
+  if (sessionMissing(error)) return { status: 'error', message: sessionGone }
   return { status: 'error', message: (error.code && AUTH_ERRORS.get(error.code)) || fallback }
 }
 
@@ -85,7 +90,10 @@ export async function attachEmail(
   if (error?.code && TAKEN_WHILE_ATTACHING.has(error.code)) {
     return { status: 'error', message: 'Email này đã có tài khoản. Dùng email khác.' }
   }
-  return error ? failed(error, 'Chưa gắn được email. Thử lại.') : { status: 'active' }
+  // An anonymous learner has no password to sign in again with.
+  return error
+    ? failed(error, 'Chưa gắn được email. Thử lại.', 'Phiên đăng nhập đã hết. Tải lại trang rồi tạo tài khoản.')
+    : { status: 'active' }
 }
 
 /** Create an account from scratch. No mail is sent, so a missing session is a failure. */
