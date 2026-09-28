@@ -1,6 +1,7 @@
 import { aiConfig } from '@/lib/ai/config'
-import { askJson, AiUnavailableError } from '@/lib/ai/client'
-import { ERASED_TASKS, isTaskName } from '@/lib/ai/tasks'
+import type { AiConfig } from '@/lib/ai/config'
+import { askJson, streamText, AiUnavailableError } from '@/lib/ai/client'
+import { ERASED_TASKS, isTaskName, type ErasedTask } from '@/lib/ai/tasks'
 import { z } from '@/lib/zod'
 import { clientKey, createRateLimiter } from '@/lib/http/rateLimit'
 import { createClient } from '@/lib/supabase/server'
@@ -51,6 +52,62 @@ const TIMEOUT_MS = 30_000
 
 /** The answer depends on the caller's session, so no cache may keep it. */
 const PRIVATE = { 'Cache-Control': 'private, no-store' }
+
+const UNAVAILABLE = 'Trợ lý chưa trả lời được. Thử lại sau.'
+
+/** What the browser is told about a failed model call, or null for a failure that
+ *  is not the model's and should surface as one. */
+function failure(e: unknown): { error: string; status: number } | null {
+  if (e instanceof AiUnavailableError) return { error: UNAVAILABLE, status: 502 }
+  if (e instanceof DOMException && e.name === 'TimeoutError') {
+    return { error: 'Trợ lý trả lời quá lâu. Thử lại sau.', status: 504 }
+  }
+  return null
+}
+
+/**
+ * A plain-text task, answered as NDJSON: `{"text"}` per piece as the model writes it,
+ * then one `{"data"}` checked against the task's output schema, or one `{"error"}`.
+ * The status is already 200 by the time the model can fail, hence the error line.
+ */
+async function streamed(
+  cfg: AiConfig, spec: ErasedTask, fromText: (text: string) => unknown, user: string,
+  signal: AbortSignal,
+): Promise<Response> {
+  // The browser going away cancels the body; that has to stop the model call too.
+  const gone = new AbortController()
+  const pieces = await streamText(cfg, {
+    system: spec.system, user, maxTokens: spec.maxTokens, signal: AbortSignal.any([signal, gone.signal]),
+  })
+  const encoder = new TextEncoder()
+  const line = (value: unknown) => encoder.encode(`${JSON.stringify(value)}\n`)
+  let whole = ''
+
+  const body = new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        const { done, value } = await pieces.next()
+        if (!done) {
+          whole += value
+          controller.enqueue(line({ text: value }))
+          return
+        }
+        const data = spec.parseOutput(fromText(whole))
+        controller.enqueue(line(data === null ? { error: UNAVAILABLE } : { data }))
+      } catch (e) {
+        if (gone.signal.aborted) return
+        const f = failure(e)
+        if (!f) throw e
+        controller.enqueue(line({ error: f.error }))
+      }
+      controller.close()
+    },
+    cancel() {
+      gone.abort()
+    },
+  })
+  return new Response(body, { headers: { 'content-type': 'application/x-ndjson; charset=utf-8', ...PRIVATE } })
+}
 
 async function signedIn(): Promise<boolean> {
   return (await permanentUser(await createClient())) !== null
@@ -106,6 +163,7 @@ export async function POST(request: Request) {
 
   const timeout = AbortSignal.timeout(TIMEOUT_MS)
   try {
+    if (spec.fromText) return await streamed(cfg, spec, spec.fromText, prompt, timeout)
     const data = await askJson(cfg, {
       system: spec.system,
       user: prompt,
@@ -115,12 +173,8 @@ export async function POST(request: Request) {
     })
     return Response.json({ data })
   } catch (e) {
-    if (e instanceof AiUnavailableError) {
-      return Response.json({ error: 'Trợ lý chưa trả lời được. Thử lại sau.' }, { status: 502 })
-    }
-    if (e instanceof DOMException && e.name === 'TimeoutError') {
-      return Response.json({ error: 'Trợ lý trả lời quá lâu. Thử lại sau.' }, { status: 504 })
-    }
-    throw e
+    const f = failure(e)
+    if (!f) throw e
+    return Response.json({ error: f.error }, { status: f.status })
   }
 }

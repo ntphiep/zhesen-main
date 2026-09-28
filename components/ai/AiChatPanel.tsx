@@ -31,6 +31,9 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /** The reply as it streams in, unchecked until `callAi` resolves. */
+  const [partial, setPartial] = useState('')
+  const stopRef = useRef<AbortController | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const dialogRef = useModalDialog(open)
@@ -50,21 +53,29 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
     setDraft('')
     setError(null)
     setBusy(true)
+    const stop = new AbortController()
+    stopRef.current = stop
 
     try {
       const outcome = await callAi('chat', {
         context: pageContext(path, typeof document === 'undefined' ? '' : document.title),
         messages: next.slice(-HISTORY),
+      }, stop.signal, (text) => {
+        setPartial(text)
+        endRef.current?.scrollIntoView({ block: 'end' })
       })
       // The question stays on screen either way, so a failure costs no retyping.
       if (outcome.status === 'error') setError(outcome.message)
       else setTurns([...next, { role: 'assistant', text: outcome.data.reply }])
-    } catch {
+    } catch (e) {
       // `callAi` handles fetch failures, but its dynamic task-module import rejects
       // after a redeploy, leaving the send button disabled for the life of the page.
-      setError('Chưa gửi được câu hỏi. Thử lại.')
+      // An abort is the learner pressing Dừng, which needs no message.
+      if ((e as Error).name !== 'AbortError') setError('Chưa gửi được câu hỏi. Thử lại.')
     } finally {
       setBusy(false)
+      setPartial('')
+      stopRef.current = null
     }
     endRef.current?.scrollIntoView({ block: 'end' })
   }
@@ -122,7 +133,9 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
                   {t.text}
                 </p>
               ))}
-              {busy && <p className="text-black/50">Đang trả lời…</p>}
+              {busy && (partial
+                ? <p className="mr-6 rounded-xl bg-black/5 px-3 py-2 whitespace-pre-wrap">{partial}</p>
+                : <p className="text-black/50">Đang trả lời…</p>)}
               {error && <p className="text-red-700">{error}</p>}
               <div ref={endRef} />
             </div>
@@ -145,6 +158,15 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
                 placeholder="Nhập câu hỏi…"
                 className="flex-1 resize-none rounded-xl border border-black/15 px-3 py-2 text-sm outline-none focus:border-blue-600"
               />
+              {busy && (
+                <button
+                  type="button"
+                  onClick={() => stopRef.current?.abort()}
+                  className="rounded-xl border border-black/15 px-3 py-2 text-sm font-medium"
+                >
+                  Dừng
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={busy || draft.trim() === ''}

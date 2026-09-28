@@ -6,6 +6,7 @@ const { getUser } = vi.hoisted(() => ({ getUser: vi.fn() }))
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser } }) }))
 
 import { GET, POST, resetAiBudgets } from '@/app/api/ai/route'
+import { anthropicStream, ndjsonLines } from './helpers/stream'
 
 const ENV = ['AI_BASE_URL', 'AI_API_KEY', 'AI_MODEL', 'TRUST_PROXY_HEADER', 'VERCEL'] as const
 const saved: Record<string, string | undefined> = {}
@@ -175,5 +176,41 @@ describe('/api/ai', () => {
     }))
     const real = await post({ task: 'enrich', input: { lang: 'en', headword: 'dog' } })
     expect(real.status).toBe(200)
+  })
+
+  describe('chat, which streams', () => {
+    const chat = { task: 'chat', input: { messages: [{ role: 'user', text: 'từ này nghĩa gì' }] } }
+
+    // A two-sentence reply took 12,179 ms with nothing on screen, so the text goes out
+    // as it arrives and the checked answer closes the stream.
+    it('sends each piece of text as it arrives, then the checked answer', async () => {
+      globalThis.fetch = vi.fn(async () => anthropicStream(['Hoãn ', 'lại.']))
+      const res = await post(chat)
+      expect(res.status).toBe(200)
+      expect(res.headers.get('content-type')).toContain('application/x-ndjson')
+      expect(res.headers.get('cache-control')).toBe('private, no-store')
+      expect(await ndjsonLines(res)).toEqual([
+        { text: 'Hoãn ' }, { text: 'lại.' }, { data: { reply: 'Hoãn lại.' } },
+      ])
+    })
+
+    it('answers 502 before streaming when the model refuses', async () => {
+      globalThis.fetch = vi.fn(async () => new Response('down', { status: 500 }))
+      expect((await post(chat)).status).toBe(502)
+    })
+
+    it('ends with an error line, not an answer, when the model breaks off', async () => {
+      globalThis.fetch = vi.fn(async () => anthropicStream(['Hoãn '], [
+        { type: 'error', error: { type: 'overloaded_error', message: 'Overloaded' } },
+      ]))
+      const lines = await ndjsonLines(await post(chat))
+      expect(lines.at(-1)).toEqual({ error: 'Trợ lý chưa trả lời được. Thử lại sau.' })
+      expect(lines.some((l) => typeof l === 'object' && l !== null && 'data' in l)).toBe(false)
+    })
+
+    it('still holds the reply to the task schema', async () => {
+      globalThis.fetch = vi.fn(async () => anthropicStream(['   ']))
+      expect((await ndjsonLines(await post(chat))).at(-1)).toEqual({ error: 'Trợ lý chưa trả lời được. Thử lại sau.' })
+    })
   })
 })

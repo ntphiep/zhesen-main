@@ -44,6 +44,16 @@ describe('task inputs', () => {
     expect(isTaskName('drop-tables')).toBe(false)
   })
 
+  // Chat streams its reply to the screen as it arrives, which a JSON envelope would
+  // show as raw braces; the other tasks stay JSON because a partial object is useless.
+  it('asks for plain text in chat and JSON everywhere else', () => {
+    const chat = ERASED_TASKS.chat.promptFor({ messages: [{ role: 'user', text: 'chào' }] })
+    expect(`${ERASED_TASKS.chat.system}\n${chat}`).not.toContain('JSON')
+    expect(ERASED_TASKS.chat.fromText?.(' Chào. ')).toEqual({ reply: 'Chào.' })
+    expect(ERASED_TASKS.enrich.system).toContain('JSON')
+    expect(ERASED_TASKS.enrich.fromText).toBeUndefined()
+  })
+
   it('builds a prompt only for input the task accepts', () => {
     expect(ERASED_TASKS.enrich.promptFor({ lang: 'en', headword: 'dog' })).toContain('dog')
     expect(ERASED_TASKS.enrich.promptFor({ lang: 'fr', headword: 'chien' })).toBeNull()

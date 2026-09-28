@@ -147,7 +147,7 @@ const TUTOR = [
   'Ví dụ thì viết nguyên văn ở ngôn ngữ đích rồi kèm bản dịch tiếng Việt.',
   'Không bịa: không chắc thì nói thẳng là không chắc.',
   'Chỉ trả lời chuyện học ngoại ngữ và cách dùng ứng dụng; câu hỏi ngoài phạm vi thì từ chối ngắn gọn.',
-  JSON_ONLY,
+  'Viết văn bản thường, không markdown.',
 ].join(' ')
 
 export interface TaskSpec<I, O> {
@@ -156,6 +156,9 @@ export interface TaskSpec<I, O> {
   maxTokens: number
   system: string
   prompt: (input: I) => string
+  /** Present when the model answers in plain text rather than JSON, which is what lets
+   *  the route stream it; turns the whole text into what `output` checks. */
+  fromText?: (text: string) => unknown
 }
 
 export const TASKS = {
@@ -252,9 +255,9 @@ export const TASKS = {
         context ? `Người học đang xem: ${context}.` : '',
         'Đoạn hội thoại, lượt cuối là câu hỏi cần trả lời:',
         ...messages.map((m) => `${m.role === 'user' ? 'Người học' : 'Gia sư'}: ${m.text}`),
-        'Trả JSON với đúng khoá sau:',
-        '{"reply": câu trả lời của gia sư cho lượt cuối}',
+        'Viết câu trả lời của gia sư cho lượt cuối.',
       ].filter(Boolean).join('\n'),
+    fromText: (text) => ({ reply: text.trim() }),
   } satisfies TaskSpec<z.infer<typeof chatInput>, ChatOutput>,
 } as const
 
@@ -274,6 +277,8 @@ export interface ErasedTask {
   promptFor(input: unknown): string | null
   /** The model's answer, or null when it is not the promised shape. */
   parseOutput(value: unknown): unknown | null
+  /** See `TaskSpec.fromText`. */
+  fromText?: (text: string) => unknown
 }
 
 function erase<I, O>(spec: TaskSpec<I, O>): ErasedTask {
@@ -288,6 +293,7 @@ function erase<I, O>(spec: TaskSpec<I, O>): ErasedTask {
       const parsed = spec.output.safeParse(value)
       return parsed.success ? parsed.data : null
     },
+    fromText: spec.fromText,
   }
 }
 

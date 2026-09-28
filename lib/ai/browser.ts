@@ -15,10 +15,13 @@ export type AiOutcome<T> =
 
 type Output<K extends TaskName> = z.infer<Tasks[K]['output']>
 
+/** A streamed task (chat) calls `onText` with the reply so far as it is written. The
+ *  text is unchecked until the outcome arrives; only the outcome is the answer. */
 export async function callAi<K extends TaskName>(
   task: K,
   input: z.input<Tasks[K]['input']>,
   signal?: AbortSignal,
+  onText?: (text: string) => void,
 ): Promise<AiOutcome<Output<K>>> {
   let res: Response
   try {
@@ -33,10 +36,12 @@ export async function callAi<K extends TaskName>(
     return { status: 'error', message: 'Chưa kết nối được trợ lý.' }
   }
 
-  const body: unknown = await res.json().catch(() => null)
-  if (!res.ok) {
-    const message = (body as { error?: string } | null)?.error
-    return { status: 'error', message: message ?? 'Trợ lý chưa trả lời được.' }
+  const body: unknown = res.ok && res.body && res.headers.get('content-type')?.startsWith('application/x-ndjson')
+    ? await readLines(res.body, onText)
+    : await res.json().catch(() => null)
+  const message = (body as { error?: unknown } | null)?.error
+  if (!res.ok || typeof message === 'string') {
+    return { status: 'error', message: typeof message === 'string' ? message : 'Trợ lý chưa trả lời được.' }
   }
 
   // Loaded here rather than at module scope: by now the request has been made
@@ -45,6 +50,37 @@ export async function callAi<K extends TaskName>(
   const parsed = TASKS[task].output.safeParse((body as { data?: unknown } | null)?.data)
   if (!parsed.success) return { status: 'error', message: 'Chưa đọc được câu trả lời.' }
   return { status: 'ok', data: parsed.data as Output<K> }
+}
+
+/** Reads `app/api/ai/route.ts`'s NDJSON: every `{"text"}` line goes to `onText` as the
+ *  text so far, and the closing `{"data"}` or `{"error"}` line is returned. A body cut
+ *  before that line returns null, and an abort is rethrown for the caller to ignore. */
+async function readLines(body: ReadableStream<Uint8Array>, onText?: (text: string) => void): Promise<unknown> {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let buffered = ''
+  let text = ''
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) return null
+      buffered += decoder.decode(value, { stream: true })
+      const lines = buffered.split('\n')
+      buffered = lines.pop() ?? ''
+      for (const line of lines.filter(Boolean)) {
+        const msg: unknown = JSON.parse(line)
+        const piece = (msg as { text?: unknown } | null)?.text
+        if (typeof piece !== 'string') return msg
+        text += piece
+        onText?.(text)
+      }
+    }
+  } catch (e) {
+    if ((e as Error).name === 'AbortError') throw e
+    return { error: 'Chưa kết nối được trợ lý.' }
+  } finally {
+    reader.cancel().catch(() => {})
+  }
 }
 
 /** Whether the deployment has the assistant configured at all. */

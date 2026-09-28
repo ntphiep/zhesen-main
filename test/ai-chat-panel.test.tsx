@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AiChatPanel } from '@/components/ai/AiChatPanel'
 import { resetAiEnabledCache } from '@/lib/hooks/useAiEnabled'
@@ -62,7 +62,7 @@ describe('AiChatPanel', () => {
     expect(callAi).toHaveBeenCalledWith('chat', expect.objectContaining({
       context: expect.stringContaining('/dictionary/en/adjourned'),
       messages: [{ role: 'user', text: 'từ này nghĩa gì' }],
-    }))
+    }), expect.any(AbortSignal), expect.any(Function))
     expect(await screen.findByText('Hoãn lại.')).toBeInTheDocument()
   })
 
@@ -96,6 +96,38 @@ describe('AiChatPanel', () => {
     await openPanel()
     expect(screen.getByRole('button', { name: 'Gửi' })).toBeDisabled()
     expect(callAi).not.toHaveBeenCalled()
+  })
+
+  // A two-sentence reply took 12,179 ms with nothing changing on screen.
+  it('shows the reply while it is still arriving', async () => {
+    vi.mocked(callAi).mockImplementation(async (_task, _input, _signal, onText) => {
+      onText?.('Hoãn lại')
+      return new Promise(() => {})
+    })
+    await openPanel()
+    await ask('từ này nghĩa gì')
+    expect(await screen.findByText('Hoãn lại')).toBeInTheDocument()
+    expect(screen.queryByText('Đang trả lời…')).toBeNull()
+  })
+
+  it('stops a reply on Dừng, aborting the request and keeping the question', async () => {
+    let signal: AbortSignal | undefined
+    vi.mocked(callAi).mockImplementation((_task, _input, s, onText) => {
+      signal = s
+      onText?.('Hoãn')
+      return new Promise((_, reject) => {
+        s?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+      })
+    })
+    await openPanel()
+    await ask('từ này nghĩa gì')
+    await userEvent.click(await screen.findByRole('button', { name: 'Dừng' }))
+
+    expect(signal?.aborted).toBe(true)
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Dừng' })).toBeNull())
+    expect(screen.queryByText('Hoãn')).toBeNull()
+    expect(screen.getByText('từ này nghĩa gì')).toBeInTheDocument()
+    expect(screen.queryByText('Chưa gửi được câu hỏi. Thử lại.')).toBeNull()
   })
 
   // A modal <dialog> is what gives Escape, the focus trap and focus restore; jsdom

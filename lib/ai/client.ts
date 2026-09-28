@@ -2,10 +2,11 @@ import { z } from '@/lib/zod'
 import type { AiConfig } from './config'
 
 /**
- * One request to the model, answered as validated JSON. Both response shapes must stay
- * handled: `POST /messages` with `stream: false` answers an OpenAI `chat.completion` body
- * while the same path answers Anthropic-shaped events when streaming (measured against the
- * router on 2026-09-14). `extractJson` also unwraps a ```json fence.
+ * Requests to the model: `askJson` answers validated JSON, `streamText` plain text in
+ * pieces. Both response shapes must stay handled: `POST /messages` with `stream: false`
+ * answers an OpenAI `chat.completion` body while the same path answers Anthropic-shaped
+ * events when streaming (measured against the router on 2026-09-14). `extractJson` also
+ * unwraps a ```json fence.
  */
 
 const openAiShape = z.object({
@@ -14,6 +15,13 @@ const openAiShape = z.object({
 const anthropicShape = z.object({
   content: z.array(z.object({ type: z.string(), text: z.string().optional() })).min(1),
 })
+
+/** The server-sent events that matter; only `message_stop` proves the text is whole. */
+const streamEvent = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('content_block_delta'), delta: z.object({ type: z.string(), text: z.string().optional() }) }),
+  z.object({ type: z.literal('message_stop') }),
+  z.object({ type: z.literal('error') }),
+])
 
 /** The model refused, timed out, or answered something that is not the shape asked for. */
 export class AiUnavailableError extends Error {}
@@ -39,19 +47,22 @@ export function extractJson(text: string): string {
   return body.slice(start, end + 1)
 }
 
-export interface AskOptions<T> {
+export interface TextOptions {
   system: string
   user: string
-  /** Validates the model's JSON. Returns null when it is not the shape asked for.
-   *  A function rather than a schema so the task registry can hand over an
-   *  already-narrowed validator instead of a union of schemas. */
-  parse: (value: unknown) => T | null
   maxTokens: number
   /** Aborts the request; the caller owns the deadline. */
   signal?: AbortSignal
 }
 
-export async function askJson<T>(cfg: AiConfig, opts: AskOptions<T>): Promise<T> {
+export interface AskOptions<T> extends TextOptions {
+  /** Validates the model's JSON. Returns null when it is not the shape asked for.
+   *  A function rather than a schema so the task registry can hand over an
+   *  already-narrowed validator instead of a union of schemas. */
+  parse: (value: unknown) => T | null
+}
+
+async function send(cfg: AiConfig, opts: TextOptions, stream: boolean): Promise<Response> {
   const res = await fetch(`${cfg.baseUrl}/messages`, {
     method: 'POST',
     headers: {
@@ -63,7 +74,7 @@ export async function askJson<T>(cfg: AiConfig, opts: AskOptions<T>): Promise<T>
     body: JSON.stringify({
       model: cfg.model,
       max_tokens: opts.maxTokens,
-      stream: false,
+      stream,
       system: opts.system,
       messages: [{ role: 'user', content: opts.user }],
     }),
@@ -75,8 +86,16 @@ export async function askJson<T>(cfg: AiConfig, opts: AskOptions<T>): Promise<T>
       `model returned HTTP ${res.status}${detail ? `: ${detail.slice(0, 200)}` : ''}`,
     )
   }
+  return res
+}
 
-  const text = extractJson(messageText(await res.json()))
+async function bodyText(res: Response): Promise<string> {
+  const body: unknown = await res.json().catch(() => null)
+  return messageText(body)
+}
+
+export async function askJson<T>(cfg: AiConfig, opts: AskOptions<T>): Promise<T> {
+  const text = extractJson(await bodyText(await send(cfg, opts, false)))
   let value: unknown
   try {
     value = JSON.parse(text)
@@ -86,4 +105,51 @@ export async function askJson<T>(cfg: AiConfig, opts: AskOptions<T>): Promise<T>
   const parsed = opts.parse(value)
   if (parsed === null) throw new AiUnavailableError('JSON did not match the task schema')
   return parsed
+}
+
+/**
+ * The reply as it is written. Resolves once the model has accepted the request, so a
+ * refusal throws before the caller commits to a streamed response; the pieces that
+ * follow throw AiUnavailableError on an `error` event or a stream cut before
+ * `message_stop`.
+ */
+export async function streamText(cfg: AiConfig, opts: TextOptions): Promise<AsyncGenerator<string>> {
+  const res = await send(cfg, opts, true)
+  if (!res.body || !res.headers.get('content-type')?.includes('text/event-stream')) {
+    // A router that ignores `stream` answers one body; its text is the whole reply.
+    const text = await bodyText(res)
+    return (async function* () { yield text })()
+  }
+  return deltas(res.body)
+}
+
+async function* deltas(body: ReadableStream<Uint8Array>): AsyncGenerator<string> {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let buffered = ''
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) throw new AiUnavailableError('stream ended before message_stop')
+      buffered += decoder.decode(value, { stream: true })
+      const lines = buffered.split(/\r?\n/)
+      buffered = lines.pop() ?? ''
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue
+        let json: unknown
+        try {
+          json = JSON.parse(line.slice(5))
+        } catch {
+          continue
+        }
+        const event = streamEvent.safeParse(json)
+        if (!event.success) continue
+        if (event.data.type === 'error') throw new AiUnavailableError('error event in the stream')
+        if (event.data.type === 'message_stop') return
+        if (event.data.delta.type === 'text_delta' && event.data.delta.text) yield event.data.delta.text
+      }
+    }
+  } finally {
+    await reader.cancel().catch(() => {})
+  }
 }

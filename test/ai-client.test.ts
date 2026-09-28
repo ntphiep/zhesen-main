@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { z } from 'zod'
-import { askJson, extractJson, AiUnavailableError } from '@/lib/ai/client'
+import { askJson, extractJson, streamText, AiUnavailableError } from '@/lib/ai/client'
 import type { AiConfig } from '@/lib/ai/config'
+import { anthropicStream } from './helpers/stream'
 
 const cfg: AiConfig = { baseUrl: 'http://router.test/v1', apiKey: 'k', model: 'm' }
 const schema = z.object({ answer: z.string() })
@@ -77,5 +78,54 @@ describe('askJson', () => {
     const body = JSON.parse((f.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
     expect(body.stream).toBe(false)
     expect(body.model).toBe('m')
+  })
+})
+
+describe('streamText', () => {
+  const realFetch = globalThis.fetch
+  const opts = { system: 's', user: 'u', maxTokens: 10 }
+  afterEach(() => { globalThis.fetch = realFetch })
+
+  async function collect(pieces: AsyncIterable<string>): Promise<string[]> {
+    const out: string[] = []
+    for await (const piece of pieces) out.push(piece)
+    return out
+  }
+
+  it('asks the model to stream', async () => {
+    const f = vi.fn(async () => anthropicStream(['a']))
+    globalThis.fetch = f
+    await collect(await streamText(cfg, opts))
+    const body = JSON.parse((f.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    expect(body.stream).toBe(true)
+  })
+
+  // Streaming answers Anthropic-shaped events on the same endpoint that answers an
+  // OpenAI body without streaming. The pieces arrive cut mid-event and mid-character.
+  it('yields the text of each delta event in order', async () => {
+    globalThis.fetch = vi.fn(async () => anthropicStream(['Hoãn ', 'lại ', 'cuộc họp.']))
+    expect(await collect(await streamText(cfg, opts))).toEqual(['Hoãn ', 'lại ', 'cuộc họp.'])
+  })
+
+  it('fails on an error event after some text has arrived', async () => {
+    globalThis.fetch = vi.fn(async () => anthropicStream(['Hoãn '], [
+      { type: 'error', error: { type: 'overloaded_error', message: 'Overloaded' } },
+    ]))
+    await expect(collect(await streamText(cfg, opts))).rejects.toThrow(AiUnavailableError)
+  })
+
+  it('fails on a stream that stops without message_stop', async () => {
+    globalThis.fetch = vi.fn(async () => anthropicStream(['Hoãn '], []))
+    await expect(collect(await streamText(cfg, opts))).rejects.toThrow(AiUnavailableError)
+  })
+
+  it('reports a non-OK response before yielding anything', async () => {
+    globalThis.fetch = reply({ error: 'nope' }, false)
+    await expect(streamText(cfg, opts)).rejects.toThrow(AiUnavailableError)
+  })
+
+  it('takes the text whole from a router that answers one body', async () => {
+    globalThis.fetch = reply({ choices: [{ message: { content: 'Hoãn lại.' } }] })
+    expect(await collect(await streamText(cfg, opts))).toEqual(['Hoãn lại.'])
   })
 })
