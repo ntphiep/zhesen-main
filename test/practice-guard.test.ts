@@ -38,3 +38,10 @@ describe('practice mode pages, signed out', () => {
     await expect(open(mode)).rejects.toThrow(`NEXT_REDIRECT /register?next=%2Fpractice%2F${mode}`)
   })
 })
+
+describe('practice index, signed out', () => {
+  it('sends /practice to /login and back to the index', async () => {
+    const page: { default: () => unknown } = await import('../app/practice/page')
+    await expect(page.default()).rejects.toThrow('NEXT_REDIRECT /login?next=%2Fpractice')
+  })
+})
