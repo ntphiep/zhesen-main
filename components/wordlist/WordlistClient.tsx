@@ -67,6 +67,10 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   // pressed it expects all of those rows tagged, not the first fifty.
   const allVisibleIds = visible.map((w) => w.id)
   const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selected.has(id))
+  // Bulk actions act only on what the filter shows: a selected row the filter hid
+  // would otherwise be deleted unseen. The selection itself is kept for when it returns.
+  const selectedWords = visible.filter((w) => selected.has(w.id))
+  const selectedIds = selectedWords.map((w) => w.id)
 
   // Lets the add dialog say "Đã có" instead of letting the insert fail against the
   // unique index from migration 0031.
@@ -172,7 +176,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   }
 
   function handleBulkDelete() {
-    const ids = [...selected]
+    const ids = selectedIds
     if (ids.length === 0) return
     setConfirming({
       title: 'Xóa nhiều từ',
@@ -198,7 +202,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   // One request per row: a flat bulk UPDATE would write the same tag array over every
   // row, and an upsert cannot carry a partial row past the table's NOT NULL columns.
   async function applyTags(tagsFor: (w: UserWord) => string[]) {
-    const ids = [...selected]
+    const ids = selectedIds
     if (ids.length === 0) return
     // Skip rows whose tags would not change: the assistant often returns tags
     // that are already stored.
@@ -233,7 +237,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     applyTags((w) => tagsByKey.get(`${w.lang}:${w.headword}`) ?? [])
 
   async function handleBulkStatus(status: WordStatus) {
-    const ids = [...selected]
+    const ids = selectedIds
     if (ids.length === 0) return
     const snapshot = words
     setWords((prev) => prev.map((w) => (ids.includes(w.id) ? { ...w, status } : w)))
@@ -270,7 +274,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     downloadTextFile('wordlist-anki.tsv', wordsToAnkiTsv(visible), 'text/tab-separated-values;charset=utf-8')
   }
 
-  const selectedWords = words.filter((w) => selected.has(w.id))
   const allTags = tagCounts(words).map((t) => t.tag)
 
   return (

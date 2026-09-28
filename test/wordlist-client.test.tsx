@@ -217,6 +217,27 @@ describe('WordlistClient', () => {
     expect(screen.getByText('70 từ đã chọn')).toBeInTheDocument()
   })
 
+  it('does not count or delete a selected word the filter hides', async () => {
+    render(<WordlistClient initialWords={[mk('x', { headword: 'alpha' }), mk('y', { headword: 'beta' })]} />)
+    await userEvent.click(screen.getByLabelText('Chọn từ alpha'))
+    await userEvent.click(screen.getByLabelText('Chọn từ beta'))
+    await userEvent.type(screen.getByPlaceholderText(/Tìm trong sổ tay/i), 'beta')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Xóa đã chọn (1)' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Xóa 1 từ' }))
+    expect(deleteWords).toHaveBeenCalledWith(expect.anything(), ['y'])
+
+    await userEvent.clear(screen.getByPlaceholderText(/Tìm trong sổ tay/i))
+    expect(screen.getByText('alpha')).toBeInTheDocument()
+  })
+
+  it('offers no bulk delete once the filter hides every selected word', async () => {
+    render(<WordlistClient initialWords={[mk('x', { headword: 'alpha' })]} />)
+    await userEvent.click(screen.getByLabelText('Chọn từ alpha'))
+    await userEvent.type(screen.getByPlaceholderText(/Tìm trong sổ tay/i), 'zzz')
+    expect(screen.queryByRole('button', { name: /Xóa đã chọn/ })).toBeNull()
+  })
+
   // A narrower filter must not leave the reader on page three of the old list.
   it('returns to the first page when the filter changes', async () => {
     const many = Array.from({ length: 120 }, (_, i) =>
