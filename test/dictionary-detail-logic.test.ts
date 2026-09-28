@@ -139,8 +139,10 @@ describe('classifyRelations', () => {
       { relationType: 'synonym', relatedText: 'growth', relatedEntryId: null },
       { relationType: 'antonym', relatedText: 'decline', relatedEntryId: null },
       { relationType: 'related', relatedText: 'progress', relatedEntryId: null },
+      { relationType: 'collocation', relatedText: 'rapid development', relatedEntryId: null },
     ]
     const c = classifyRelations(rels)
+    expect(c.collocations).toEqual(['rapid development'])
     expect(c.derived).toEqual(['antidevelopment'])
     expect(c.compounds).toEqual(['business development', 'web development'])
     expect(c.synonyms).toEqual(['growth'])

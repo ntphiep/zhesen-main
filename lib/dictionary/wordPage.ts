@@ -181,6 +181,7 @@ export function relatedTabs({ lang, headword, lemma, relations, containing, kin,
   })
   const kinItems = kin.map(fromEntry)
   const candidates: RelatedTab[] = [
+    { key: 'collocations', label: 'Kết hợp từ', items: fromText(c.collocations) },
     { key: 'compounds', label: 'Cụm từ', items: [...containing.map(fromEntry), ...kinItems.filter((i) => isPhrase(i.text)), ...fromText(c.compounds)] },
     { key: 'derived', label: 'Phái sinh', items: [...kinItems.filter((i) => !isPhrase(i.text)), ...fromText(c.derived.filter((t) => isPlausibleDerived(t, lemma ?? headword)))] },
     { key: 'synonyms', label: 'Cận nghĩa', items: fromText(c.synonyms) },

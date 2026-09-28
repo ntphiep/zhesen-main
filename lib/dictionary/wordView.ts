@@ -198,7 +198,7 @@ export function buildWordView({
   // shown, and nowhere else. The other lists keep what they already hold, as relatedTabs
   // lists a word once.
   const listed = new Set(
-    [detail.headword, ...allForms.map((f) => f.text), ...['compounds', 'derived', 'antonyms', 'related'].flatMap((k) => tab(k).map((i) => i.text))]
+    [detail.headword, ...allForms.map((f) => f.text), ...['collocations', 'compounds', 'derived', 'antonyms', 'related'].flatMap((k) => tab(k).map((i) => i.text))]
       .map((t) => t.toLowerCase()),
   )
   const bySense = new Map<number, ViewWord[]>()
@@ -218,8 +218,9 @@ export function buildWordView({
     .filter((s) => bySense.has(s.senseOrder))
     .map((s) => ({ senseOrder: s.senseOrder, label: senseLabel(s), words: bySense.get(s.senseOrder) ?? [] }))
 
-  // Glossed phrases first; the SQL order already puts the ones a learner meets first.
-  const phrases = tab('compounds').map(toWord)
+  // Glossed phrases first; the SQL order already puts the ones a learner meets first, and
+  // the collocations, chosen for learners, go ahead of both.
+  const phrases = [...tab('collocations'), ...tab('compounds')].map(toWord)
   const glossedFirst = [...phrases.filter((w) => w.gloss), ...phrases.filter((w) => !w.gloss)]
 
   return {

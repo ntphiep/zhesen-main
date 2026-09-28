@@ -126,6 +126,21 @@ describe('buildWordView', () => {
     expect(withPhrase.phrases.map((w) => w.text)).toContain('take off')
   })
 
+  it('puts the collocations first among the phrases', () => {
+    const withCollocations = buildWordView({
+      detail: {
+        ...take,
+        relations: [
+          ...take.relations,
+          { relationType: 'derived', relatedText: 'take off', relatedEntryId: null },
+          { relationType: 'collocation', relatedText: 'take a break', relatedEntryId: 'en:take a break' },
+        ],
+      },
+      characters: [], siblings: [],
+    })
+    expect(withCollocations.phrases.map((w) => w.text)).toEqual(['take a break', 'take off'])
+  })
+
   it('hands the client the entry without its senses and relations', () => {
     expect(view.head.senses).toEqual([])
     expect(view.head.relations).toEqual([])

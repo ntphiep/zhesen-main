@@ -139,4 +139,23 @@ describe('relatedTabs', () => {
     ])
     expect(tabs[0].items[0]).toMatchObject({ href: '/dictionary/en/take%20up', gloss: 'bắt đầu', entry: true })
   })
+  it('shows collocations first, and a phrase listed there leaves the other tabs', () => {
+    const tabs = relatedTabs({
+      ...base,
+      headword: 'decision',
+      previews: { 'make a decision': {
+        matchText: 'make a decision', id: 'en:make a decision', headword: 'make a decision', pos: null,
+        ipa: null, reading: null, gender: null, glossVi: 'ra quyết định', glossEn: null,
+      } },
+      relations: [
+        { relationType: 'derived', relatedText: 'make a decision', relatedEntryId: null },
+        { relationType: 'collocation', relatedText: 'make a decision', relatedEntryId: 'en:make a decision' },
+        { relationType: 'collocation', relatedText: 'final decision', relatedEntryId: null },
+      ],
+    })
+    expect(tabs.map((t) => [t.label, t.items.map((i) => i.text)])).toEqual([
+      ['Kết hợp từ', ['make a decision', 'final decision']],
+    ])
+    expect(tabs[0].items[0]).toMatchObject({ href: '/dictionary/en/make%20a%20decision', gloss: 'ra quyết định' })
+  })
 })
