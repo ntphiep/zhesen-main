@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { searchPath } from '@/lib/dictionary/entryId'
 import type { TermPreview } from '@/lib/dictionary/types'
+import { EnglishMark } from './WordParts'
 import type { LangCode } from '@/lib/languages'
 
 /**
@@ -24,7 +25,7 @@ export function LemmaLink({ lemma, preview, lang }: {
       ) : (
         <span className="font-medium text-black/70">{lemma}</span>
       )}
-      {gloss && <span className="text-black/55">{gloss}</span>}
+      {gloss && <span className="text-black/55">{gloss}{!preview?.glossVi && <EnglishMark />}</span>}
     </p>
   )
 }

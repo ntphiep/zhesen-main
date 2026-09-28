@@ -23,6 +23,8 @@ export interface ViewWord {
   /** The entry behind the word, when the dictionary has one. */
   id: string | null
   gloss: string | null
+  /** The gloss is English, standing in for a missing Vietnamese one. */
+  glossIsEnglish?: boolean
   pos: string | null
   level: string | null
 }
@@ -99,7 +101,8 @@ export interface WordViewInput {
   backlinks?: LearnerBacklink[]
 }
 
-const toWord = ({ text, href, id, gloss, pos, level }: RelatedItem): ViewWord => ({ text, href, id, gloss, pos, level })
+const toWord = ({ text, href, id, gloss, glossIsEnglish, pos, level }: RelatedItem): ViewWord =>
+  ({ text, href, id, gloss, glossIsEnglish, pos, level })
 
 const LANG_ORDER = ['zh', 'es', 'en']
 
@@ -216,7 +219,8 @@ export function buildWordView({
     const p = previews[link.text.toLowerCase()]
     words.push({
       text: link.text, href: entryPath(link.targetId), id: link.targetId,
-      gloss: p?.glossVi || p?.glossEn || null, pos: p?.pos ?? null, level: null,
+      gloss: p?.glossVi || p?.glossEn || null, glossIsEnglish: !p?.glossVi && !!p?.glossEn,
+      pos: p?.pos ?? null, level: null,
     })
     bySense.set(link.senseOrder, words)
     claimed.add(link.text.toLowerCase())

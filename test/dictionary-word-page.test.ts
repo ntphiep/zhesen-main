@@ -158,4 +158,18 @@ describe('relatedTabs', () => {
     ])
     expect(tabs[0].items[0]).toMatchObject({ href: '/dictionary/en/make%20a%20decision', gloss: 'ra quyết định' })
   })
+  it('flags an English gloss standing in for a Vietnamese one', () => {
+    const tabs = relatedTabs({
+      ...base,
+      containing: [
+        { id: 'en:take up', headword: 'take up', glossVi: 'bắt đầu', glossEn: 'To begin' },
+        { id: 'en:take over', headword: 'take over', glossVi: null, glossEn: 'To assume control' },
+      ],
+      relations: [],
+    })
+    expect(tabs[0].items.map((i) => [i.text, i.gloss, i.glossIsEnglish])).toEqual([
+      ['take up', 'bắt đầu', false],
+      ['take over', 'To assume control', true],
+    ])
+  })
 })

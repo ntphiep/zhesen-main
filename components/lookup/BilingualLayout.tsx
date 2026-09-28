@@ -55,7 +55,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
           <LevelChip level={w.level} />
         </span>
       ),
-      right: <span className={`text-[15px] ${w.gloss ? '' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}</span>,
+      right: <span className={`text-[15px] ${w.gloss ? '' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</span>,
     }))
 
   const blocks: { id: string; title: string; note?: React.ReactNode; count: number; node: React.ReactNode }[] = [
@@ -99,7 +99,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
             ...view.antonyms.map((w) => ({
               key: `anti-${w.text}`,
               left: <span className="flex items-center gap-2"><WordChip word={w} tone="rose" /><span className="text-xs text-rose-700">trái nghĩa</span></span>,
-              right: <span className={`text-[15px] ${w.gloss ? '' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}</span>,
+              right: <span className={`text-[15px] ${w.gloss ? '' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</span>,
             })),
           ]}
           shown={6}

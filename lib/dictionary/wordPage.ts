@@ -132,6 +132,8 @@ export interface RelatedItem {
   text: string
   href: string
   gloss: string | null
+  /** The gloss is English, standing in for a missing Vietnamese one. */
+  glossIsEnglish?: boolean
   /** True when the item came from an entry row, which carries its own gloss. */
   entry: boolean
   /** The entry behind the item, when the dictionary holds one. */
@@ -172,11 +174,12 @@ export function relatedTabs({ lang, headword, lemma, relations, containing, kin,
     const p = previews[text.toLowerCase()]
     return {
       text, href: p ? entryPath(p.id) : searchPath(lang, text), gloss: p?.glossVi || p?.glossEn || null,
+      glossIsEnglish: !p?.glossVi && !!p?.glossEn,
       entry: false, id: p?.id ?? null, pos: p?.pos ?? null, level: null,
     }
   })
   const fromEntry = (w: EntryLike): RelatedItem => ({
-    text: w.headword, href: entryPath(w.id), gloss: w.glossVi || w.glossEn || null, entry: true,
+    text: w.headword, href: entryPath(w.id), gloss: w.glossVi || w.glossEn || null, glossIsEnglish: !w.glossVi && !!w.glossEn, entry: true,
     id: w.id, pos: w.pos ?? previews[w.headword.toLowerCase()]?.pos ?? null, level: w.level ?? null,
   })
   const kinItems = kin.map(fromEntry)

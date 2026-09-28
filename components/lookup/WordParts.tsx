@@ -213,6 +213,7 @@ function GlossChip({ word, tone = 'blue' }: { word: ViewWord; tone?: 'blue' | 'r
     >
       <span className={`shrink-0 font-semibold ${tone === 'rose' ? 'text-rose-700' : 'text-blue-700'}`}>{word.text}</span>
       {word.gloss && <span className="truncate text-black/55">{word.gloss}</span>}
+      {word.glossIsEnglish && <span className="shrink-0"><EnglishMark /></span>}
     </WordLink>
   )
 }
@@ -396,7 +397,7 @@ export function WordTable({ words, head, family = false, level = false, shown = 
                   <PosTag full value={w.pos} className="block text-xs text-black/55 sm:hidden" />
                 </td>
                 <td className="hidden whitespace-nowrap px-3.5 py-2.5 text-black/55 sm:table-cell"><PosTag full value={w.pos} /></td>
-                <td className={`px-3.5 py-2.5 ${w.gloss ? 'text-black/80' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}</td>
+                <td className={`px-3.5 py-2.5 ${w.gloss ? 'text-black/80' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</td>
                 {level && <td className="px-3.5 py-2.5 text-right"><LevelChip level={w.level} /></td>}
               </tr>
             ))}
@@ -439,7 +440,7 @@ export function PhrasesCard({ headword, lang, phrases }: { headword: string; lan
                 <WordLink word={w} className="flex h-full flex-col gap-0.5 rounded-[14px] bg-black/[0.04] p-3.5 hover:bg-black/[0.07]">
                   <span className="text-xs text-black/55">{headword}</span>
                   <span className="text-2xl font-bold leading-tight tracking-[-0.02em] text-blue-700">{w.particle}</span>
-                  <span className={`line-clamp-2 text-[13px] leading-[1.35] ${w.gloss ? '' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}</span>
+                  <span className={`line-clamp-2 text-[13px] leading-[1.35] ${w.gloss ? '' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</span>
                 </WordLink>
               </li>
             ))}
@@ -472,7 +473,7 @@ export function FamilyRows({ family, related, shown = 6 }: { family: FamilyWord[
               <WordLink word={w} className="flex flex-col items-start gap-0.5 py-2 hover:bg-black/[0.02] @xs:flex-row @xs:items-center @xs:gap-3">
                 <span className="text-lg @xs:min-w-[7.25rem] @xs:shrink-0"><MorphText word={w} /></span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className={`text-sm ${w.gloss ? '' : 'text-black/60'}`}>{w.gloss ?? 'Chưa có nghĩa'}</span>
+                  <span className={`text-sm ${w.gloss ? '' : 'text-black/60'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</span>
                   <PosTag full value={w.pos} className="text-xs text-black/60" />
                 </span>
                 <LevelChip level={w.level} />
