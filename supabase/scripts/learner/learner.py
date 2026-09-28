@@ -22,7 +22,7 @@ PROMPT_VERSION = 'v4'
 # Writers in order of preference. Antigravity refused Claude with HTTP 403 for every call from
 # 11:00 to 17:20 UTC on 2026-09-28, so the batch falls back rather than stall.
 WRITER = 'ag/claude-opus-4-6-thinking,ag/gemini-3.1-pro-low'
-REVIEWER = 'ag/gemini-3.1-pro-low'
+REVIEWER = 'ag/gemini-3.1-pro-low,ag/claude-sonnet-4-6'
 CACHE_DIR = os.path.expanduser(os.environ.get('LEARNER_CACHE', '~/.cache/zhesen/learner'))
 MAX_EXAMPLES = 40
 MAX_RELATIONS = 150
@@ -408,12 +408,12 @@ def first_answer(models, system, user):
     return (models[-1], *ask(models[-1], system, user))
 
 
-def build(entry_id, trad, writers, reviewer):
-    """Write, check, review and correct one entry with the first writer the router serves,
-    which also makes the corrections. Returns the cache record."""
+def build(entry_id, trad, writers, reviewers):
+    """Write, check, review and correct one entry with the first writer and reviewer the router
+    serves; the writer also makes the corrections. Returns the cache record."""
     raw = raw_entry(entry_id)
     writer, layer, secs = first_answer(writers.split(','), SYSTEM, write_user(raw))
-    rec = {'raw': raw, 'report': {'id': entry_id, 'writer': writer, 'reviewer': reviewer}}
+    rec = {'raw': raw, 'report': {'id': entry_id, 'writer': writer}}
     errs = validate(layer, raw, trad)
     rec['report']['seconds_write'] = secs
     if errs:
@@ -426,8 +426,10 @@ def build(entry_id, trad, writers, reviewer):
     if errs:
         rec['report']['errors'] = errs
         return rec
-    review, secs = ask(reviewer, REVIEW, f'Raw entry:\n{json.dumps(raw, ensure_ascii=False)}\n\n'
+    reviewer, review, secs = first_answer(reviewers.split(','), REVIEW,
+                                          f'Raw entry:\n{json.dumps(raw, ensure_ascii=False)}\n\n'
                                           f'Learner layer:\n{json.dumps(layer, ensure_ascii=False)}')
+    rec['report']['reviewer'] = reviewer
     issues = [i for i in review.get('issues') or [] if isinstance(i, dict)]
     rec['report']['seconds_review'] = secs
     rec['issues'] = issues
