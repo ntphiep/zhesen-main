@@ -175,6 +175,22 @@ describe('WordlistClient', () => {
     expect(screen.queryByRole('menu')).toBeNull()
   })
 
+  it('closes the export menu on Escape and on a click outside it', async () => {
+    render(<WordlistClient initialWords={[mk('w1', { headword: 'alpha' })]} />)
+    const trigger = screen.getByRole('button', { name: /^Xuất/ })
+    await userEvent.click(trigger)
+    expect(screen.getByRole('menu')).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+
+    await userEvent.click(trigger)
+    await userEvent.click(document.body)
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  })
+
   // A phone holds one column at the left edge whatever is pinned, so a pin control
   // there would spend the reader's three slots on nothing.
   it('offers no pinning on a phone', async () => {

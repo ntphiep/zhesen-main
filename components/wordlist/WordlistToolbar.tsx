@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { LANGUAGES, type LangCode } from '@/lib/languages'
 import type { ReviewFilter, ViewMode } from '@/lib/hooks/useWordlistFilters'
 import { STATUS_OPTIONS, type WordStatus } from '@/lib/wordlist/types'
@@ -38,6 +38,22 @@ export function WordlistToolbar({
   columnControls,
 }: Props) {
   const [exportOpen, setExportOpen] = useState(false)
+  const exportRoot = useRef<HTMLDivElement>(null)
+
+  // Same close rules as ColumnMenu beside it.
+  useEffect(() => {
+    if (!exportOpen) return
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setExportOpen(false) }
+    function onDown(e: MouseEvent) {
+      if (!exportRoot.current?.contains(e.target as Node)) setExportOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onDown)
+    }
+  }, [exportOpen])
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -135,7 +151,7 @@ export function WordlistToolbar({
 
       {view === 'table' && columnControls}
 
-      <div className="relative">
+      <div className="relative" ref={exportRoot}>
         <button
           className="rounded-lg border border-black/15 px-3 py-2 text-sm hover:bg-black/5"
           onClick={() => setExportOpen((v) => !v)}
