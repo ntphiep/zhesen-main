@@ -54,6 +54,31 @@ describe('LevelWordList', () => {
     expect(await screen.findByText('b')).toBeInTheDocument()
   })
 
+  // en:B2 holds 2,330 words: at 40 a page its end took 58 presses of "load more".
+  it('jumps straight to a page, then loads more from there', async () => {
+    getEntriesByLevel.mockResolvedValueOnce({ items: [entry('m')], total: 3 })
+    getEntriesByLevel.mockResolvedValueOnce({ items: [entry('z')], total: 3 })
+    render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[entry('a')]} total={4} pageSize={1} />)
+
+    const pager = screen.getByRole('combobox', { name: 'Chuyển tới trang' })
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['1', '2', '3', '4'])
+    await userEvent.selectOptions(pager, '3')
+
+    expect(getEntriesByLevel).toHaveBeenCalledWith(expect.anything(), 'en', 'A1', 2, 1)
+    expect(await screen.findByText('m')).toBeInTheDocument()
+    expect(screen.queryByText('a')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /Tải thêm/i }))
+    expect(getEntriesByLevel).toHaveBeenLastCalledWith(expect.anything(), 'en', 'A1', 3, 1)
+    expect(await screen.findByText('z')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Tải thêm/i })).not.toBeInTheDocument()
+  })
+
+  it('shows no pager when the level fits on one page', () => {
+    render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[entry('a')]} total={1} pageSize={40} />)
+    expect(screen.queryByRole('combobox', { name: 'Chuyển tới trang' })).not.toBeInTheDocument()
+  })
+
   it('"add all" skips entries already saved and reports the counts', async () => {
     getAllEntriesByLevel.mockResolvedValueOnce([entry('a'), entry('b'), entry('c')])
     listSavedEntryIds.mockResolvedValueOnce(new Set(['en:b']))

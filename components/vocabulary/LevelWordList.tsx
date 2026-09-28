@@ -9,6 +9,7 @@ import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { Language } from '@/lib/languages'
 import { Ipa } from '@/components/ui/Ipa'
 import { loadSupabaseClient } from '@/lib/supabase/loadClient'
+import { pageCount } from '@/lib/wordlist/paginate'
 
 type AddAllState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'done'; added: number; skipped: number } | { kind: 'error' }
 
@@ -24,11 +25,15 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
   pageSize: number
 }) {
   const { kind } = useAccount()
+  // `items` starts at row `start`: a page jump replaces the list, "load more" extends it.
+  const [start, setStart] = useState(0)
   const [items, setItems] = useState(initialItems)
   const [loadingMore, setLoadingMore] = useState(false)
   const [addAll, setAddAll] = useState<AddAllState>({ kind: 'idle' })
+  const end = start + items.length
+  const pages = pageCount(total, pageSize)
 
-  async function loadMore() {
+  async function fetchFrom(offset: number, replace: boolean) {
     setLoadingMore(true)
     try {
       // Imported on the click, as in `PersonalStrip`: browsing the list needs neither
@@ -37,8 +42,9 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
         loadSupabaseClient(),
         import('@/lib/dictionary/levels'),
       ])
-      const page = await getEntriesByLevel(createClient(), language.code, level, items.length, pageSize)
-      setItems((prev) => [...prev, ...page.items])
+      const page = await getEntriesByLevel(createClient(), language.code, level, offset, pageSize)
+      if (replace) setStart(offset)
+      setItems((prev) => (replace ? page.items : [...prev, ...page.items]))
     } finally {
       setLoadingMore(false)
     }
@@ -76,10 +82,25 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
   return (
     <main className="mx-auto max-w-page px-6 py-10">
       <Link href={theoryBlockPath(language.code, 'vocabulary')} className="text-sm text-black/50 hover:underline">← Từ vựng {language.name}</Link>
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <span className="text-xl font-medium text-black/70">{language.nativeName}</span>
         <h1 className="text-3xl font-bold">{level}</h1>
         <span className="text-sm text-black/40">{total} từ</span>
+        {pages > 1 && (
+          <label className="ml-auto flex items-center gap-2 text-sm text-black/50">
+            Trang
+            <select
+              value={Math.floor(start / pageSize) + 1}
+              onChange={(e) => fetchFrom((Number(e.target.value) - 1) * pageSize, true)}
+              disabled={loadingMore}
+              aria-label="Chuyển tới trang"
+              className="rounded-lg border border-black/15 bg-white px-2 py-1.5 text-sm text-black"
+            >
+              {Array.from({ length: pages }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
+            </select>
+            / {pages}
+          </label>
+        )}
       </div>
 
       {levelIsEstimated && (
@@ -125,14 +146,14 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
         ))}
       </div>
 
-      {items.length < total && (
+      {end < total && (
         <button
           type="button"
-          onClick={loadMore}
+          onClick={() => fetchFrom(end, false)}
           disabled={loadingMore}
           className="mt-6 w-full rounded-lg border border-black/15 px-4 py-2 text-sm text-black/70 hover:bg-black/5 disabled:opacity-50"
         >
-          {loadingMore ? 'Đang tải…' : `Tải thêm (${items.length}/${total})`}
+          {loadingMore ? 'Đang tải…' : `Tải thêm (${end}/${total})`}
         </button>
       )}
     </main>
