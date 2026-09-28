@@ -54,6 +54,13 @@ Every item here cost time on this project once. Re-check before contradicting on
   week to appear. Call `/api/revalidate` with `REVALIDATE_SECRET` by hand after a load; the
   secret goes in the `x-revalidate-secret` header, not the body. Do not set
   `revalidate: false` while no caller exists.
+- `unstable_cache` keys on the source text of the function it wraps plus `keyParts`
+  (`node_modules/next/dist/server/web/spec-extension/unstable-cache.js:58`), not on the
+  parser that function calls. A change to what a cached parser returns needs a new key part,
+  or the old shape is served until the tag is flushed or `LEX_REVALIDATE` runs out.
+- The data cache in `.next/cache/fetch-cache` survives `next build`, so a local build made
+  right after a data load still serves the old rows. Clear that folder before checking new
+  data on a local build.
 - `s-maxage` says nothing to a browser. Set alone, the browser invents its own freshness and
   holds a stale copy that `revalidateTag` cannot reach. A cached API route sets
   `Cache-Control` for the browser and `CDN-Cache-Control` for the CDN separately.
