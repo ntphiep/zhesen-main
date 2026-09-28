@@ -81,6 +81,21 @@ export function splitPos(pos: string | null | undefined): string[] {
   return (pos ?? '').split(POS_SEPARATOR).map((p) => p.trim()).filter(Boolean)
 }
 
+/** The stored value as `PosTag` draws it ("n. · v."), for a text input. */
+export function formatPos(pos: string | null | undefined): string {
+  return posGroups(splitPos(pos)).map((g) => g.abbr).join(' · ')
+}
+
+const KEY_BY_ABBR = new Map(Object.values(POS_GROUPS).map((g) => [g.abbr.toLowerCase(), g.key]))
+
+/** The inverse of `formatPos`: an abbreviation becomes its stored key, anything else
+ *  is kept as typed. A comma separates as well as the dot. */
+export function parsePos(text: string): string | null {
+  const parts = text.split(/[·,]/).map((p) => p.trim()).filter(Boolean)
+    .map((p) => KEY_BY_ABBR.get(p.toLowerCase()) ?? p)
+  return parts.length > 0 ? [...new Set(parts)].join(POS_SEPARATOR) : null
+}
+
 /** Several senses' `pos` values as one stored string, most-used first. Matches what
  *  `lex.entry_pos` (migration 0045) returns, so a preview built by either route reads
  *  the same: `tentative` is an adjective in three senses and a noun in two, and the

@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { TagEditor } from './TagEditor'
+import { formatPos, parsePos } from '@/lib/dictionary/pos'
 import { STATUS_OPTIONS, type UserWord, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
 
 interface Props {
@@ -35,7 +36,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
     if (word && open) {
       setMeaningVi(word.meaningVi ?? '')
       setMeaningEn(word.meaningEn ?? '')
-      setPos(word.pos ?? '')
+      setPos(formatPos(word.pos))
       setIpa(word.ipa ?? '')
       setLevel(word.level ?? '')
       setExample(word.example ?? '')
@@ -56,8 +57,11 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
     const newMeaningEn = meaningEn.trim() || null
     if (newMeaningEn !== word.meaningEn) patch.meaningEn = newMeaningEn
 
-    const newPos = pos.trim() || null
-    if (newPos !== word.pos) patch.pos = newPos
+    // Compared as shown, so an untouched field never rewrites a stored 'adj' as 'adjective'.
+    if (pos.trim() !== formatPos(word.pos)) {
+      const newPos = parsePos(pos)
+      if (newPos !== word.pos) patch.pos = newPos
+    }
 
     const newIpa = ipa.trim() || null
     if (newIpa !== word.ipa) patch.ipa = newIpa

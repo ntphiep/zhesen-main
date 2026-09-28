@@ -72,6 +72,28 @@ describe('EditWordDialog', () => {
     expect(onSave).not.toHaveBeenCalled()
   })
 
+  it('shows the part of speech the way the table does, and stores it back', async () => {
+    const onSave = vi.fn()
+    const both: UserWord = { ...word, pos: 'noun,verb' }
+    render(<EditWordDialog word={both} open onClose={() => {}} onSave={onSave} />)
+    const pos = screen.getByLabelText(/Từ loại/i)
+    expect(pos).toHaveValue('n. · v.')
+
+    await userEvent.clear(pos)
+    await userEvent.type(pos, 'v. · adj.')
+    await userEvent.click(screen.getByRole('button', { name: /Lưu/i }))
+    expect(onSave).toHaveBeenCalledWith('id1', { pos: 'verb,adjective' })
+  })
+
+  it('leaves a stored short spelling alone when the part of speech is untouched', async () => {
+    const onSave = vi.fn()
+    const onClose = vi.fn()
+    render(<EditWordDialog word={{ ...word, pos: 'adj' }} open onClose={onClose} onSave={onSave} />)
+    await userEvent.click(screen.getByRole('button', { name: /Lưu/i }))
+    expect(onSave).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
+  })
+
   it('still syncs when a different word is opened', async () => {
     const other: UserWord = { ...word, id: 'id2', headword: 'cat', meaningVi: 'con mèo' }
     const { rerender } = render(<EditWordDialog word={word} open onClose={() => {}} onSave={vi.fn()} />)
