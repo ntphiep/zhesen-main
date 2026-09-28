@@ -67,7 +67,9 @@ export async function getEntriesByLevel(
     .order('headword_normalized', { ascending: true }).order('id')
     .range(offset, offset + pageSize - 1)
   if (error) throw error
-  return { items: entryPreviewRow.array().parse(data ?? []).map(toPreview), total: count ?? 0 }
+  // An empty body is a failed read, not an empty level: a cached zero would 404 for a week.
+  if (data === null || count === null) throw new Error(`entries for ${lang}:${level} came back empty`)
+  return { items: entryPreviewRow.array().parse(data).map(toPreview), total: count }
 }
 
 // PostgREST's own max-rows setting (confirmed 1000) caps any single request

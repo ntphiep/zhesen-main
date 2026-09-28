@@ -91,8 +91,9 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
             Trang
             <select
               value={Math.floor(start / pageSize) + 1}
-              onChange={(e) => fetchFrom((Number(e.target.value) - 1) * pageSize, true)}
-              disabled={loadingMore}
+              // Not disabled while loading: disabling a focused control drops focus to the page.
+              onChange={(e) => { if (!loadingMore) fetchFrom((Number(e.target.value) - 1) * pageSize, true) }}
+              aria-busy={loadingMore}
               aria-label="Chuyển tới trang"
               className="rounded-lg border border-black/15 bg-white px-2 py-1.5 text-sm text-black"
             >
