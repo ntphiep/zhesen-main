@@ -1153,3 +1153,55 @@ export const CASA_SENSE_ROWS = [
     "gloss_vi": "Dạng mệnh lệnh ngôi thứ hai số ít của 'casar' (hãy cưới)"
   }
 ]
+
+/** The senses of en:dog as the word page reads them. */
+export const DOG_SENSES = [
+  {"pos": "noun", "glossVi": "Con chó", "glossEn": "The species Canis familiaris (sometimes designated Canis lupus familiaris), domesticated for thousands of years and of highly variable appearance because of human breeding.", "senseOrder": 1, "id": "en:dog#1", "senseFrequency": 1, "glossViIsMt": false},
+  {"pos": "noun", "glossVi": "Theo ai nhằng nhẵng", "glossEn": "Any member of the family Canidae, including domestic dogs, wolves, coyotes, jackals, and their relatives (extant and extinct).", "senseOrder": 2, "id": "en:dog#3", "senseFrequency": null, "glossViIsMt": false},
+  {"pos": "noun", "glossVi": "Chó đực, con đực", "glossEn": "A male dog, wolf, or fox, as opposed to a bitch or vixen.", "senseOrder": 3, "id": "en:dog#4", "senseFrequency": 2, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Thịt chó", "glossEn": "The meat of this animal, eaten as food.", "senseOrder": 4, "id": "en:dog#5", "senseFrequency": 3, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Gái xấu, phụ nữ xấu xí", "glossEn": "A dull, unattractive girl or woman.", "senseOrder": 5, "id": "en:dog#6", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Gã, thằng, anh chàng", "glossEn": "A man, guy, chap.", "senseOrder": 6, "id": "en:dog#7", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Kẻ đê tiện, kẻ hèn hạ, kẻ tồi tệ", "glossEn": "Someone who is cowardly, worthless, or morally reprehensible.", "senseOrder": 7, "id": "en:dog#8", "senseFrequency": 4, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Kẻ hám gái, kẻ lăng nhăng", "glossEn": "A sexually aggressive man.", "senseOrder": 8, "id": "en:dog#9b9f2b1a5e", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Chốt kẹp, móc giữ, ngàm giữ", "glossEn": "Any of various mechanical devices for holding, gripping, or fastening something, particularly with a tooth-like projection.", "senseOrder": 9, "id": "en:dog#9", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Cóc hãm, chốt chặn", "glossEn": "A click or pallet adapted to engage the teeth of a ratchet wheel, to restrain the back action.", "senseOrder": 10, "id": "en:dog#317a15f4f7", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Giá đỡ củi", "glossEn": "A metal support for logs in a fireplace.", "senseOrder": 11, "id": "en:dog#10", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Đinh cóc, đinh kẹp ray", "glossEn": "A double-ended side spike driven through a hole in the flange of a rail on a tramway.", "senseOrder": 12, "id": "en:dog#46889e6926", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Lá bài Con Chó", "glossEn": "The eighteenth Lenormand card.", "senseOrder": 13, "id": "en:dog#4d156e8049", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Bánh mì xúc xích, xúc xích", "glossEn": "A hot dog: a frankfurter, wiener, or similar sausage; or a sandwich made from this.", "senseOrder": 14, "id": "en:dog#11", "senseFrequency": 5, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Kẻ yếu thế, người yếu thế", "glossEn": "An underdog.", "senseOrder": 15, "id": "en:dog#734f4e1449", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Bàn chân, ngón chân", "glossEn": "Foot; toe.", "senseOrder": 16, "id": "en:dog#6f3b8d66aa", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Điện thoại", "glossEn": "(from \"dog and bone\") Phone or mobile phone.", "senseOrder": 17, "id": "en:dog#5aaac551ee", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Cọc tiêu", "glossEn": "One of the cones used to divide up a racetrack when training horses.", "senseOrder": 18, "id": "en:dog#8a8513bdf4", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Thứ kém cỏi, phế phẩm", "glossEn": "Something that performs poorly.", "senseOrder": 19, "id": "en:dog#12", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Phim xịt, bom xịt", "glossEn": "A flop; a film that performs poorly at the box office.", "senseOrder": 20, "id": "en:dog#adab714920", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Búa súng, búa đập", "glossEn": "A cock, as of a gun.", "senseOrder": 21, "id": "en:dog#9224317cba", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "noun", "glossVi": "Cáo đực", "glossEn": "A dance having a brief vogue in the 1960s in which the actions of a dog were mimicked.", "senseOrder": 22, "id": "en:dog#2", "senseFrequency": null, "glossViIsMt": false},
+  {"pos": "verb", "glossVi": "Đuổi theo, săn đuổi, truy đuổi", "glossEn": "To pursue with the intent to catch.", "senseOrder": 23, "id": "en:dog#13", "senseFrequency": 1, "glossViIsMt": true},
+  {"pos": "verb", "glossVi": "Đeo bám, bám theo, quấy rối", "glossEn": "To follow in an annoying or harassing way.", "senseOrder": 24, "id": "en:dog#14", "senseFrequency": 2, "glossViIsMt": true},
+  {"pos": "verb", "glossVi": "Chốt chặt, đóng chặt", "glossEn": "To fasten a hatch securely.", "senseOrder": 25, "id": "en:dog#15", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "verb", "glossVi": "Làm tình nơi công cộng", "glossEn": "To watch, or participate, in sexual activity in a public place.", "senseOrder": 26, "id": "en:dog#19ea333657", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "verb", "glossVi": "Làm việc cầm chừng, câu giờ", "glossEn": "To intentionally restrict one's productivity as employee; to work at the slowest rate that goes unpunished.", "senseOrder": 27, "id": "en:dog#aec5590d08", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "verb", "glossVi": "Chỉ trích, chê bai", "glossEn": "To criticize.", "senseOrder": 28, "id": "en:dog#14cdb99e56", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "verb", "glossVi": "Chia ca trực", "glossEn": "To divide (a watch) with a comrade.", "senseOrder": 29, "id": "en:dog#368fec7e88", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "adjective", "glossVi": "Rất tệ, dở tệ", "glossEn": "Of inferior quality; very bad.", "senseOrder": 30, "id": "en:dog#16", "senseFrequency": 1, "glossViIsMt": true},
+]
+
+/** The senses of es:casa as the word page reads them, with the MT flags read on 2026-09-29. */
+export const CASA_SENSES = [
+  {"pos": "noun", "glossVi": "Nhà ở, căn nhà, tòa nhà; chỗ ở.", "glossEn": "house", "senseOrder": 1, "id": "es:casa#1", "senseFrequency": null, "glossViIsMt": false},
+  {"pos": "verb", "glossVi": "Dạng chia của động từ 'casar' (cưới, kết hôn)", "glossEn": "inflection of casar:", "senseOrder": 2, "id": "es:casa#2", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "verb", "glossVi": "Dạng chia ngôi thứ ba số ít, thì hiện tại của 'casar'", "glossEn": "third-person singular present indicative", "senseOrder": 3, "id": "es:casa#3", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": "verb", "glossVi": "Dạng mệnh lệnh ngôi thứ hai số ít của 'casar' (hãy cưới)", "glossEn": "second-person singular imperative", "senseOrder": 4, "id": "es:casa#4", "senseFrequency": null, "glossViIsMt": true},
+]
+
+/** The senses of zh:打 as the word page reads them, with the MT flags read on 2026-09-29. */
+export const DA_SENSES = [
+  {"pos": null, "glossVi": "Đánh, đập", "glossEn": "to hit; to strike", "senseOrder": 1, "id": "zh:打:s3", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": null, "glossVi": "Đánh nhau, chiến đấu", "glossEn": "to fight", "senseOrder": 2, "id": "zh:打:s4", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": null, "glossVi": "Đánh, làm, gọi", "glossEn": "(in many expressions) a semantically light transitive verb used with various objects to form expressions with a wide range of meanings, e.g. 打傘|打伞[da3 san3] \"to hold an umbrella\", 打電話|打电话[da3 dian4 hua4] \"to make a phone call\", 打針|打针[da3 zhen1] \"to get an injection\"", "senseOrder": 3, "id": "zh:打:s5", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": null, "glossVi": "Từ", "glossEn": "(coll.) from; since", "senseOrder": 4, "id": "zh:打:s6", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": null, "glossVi": "Tá (12 cái)", "glossEn": "(loanword) dozen", "senseOrder": 5, "id": "zh:打:s1", "senseFrequency": null, "glossViIsMt": true},
+  {"pos": null, "glossVi": "Đánh, đập", "glossEn": "Taiwan pr. [da3]", "senseOrder": 6, "id": "zh:打:s2", "senseFrequency": null, "glossViIsMt": true},
+]

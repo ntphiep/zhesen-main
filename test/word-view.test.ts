@@ -3,11 +3,19 @@ import {
   balanceColumns, buildWordView, groupSenses, mainSenses, splitAroundStem, splitForm, splitPhrasalVerbs, type ViewWord,
 } from '@/lib/dictionary/wordView'
 import { senseSections } from '@/lib/dictionary/wordPage'
-import type { DictEntryDetail, DictSense } from '@/lib/dictionary/types'
+import type { CharInfo, DictEntryDetail, DictSense } from '@/lib/dictionary/types'
 
 const sense = (over: Partial<DictSense> & { senseOrder: number }): DictSense =>
   ({ pos: 'verb', glossVi: null, glossEn: null, ...over })
 const word = (text: string): ViewWord => ({ text, href: `/x/${text}`, id: null, gloss: null, pos: null, level: null })
+const char = (over: Partial<CharInfo> & { char: string }): CharInfo =>
+  ({ radical: null, strokeCount: null, hanViet: [], pinyin: [], gloss: null, ...over })
+
+const zhWord = (headword: string): DictEntryDetail => ({
+  id: `zh:${headword}`, lang: 'zh', headword, traditional: null, level: null, ipa: null, pos: null,
+  glossVi: null, glossEn: null, audioUrl: null, senses: [], pronunciations: [], examples: [],
+  relations: [], attributes: {}, senseLinks: [],
+})
 
 const take: DictEntryDetail = {
   id: 'en:take', lang: 'en', headword: 'take', traditional: null, level: 'B1', ipa: null, pos: 'verb',
@@ -168,5 +176,19 @@ describe('buildWordView', () => {
     expect(buildWordView({ detail: take, characters: [], siblings: [], inflections }).forms[0].label).toBe('Ngôi thứ ba số ít')
     const noun = { ...take, senses: take.senses.map((s) => ({ ...s, senseOrder: s.pos === 'noun' ? 0 : s.senseOrder })) }
     expect(buildWordView({ detail: noun, characters: [], siblings: [], inflections }).forms[0].label).toBe('Số nhiều')
+  })
+
+  it('shows every reading of a single-character headword, one per character for a multi-character one', () => {
+    const single = buildWordView({
+      detail: zhWord('行'), characters: [char({ char: '行', hanViet: ['hàng', 'hành'] })], siblings: [],
+    })
+    expect(single.hanViet).toBe('hàng, hành')
+
+    const multi = buildWordView({
+      detail: zhWord('银行'),
+      characters: [char({ char: '银', hanViet: ['ngân'] }), char({ char: '行', hanViet: ['hàng', 'hành'] })],
+      siblings: [],
+    })
+    expect(multi.hanViet).toBe('ngân hàng')
   })
 })

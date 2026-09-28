@@ -59,6 +59,18 @@ describe('parseLearnerLayer', () => {
     expect(zh.senses[0].synonyms.find((s) => s.text === '念书')?.targetEntryId).toBeNull()
   })
 
+  it('names the phrasal verb and idiom patterns in Vietnamese', () => {
+    const link = (text: string, pattern: string, link_order: number) => ({
+      kind: 'collocation', lang: 'en', text, pattern, link_order, sense_order: 1, reading: null, example: null,
+      vi: null, note_vi: null, example_vi: null, target_entry_id: null,
+    })
+    const en = parseLearnerLayer({
+      ...XUEXI_LAYER_ROW,
+      learner_links: [link('take off', 'phrasal verb', 1), link('take it easy', 'Idiom', 2), link('take a break', 'V + N', 3)],
+    })
+    expect(en.senses[0].collocations.map((c) => c.pattern)).toEqual(['cụm động từ', 'thành ngữ', 'V + N'])
+  })
+
   it('puts a Chinese sentence reading under the example, not under the collocation', () => {
     const link = (text: string, reading: string, example: string, link_order: number) => ({
       kind: 'collocation', lang: 'zh', text, reading, example, link_order, sense_order: 1,

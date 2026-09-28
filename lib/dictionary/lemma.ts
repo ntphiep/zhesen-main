@@ -31,6 +31,36 @@ export const INFLECTION_WORDS = [
 const POINTER_RE = new RegExp(String.raw`^((?:(?:${POINTER_WORDS.join('|')}|\([^)]*\))\s+)+)of\s+([\p{L}][\p{L}''’-]*)`, 'iu')
 const INFLECTION_RE = new RegExp(String.raw`\b(?:${INFLECTION_WORDS.join('|')})\b`, 'i')
 
+const FORM_LINE_RE = new RegExp(String.raw`^(?:(?:${POINTER_WORDS.join('|')}|\([^)]*\))[\s.,;]*)+$`, 'iu')
+
+/** The word the sense at `index` (dictionary order, from 0) points at: "plural of person"
+ *  and Wiktionary's heading "inflection of casar:" name person and casar. It needs a grammar
+ *  word before "of", since a label alone is a definition: CC-CEDICT's "(idiom) of long
+ *  standing" is not a form of long. The limits of lemmaFromSenses hold too. English and
+ *  Spanish only. */
+export function pointerLemma(glossEn: string | null, index = 0): string | null {
+  if (index >= LAST_POINTER_SENSE) return null
+  const m = glossEn?.match(POINTER_RE)
+  if (!m || !m[1].replace(/\([^)]*\)/g, '').trim() || (index > 0 && !INFLECTION_RE.test(m[1]))) return null
+  return m[2].trim()
+}
+
+/** The lemma of a form line: a gloss made only of grammar words that follows, in the same
+ *  part of speech, a heading ending in ":" (casa's "third-person singular present
+ *  indicative" under "inflection of casar:"). `senses` is in dictionary order. */
+export function formLineLemma(senses: DictSense[], index: number): string | null {
+  const s = senses[index]
+  if (!s?.glossEn || !FORM_LINE_RE.test(s.glossEn.trim())) return null
+  for (let i = index - 1; i >= 0; i--) {
+    const prev = senses[i]
+    if (prev.pos !== s.pos) return null
+    const gloss = prev.glossEn?.trim() ?? ''
+    if (/:$/.test(gloss)) return pointerLemma(gloss, i)
+    if (!FORM_LINE_RE.test(gloss)) return null
+  }
+  return null
+}
+
 /** The headword this entry is a form of, or null when it is a word in its own right. */
 export function lemmaFromSenses(senses: DictSense[], headword: string): string | null {
   for (const [i, s] of senses.slice(0, LAST_POINTER_SENSE).entries()) {

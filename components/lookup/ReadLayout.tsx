@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AiNote, Chip, FORMS_LABEL, LearnerHeader, LearnerRail, LemmaMention, PANEL, SenseBody, SenseChips, minorGloss, minorTerms } from './LearnerParts'
+import { Chip, FORMS_LABEL, LayerNote, LearnerHeader, LearnerRail, LemmaMention, PANEL, SenseBody, SenseChips, minorGloss, minorTerms } from './LearnerParts'
 import { CARD, CONTAINER, SectionLabel } from './WordParts'
 import { minorSenses, type LearnerLayer, type MinorSense } from '@/lib/dictionary/learner'
 import { useAnchor } from '@/lib/hooks/useAnchor'
@@ -73,7 +73,7 @@ export function ReadLayout({ view, layer }: { view: WordView; layer: LearnerLaye
               <MinorTable label={other.length > 0 ? FORMS_LABEL : null} senses={inflections} />
             </section>
           )}
-          <AiNote />
+          <LayerNote layer={layer} view={view} />
         </div>
 
         <aside className="flex min-w-0 flex-col gap-4 lg:self-stretch">

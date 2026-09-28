@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { lemmaFromSenses } from '@/lib/dictionary/lemma'
+import { formLineLemma, lemmaFromSenses, pointerLemma } from '@/lib/dictionary/lemma'
 import type { DictSense } from '@/lib/dictionary/types'
 
 function sense(glossEn: string | null, glossVi: string | null = null): DictSense {
@@ -58,5 +58,56 @@ describe('lemmaFromSenses', () => {
     expect(lemmaFromSenses(run, 'run')).toBeNull()
     const saw = [...Array.from({ length: 14 }, () => sense('A tool for cutting.')), sense('simple past of see')]
     expect(lemmaFromSenses(saw, 'saw')).toBe('see')
+  })
+})
+
+describe('pointerLemma', () => {
+  it('reads the word a pointer or a heading names', () => {
+    expect(pointerLemma('inflection of casar:')).toBe('casar')
+    expect(pointerLemma('plural of person')).toBe('person')
+  })
+
+  it('leaves prose alone', () => {
+    expect(pointerLemma('A form of government.')).toBeNull()
+    expect(pointerLemma(null)).toBeNull()
+  })
+})
+
+describe('pointerLemma limits', () => {
+  it('needs a grammar word before "of", not only a label', () => {
+    expect(pointerLemma('(idiom) of long standing; with a long history')).toBeNull()
+    expect(pointerLemma('(coll.) of poor quality', 3)).toBeNull()
+    expect(pointerLemma('(obsolete) plural of cow')).toBe('cow')
+  })
+
+  it('applies the limits of lemmaFromSenses', () => {
+    expect(pointerLemma('Alternative form of gyve.', 29)).toBeNull()
+    expect(pointerLemma('Alternative form of gyve.', 3)).toBeNull()
+    expect(pointerLemma('Misspelling of advise.', 0)).toBe('advise')
+    expect(pointerLemma('simple past of see', 14)).toBe('see')
+    expect(pointerLemma('past participle of rin', 15)).toBeNull()
+  })
+})
+
+describe('formLineLemma', () => {
+  const casa: DictSense[] = [
+    { pos: 'noun', glossVi: null, glossEn: 'house', senseOrder: 1 },
+    { pos: 'verb', glossVi: null, glossEn: 'inflection of casar:', senseOrder: 2 },
+    { pos: 'verb', glossVi: null, glossEn: 'third-person singular present indicative', senseOrder: 3 },
+    { pos: 'verb', glossVi: null, glossEn: 'second-person singular (tú) affirmative imperative', senseOrder: 4 },
+  ]
+
+  it('gives the lines under a heading the heading lemma', () => {
+    expect([0, 1, 2, 3].map((i) => formLineLemma(casa, i))).toEqual([null, null, 'casar', 'casar'])
+  })
+
+  it('needs the heading in the same part of speech', () => {
+    const noun = casa.map((s, i) => (i === 2 ? { ...s, pos: 'noun' } : s))
+    expect(formLineLemma(noun, 2)).toBeNull()
+    expect(formLineLemma([casa[2]], 0)).toBeNull()
+  })
+
+  it('leaves a definition alone', () => {
+    expect(formLineLemma([casa[1], { ...casa[2], glossEn: 'A form of government.' }], 1)).toBeNull()
   })
 })

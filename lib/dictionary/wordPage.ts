@@ -53,6 +53,25 @@ export function senseSections(senses: DictSense[]): SenseSection[] {
     .map((sec) => ({ ...sec, senses: rankSenses(sec.senses) }))
 }
 
+/** The first Vietnamese term of a sense, the way the summary line cuts it. */
+export function senseLabel(s: DictSense): string {
+  const vi = (s.glossVi ?? s.pivotVi)?.split(/[,;](?![^(]*\))/)[0].trim()
+  return vi || s.glossEn?.split(/[,;(]/)[0].trim() || ''
+}
+
+/** The senses the overview leads with: the first of every part of speech, then the rest
+ *  of the budget from the first part of speech, which is the one the word is used as most. */
+export function mainSenses(sections: SenseSection[], max = 4): { section: SenseSection; senses: DictSense[] }[] {
+  const quota = sections.map((s, i) => (i < max ? Math.min(1, s.senses.length) : 0))
+  let left = max - quota.reduce((a, b) => a + b, 0)
+  for (let i = 0; i < sections.length && left > 0; i++) {
+    const extra = Math.min(left, sections[i].senses.length - quota[i])
+    quota[i] += extra
+    left -= extra
+  }
+  return sections.map((section, i) => ({ section, senses: section.senses.slice(0, quota[i]) })).filter((g) => g.senses.length > 0)
+}
+
 /** The entry's own meanings, which a copied "translation" repeats; see isSentenceTranslation. */
 export function entryGlosses(detail: Pick<DictEntryDetail, 'glossVi' | 'senses'>): (string | null)[] {
   return [detail.glossVi, ...detail.senses.map((s) => s.glossVi)]

@@ -28,8 +28,8 @@ import type { LangCode } from '@/lib/languages'
 
 export const getCachedEntryDetail = unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),
-  // v4: keeps the recordings audioMatchesHeadword now accepts, which a v3 value dropped.
-  ['dict-entry-detail-v4'],
+  // v5: carries glossViIsMt and example sourceId, which a v4 value lacks.
+  ['dict-entry-detail-v5'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 

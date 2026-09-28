@@ -7,6 +7,7 @@ const PRONUNCIATIONS = 'pronunciations(accent, ipa, audio_url)'
 export const PREVIEW_SELECT =
   `${ENTRY_COLUMNS}, senses(pos, gloss_vi, gloss_en, sense_order), ${PRONUNCIATIONS}`
 
-/** The preview plus each sense's id and rank, which only the entry page reads. */
+/** The preview plus each sense's id, rank and machine-translation flag, which only the
+ *  entry page reads. */
 export const DETAIL_SELECT =
-  `${ENTRY_COLUMNS}, senses(id, pos, gloss_vi, gloss_en, sense_order, sense_frequency), ${PRONUNCIATIONS}`
+  `${ENTRY_COLUMNS}, senses(id, pos, gloss_vi, gloss_en, sense_order, sense_frequency, gloss_vi_is_mt), ${PRONUNCIATIONS}`

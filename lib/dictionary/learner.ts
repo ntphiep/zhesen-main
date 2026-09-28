@@ -33,8 +33,12 @@ export interface LearnerExample {
   text: string
   reading: string | null
   vi: string
-  /** Null when the model wrote the sentence rather than taking it from Wiktionary. */
+  /** On an AI layer, null when the model wrote the sentence; always null on a derived one. */
   sourceExampleId: number | null
+  /** A model wrote the sentence rather than a dictionary or a corpus. */
+  byModel: boolean
+  /** `lex.sources.id` of the sentence on a derived layer; null on an AI layer. */
+  sourceId: string | null
 }
 
 export interface LearnerSense {
@@ -42,6 +46,8 @@ export interface LearnerSense {
   pos: string | null
   viTerms: string[]
   viDefinition: string
+  /** True when the Vietnamese came through the English pivot rather than from the entry. */
+  pivot: boolean
   enDefinition: string | null
   domain: string | null
   register: string | null
@@ -70,6 +76,8 @@ export interface SenseLabel {
 
 export interface LearnerLayer {
   entryId: string
+  /** 'ai' for a layer a model wrote, 'dictionary' for one derived from the raw senses. */
+  source: 'ai' | 'dictionary'
   gistVi: string[]
   level: string | null
   usageNoteVi: string | null
@@ -176,11 +184,15 @@ export function isExampleReading(text: string, example: string | null, reading: 
   return /[.?!,;:。，？！]/.test(bare) || words.length > units
 }
 
+/** The two pattern names the prompt allows beside the N + V notation. */
+const PATTERN_VI: Record<string, string> = { 'phrasal verb': 'cụm động từ', idiom: 'thành ngữ' }
+
 function toLink(r: LinkRow & { lang: LangCode }): LearnerLink {
   const ofExample = r.lang === 'zh' && r.example_reading === null && r.reading !== null
     && isExampleReading(r.text, r.example, r.reading)
+  const pattern = r.pattern === null ? null : PATTERN_VI[r.pattern.trim().toLowerCase()] ?? r.pattern
   return {
-    kind: r.kind, text: r.text, lang: r.lang, targetEntryId: r.target_entry_id, pattern: r.pattern, vi: r.vi,
+    kind: r.kind, text: r.text, lang: r.lang, targetEntryId: r.target_entry_id, pattern, vi: r.vi,
     noteVi: r.note_vi, example: r.example, exampleVi: r.example_vi,
     reading: ofExample ? null : r.reading, exampleReading: r.example_reading ?? (ofExample ? r.reading : null),
   }
@@ -200,6 +212,7 @@ export function parseLearnerLayer(raw: unknown): LearnerLayer {
   const of = (order: number, kind: LinkKind) => links.filter((l) => l.sense_order === order && l.kind === kind).map(toLink)
   return {
     entryId: r.entry_id,
+    source: 'ai',
     gistVi: r.gist_vi,
     level: cefr(r.level),
     usageNoteVi: r.usage_note_vi,
@@ -209,6 +222,7 @@ export function parseLearnerLayer(raw: unknown): LearnerLayer {
       pos: s.pos,
       viTerms: s.vi_terms,
       viDefinition: s.vi_definition,
+      pivot: false,
       enDefinition: s.en_definition,
       domain: s.domain,
       register: s.register,
@@ -216,6 +230,7 @@ export function parseLearnerLayer(raw: unknown): LearnerLayer {
       sourceSenseIds: s.source_sense_ids,
       examples: [...s.learner_examples].sort((a, b) => a.example_order - b.example_order).map((x) => ({
         text: x.text, reading: x.reading, vi: x.vi, sourceExampleId: x.source_example_id,
+        byModel: x.source_example_id === null, sourceId: null,
       })),
       collocations: of(s.sense_order, 'collocation'),
       synonyms: of(s.sense_order, 'synonym'),

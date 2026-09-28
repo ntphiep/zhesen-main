@@ -84,6 +84,8 @@ function LayoutButtons({ value, stored, options }: Parameters<typeof LayoutPicke
 }
 
 const NOTE = 'w-full text-[13px] text-black/60 sm:text-right'
+/** What a hidden panel renders while hydrating: nothing React compares or patches. */
+const DORMANT = { __html: '' }
 
 /**
  * The word page in the layout the reader picked, with the picker above it. Each layout
@@ -92,7 +94,11 @@ const NOTE = 'w-full text-[13px] text-black/60 sm:text-right'
  * The page is cached for everyone, so the server cannot know the stored layout. It draws
  * every layout the entry offers, each in a panel, and `app/globals.css` shows the one the
  * boot script marked on <html> before the first paint. Hidden panels prefix their ids.
- * Hydration keeps the shown panel's DOM by its key and drops the rest.
+ * Hydration works on the shown panel only. Over server HTML (main[data-boot] is in the
+ * document) every other panel is an empty `dangerouslySetInnerHTML`, which React hydrates
+ * without rendering or touching its children; the render after hydration drops it, and
+ * the shown one keeps its DOM. A Suspense boundary per panel would do the same, but React
+ * then streams each large panel out of line and reveals the shown one up to 300 ms late.
  */
 export function WordLayouts({ view }: { view: WordView }) {
   const stored = useSyncExternalStore(wordLayout.subscribe, wordLayout.snapshot, wordLayout.serverSnapshot)
@@ -102,6 +108,8 @@ export function WordLayouts({ view }: { view: WordView }) {
   const options = availableLayouts(ctx)
   const label = (key: WordLayout) => WORD_LAYOUTS.find((l) => l.key === key)?.label ?? key
   const panels = hydrated ? [layout] : options.map((l) => l.key)
+  const overServerHtml = !hydrated && typeof document !== 'undefined' && document.querySelector('main[data-boot]') !== null
+  const shown = overServerHtml ? resolveLayout(wordLayout.snapshot(), ctx) : null
   const missing = WORD_LAYOUTS.filter((l) => !options.includes(l))
   return (
     <main
@@ -119,13 +127,15 @@ export function WordLayouts({ view }: { view: WordView }) {
           <p key={l.key} data-note={l.key} className={NOTE}>Từ này chưa có bố cục {l.label}, đang hiện {label('classic')}.</p>
         ))}
       </div>
-      {panels.map((key) => (
-        <div key={key} data-panel={key}>
-          <AnchorPrefix value={hydrated || key === 'overview' ? '' : `${key}-`}>
-            <LayoutBody layout={key} view={view} />
-          </AnchorPrefix>
-        </div>
-      ))}
+      {panels.map((key) => (shown !== null && key !== shown
+        ? <div key={key} data-panel={key} suppressHydrationWarning dangerouslySetInnerHTML={DORMANT} />
+        : (
+          <div key={key} data-panel={key}>
+            <AnchorPrefix value={hydrated || key === 'overview' ? '' : `${key}-`}>
+              <LayoutBody layout={key} view={view} />
+            </AnchorPrefix>
+          </div>
+        )))}
     </main>
   )
 }

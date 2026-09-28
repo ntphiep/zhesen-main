@@ -21,6 +21,7 @@ export const senseRow = z.object({
   // Selected only by DETAIL_SELECT.
   id: z.string().optional(),
   sense_frequency: z.string().nullable().optional(),
+  gloss_vi_is_mt: z.boolean().optional(),
 })
 export type SenseRow = z.infer<typeof senseRow>
 
@@ -52,6 +53,7 @@ export const exampleRow = z.object({
   translation_vi: z.string().nullable(),
   translation_en: z.string().nullable(),
   sense_id: z.string().nullable(),
+  source_id: z.string().nullable().optional(),
 })
 
 export const relationRow = z.object({
@@ -185,6 +187,7 @@ export function toSenses(rows: SenseRow[] | null): DictSense[] {
   return [...(rows ?? [])].sort((a, b) => a.sense_order - b.sense_order).map((r) => ({
     pos: r.pos, glossVi: cleanGlossVi(cleanMtGloss(r.gloss_vi)), glossEn: r.gloss_en, senseOrder: r.sense_order,
     ...(r.id === undefined ? {} : { id: r.id, senseFrequency: parseSenseFrequency(r.sense_frequency) }),
+    ...(r.gloss_vi_is_mt === undefined ? {} : { glossViIsMt: r.gloss_vi_is_mt }),
   }))
 }
 export function toProns(rows: PronRow[] | null): DictPron[] {

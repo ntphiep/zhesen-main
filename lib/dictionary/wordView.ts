@@ -1,10 +1,11 @@
 import { buildConjugation, type Conjugation } from './conjugation'
+import { deriveLearnerLayer } from './derivedLayer'
 import { entryPath } from './entryId'
 import { groupWordForms } from './family'
 import { entryMeaningVi, isCleanExample } from './textQuality'
 import {
-  entryGlosses, exampleCandidates, knownWordExamples, planExamples, relatedTabs, senseSections, summaryLine,
-  type RelatedItem, type SenseSection,
+  entryGlosses, exampleCandidates, knownWordExamples, planExamples, relatedTabs, senseLabel, senseSections, summaryLine,
+  type RelatedItem,
 } from './wordPage'
 import type { LangCode } from '@/lib/languages'
 import type { ResolvedText } from './tappable'
@@ -14,6 +15,8 @@ import type {
 } from './types'
 import type { GrammarPoint } from '@/lib/grammar/types'
 import type { LearnerBacklink, LearnerLayer } from './learner'
+
+export { mainSenses, senseLabel } from './wordPage'
 
 /** Everything the three word-page layouts draw, as plain data, built once on the server. */
 
@@ -64,6 +67,8 @@ export interface WordView {
   forms: ViewForm[]
   conjugation: Conjugation | null
   phrases: ViewWord[]
+  /** Phrases from collocation relations, which a model wrote. */
+  modelPhrases: number
   family: FamilyWord[]
   senseSynonyms: SenseSynonyms[]
   /** Synonyms no sense claimed. */
@@ -80,7 +85,7 @@ export interface WordView {
   /** The entry's own meanings, which a copied "translation" repeats. */
   glosses: (string | null)[]
   grammarPoints: GrammarPoint[]
-  /** The learner layer, when the entry has a published one. */
+  /** The published AI layer, else one derived from the senses; null without senses. */
   learner: LearnerLayer | null
   /** The layers that mention this entry. */
   backlinks: LearnerBacklink[]
@@ -173,12 +178,6 @@ export function splitAroundStem(word: string, stem: string): { before: string; s
   return n >= 2 ? { before: '', stem: word.slice(0, n), after: word.slice(n) } : { before: '', stem: word, after: '' }
 }
 
-/** The first Vietnamese term of a sense, the way the summary line cuts it. */
-export function senseLabel(s: DictSense): string {
-  const vi = (s.glossVi ?? s.pivotVi)?.split(/[,;](?![^(]*\))/)[0].trim()
-  return vi || s.glossEn?.split(/[,;(]/)[0].trim() || ''
-}
-
 export function buildWordView({
   detail, lemma = null, characters, siblings, inflections = [], grammarPoints = [], containing = [], kin = [],
   previews = {}, resolvedExamples = [], learner = null, backlinks = [],
@@ -236,7 +235,11 @@ export function buildWordView({
 
   return {
     head: { ...detail, senses: [], relations: [], senseLinks: [], examples: detail.examples.filter((e) => e.translationVi) },
-    hanViet: detail.lang === 'zh' ? characters.map((c) => c.hanViet[0]).filter(Boolean).join(' ') || null : null,
+    // A single character shows every reading it has; a multi-character headword shows one
+    // per character, so the string stays one syllable per glyph.
+    hanViet: detail.lang === 'zh'
+      ? (characters.length === 1 ? characters[0].hanViet.join(', ') : characters.map((c) => c.hanViet[0]).filter(Boolean).join(' ')) || null
+      : null,
     lemma,
     lemmaPreview: lemma ? previews[lemma.toLowerCase()] ?? null : null,
     senses: detail.senses,
@@ -245,6 +248,7 @@ export function buildWordView({
     forms,
     conjugation,
     phrases: glossedFirst,
+    modelPhrases: tab('collocations').length,
     family: tab('derived').map((i) => ({ ...toWord(i), ...splitAroundStem(i.text, stem) })),
     senseSynonyms,
     synonyms: tab('synonyms').filter((i) => !claimed.has(i.text.toLowerCase())).map(toWord),
@@ -258,22 +262,11 @@ export function buildWordView({
     resolved: resolvedExamples,
     glosses,
     grammarPoints,
-    learner,
+    learner: learner ?? deriveLearnerLayer({
+      entryId: detail.id, lang: detail.lang, senses: detail.senses, examplesBySense: plan.bySense, glosses, senseSynonyms, previews,
+    }),
     backlinks,
   }
-}
-
-/** The senses the overview leads with: the first of every part of speech, then the rest
- *  of the budget from the first part of speech, which is the one the word is used as most. */
-export function mainSenses(sections: SenseSection[], max = 4): { section: SenseSection; senses: DictSense[] }[] {
-  const quota = sections.map((s, i) => (i < max ? Math.min(1, s.senses.length) : 0))
-  let left = max - quota.reduce((a, b) => a + b, 0)
-  for (let i = 0; i < sections.length && left > 0; i++) {
-    const extra = Math.min(left, sections[i].senses.length - quota[i])
-    quota[i] += extra
-    left -= extra
-  }
-  return sections.map((section, i) => ({ section, senses: section.senses.slice(0, quota[i]) })).filter((g) => g.senses.length > 0)
 }
 
 export interface SenseGroup {

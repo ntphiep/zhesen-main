@@ -12,6 +12,8 @@ export interface DictSense {
   id?: string
   /** Rank of a core sense within its part of speech, 1 most common; null when unranked. */
   senseFrequency?: number | null
+  /** `lex.senses.gloss_vi_is_mt`: `glossVi` is a machine translation. Read on the entry page only. */
+  glossViIsMt?: boolean
 }
 export interface DictPron {
   accent: string
@@ -25,6 +27,8 @@ export interface DictExample {
   translationEn: string | null
   /** The sense this sentence illustrates (`lex.examples.sense_id`); null when unlinked. */
   senseId?: string | null
+  /** `lex.examples.source_id`, the dataset the sentence came from. Read on the entry page only. */
+  sourceId?: string | null
 }
 export interface DictRelation {
   relationType: string

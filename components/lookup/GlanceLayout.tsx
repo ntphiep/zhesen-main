@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import {
-  AiNote, Chip, CollocationGloss, Equivalents, Examples, FORMS_LABEL, LearnerHeader, LearnerRail, Mention, PANEL, SenseChips, SourceLine,
-  minorGloss, minorTerms, toneOf,
+  Chip, CollocationGloss, Equivalents, Examples, FORMS_LABEL, LayerNote, LearnerHeader, LearnerRail, Mention, PANEL, PhraseTable, SenseChips,
+  SourceLine, minorGloss, minorTerms, toneOf,
 } from './LearnerParts'
-import { CARD, CONTAINER, SectionLabel } from './WordParts'
+import { CARD, CONTAINER, PivotMark, SectionLabel } from './WordParts'
 import { LINK_KIND_VI, domainLabel, minorSenses, registerLabel, type LearnerLayer, type LearnerLink, type MinorSense } from '@/lib/dictionary/learner'
 import type { WordView } from '@/lib/dictionary/wordView'
 
@@ -24,6 +24,7 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
   const [active, setActive] = useState<number | null>(null)
   const { other, inflections } = minorSenses(layer, view.senses)
   const lang = view.head.lang
+  const derived = layer.source === 'dictionary'
   const dim = (order: number) => (active !== null && active !== order ? 'opacity-30' : '')
   const collocations = layer.senses.flatMap((s) => s.collocations.map((link) => ({ order: s.order, link })))
   const related = layer.senses.flatMap((s) => [...s.synonyms, ...s.antonyms].map((link) => ({ order: s.order, link })))
@@ -64,8 +65,8 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
               }`}
             >
               <SenseChips pos={s.pos} cefr={s.cefr} domain={s.domain} register={s.register}><Badge order={s.order} /></SenseChips>
-              <h3 className="text-lg font-bold leading-tight">{s.viTerms.join(', ')}</h3>
-              <p className="text-[15px] leading-relaxed">{s.viDefinition}</p>
+              <h3 className="text-lg font-bold leading-tight">{s.viTerms.join(', ')}{s.pivot && <PivotMark />}</h3>
+              {s.viDefinition && <p className="text-[15px] leading-relaxed">{s.viDefinition}</p>}
               {s.enDefinition && <p className="text-[13.5px] text-black/60">{s.enDefinition}</p>}
               <Examples examples={s.examples.slice(0, 1)} view={view} />
               <SourceLine ids={s.sourceSenseIds} view={view} />
@@ -75,10 +76,15 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
           <MinorPanel label={FORMS_LABEL} senses={inflections} />
         </section>
 
+        {/* A derived layer has no collocations of its own, so the column lists the entry's phrases. */}
         <section className="flex min-w-0 flex-col gap-3">
-          <SectionLabel className="px-1">Kết hợp hay gặp · {collocations.length}</SectionLabel>
+          <SectionLabel className="px-1">
+            {derived ? `Cụm từ · ${view.phrases.length}` : `Kết hợp hay gặp · ${collocations.length}`}
+          </SectionLabel>
           <div className={PANEL}>
-            {collocations.length === 0 ? <p className="text-sm text-black/60">Chưa có kết hợp.</p> : (
+            {derived ? (
+              view.phrases.length === 0 ? <p className="text-sm text-black/60">Chưa có cụm từ.</p> : <PhraseTable view={view} />
+            ) : collocations.length === 0 ? <p className="text-sm text-black/60">Chưa có kết hợp.</p> : (
               <ul className="flex flex-col gap-3 text-sm">
                 {collocations.map(({ order, link }) => item(order, `${order}-${link.text}`, (
                   <>
@@ -109,8 +115,8 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
               </ul>
             </div>
           )}
-          <LearnerRail view={view} layer={layer} />
-          <AiNote />
+          <LearnerRail view={view} layer={layer} phrases={false} />
+          <LayerNote layer={layer} view={view} />
         </section>
       </div>
     </div>
