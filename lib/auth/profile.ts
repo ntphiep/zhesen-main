@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from '@/lib/zod'
+import { SESSION_GONE } from '@/lib/auth/account'
 
 /**
  * Display name and role, in `public.profiles` (migration 0032) because `auth.users` is not
@@ -55,10 +56,10 @@ export async function setDisplayName(
   // Said here rather than falling back to an empty id: `id=eq.` against a uuid column
   // raises 22P02, showing raw Postgres text for what is really an expired session.
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { ok: false, message: 'Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi thử lại.' }
+  if (!user) return { ok: false, message: SESSION_GONE }
   const { error } = await supabase
     .from('profiles')
     .update({ display_name: trimmed || null })
     .eq('id', user.id)
-  return error ? { ok: false, message: error.message } : { ok: true }
+  return error ? { ok: false, message: 'Chưa lưu được tên. Thử lại.' } : { ok: true }
 }

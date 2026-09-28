@@ -108,6 +108,17 @@ describe('AuthForm, sent incomplete', () => {
     expect(signInWithPassword).not.toHaveBeenCalled()
   })
 
+  // noValidate also dropped the browser's email-format check.
+  it('refuses an address that is not an email before sending anything', async () => {
+    render(<AuthForm mode="login" localWordCount={0} hasAnonymousSession={false} />)
+    await type('Email', 'khong-phai-email')
+    await type('Mật khẩu', 'longenough1')
+    await userEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }))
+
+    expect(await screen.findByText('Email không hợp lệ.')).toBeInTheDocument()
+    expect(signInWithPassword).not.toHaveBeenCalled()
+  })
+
   it('asks for the password in Vietnamese when only the email is filled', async () => {
     render(<AuthForm mode="register" localWordCount={0} hasAnonymousSession={false} />)
     await type('Email', 'a@b.com')

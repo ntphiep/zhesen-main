@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { LinkPending } from '@/components/ui/LinkPending'
 import { useRouter } from 'next/navigation'
@@ -51,6 +51,7 @@ export function AuthForm({
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<Feedback>(null)
+  const emailRef = useRef<HTMLInputElement>(null)
 
   // Registering on a browser that already holds words is an upgrade of the
   // account that holds them, not a new account.
@@ -83,6 +84,8 @@ export function AuthForm({
     const address = email.trim()
     // The form is `noValidate`: the browser's own validation bubble is English.
     if (!address) return setFeedback({ tone: 'bad', text: 'Nhập email.' })
+    // The field still runs the browser's email check; noValidate only hides its bubble.
+    if (emailRef.current?.validity.typeMismatch) return setFeedback({ tone: 'bad', text: 'Email không hợp lệ.' })
     if (!password) return setFeedback({ tone: 'bad', text: 'Nhập mật khẩu.' })
     if (upgrading) return run(() => attachEmail(supabase, address, password))
     if (mode === 'register') return run(() => registerWithPassword(supabase, address, password))
@@ -113,6 +116,7 @@ export function AuthForm({
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Email</span>
           <input
+            ref={emailRef}
             type="email"
             required
             autoComplete="email"

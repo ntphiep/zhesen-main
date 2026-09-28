@@ -1,4 +1,4 @@
-import type { AuthError, SupabaseClient, User } from '@supabase/supabase-js'
+import { isAuthSessionMissingError, type AuthError, type SupabaseClient, type User } from '@supabase/supabase-js'
 
 /**
  * An anonymous account lives in one browser's cookie, so clearing site data strands the
@@ -32,7 +32,7 @@ const SWITCH_WOULD_STRAND =
   'Trình duyệt này còn từ chưa gắn email. Gắn email cho sổ tay này trước.'
 
 const RATE_LIMITED = 'Thử quá nhiều lần. Chờ vài phút rồi thử lại.'
-const SESSION_GONE = 'Phiên đăng nhập đã hết. Đăng nhập lại.'
+export const SESSION_GONE = 'Phiên đăng nhập đã hết. Đăng nhập lại.'
 
 /** Keyed on GoTrue's `code`, never its English `message`. Codes are `ErrorCode` in
  *  @supabase/auth-js (`dist/module/lib/error-codes.d.ts`). */
@@ -57,10 +57,15 @@ const AUTH_ERRORS = new Map<string, string>([
   ['request_timeout', 'Chưa kết nối được. Thử lại.'],
 ])
 
-/** An unmapped or missing code gets `fallback`: the English text never reaches the page. */
+/** An unmapped or missing code gets `fallback`: the English text never reaches the page.
+ *  AuthSessionMissingError has no code, only its name. */
 function failed(error: AuthError, fallback: string): AuthOutcome {
+  if (isAuthSessionMissingError(error)) return { status: 'error', message: SESSION_GONE }
   return { status: 'error', message: (error.code && AUTH_ERRORS.get(error.code)) || fallback }
 }
+
+/** Sign-in refuses a browser holding words, so the way on from a taken email is another one. */
+const TAKEN_WHILE_ATTACHING = new Set(['email_exists', 'user_already_exists'])
 
 /**
  * Put an email and a password on the anonymous account holding this browser's words.
@@ -77,6 +82,9 @@ export async function attachEmail(
   const problem = passwordProblem(password)
   if (problem) return { status: 'error', message: problem }
   const { error } = await supabase.auth.updateUser({ email, password })
+  if (error?.code && TAKEN_WHILE_ATTACHING.has(error.code)) {
+    return { status: 'error', message: 'Email này đã có tài khoản. Dùng email khác.' }
+  }
   return error ? failed(error, 'Chưa gắn được email. Thử lại.') : { status: 'active' }
 }
 

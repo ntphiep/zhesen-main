@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { AuthApiError, type SupabaseClient, type User } from '@supabase/supabase-js'
+import { AuthApiError, AuthSessionMissingError, type SupabaseClient, type User } from '@supabase/supabase-js'
 import {
   accountKind, attachEmail, passwordProblem, registerWithPassword, setPassword,
   signInWithPassword, MIN_PASSWORD,
@@ -139,6 +139,22 @@ describe('auth failures', () => {
     signUp.mockResolvedValue(refuse(english, status, code))
     await expect(registerWithPassword(client, 'a@b.com', 'longenough1')).resolves
       .toEqual({ status: 'error', message: vietnamese })
+  })
+
+  // Sign-in refuses a browser holding words, so "Đăng nhập" beside this message led nowhere.
+  it.each(['email_exists', 'user_already_exists'])('sends %s while attaching an email to another email', async (code) => {
+    const { client, updateUser } = fakeAuth()
+    updateUser.mockResolvedValue(refuse('A user with this email address has already been registered', 422, code))
+    await expect(attachEmail(client, 'a@b.com', 'longenough1')).resolves
+      .toEqual({ status: 'error', message: 'Email này đã có tài khoản. Dùng email khác.' })
+  })
+
+  // AuthSessionMissingError carries no code, only its name.
+  it('says the session is gone when there is no session at all', async () => {
+    const { client, updateUser } = fakeAuth()
+    updateUser.mockResolvedValue({ data: { user: null }, error: new AuthSessionMissingError() } as never)
+    await expect(setPassword(client, 'longenough1')).resolves
+      .toEqual({ status: 'error', message: 'Phiên đăng nhập đã hết. Đăng nhập lại.' })
   })
 
   // #59: this is what production answered while mail delivery was broken.

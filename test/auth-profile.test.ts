@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
-import { getProfile } from '@/lib/auth/profile'
-import { clientReturning } from './helpers/supabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getProfile, setDisplayName } from '@/lib/auth/profile'
+import { clientReturning, queryBuilder } from './helpers/supabase'
 
 const row = { id: 'u1', role: 'learner', display_name: 'Hiệp' }
 
@@ -31,5 +32,26 @@ describe('getProfile', () => {
   it('reads a failed query as no profile', async () => {
     const { client } = clientReturning(null, { message: 'boom' })
     await expect(getProfile(client, 'u1')).resolves.toBeNull()
+  })
+})
+
+describe('setDisplayName', () => {
+  function client(user: { id: string } | null, error: unknown = null) {
+    const builder = queryBuilder({ data: null, error })
+    builder.update = vi.fn(() => builder)
+    return {
+      auth: { getUser: vi.fn(async () => ({ data: { user } })) },
+      from: vi.fn(() => builder),
+    } as unknown as SupabaseClient
+  }
+
+  it('says the session is gone in the words the sign-in forms use', async () => {
+    await expect(setDisplayName(client(null), 'Hiệp')).resolves
+      .toEqual({ ok: false, message: 'Phiên đăng nhập đã hết. Đăng nhập lại.' })
+  })
+
+  it('shows Vietnamese, never the database text, when the save fails', async () => {
+    await expect(setDisplayName(client({ id: 'u1' }, { message: 'new row violates row-level security policy' }), 'Hiệp'))
+      .resolves.toEqual({ ok: false, message: 'Chưa lưu được tên. Thử lại.' })
   })
 })
