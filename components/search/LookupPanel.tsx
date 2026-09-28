@@ -107,6 +107,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
       const cached = cache.current.get(key)
       if (cached) { setData(cached); setDataKey(key); setLoading(false); setRefusal(null); return }
       setLoading(true)
+      setRefusal(null)
       id = setTimeout(async () => {
         try {
           const outcome = await fetchSearch(trimmed, ctrl.signal, opts)
@@ -118,7 +119,6 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
             setDataKey(key)
             return
           }
-          setRefusal(null)
           // Map insertion order is age, so the first key is the oldest.
           if (cache.current.size >= CACHE_LIMIT) {
             const oldest = cache.current.keys().next()

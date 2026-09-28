@@ -147,6 +147,20 @@ describe('LookupPanel', () => {
     expect(String(fetchMock.mock.calls[1][0])).toBe(String(fetchMock.mock.calls[0][0]))
   })
 
+  // The old failure beside "Đang dịch…" reads as the new query having failed already.
+  it('clears the previous failure once a new query starts loading', async () => {
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockReturnValue(new Promise<Response>(() => {}))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<LookupPanel direction="fw" label="FW" />)
+    await userEvent.type(screen.getByLabelText('FW'), 'dog')
+    expect(await screen.findByText('Chưa tra được.')).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('FW'), 's')
+    expect(await screen.findByText('Đang dịch…')).toBeInTheDocument()
+    expect(screen.queryByText('Chưa tra được.')).toBeNull()
+  })
+
   it('shows language chips on both panels, naming the question each one answers', () => {
     stubFetch({ entries: EMPTY, suggestions: [] })
     const { unmount } = render(<LookupPanel direction="vi" label="VN" />)
