@@ -3,7 +3,7 @@ import { entryPath } from '@/lib/dictionary/entryId'
 import { LinkPending } from '@/components/ui/LinkPending'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import { genderFromCode } from '@/lib/dictionary/gender'
-import { SectionLabel } from './WordParts'
+import { EnglishMark, SectionLabel } from './WordParts'
 import type { CrossLangSibling } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 
@@ -48,7 +48,7 @@ export function CrossLanguagePanel({ siblings, className = '' }: {
                             {gender && <span className="text-xs text-black/55">{gender}</span>}
                           </span>
                         )}
-                      {gloss && <span className="text-sm">{gloss}</span>}
+                      {gloss && <span className="text-sm">{gloss}{!s.glossVi && <EnglishMark />}</span>}
                     </span>
                     <LinkPending />
                   </Link>

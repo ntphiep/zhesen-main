@@ -7,7 +7,7 @@ import { ConjugationTable } from './ConjugationTable'
 import { LemmaLink } from './LemmaLink'
 import { BACKLINKS_LABEL, BacklinkList } from './LearnerParts'
 import {
-  AiCorner, Badge, CONTAINER, FormCells, FrequencyMeter, GrammarList, LevelChip, MorphText, MoreButton, PivotMark, PosChip, WordChip,
+  AiCorner, Badge, CONTAINER, EnglishMark, FormCells, FrequencyMeter, GrammarList, LevelChip, MorphText, MoreButton, PivotMark, PosChip, WordChip,
   UntranslatedNote, WordLink, baseFormLabel,
 } from './WordParts'
 import { AudioButton } from '@/components/ui/AudioButton'
@@ -136,7 +136,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
                 {s.reading && <span className="text-sm text-black/55">{s.reading}</span>}
               </span>
             ),
-            right: <span className="text-[15px]">{s.glossVi || s.glossEn}</span>,
+            right: <span className="text-[15px]">{s.glossVi || s.glossEn}{!s.glossVi && s.glossEn && <EnglishMark />}</span>,
           }))}
         />
       ),
