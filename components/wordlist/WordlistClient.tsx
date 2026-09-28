@@ -161,6 +161,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     // Snapshot outside the updater: React may call an updater more than once, and the
     // catch below needs the pre-delete list.
     const snapshot = words
+    const wasSelected = selected.has(id)
     setWords((prev) => prev.filter((w) => w.id !== id))
     setSelected((prev) => {
       const next = new Set(prev)
@@ -171,6 +172,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       await deleteWord(supabase, id)
     } catch {
       setWords(snapshot)
+      if (wasSelected) setSelected((prev) => new Set(prev).add(id))
       notify('Chưa xóa được từ. Thử lại.')
     }
   }

@@ -79,6 +79,16 @@ describe('WordlistClient', () => {
     expect(deleteWord).toHaveBeenCalledWith(expect.anything(), 'a')
   })
 
+  it('keeps a selected word selected when its deletion fails', async () => {
+    deleteWord.mockRejectedValueOnce(new Error('offline'))
+    render(<WordlistClient initialWords={[mk('a', { headword: 'forward' })]} />)
+    await userEvent.click(screen.getByLabelText('Chọn từ forward'))
+    await userEvent.click(screen.getByRole('button', { name: /Xóa từ forward/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Xóa' }))
+    expect(await screen.findByText('forward')).toBeInTheDocument()
+    expect(screen.getByLabelText('Chọn từ forward')).toBeChecked()
+  })
+
   it('keeps the word when the deletion is cancelled', async () => {
     render(<WordlistClient initialWords={[mk('a', { headword: 'forward' })]} />)
     await userEvent.click(screen.getByRole('button', { name: /Xóa từ forward/i }))
