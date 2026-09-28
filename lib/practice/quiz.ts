@@ -38,17 +38,20 @@ export interface QuizQuestion {
  *  từ" screen is the honest response, and an empty list is how it is asked for. */
 const MIN_DISTINCT_MEANINGS = 2
 
+/** "Nước", "Nước." and "nước" are one answer: trailing punctuation and case are dropped. */
+const meaningKey = (m: string) => m.trim().replace(/[\s\p{P}]+$/u, '').toLocaleLowerCase('vi')
+
 export function buildQuiz(words: QuizWord[], count: number, rand: Rand = Math.random): QuizQuestion[] {
   const usable = words.filter((x): x is QuizWord & { meaningVi: string } => Boolean(x.meaningVi && x.meaningVi.trim()))
-  if (new Set(usable.map((x) => x.meaningVi.trim())).size < MIN_DISTINCT_MEANINGS) return []
+  if (new Set(usable.map((x) => meaningKey(x.meaningVi))).size < MIN_DISTINCT_MEANINGS) return []
   const targets = shuffle(usable, rand).slice(0, count)
   return targets.map((t) => {
     const distractors = shuffle(
-      usable.filter((x) => x.id !== t.id && x.meaningVi.trim() !== t.meaningVi.trim()),
+      usable.filter((x) => x.id !== t.id && meaningKey(x.meaningVi) !== meaningKey(t.meaningVi)),
       rand,
     )
       .map((x) => x.meaningVi.trim())
-      .filter((m, i, arr) => arr.indexOf(m) === i) // distinct distractor texts
+      .filter((m, i, arr) => arr.findIndex((o) => meaningKey(o) === meaningKey(m)) === i) // distinct distractor texts
       .slice(0, 3)
     return {
       id: t.id,

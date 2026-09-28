@@ -40,4 +40,22 @@ describe('buildQuiz', () => {
       expect(q.options.length).toBeGreaterThanOrEqual(1)
     }
   })
+
+  // Measured on production: water (Nước), agua (Nước.) and 水 (Nước) offered "Nước."
+  // beside "Nước", and picking "Nước." was graded wrong.
+  it('never offers two options that differ only by trailing punctuation or case', () => {
+    const words = [
+      w('1', 'water', 'Nước'), w('2', 'agua', 'Nước.'), w('3', '水', 'nước'),
+      w('4', 'dog', 'con chó'),
+    ]
+    const key = (m: string) => m.trim().replace(/[\s\p{P}]+$/u, '').toLocaleLowerCase('vi')
+    for (const q of buildQuiz(words, 4, () => 0)) {
+      expect(new Set(q.options.map(key)).size).toBe(q.options.length)
+    }
+  })
+
+  it('gives no quiz when every meaning collapses to one after that normalisation', () => {
+    const words = [w('1', 'water', 'Nước'), w('2', 'agua', 'Nước.'), w('3', '水', 'nước ')]
+    expect(buildQuiz(words, 3, () => 0)).toEqual([])
+  })
 })
