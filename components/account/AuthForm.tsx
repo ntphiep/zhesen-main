@@ -56,6 +56,7 @@ export function AuthForm({
   // Registering on a browser that already holds words is an upgrade of the
   // account that holds them, not a new account.
   const upgrading = mode === 'register' && hasAnonymousSession && localWordCount > 0
+  const passwordField = mode === 'register' ? 'new-password' : 'current-password'
 
   async function run(action: () => Promise<AuthOutcome>) {
     if (busy) return
@@ -117,9 +118,12 @@ export function AuthForm({
           <span className="font-medium">Email</span>
           <input
             ref={emailRef}
+            id="email"
+            name="email"
             type="email"
             required
-            autoComplete="email"
+            // Password managers pair a password with `username`, not `email`.
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="ban@vidu.com"
@@ -133,10 +137,12 @@ export function AuthForm({
           <label className="flex flex-col gap-1">
             <span className="font-medium">Mật khẩu</span>
             <input
+              id={passwordField}
+              name={passwordField}
               type="password"
               required
               minLength={mode === 'register' ? MIN_PASSWORD : undefined}
-              autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+              autoComplete={passwordField}
               aria-describedby={mode === 'register' ? 'password-hint' : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}

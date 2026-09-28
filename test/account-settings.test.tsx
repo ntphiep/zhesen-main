@@ -112,6 +112,18 @@ describe('AccountSettings', () => {
     expect(setPassword).toHaveBeenCalledWith(expect.anything(), '')
   })
 
+  // #17: a password manager needs the account's username in the same form to know
+  // which saved password the new one replaces.
+  it('names the new password and carries the username for a password manager', () => {
+    show()
+    const box = screen.getByLabelText('Mật khẩu mới')
+    expect(box).toHaveAttribute('id', 'new-password')
+    expect(box).toHaveAttribute('name', 'new-password')
+    expect(box).toHaveAttribute('autocomplete', 'new-password')
+    const username = box.closest('form')?.querySelector('input[autocomplete="username"]')
+    expect(username).toHaveValue('a@b.com')
+  })
+
   it('reports progress, and the split by status and language', () => {
     show()
     expect(screen.getByText('Tổng số từ')).toBeInTheDocument()

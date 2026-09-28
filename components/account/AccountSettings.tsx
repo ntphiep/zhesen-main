@@ -187,7 +187,11 @@ export function AccountSettings({
         </p>
         {/* noValidate: the browser's bubble is English; `setPassword` checks in Vietnamese. */}
         <form onSubmit={savePassword} noValidate className="mt-2 flex flex-wrap items-center gap-2">
+          {/* Tells a password manager which saved account the new password belongs to. */}
+          <input type="email" name="email" autoComplete="username" value={email} readOnly hidden />
           <input
+            id="new-password"
+            name="new-password"
             type="password"
             required
             minLength={MIN_PASSWORD}

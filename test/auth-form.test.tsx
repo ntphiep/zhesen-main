@@ -128,3 +128,22 @@ describe('AuthForm, sent incomplete', () => {
     expect(registerWithPassword).not.toHaveBeenCalled()
   })
 })
+
+// #17: a password manager keys on `autocomplete`, and stores only fields with a stable id or name.
+describe('AuthForm, read by a password manager', () => {
+  it.each([
+    ['signing in', { mode: 'login' as const }, 'current-password'],
+    ['registering', { mode: 'register' as const }, 'new-password'],
+    ['attaching an email', { mode: 'register' as const, localWordCount: 5, hasAnonymousSession: true }, 'new-password'],
+  ])('names both fields while %s', (_, props, password) => {
+    render(<AuthForm {...props} />)
+    const email = screen.getByLabelText('Email')
+    expect(email).toHaveAttribute('id', 'email')
+    expect(email).toHaveAttribute('name', 'email')
+    expect(email).toHaveAttribute('autocomplete', 'username')
+    const secret = screen.getByLabelText('Mật khẩu')
+    expect(secret).toHaveAttribute('id', password)
+    expect(secret).toHaveAttribute('name', password)
+    expect(secret).toHaveAttribute('autocomplete', password)
+  })
+})
