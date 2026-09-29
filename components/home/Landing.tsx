@@ -44,7 +44,7 @@ export function Landing({ example, facts, take, slips }: {
       {take && (
         <section className={s.senses} aria-labelledby="senses-title">
           <div className={s.wrap}>
-            <h2 id="senses-title" className={s.h2} data-reveal="">Từ {take.headword} có {take.senseCount} nghĩa. Zhesen đưa những nghĩa hay gặp lên trước.</h2>
+            <h2 id="senses-title" className={s.h2} data-reveal="">Từ {take.headword} có {take.senseCount >= 10 ? 'rất nhiều' : take.senseCount} nghĩa. Zhesen đưa những nghĩa hay gặp lên trước.</h2>
             <p className={s.lede} data-reveal="" data-i="1">
               Mỗi nghĩa chính có cụm từ hay đi kèm, câu ví dụ và từ tương đương trong tiếng Trung, tiếng Tây Ban Nha. Những nghĩa ít gặp vẫn nằm ở trang từ, xếp riêng bên dưới.
             </p>
