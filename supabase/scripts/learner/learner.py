@@ -129,10 +129,10 @@ def raw_entry(entry_id):
 
 # Never asked: Claude under any of its names, on the owner's instruction; a name without a
 # provider or an auto router, either of which may resolve to Claude; and models that do not
-# write text.
+# write text. AI Horde lists image models (Deliberate, DucHaiten) beside its text ones.
 CLAUDE = re.compile(r'claude|anthropic|opus|sonnet|haiku|fable', re.I)
 EXCLUDE = re.compile(r'(^|[/:])auto(/|$)|combo|embed|image|tts|whisper|audio|lyria|rerank|safety|guard|moderation|ocr|'
-                     r'ui-tars|veo|video|sora|kling|suno|music|flux|imagen|dall-e|midjourney|stable-diffusion', re.I)
+                     r'ui-tars|aihorde|veo|video|sora|kling|suno|music|flux|imagen|dall-e|midjourney|stable-diffusion', re.I)
 MIN_BILLIONS = 20
 # Stronger first; a model matching none of these follows them, and a light variant comes last.
 RANK = [re.compile(p) for p in (
