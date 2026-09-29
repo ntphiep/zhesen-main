@@ -51,7 +51,9 @@ learner layer as one JSON object. Rules:
    sense only says it is a form of another word ("plural of", "inflection of", "third-person singular").
 8. gloss_fixes: every raw sense whose existing Vietnamese (gloss_vi) is wrong or misleading, with the
    corrected Vietnamese and a short English reason. proposed_vi is a dictionary gloss, not a definition:
-   1 to 3 equivalents separated by ", ", at most 60 characters.
+   1 to 3 equivalents separated by ", ", at most 60 characters. A raw sense with gloss_vi_mt false was written
+   by a dictionary: fix it only when its gloss names a different meaning (another sense, another part of
+   speech, another word) and then set "certain": true. Never set certain for wording, register or style.
 9. usage_note_vi: 1 to 3 Vietnamese sentences on how the word is really used and what learners confuse it
    with. Only claims you are sure of. confusables: words learners mix it up with, each with a Vietnamese note.
 10. equivalents: for each core sense, the natural single-word or short equivalents in the other two
@@ -88,7 +90,7 @@ SCHEMA_HINT = {
     }],
     'other_senses': [{'source_sense_id': '<raw sense id>', 'vi_terms': ['...'], 'domain': None, 'register': None,
                       'is_inflection': False, 'lemma': None}],
-    'gloss_fixes': [{'source_sense_id': '...', 'current_vi': '...', 'proposed_vi': '...', 'reason': '...'}],
+    'gloss_fixes': [{'source_sense_id': '...', 'current_vi': '...', 'proposed_vi': '...', 'reason': '...', 'certain': False}],
     'usage_note_vi': '...',
     'confusables': [{'text': '...', 'note_vi': '...'}],
 }
@@ -102,6 +104,7 @@ dictionary entry and the learner layer a colleague wrote for it. Find real probl
   that does not contain the collocation
 - Chinese written in traditional characters, or pinyin with wrong tones
 - a claim in the usage note that is false
+- a gloss fix marked certain whose current gloss does fit the sense
 Do not report style preferences. Return JSON: {"issues": [{"path": "core_senses[0].examples[1].vi",
 "severity": "high|medium|low", "problem": "<English>", "fix": "<corrected value>"}], "verdict": "ok|fix"}"""
 
