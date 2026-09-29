@@ -521,6 +521,18 @@ describe('getCommonWords', () => {
     expect(is).toHaveBeenCalledWith('form_of', null)
   })
 
+  it('drops single letters outside Chinese, where one character is a word', async () => {
+    const not = vi.fn()
+    const built = clientReturning([], null, {
+      not: (...args: unknown[]) => { not(...args); return built.builder },
+    })
+    await getCommonWords(built.client, 'en', { leveled: true })
+    expect(not).toHaveBeenCalledWith('headword', 'like', '_')
+    not.mockClear()
+    await getCommonWords(built.client, 'zh', { leveled: true })
+    expect(not).not.toHaveBeenCalledWith('headword', 'like', '_')
+  })
+
   it('keeps every row when it is not asked to', async () => {
     const not = vi.fn()
     const built = clientReturning([], null, {

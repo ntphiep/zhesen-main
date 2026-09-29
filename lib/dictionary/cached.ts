@@ -93,7 +93,7 @@ export const getCachedWordOfDay = unstable_cache(
 export const getCachedCommonWords = unstable_cache(
   (lang: LangCode, options: CommonWordsOptions = {}): Promise<DictEntryPreview[]> =>
     getCommonWords(createContentClient(), lang, options),
-  ['dict-common-words-v2'],
+  ['dict-common-words-v3'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 

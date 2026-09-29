@@ -195,7 +195,9 @@ export interface CommonWordsOptions {
    *  corpus, so it drops the scraped single letters and bare inflections that otherwise
    *  sit between the real words: measured at rank 301, "d", "makes" and "using" go and
    *  important, news, book and friends take their place. A levelled inflection such as
-   *  friends goes too, because its lemma is on the list already (`lex.entries.form_of`). */
+   *  friends goes too, because its lemma is on the list already (`lex.entries.form_of`).
+   *  A single letter carries a level too (en m, b, r, c and es p, q, x, b between ranks 301
+   *  and 360), so outside Chinese a one-character headword goes as well. */
   leveled?: boolean
 }
 
@@ -209,6 +211,7 @@ export async function getCommonWords(
     .select(PREVIEW_SELECT)
     .eq('lang', lang)
   if (leveled) query = query.not('level', 'is', null).is('form_of', null)
+  if (leveled && lang !== 'zh') query = query.not('headword', 'like', '_')
   const { data, error } = await query
     .order('frequency_rank', { ascending: true, nullsFirst: false })
     .range(offset, offset + limit - 1)
