@@ -388,7 +388,8 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
 
                 <span className={s.hw} data-l={w.lang} lang={w.lang}>{w.headword}</span>
                 <div className={s.line}>
-                  {w.lang === 'zh' ? w.reading && <span>{w.reading}</span> : <Ipa value={w.ipa} lang={w.lang} />}
+                  {/* Chinese keeps its pinyin in `ipa` unless the entry gave a separate reading. */}
+                  <Ipa value={w.reading || w.ipa} lang={w.lang} />
                   <PosTag value={w.pos} />
                 </div>
                 {w.meaningVi && <p className={s.mean}>{w.meaningVi}</p>}

@@ -32,7 +32,7 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className="min-h-10 rounded-full bg-(--ink) px-4 text-sm font-bold text-(--zs-bg) transition-opacity duration-150 ease-std hover:opacity-85"
+            className="min-h-10 rounded-full border-[1.5px] border-(--ink) bg-transparent px-4 text-sm font-bold text-(--ink) transition-colors duration-150 ease-std hover:bg-(--ink) hover:text-(--zs-bg)"
           >
             {confirmLabel}
           </button>

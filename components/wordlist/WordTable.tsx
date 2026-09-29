@@ -236,7 +236,7 @@ export function WordTable({
           {words.map((w) => (
             <Fragment key={w.id}>
               <tr className={s.row} data-on={selected.has(w.id) || undefined}>
-                <td className="sticky left-0 z-10 bg-(--zs-bg) px-3 py-2.5">
+                <td className="sticky left-0 z-10 bg-(--zs-bg) px-3 py-2.5 align-top">
                   <input
                     type="checkbox"
                     checked={selected.has(w.id)}
@@ -247,13 +247,13 @@ export function WordTable({
                 {columns.map((c) => (
                   <td
                     key={c.key}
-                    className={`px-3 py-2.5 ${widthOf(c.key) !== undefined ? 'truncate' : ''} ${stickyClass(c.key)}`}
+                    className={`px-3 py-2.5 align-top ${widthOf(c.key) !== undefined ? 'truncate' : ''} ${stickyClass(c.key)}`}
                     style={cellStyle(c.key)}
                   >
                     <Cell word={w} column={c.key} />
                   </td>
                 ))}
-                <td className="px-3 py-2.5 text-right">
+                <td className="px-3 py-2.5 align-top text-right">
                   <WordRowActions
                     word={w}
                     expanded={expandedId === w.id}

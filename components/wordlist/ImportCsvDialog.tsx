@@ -91,7 +91,14 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
             <div className="flex gap-3 text-sm font-semibold">
               <span>{okRows.length} sẽ nhập</span>
               {duplicateCount > 0 && <span className={s.pron}>{duplicateCount} trùng</span>}
-              {errorCount > 0 && <span className={s.pron}>{errorCount} lỗi</span>}
+              {errorCount > 0 && (
+                <span className="inline-flex items-center gap-1 font-extrabold text-(--ink)">
+                  <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+                    <path d="M8 1.8 15 14H1z" /><path d="M8 6.2v3.6M8 11.6v.1" strokeLinecap="round" />
+                  </svg>
+                  {errorCount} lỗi
+                </span>
+              )}
             </div>
 
             <div className={s.preview}>

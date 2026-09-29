@@ -9,7 +9,7 @@
   color: var(--zs-ink);
   -webkit-font-smoothing: antialiased;
 }
-.nb :focus-visible { outline: 2.5px solid var(--sea-500); outline-offset: 2px; border-radius: 6px; }
+.nb :focus-visible { outline: 2.5px solid var(--sea-500); outline-offset: 2px; }
 .nb input[type="checkbox"] { width: 1rem; height: 1rem; accent-color: var(--sea-600); cursor: pointer; }
 :global(:root[data-theme="dark"]) .nb input[type="checkbox"] { accent-color: var(--sea-300); }
 
@@ -25,9 +25,9 @@
 .ghost { border: 1.5px solid var(--edge); background: var(--zs-bg); color: var(--zs-ink); font-weight: 600; }
 .ghost:hover:not(:disabled) { border-color: var(--sea-400); background: var(--tint-1); }
 .ghost[aria-expanded="true"] { border-color: var(--sea-400); background: var(--tint-1); }
-/* Black, not the blue of every other action: the one button that throws words away. */
-.danger { border: 0; background: var(--ink); color: var(--zs-bg); }
-.danger:hover:not(:disabled) { background: color-mix(in srgb, var(--ink) 78%, var(--zs-bg)); }
+/* Outlined in ink where every other action is filled blue: the button that throws words away. */
+.danger { border: 1.5px solid var(--ink); background: transparent; color: var(--ink); }
+.danger:hover:not(:disabled) { background: var(--ink); color: var(--zs-bg); }
 .btn:active:not(:disabled), .ghost:active:not(:disabled), .danger:active:not(:disabled) { transform: scale(0.97); }
 .btn:disabled, .ghost:disabled, .danger:disabled { opacity: 0.45; cursor: default; }
 .sm { min-height: 2.125rem; padding: 0 0.85rem; font-size: 0.8125rem; }
@@ -112,7 +112,7 @@ select.field { padding-right: 0.5rem; cursor: pointer; }
 .act { padding: 0.3rem 0.55rem; border: 0; border-radius: 8px; background: none; color: var(--zs-pen); font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: background-color 150ms var(--ease-std), color 150ms var(--ease-std); }
 .act:hover { background: var(--tint-2); color: var(--zs-ink); }
 .act[aria-expanded="true"] { background: var(--zs-chip); color: var(--zs-ink); }
-.act[data-danger] { color: var(--zs-soft); }
+.act[data-danger] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 0.2em; }
 .act[data-danger]:hover { background: var(--ink); color: var(--zs-bg); }
 
 /* The table */
@@ -123,7 +123,7 @@ select.field { padding-right: 0.5rem; cursor: pointer; }
 .sheet th:last-child { border-top-right-radius: 18px; }
 .sheet th button { font-weight: 700; letter-spacing: 0.04em; color: var(--zs-soft); cursor: pointer; transition: color 150ms var(--ease-std); }
 .sheet th button:hover, .sheet th[aria-sort] button { color: var(--zs-ink); }
-.sheet td { border-bottom: 1.5px solid var(--zs-line); vertical-align: middle; transition: background-color 150ms var(--ease-std); }
+.sheet td { border-bottom: 1.5px solid var(--zs-line); transition: background-color 150ms var(--ease-std); }
 .sheet tbody tr:last-child > td { border-bottom: 0; }
 .sheet tbody tr:hover > td { background: var(--tint-1); }
 .sheet tbody tr[data-on] > td { background: var(--tint-2); }

@@ -357,4 +357,12 @@ describe('WordlistClient', () => {
     await waitFor(() => expect(listWords).toHaveBeenCalled())
     expect(await screen.findByText('beta')).toBeInTheDocument()
   })
+
+  // A word saved from the dictionary keeps its pinyin in `ipa`; `reading` is set only
+  // when the entry carries a separate one.
+  it('shows the pinyin of a Chinese word on its grid card', async () => {
+    render(<WordlistClient initialWords={[mk('z1', { lang: 'zh', entryId: 'zh:天气', headword: '天气', reading: null, ipa: 'tiānqì' })]} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Xem dạng lưới' }))
+    expect(screen.getByText('tiānqì')).toBeInTheDocument()
+  })
 })
