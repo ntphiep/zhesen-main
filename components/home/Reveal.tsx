@@ -1,10 +1,11 @@
 'use client'
 import { useEffect, useRef, type ReactNode } from 'react'
 
-/** The landing page's root. Headings, cards and tiles marked `data-reveal` rise once as
- *  they enter the viewport; without script, or under reduced motion, they simply show. */
+/** The landing page's root, inside HomeSwitch's <main>. Headings, cards and tiles marked
+ *  `data-reveal` rise once as they enter the viewport; without script, or under reduced
+ *  motion, they simply show. */
 export function Reveal({ className, children }: { className: string; children: ReactNode }) {
-  const ref = useRef<HTMLElement>(null)
+  const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const root = ref.current
     if (!root || matchMedia('(prefers-reduced-motion: reduce)').matches) return
@@ -17,5 +18,5 @@ export function Reveal({ className, children }: { className: string; children: R
     root.setAttribute('data-reveal-on', '')
     return () => io.disconnect()
   }, [])
-  return <main ref={ref} className={className}>{children}</main>
+  return <div ref={ref} className={className}>{children}</div>
 }

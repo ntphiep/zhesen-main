@@ -89,6 +89,16 @@ export async function listRecentWords(supabase: SupabaseClient, limit: number): 
   return (data ?? []).map(parseUserWordRow)
 }
 
+/** The words forgotten most often, at least `minLapses` times each: the wordlist's
+ *  "Hay sai" filter, as a short list for the home page. */
+export async function listLeeches(supabase: SupabaseClient, minLapses: number, limit: number): Promise<UserWord[]> {
+  const { data, error } = await supabase.from('user_words').select('*')
+    .gte('fsrs_lapses', minLapses)
+    .order('fsrs_lapses', { ascending: false }).order('id').limit(limit)
+  if (error) throw error
+  return (data ?? []).map(parseUserWordRow)
+}
+
 /** Row count without downloading the rows. The sign-in pages need only the number: a
  *  browser that already holds words must not sign in to a different account. */
 export async function countWords(supabase: SupabaseClient): Promise<number> {

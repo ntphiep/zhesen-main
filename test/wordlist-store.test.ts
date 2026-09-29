@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { parseUserWordRow, draftFromDictEntry, addWord, addWords, updateWordsStatus, listWords, listPracticeWords, listSavedEntryIds, countWords, WordAlreadyExistsError, PRACTICE_POOL } from '@/lib/wordlist/store'
+import { parseUserWordRow, draftFromDictEntry, addWord, addWords, updateWordsStatus, listWords, listLeeches, listPracticeWords, listSavedEntryIds, countWords, WordAlreadyExistsError, PRACTICE_POOL } from '@/lib/wordlist/store'
 import { authStub, clientReturning } from './helpers/supabase'
 import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 import type { WordDraft } from '@/lib/wordlist/types'
@@ -137,6 +137,22 @@ describe('listWords', () => {
     await listWords(client)
     expect(listOrder).toHaveBeenCalledWith('created_at', { ascending: false })
     expect(listOrder).toHaveBeenCalledWith('id')
+  })
+})
+
+describe('listLeeches', () => {
+  it('asks for words forgotten at least that often, the most forgotten first', async () => {
+    const { client, builder } = clientReturning([{ ...row, fsrs_lapses: 4 }])
+    const words = await listLeeches(client, 3, 6)
+    expect(builder.gte).toHaveBeenCalledWith('fsrs_lapses', 3)
+    expect(builder.order).toHaveBeenCalledWith('fsrs_lapses', { ascending: false })
+    expect(builder.limit).toHaveBeenCalledWith(6)
+    expect(words.map((w) => [w.headword, w.fsrsLapses])).toEqual([['dog', 4]])
+  })
+
+  it('raises the read error', async () => {
+    const { client } = clientReturning(null, { message: 'boom' })
+    await expect(listLeeches(client, 3, 6)).rejects.toMatchObject({ message: 'boom' })
   })
 })
 

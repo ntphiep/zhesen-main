@@ -83,17 +83,14 @@ const statRowDbSchema = z.object({
   fsrs_reps: z.number(),
 })
 
-/** Wordlist progress stats for the current user. RLS scopes the reads. */
-export async function getWordlistStats(supabase: SupabaseClient, now: number = Date.now()): Promise<WordlistStats> {
-  const [wordRows, activityDays] = await Promise.all([
-    fetchAllRows((from, to) =>
-      supabase.from('user_words')
-        .select('lang, status, fsrs_scheduled_days, fsrs_due_at, fsrs_last_review_at, fsrs_reps')
-        .order('id')
-        .range(from, to)),
-    getActivityDays(supabase),
-  ])
-  const rows: StatRow[] = z.array(statRowDbSchema).parse(wordRows).map((r) => ({
+/** Every saved word's scheduling columns, one row each. RLS scopes the read. */
+export async function fetchStatRows(supabase: SupabaseClient): Promise<StatRow[]> {
+  const wordRows = await fetchAllRows((from, to) =>
+    supabase.from('user_words')
+      .select('lang, status, fsrs_scheduled_days, fsrs_due_at, fsrs_last_review_at, fsrs_reps')
+      .order('id')
+      .range(from, to))
+  return z.array(statRowDbSchema).parse(wordRows).map((r) => ({
     lang: r.lang,
     status: r.status,
     srsIntervalDays: r.fsrs_scheduled_days,
@@ -101,5 +98,38 @@ export async function getWordlistStats(supabase: SupabaseClient, now: number = D
     srsLastReviewedAt: r.fsrs_last_review_at,
     srsReps: r.fsrs_reps,
   }))
+}
+
+/** Wordlist progress stats for the current user. RLS scopes the reads. */
+export async function getWordlistStats(supabase: SupabaseClient, now: number = Date.now()): Promise<WordlistStats> {
+  const [rows, activityDays] = await Promise.all([fetchStatRows(supabase), getActivityDays(supabase)])
   return computeWordlistStats(rows, activityDays, now)
+}
+
+/** One language's share of the notebook. The three parts add up to `total`: learned is
+ *  the mature interval `computeWordlistStats` counts, unseen is never graded. */
+export interface LangProgress {
+  total: number
+  learned: number
+  learning: number
+  unseen: number
+}
+
+export function progressPart(reps: number, intervalDays: number): Exclude<keyof LangProgress, 'total'> {
+  if (intervalDays >= MATURE_DAYS) return 'learned'
+  return reps > 0 ? 'learning' : 'unseen'
+}
+
+export function computeLangProgress(rows: StatRow[]): Record<LangCode, LangProgress> {
+  const out: Record<LangCode, LangProgress> = {
+    en: { total: 0, learned: 0, learning: 0, unseen: 0 },
+    es: { total: 0, learned: 0, learning: 0, unseen: 0 },
+    zh: { total: 0, learned: 0, learning: 0, unseen: 0 },
+  }
+  for (const r of rows) {
+    const p = out[r.lang]
+    p.total++
+    p[progressPart(r.srsReps, r.srsIntervalDays)]++
+  }
+  return out
 }

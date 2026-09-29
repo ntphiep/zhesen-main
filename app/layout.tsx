@@ -7,6 +7,7 @@ import { AiChatPanel } from '@/components/ai/AiChatPanel'
 import { SITE_URL } from '@/lib/site'
 import { THEME_BOOT_SCRIPT } from '@/lib/theme'
 import { WORD_LAYOUT_BOOT_SCRIPT } from '@/lib/dictionary/wordLayout'
+import { HOME_BOOT_SCRIPT } from '@/lib/home/homeLayout'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -67,6 +68,9 @@ export default function RootLayout({
         {/* The word page's layout choice, for the same reason: the page is cached for
             everyone in the default layout, so another one has to be known before paint. */}
         <script dangerouslySetInnerHTML={{ __html: WORD_LAYOUT_BOOT_SCRIPT }} />
+        {/* `/` is cached for visitors and readers alike: whether this browser holds a
+            session, and which home layout it picked, have to be known before paint too. */}
+        <script dangerouslySetInnerHTML={{ __html: HOME_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
         <SiteHeader />

@@ -1,9 +1,9 @@
-import { getCachedEntryDetail, getCachedSearch } from '@/lib/dictionary/cached'
+import { getCachedCrossLanguage, getCachedEntryDetail, getCachedSearch, getCachedWordOfDay } from '@/lib/dictionary/cached'
 import { getCachedLearnerLayer } from '@/lib/dictionary/learnerCached'
 import { markHeadword, minorSenses, type LearnerLayer, type LearnerLink } from '@/lib/dictionary/learner'
 import { entryPath } from '@/lib/dictionary/entryId'
 import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
-import { LANG_CODES, type LangCode } from '@/lib/languages'
+import { byLang, LANG_CODES, type LangCode } from '@/lib/languages'
 import { PHONEMES } from '@/lib/theory/en/pronunciation'
 import { COLLOCATION_PATTERNS } from '@/lib/theory/en/collocation'
 import { theoryBlockPath } from '@/lib/theory/path'
@@ -71,6 +71,28 @@ export function takeMap(layer: LearnerLayer, detail: Pick<DictEntryDetail, 'head
     .filter((m) => !UNSHOWN_REGISTERS.has(m.register ?? '') && m.viTerms.length)
     .map((m) => m.viTerms.join(', ')))]
   return { headword: detail.headword, href: entryPath(layer.entryId), senses, tail }
+}
+
+/** Today's word and, for the other two languages, its first equivalent: the signed-in
+ *  home's "Từ vựng hôm nay". Null when the word of the day cannot be read. */
+export async function loadDaily(): Promise<Record<LangCode, DictEntryPreview | null> | null> {
+  try {
+    const word = await getCachedWordOfDay()
+    if (!word) return null
+    const siblings = await getCachedCrossLanguage(word.id)
+    const preview = (e: { id: string; lang: LangCode; headword: string; glossVi: string | null }, more: Partial<DictEntryPreview>): DictEntryPreview => ({
+      id: e.id, lang: e.lang, headword: e.headword, glossVi: e.glossVi,
+      traditional: null, level: null, ipa: null, pos: null, glossEn: null, audioUrl: null, ...more,
+    })
+    const other = (lang: LangCode) => {
+      const s = siblings.find((x) => x.lang === lang)
+      return s ? preview(s, { reading: s.reading, pos: s.pos, glossEn: s.glossEn }) : null
+    }
+    return byLang(({ code }) => (code === word.lang ? preview(word, { ipa: word.ipa, level: word.level }) : other(code)))
+  } catch (e) {
+    console.error('home daily word failed', e)
+    return null
+  }
 }
 
 /** The meaning map of take, or null when either read comes back empty. */

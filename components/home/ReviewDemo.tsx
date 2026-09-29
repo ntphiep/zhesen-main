@@ -19,7 +19,8 @@ import s from './Landing.module.css'
 /** Six ways to practise the word just looked up, all moving one schedule. Nothing is
  *  saved: the schedule is simulated from today, one review per due date. */
 
-type Mode = 'card' | PracticeMode
+// The self-graded review is the 'card' mode here.
+type Mode = 'card' | Exclude<PracticeMode, 'review'>
 const DAY = 86_400_000
 const LABEL: Record<Grade, string> = { again: 'Lại', hard: 'Khó', good: 'Tốt', easy: 'Dễ' }
 const GRADES: Grade[] = ['again', 'hard', 'good', 'easy']

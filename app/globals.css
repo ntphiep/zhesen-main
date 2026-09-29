@@ -452,6 +452,39 @@ html[data-word-layout="glance"] main[data-boot][data-layouts~="glance"] [data-pi
   color: var(--color-black);
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
+/* `/` is cached for everyone, so components/home/HomeSwitch.tsx draws the landing page
+   and the three home layouts, each in a [data-home-panel], and the boot script in
+   app/layout.tsx marks <html> with data-session when the auth cookie is there and with
+   the stored layout. Until hydration drops the rest (main[data-home-boot]), these rules
+   show that one panel and mark its picker: the landing without a session, the desk when
+   nothing is stored. Named apart from the word page's data-boot and data-panel, whose
+   rules above would hide these panels. */
+main[data-home-boot] > [data-home-panel],
+main[data-home-boot] [data-hint] {
+  display: none;
+}
+html:not([data-session]) main[data-home-boot] > [data-home-panel="landing"],
+html[data-session]:not([data-home-layout]) main[data-home-boot] > [data-home-panel="desk"],
+html[data-session][data-home-layout="desk"] main[data-home-boot] > [data-home-panel="desk"],
+html[data-session][data-home-layout="today"] main[data-home-boot] > [data-home-panel="today"],
+html[data-session][data-home-layout="orbit"] main[data-home-boot] > [data-home-panel="orbit"] {
+  display: block;
+}
+html:not([data-home-layout]) main[data-home-boot] [data-pick="desk"] [data-hint],
+html[data-home-layout="desk"] main[data-home-boot] [data-pick="desk"] [data-hint],
+html[data-home-layout="today"] main[data-home-boot] [data-pick="today"] [data-hint],
+html[data-home-layout="orbit"] main[data-home-boot] [data-pick="orbit"] [data-hint] {
+  display: inline;
+}
+html:not([data-home-layout]) main[data-home-boot] [data-pick="desk"],
+html[data-home-layout="desk"] main[data-home-boot] [data-pick="desk"],
+html[data-home-layout="today"] main[data-home-boot] [data-pick="today"],
+html[data-home-layout="orbit"] main[data-home-boot] [data-pick="orbit"] {
+  background-color: var(--zs-bg);
+  color: var(--zs-ink);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
 /* The overview draws on a grey page. */
 main[data-rendered-layout="overview"]:not([data-boot]),
 html:not([data-word-layout]) main[data-boot],

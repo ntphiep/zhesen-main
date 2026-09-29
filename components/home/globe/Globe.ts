@@ -235,6 +235,10 @@ export class Globe {
     this.kick()
   }
   pause(ms: number): void { this.pausedUntil = Math.max(this.pausedUntil, performance.now() + ms) }
+  /** One language alone, or all three with null. */
+  showOnly(lang: Lang | null): void { this.only = lang; this.kick() }
+  /** The pause control; returns whether the globe is now stopped. */
+  toggleStopped(): boolean { this.stopped = !this.stopped; this.kick(); return this.stopped }
   hold(on: boolean): void {
     this.holds = Math.max(0, this.holds + (on ? 1 : -1))
     if (!on) this.pause(1200)

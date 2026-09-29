@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeWordlistStats, type StatRow } from '@/lib/wordlist/stats'
+import { computeLangProgress, computeWordlistStats, type StatRow } from '@/lib/wordlist/stats'
 
 const iso = (s: string) => s
 const now = Date.parse('2026-06-21T12:00:00.000Z')
@@ -76,5 +76,21 @@ describe('computeWordlistStats', () => {
     const rows: StatRow[] = Array.from({ length: 80 }, () => row({ srsDueAt: past, srsReps: 5 }))
     // 50 reviews fill the session; no room is left for new cards.
     expect(computeWordlistStats(rows, [], now).due).toBe(50)
+  })
+})
+
+describe('computeLangProgress', () => {
+  it('splits each language into learned, learning and never graded', () => {
+    const rows: StatRow[] = [
+      row({ lang: 'en', srsIntervalDays: 30, srsReps: 6 }),
+      row({ lang: 'en', srsIntervalDays: 4, srsReps: 2 }),
+      row({ lang: 'en' }),
+      row({ lang: 'zh', srsIntervalDays: 21, srsReps: 5 }),
+    ]
+    expect(computeLangProgress(rows)).toEqual({
+      en: { total: 3, learned: 1, learning: 1, unseen: 1 },
+      zh: { total: 1, learned: 1, learning: 0, unseen: 0 },
+      es: { total: 0, learned: 0, learning: 0, unseen: 0 },
+    })
   })
 })

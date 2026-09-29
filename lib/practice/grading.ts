@@ -12,10 +12,13 @@ export interface PracticeOutcome {
   /** The learner produced the word but not exactly: a one-character typo, or a
    *  match found only after a wrong pairing. Meaningless for multiple choice. */
   nearly?: boolean
+  /** The learner judged the recall effortless. Only a self-graded review can say so. */
+  easy?: boolean
 }
 
-export function gradeFromOutcome({ correct, nearly = false }: PracticeOutcome): Grade {
+export function gradeFromOutcome({ correct, nearly = false, easy = false }: PracticeOutcome): Grade {
   if (!correct) return 'again'
+  if (easy) return 'easy'
   return nearly ? 'hard' : 'good'
 }
 
@@ -28,9 +31,10 @@ export const REPORTS_FAILURES: Record<PracticeMode, boolean> = {
   dictation: true,
   match: true,
   speak: false,
+  review: true,
 }
 
-export type PracticeMode = 'quiz' | 'write' | 'dictation' | 'match' | 'speak'
+export type PracticeMode = 'quiz' | 'write' | 'dictation' | 'match' | 'speak' | 'review'
 
 /** The grade a mode should record, or null when it should record nothing. */
 export function gradeForMode(mode: PracticeMode, outcome: PracticeOutcome): Grade | null {

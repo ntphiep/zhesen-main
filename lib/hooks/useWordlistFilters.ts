@@ -2,19 +2,17 @@
 import { useMemo, useState } from 'react'
 import type { LangCode } from '@/lib/languages'
 import { isDueAt } from '@/lib/wordlist/format'
-import type { UserWord, WordStatus } from '@/lib/wordlist/types'
+import { LEECH_LAPSES, type UserWord, type WordStatus } from '@/lib/wordlist/types'
 import { posGroups, splitPos, type PosGroup } from '@/lib/dictionary/pos'
 import { columnValue, type SortKey } from '@/lib/wordlist/columns'
 import { useStoredView, type ViewMode } from './useStoredView'
 
 export type { ViewMode }
 export type { SortKey }
+export { LEECH_LAPSES }
 /** Which words the review columns single out. '' is every word. */
 export type ReviewFilter = '' | 'due' | 'leech'
 
-/** A word missed this often needs a different approach, not more repetitions. Anki's leech
- *  threshold is eight; this list is reviewed far less often, so three is already the signal. */
-export const LEECH_LAPSES = 3
 export type SortDir = 'asc' | 'desc'
 
 /** Drop diacritics so "thuong mai" finds "thương mại": the box gets typed without a

@@ -17,6 +17,14 @@ describe('gradeFromOutcome', () => {
   it('ignores `nearly` on a wrong answer', () => {
     expect(gradeFromOutcome({ correct: false, nearly: true })).toBe('again')
   })
+
+  it('counts a recall the learner called effortless as easy', () => {
+    expect(gradeFromOutcome({ correct: true, easy: true })).toBe('easy')
+  })
+
+  it('ignores `easy` on a wrong answer', () => {
+    expect(gradeFromOutcome({ correct: false, easy: true })).toBe('again')
+  })
 })
 
 describe('gradeForMode', () => {
@@ -32,6 +40,11 @@ describe('gradeForMode', () => {
     }
   })
 
+  it('records a forgotten word from the self-graded review', () => {
+    expect(gradeForMode('review', { correct: false })).toBe('again')
+    expect(gradeForMode('review', { correct: true, easy: true })).toBe('easy')
+  })
+
   it('stays quiet when the speaking drill fails', () => {
     // A noisy room or a refused microphone would otherwise reset the card's
     // stability and add a lapse, and nothing on screen would explain why.
@@ -39,6 +52,6 @@ describe('gradeForMode', () => {
   })
 
   it('lists every mode, so a new one cannot silently default to trusting itself', () => {
-    expect(Object.keys(REPORTS_FAILURES).sort()).toEqual(['dictation', 'match', 'quiz', 'speak', 'write'])
+    expect(Object.keys(REPORTS_FAILURES).sort()).toEqual(['dictation', 'match', 'quiz', 'review', 'speak', 'write'])
   })
 })

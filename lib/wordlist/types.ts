@@ -11,6 +11,10 @@ export const STATUS_LABELS: Record<WordStatus, string> = {
   known: 'Đã biết',
 }
 
+/** A word missed this often needs a different approach, not more repetitions. Anki's leech
+ *  threshold is eight; this list is reviewed far less often, so three is already the signal. */
+export const LEECH_LAPSES = 3
+
 /** Entries of STATUS_LABELS with the key still typed, for rendering option lists. */
 export const STATUS_OPTIONS = Object.entries(STATUS_LABELS) as [WordStatus, string][]
 

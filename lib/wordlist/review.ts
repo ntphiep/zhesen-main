@@ -17,6 +17,8 @@ export interface ReviewCard {
   example: string | null
   exampleTranslation: string | null
   audioUrl: string | null
+  /** The dictionary entry the word was saved from. Absent where a caller builds a card by hand. */
+  entryId?: string | null
   state: SrsState
 }
 
@@ -31,6 +33,7 @@ const cardRowSchema = z.object({
   example: z.string().nullable(),
   example_translation: z.string().nullable(),
   audio_url: z.string().nullable(),
+  entry_id: z.string().nullable().optional(),
   fsrs_stability: z.number(),
   fsrs_difficulty: z.number(),
   fsrs_elapsed_days: z.number(),
@@ -45,7 +48,7 @@ const cardRowSchema = z.object({
 type CardRow = z.infer<typeof cardRowSchema>
 
 const CARD_SELECT =
-  'id, lang, headword, reading, ipa, meaning_vi, meaning_en, example, example_translation, audio_url, ' +
+  'id, lang, headword, reading, ipa, meaning_vi, meaning_en, example, example_translation, audio_url, entry_id, ' +
   'fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_learning_steps, fsrs_reps, ' +
   'fsrs_lapses, fsrs_state, fsrs_due_at, fsrs_last_review_at'
 
@@ -53,7 +56,7 @@ export function rowToCard(r: CardRow): ReviewCard {
   return {
     id: r.id, lang: r.lang, headword: r.headword, reading: r.reading, ipa: r.ipa,
     meaningVi: r.meaning_vi && stripPhraseStop(r.meaning_vi), meaningEn: r.meaning_en, example: r.example,
-    exampleTranslation: r.example_translation, audioUrl: r.audio_url,
+    exampleTranslation: r.example_translation, audioUrl: r.audio_url, entryId: r.entry_id ?? null,
     state: {
       vocabId: r.id,
       stability: r.fsrs_stability,
