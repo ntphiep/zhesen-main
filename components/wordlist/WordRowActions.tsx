@@ -1,4 +1,5 @@
 import type { UserWord } from '@/lib/wordlist/types'
+import s from './Wordlist.module.css'
 
 /** Tag pills for one word. Renders nothing when the word has no tags. */
 export function TagChips({ tags }: { tags: string[] }) {
@@ -6,7 +7,7 @@ export function TagChips({ tags }: { tags: string[] }) {
   return (
     <div className="flex flex-wrap gap-1">
       {tags.map((tag) => (
-        <span key={tag} className="rounded-full bg-black/5 px-1.5 py-0.5 text-xs text-black/60">{tag}</span>
+        <span key={tag} className={s.tag}>{tag}</span>
       ))}
     </div>
   )
@@ -27,9 +28,9 @@ export function WordRowActions({
   className?: string
 }) {
   return (
-    <div className={`flex items-center gap-1 ${className}`.trim()}>
+    <div className={`${s.acts} ${className}`.trim()}>
       <button
-        className="rounded px-2 py-1 text-xs hover:bg-black/5"
+        className={s.act}
         onClick={onToggleDetail}
         aria-expanded={expanded}
         aria-label={`Xem chi tiết ${word.headword}`}
@@ -37,14 +38,15 @@ export function WordRowActions({
         Xem
       </button>
       <button
-        className="rounded px-2 py-1 text-xs hover:bg-black/5"
+        className={s.act}
         onClick={onEdit}
         aria-label={`Sửa từ ${word.headword}`}
       >
         Sửa
       </button>
       <button
-        className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+        className={s.act}
+        data-danger=""
         onClick={onDelete}
         aria-label={`Xóa từ ${word.headword}`}
       >

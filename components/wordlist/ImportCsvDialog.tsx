@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { parseImportCsv, type ImportPreviewRow } from '@/lib/wordlist/csv'
 import type { UserWord, WordDraft } from '@/lib/wordlist/types'
+import s from './Wordlist.module.css'
 
 interface Props {
   open: boolean
@@ -15,12 +16,6 @@ const KIND_LABEL: Record<ImportPreviewRow['kind'], string> = {
   ok: 'Sẽ nhập',
   duplicate: 'Trùng, bỏ qua',
   error: 'Lỗi, bỏ qua',
-}
-
-const KIND_CLASS: Record<ImportPreviewRow['kind'], string> = {
-  ok: 'text-green-700 bg-green-50',
-  duplicate: 'text-black/55 bg-black/5',
-  error: 'text-red-700 bg-red-50',
 }
 
 export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
@@ -73,12 +68,12 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
     <Modal open={open} onClose={onClose} title="Nhập từ CSV" titleId="import-csv-title" widthClass="max-w-xl">
 
       <div className="p-5 flex flex-col gap-3">
-        <p className="text-sm text-black/60">
+        <p className={`text-sm ${s.pron}`}>
           Chọn file CSV có cột đầu là <code>headword</code>, như file xuất từ sổ tay.
         </p>
 
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-black/55">File CSV</span>
+          <span className={s.label}>File CSV</span>
           <input
             type="file"
             accept=".csv,text/csv"
@@ -87,29 +82,29 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
               const file = e.target.files?.[0]
               if (file) handleFile(file)
             }}
-            className="text-sm"
+            className={`${s.note} file:mr-3 file:min-h-10 file:cursor-pointer file:rounded-full file:border-0 file:bg-(--zs-chip) file:px-4 file:font-semibold file:text-(--zs-ink)`}
           />
         </label>
 
         {fileName && rows.length > 0 && (
           <>
-            <div className="flex gap-3 text-sm">
-              <span className="text-green-700">{okRows.length} sẽ nhập</span>
-              {duplicateCount > 0 && <span className="text-black/55">{duplicateCount} trùng</span>}
-              {errorCount > 0 && <span className="text-red-700">{errorCount} lỗi</span>}
+            <div className="flex gap-3 text-sm font-semibold">
+              <span>{okRows.length} sẽ nhập</span>
+              {duplicateCount > 0 && <span className={s.pron}>{duplicateCount} trùng</span>}
+              {errorCount > 0 && <span className={s.pron}>{errorCount} lỗi</span>}
             </div>
 
-            <div className="max-h-56 overflow-y-auto rounded-lg border border-black/10">
-              <table className="w-full text-xs">
+            <div className={s.preview}>
+              <table className="w-full">
                 <tbody>
                   {rows.map((r) => (
-                    <tr key={r.line} className="border-b border-black/5 last:border-0">
-                      <td className="px-2 py-1 text-black/55">{r.line}</td>
-                      <td className="px-2 py-1">
+                    <tr key={r.line}>
+                      <td className={`${s.pron} w-12 tabular-nums`}>{r.line}</td>
+                      <td>
                         {r.kind === 'error' ? r.message : `${r.draft.headword} (${r.draft.lang})`}
                       </td>
-                      <td className="px-2 py-1">
-                        <span className={`rounded px-1.5 py-0.5 ${KIND_CLASS[r.kind]}`}>{KIND_LABEL[r.kind]}</span>
+                      <td className="text-right">
+                        <span className={s.kind} data-k={r.kind}>{KIND_LABEL[r.kind]}</span>
                       </td>
                     </tr>
                   ))}
@@ -120,17 +115,17 @@ export function ImportCsvDialog({ open, onClose, existing, onImport }: Props) {
         )}
 
         {fileName && rows.length === 0 && (
-          <p className="text-sm text-black/55">File trống.</p>
+          <p className={s.note}>File trống.</p>
         )}
 
         {error && (
-          <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+          <p role="alert" className={s.alert}>{error}</p>
         )}
 
         <div className="flex justify-end gap-2 mt-1">
-          <button className="rounded-lg border border-black/15 px-4 py-2 text-sm" onClick={onClose}>Hủy</button>
+          <button className={s.ghost} onClick={onClose}>Hủy</button>
           <button
-            className="rounded-lg bg-black px-4 py-2 text-sm text-white disabled:opacity-40"
+            className={s.btn}
             onClick={handleImport}
             disabled={okRows.length === 0 || importing}
           >

@@ -12,6 +12,7 @@ import { EnglishMark, PivotMark } from '@/components/lookup/WordParts'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 import type { UserWord } from '@/lib/wordlist/types'
 import { PosTag } from '@/components/ui/PosTag'
+import st from './Wordlist.module.css'
 
 type DetailState =
   | { status: 'loading' }
@@ -47,7 +48,7 @@ export function WordDetail({ word }: { word: UserWord }) {
     <AiCoach lang={word.lang} headword={word.headword} meaningVi={word.meaningVi}>
       <Link
         href={word.entryId ? entryPath(word.entryId) : searchPath(word.lang, word.headword)}
-        className="rounded-lg border border-black/15 px-3 py-1.5 text-xs font-medium hover:bg-black/5"
+        className={`${st.ghost} ${st.sm}`}
       >
         {word.entryId ? 'Chi tiết' : 'Tra từ này'}
       </Link>
@@ -107,10 +108,10 @@ function DetailBody({ word, actions }: { word: UserWord; actions: ReactNode }) {
       <Frame
         actions={actions}
         left={
-          <div className="flex flex-col gap-3 text-black/80">
+          <div className="flex flex-col gap-3">
             {word.meaningVi && <p>{word.meaningVi}</p>}
-            {word.example && <p className="italic text-black/60">{word.example}</p>}
-            {word.notes && <p className="text-black/55">{word.notes}</p>}
+            {word.example && <p className={`italic ${st.pron}`}>{word.example}</p>}
+            {word.notes && <p className={st.pron}>{word.notes}</p>}
           </div>
         }
       />
@@ -118,11 +119,11 @@ function DetailBody({ word, actions }: { word: UserWord; actions: ReactNode }) {
   }
 
   if (state.status === 'loading') {
-    return <Frame actions={actions} left={<p className="text-black/55">Đang tải…</p>} />
+    return <Frame actions={actions} left={<p className={st.pron}>Đang tải…</p>} />
   }
 
   if (state.status === 'error') {
-    return <Frame actions={actions} left={<p className="text-red-500">Chưa tải được chi tiết. Thử lại.</p>} />
+    return <Frame actions={actions} left={<p className={st.fail}>Chưa tải được chi tiết. Thử lại.</p>} />
   }
 
   const { detail } = state
@@ -148,14 +149,14 @@ function DetailBody({ word, actions }: { word: UserWord; actions: ReactNode }) {
           <ul className="flex flex-col gap-1">
             {main.map((s, i) => (
               <li key={s.id ?? i} className="flex gap-2 items-baseline">
-                <PosTag value={s.pos} className="text-xs font-medium text-black/55" />
+                <PosTag value={s.pos} className={`text-xs font-semibold ${st.pron}`} />
                 {/* English only where no Vietnamese exists. */}
                 {s.glossVi ? (
-                  <span className="text-black/85">{s.glossVi}</span>
+                  <span className="font-semibold">{s.glossVi}</span>
                 ) : s.pivotVi ? (
-                  <span className="text-black/85">{s.pivotVi}<PivotMark /></span>
+                  <span className="font-semibold">{s.pivotVi}<PivotMark /></span>
                 ) : s.glossEn ? (
-                  <span className="text-black/60">{s.glossEn}<EnglishMark /></span>
+                  <span className={st.pron}>{s.glossEn}<EnglishMark /></span>
                 ) : null}
               </li>
             ))}
@@ -169,12 +170,12 @@ function DetailBody({ word, actions }: { word: UserWord; actions: ReactNode }) {
         {/* Filtered exactly like the lookup page: the same corrupted sentences and the
             same gloss-copied-into-the-translation rows are in this data. */}
         {examples.length > 0 && (
-          <ul className="flex flex-col gap-1 border-l-2 border-black/10 pl-3">
+          <ul className="flex flex-col gap-1 border-l-2 border-(--edge) pl-3">
             {examples.map((e, i) => (
               <li key={i} className="flex flex-col gap-0.5">
-                <p className="italic text-black/70">{e.text}</p>
+                <p className="italic">{e.text}</p>
                 {isSentenceTranslation(e.translationVi, glosses) && (
-                  <p className="text-black/55">{e.translationVi}</p>
+                  <p className={st.pron}>{e.translationVi}</p>
                 )}
               </li>
             ))}
@@ -182,9 +183,9 @@ function DetailBody({ word, actions }: { word: UserWord; actions: ReactNode }) {
         )}
         {relationGroups.map((s) => (
           <div key={s.key} className="flex gap-2 items-baseline flex-wrap">
-            <span className="text-xs font-medium text-black/55 uppercase">{s.label}</span>
+            <span className={`${st.label} uppercase`}>{s.label}</span>
             {relations[s.key].slice(0, GIST_RELATION_CAP).map((w) => (
-              <span key={w} className="text-black/70">{w}</span>
+              <span key={w}>{w}</span>
             ))}
           </div>
         ))}

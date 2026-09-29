@@ -5,6 +5,8 @@ import { listWords } from '@/lib/wordlist/store'
 import { countDueCards } from '@/lib/wordlist/review'
 import { WordlistClient } from '@/components/wordlist/WordlistClient'
 import { pageMetadata } from '@/lib/site'
+import { newsreader } from '@/components/home/fonts'
+import s from '@/components/wordlist/Wordlist.module.css'
 
 export const metadata = pageMetadata({
   title: 'Sổ tay',
@@ -29,19 +31,18 @@ export default async function WordlistPage({
 
   const [words, due] = await Promise.all([listWords(supabase), countDueCards(supabase)])
   return (
-    <main className="mx-auto max-w-page px-6 py-10">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold">Sổ tay</h1>
+    <main className={`${s.nb} ${newsreader.variable} mx-auto max-w-page px-6 pt-8 pb-16 font-ui`}>
+      <div className={s.head}>
+        <div>
+          <h1 className={s.title}>Sổ tay</h1>
+          <p className={s.lede}>Xem và sửa các từ đã lưu.</p>
+        </div>
         {words.length > 0 && (
-          <Link
-            href="/practice"
-            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium ${due > 0 ? 'bg-black text-white' : 'border border-black/15 text-black/70 hover:bg-black/5'}`}
-          >
+          <Link href="/practice" className={due > 0 ? s.btn : s.ghost}>
             Luyện tập{due > 0 ? ` (${due})` : ''}
           </Link>
         )}
       </div>
-      <p className="mt-1 text-sm text-black/60">Xem và sửa các từ đã lưu.</p>
       <div className="mt-6">
         <WordlistClient initialWords={words} />
       </div>

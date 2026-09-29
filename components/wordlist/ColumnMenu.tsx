@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { COLUMNS, MAX_PINNED, type ColumnDef, type ColumnKey, type ColumnPrefs } from '@/lib/wordlist/columns'
 import { useNarrowViewport } from '@/lib/hooks/useNarrowViewport'
+import s from './Wordlist.module.css'
 
 interface Props {
   prefs: ColumnPrefs
@@ -53,7 +54,7 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
   return (
     <div className="relative" ref={root}>
       <button
-        className="rounded-lg border border-black/15 px-3 py-2 text-sm hover:bg-black/5"
+        className={s.ghost}
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -66,9 +67,9 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
           // Anchored to the button on a wide screen. On a phone the button sits far
           // enough left that a 288px panel hangs off the edge, so there it is centred
           // on the button and never wider than the screen.
-          className="absolute right-0 z-30 mt-1 w-72 rounded-lg border border-black/10 bg-white p-1 shadow-lg max-sm:left-1/2 max-sm:right-auto max-sm:w-[calc(100vw-3rem)] max-sm:-translate-x-1/2"
+          className={`${s.menu} right-0 w-72 max-sm:left-1/2 max-sm:right-auto max-sm:w-[calc(100vw-3rem)] max-sm:-translate-x-1/2`}
         >
-          <div className="flex items-center justify-between px-3 py-1.5 text-xs uppercase tracking-wide text-black/55">
+          <div className={s.menuHead}>
             <span>Hiện</span>
             {!narrow && <span>Ghim (tối đa {MAX_PINNED})</span>}
           </div>
@@ -78,7 +79,7 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
             const up = shown ? neighbour(c, -1) : null
             const down = shown ? neighbour(c, 1) : null
             return (
-              <div key={c.key} className="flex items-center gap-2 rounded px-3 py-1.5 hover:bg-black/5">
+              <div key={c.key} className={s.menuRow}>
                 <input
                   type="checkbox"
                   role="menuitemcheckbox"
@@ -89,12 +90,12 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
                   onChange={() => onToggleColumn(c.key)}
                   aria-label={`Hiện cột ${c.label}`}
                 />
-                <label htmlFor={`col-${c.key}`} className="flex-1 text-sm">
+                <label htmlFor={`col-${c.key}`} className="flex-1 cursor-pointer">
                   {c.label}
                 </label>
                 <button
                   role="menuitem"
-                  className="rounded px-1.5 py-0.5 text-xs text-black/55 hover:bg-black/5 disabled:opacity-30"
+                  className={s.arrow}
                   onClick={() => up && onMove(c.key, up)}
                   disabled={!up}
                   aria-label={`Chuyển cột ${c.label} lên`}
@@ -103,7 +104,7 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
                 </button>
                 <button
                   role="menuitem"
-                  className="rounded px-1.5 py-0.5 text-xs text-black/55 hover:bg-black/5 disabled:opacity-30"
+                  className={s.arrow}
                   onClick={() => down && onMove(c.key, down)}
                   disabled={!down}
                   aria-label={`Chuyển cột ${c.label} xuống`}
@@ -113,7 +114,7 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
                 {!narrow && (
                   <button
                     role="menuitemcheckbox"
-                    className={`rounded px-2 py-0.5 text-xs disabled:opacity-40 ${isPinned ? 'bg-black text-white' : 'border border-black/15 text-black/55 hover:bg-black/5'}`}
+                    className={s.pin}
                     onClick={() => onTogglePin(c.key)}
                     aria-checked={isPinned}
                     disabled={!isPinned && pinsLeft <= 0}
@@ -128,7 +129,7 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
           })}
           <button
             role="menuitem"
-            className="mt-1 w-full rounded px-3 py-1.5 text-left text-sm text-black/60 hover:bg-black/5"
+            className={`${s.item} mt-1`}
             onClick={() => { onReset(); setOpen(false) }}
           >
             Đặt lại mặc định

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { callAi } from '@/lib/ai/browser'
 import { useAiEnabled } from '@/lib/hooks/useAiEnabled'
 import type { UserWord } from '@/lib/wordlist/types'
+import s from './Wordlist.module.css'
 
 /** Words per request. The task caps the list at 40, so a larger selection goes in
  *  several rounds rather than one prompt long enough to blunt the answers. */
@@ -90,11 +91,11 @@ export function AiTagButton({
         type="button"
         disabled={busy}
         onClick={run}
-        className="rounded-lg border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5 disabled:opacity-40"
+        className={s.ghost}
       >
         {busy ? 'Đang gắn thẻ…' : 'Gắn thẻ bằng AI'}
       </button>
-      {error && <span className="text-sm text-red-600">{error}</span>}
+      {error && <span className={s.fail}>{error}</span>}
     </>
   )
 }

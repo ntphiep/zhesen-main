@@ -11,6 +11,7 @@ import { STATUS_LABELS, type UserWord } from '@/lib/wordlist/types'
 import { clampWidth, MAX_COLUMN_WIDTH, MAX_PINNED_WIDTH, MIN_COLUMN_WIDTH, type ColumnDef, type ColumnKey } from '@/lib/wordlist/columns'
 import { useNarrowViewport } from '@/lib/hooks/useNarrowViewport'
 import type { SortDir, SortKey } from '@/lib/hooks/useWordlistFilters'
+import s from './Wordlist.module.css'
 
 /** A pinned column the reader never resized. Fixed, because measuring a width back after
  *  layout means setState in an effect, which `react-hooks/set-state-in-effect` refuses.
@@ -143,18 +144,18 @@ export function WordTable({
     onResizeColumn(key, current + step)
   }
 
-  // `bg-white` is not decoration on a pinned cell: without an opaque background the
+  // `bg-(--zs-bg)` is not decoration on a pinned cell: without an opaque background the
   // scrolled columns show through it.
   const stickyClass = (key: ColumnKey) =>
-    offsets.has(key) ? 'sticky z-10 bg-white' : ''
+    offsets.has(key) ? 'sticky z-10 bg-(--zs-bg)' : ''
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-separate border-spacing-0 text-sm">
+    <div className={`${s.sheet} overflow-x-auto`}>
+      <table className="w-full border-separate border-spacing-0">
         <thead>
-          <tr className="text-left text-xs font-medium uppercase tracking-wide text-black/55 [&_th]:border-b [&_th]:border-black/10">
+          <tr className="text-left uppercase">
             <th
-              className="sticky left-0 z-20 bg-white px-3 py-2.5"
+              className="sticky left-0 z-20 px-3 py-2.5"
               style={{ width: SELECT_WIDTH, minWidth: SELECT_WIDTH }}
             >
               <input
@@ -172,7 +173,7 @@ export function WordTable({
                 key={c.key}
                 scope="col"
                 aria-sort={sortKey === c.sortKey ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
-                className={`${offsets.has(c.key) ? '' : 'relative'} whitespace-nowrap px-3 py-2.5 ${c.align === 'right' ? 'text-right' : ''} ${stickyClass(c.key)} ${offsets.has(c.key) ? 'z-20' : ''} ${widthOf(c.key) !== undefined ? 'truncate' : ''} ${dragKey === c.key ? 'opacity-40' : ''} ${overKey === c.key ? 'outline-2 -outline-offset-2 outline-black/30' : ''}`}
+                className={`${offsets.has(c.key) ? '' : 'relative'} whitespace-nowrap px-3 py-2.5 ${c.align === 'right' ? 'text-right' : ''} ${stickyClass(c.key)} ${offsets.has(c.key) ? 'z-20' : ''} ${widthOf(c.key) !== undefined ? 'truncate' : ''} ${dragKey === c.key ? 'opacity-40' : ''} ${overKey === c.key ? s.over : ''}`}
                 style={cellStyle(c.key)}
                 draggable={onMoveColumn !== undefined}
                 onDragStart={(e) => {
@@ -200,7 +201,7 @@ export function WordTable({
               >
                 {c.sortKey ? (
                   <button
-                    className="flex items-center gap-1 whitespace-nowrap uppercase tracking-wide hover:text-black"
+                    className="flex items-center gap-1 whitespace-nowrap uppercase"
                     onClick={() => onToggleSort(c.sortKey as SortKey)}
                   >
                     {c.label}
@@ -220,7 +221,7 @@ export function WordTable({
                     aria-valuemax={sticky.has(c.key) ? MAX_PINNED_WIDTH : MAX_COLUMN_WIDTH}
                     tabIndex={0}
                     title="Kéo để đổi độ rộng. Nhấp đúp hoặc bấm Delete để đặt lại."
-                    className="absolute inset-y-0 right-0 w-2 cursor-col-resize touch-none select-none after:absolute after:inset-y-2 after:right-0.5 after:w-px after:bg-black/10 hover:after:bg-black/40 focus-visible:after:bg-black/60"
+                    className={`${s.grip} absolute inset-y-0 right-0 w-2 cursor-col-resize touch-none select-none`}
                     onPointerDown={(e) => startResize(e, c.key)}
                     onDoubleClick={() => onResizeColumn(c.key, null)}
                     onKeyDown={(e) => resizeByKey(e, c.key)}
@@ -234,8 +235,8 @@ export function WordTable({
         <tbody>
           {words.map((w) => (
             <Fragment key={w.id}>
-              <tr className="hover:bg-black/2 [&_td]:border-b [&_td]:border-black/5">
-                <td className="sticky left-0 z-10 bg-white px-3 py-2.5 align-top">
+              <tr className={s.row} data-on={selected.has(w.id) || undefined}>
+                <td className="sticky left-0 z-10 bg-(--zs-bg) px-3 py-2.5">
                   <input
                     type="checkbox"
                     checked={selected.has(w.id)}
@@ -246,13 +247,13 @@ export function WordTable({
                 {columns.map((c) => (
                   <td
                     key={c.key}
-                    className={`px-3 py-2.5 align-top ${widthOf(c.key) !== undefined ? 'truncate' : ''} ${stickyClass(c.key)}`}
+                    className={`px-3 py-2.5 ${widthOf(c.key) !== undefined ? 'truncate' : ''} ${stickyClass(c.key)}`}
                     style={cellStyle(c.key)}
                   >
                     <Cell word={w} column={c.key} />
                   </td>
                 ))}
-                <td className="px-3 py-2.5 align-top text-right">
+                <td className="px-3 py-2.5 text-right">
                   <WordRowActions
                     word={w}
                     expanded={expandedId === w.id}
@@ -264,8 +265,8 @@ export function WordTable({
                 </td>
               </tr>
               {expandedId === w.id && (
-                <tr className="bg-black/2">
-                  <td colSpan={columns.length + 2} className="px-4 py-3">
+                <tr className={s.detail}>
+                  <td colSpan={columns.length + 2} className="px-4 py-4">
                     <WordDetail word={w} />
                   </td>
                 </tr>
@@ -280,25 +281,25 @@ export function WordTable({
 
 function Cell({ word: w, column }: { word: UserWord; column: ColumnKey }) {
   switch (column) {
-    case 'headword': return <span className="font-medium">{w.headword}</span>
-    case 'lang': return <span className="text-black/55">{LANG_NAME.get(w.lang) ?? w.lang}</span>
-    case 'ipa': return <Ipa value={w.ipa} lang={w.lang} className="text-black/55" />
-    case 'pos': return <PosTag value={w.pos} className="text-black/55" />
-    case 'meaningVi': return <>{w.meaningVi ?? ''}</>
-    case 'meaningEn': return <span className="text-black/60">{w.meaningEn ?? ''}</span>
-    case 'level': return <span className="text-black/55">{w.level ?? ''}</span>
-    case 'status': return <span className="text-black/55">{STATUS_LABELS[w.status]}</span>
+    case 'headword': return <span className={s.hw} data-l={w.lang} lang={w.lang}>{w.headword}</span>
+    case 'lang': return <span className={s.lang} data-l={w.lang}>{LANG_NAME.get(w.lang) ?? w.lang}</span>
+    case 'ipa': return <Ipa value={w.ipa} lang={w.lang} className={s.pron} />
+    case 'pos': return <PosTag value={w.pos} className={s.pron} />
+    case 'meaningVi': return <span className="font-semibold">{w.meaningVi ?? ''}</span>
+    case 'meaningEn': return <span className={s.pron}>{w.meaningEn ?? ''}</span>
+    case 'level': return w.level ? <span className={s.level}>{w.level}</span> : null
+    case 'status': return <span className={s.status} data-s={w.status}>{STATUS_LABELS[w.status]}</span>
     case 'tags': return <TagChips tags={w.tags} />
-    case 'example': return <span className="italic text-black/55">{w.example ?? ''}</span>
-    case 'notes': return <span className="text-black/55">{w.notes ?? ''}</span>
-    case 'createdAt': return <span className="whitespace-nowrap text-black/55">{formatWordDate(w.createdAt)}</span>
+    case 'example': return <span className={`italic ${s.pron}`}>{w.example ?? ''}</span>
+    case 'notes': return <span className={s.pron}>{w.notes ?? ''}</span>
+    case 'createdAt': return <span className={`whitespace-nowrap ${s.pron}`}>{formatWordDate(w.createdAt)}</span>
     case 'fsrsDueAt':
       return (
-        <span className="whitespace-nowrap text-black/55">
+        <span className={`whitespace-nowrap ${s.pron}`}>
           {isDueAt(w.fsrsDueAt) ? DUE_LABEL : formatWordDate(w.fsrsDueAt)}
         </span>
       )
-    case 'fsrsLapses': return <span className="text-black/55">{w.fsrsLapses}</span>
+    case 'fsrsLapses': return <span className={s.pron}>{w.fsrsLapses}</span>
     case 'audio':
       return (
         <span className="inline-flex items-center gap-1 whitespace-nowrap">

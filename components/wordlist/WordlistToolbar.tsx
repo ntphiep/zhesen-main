@@ -4,6 +4,7 @@ import { LANGUAGES, type LangCode } from '@/lib/languages'
 import type { ReviewFilter, ViewMode } from '@/lib/hooks/useWordlistFilters'
 import { STATUS_OPTIONS, type WordStatus } from '@/lib/wordlist/types'
 import type { PosGroup } from '@/lib/dictionary/pos'
+import s from './Wordlist.module.css'
 
 interface Props {
   query: string
@@ -56,8 +57,8 @@ export function WordlistToolbar({
   }, [exportOpen])
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <button className="rounded-lg bg-black px-4 py-2 text-sm text-white" onClick={onAddClick}>
+    <div className={s.tray}>
+      <button className={s.btn} onClick={onAddClick}>
         Thêm từ
       </button>
 
@@ -66,13 +67,13 @@ export function WordlistToolbar({
         placeholder="Tìm trong sổ tay…"
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
-        className="rounded-lg border border-black/15 px-3 py-2 text-sm flex-1 min-w-40"
+        className={`${s.field} ${s.search}`}
       />
 
       <select
         value={langFilter}
         onChange={(e) => onLangFilterChange(e.target.value as LangCode | '')}
-        className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
+        className={s.field}
         aria-label="Lọc ngôn ngữ"
       >
         <option value="">Tất cả ngôn ngữ</option>
@@ -84,7 +85,7 @@ export function WordlistToolbar({
       <select
         value={statusFilter}
         onChange={(e) => onStatusFilterChange(e.target.value as WordStatus | '')}
-        className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
+        className={s.field}
         aria-label="Lọc trạng thái"
       >
         <option value="">Tất cả trạng thái</option>
@@ -97,7 +98,7 @@ export function WordlistToolbar({
         <select
           value={levelFilter}
           onChange={(e) => onLevelFilterChange(e.target.value)}
-          className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
+          className={s.field}
           aria-label="Lọc trình độ"
         >
           <option value="">Tất cả trình độ</option>
@@ -109,7 +110,7 @@ export function WordlistToolbar({
         <select
           value={posFilter}
           onChange={(e) => onPosFilterChange(e.target.value)}
-          className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
+          className={s.field}
           aria-label="Lọc từ loại"
         >
           <option value="">Tất cả từ loại</option>
@@ -124,7 +125,7 @@ export function WordlistToolbar({
       <select
         value={reviewFilter}
         onChange={(e) => onReviewFilterChange(e.target.value as ReviewFilter)}
-        className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
+        className={s.field}
         aria-label="Lọc từ cần ôn"
       >
         <option value="">Tất cả từ</option>
@@ -132,60 +133,63 @@ export function WordlistToolbar({
         <option value="leech">Hay sai</option>
       </select>
 
-      <div className="flex rounded-lg border border-black/15 overflow-hidden">
-        <button
-          className={`px-3 py-2 text-sm ${view === 'table' ? 'bg-black text-white' : 'bg-white text-black/60'}`}
-          onClick={() => onViewChange('table')}
-          aria-label="Xem dạng bảng"
-        >
-          Bảng
-        </button>
-        <button
-          className={`px-3 py-2 text-sm ${view === 'card' ? 'bg-black text-white' : 'bg-white text-black/60'}`}
-          onClick={() => onViewChange('card')}
-          aria-label="Xem dạng lưới"
-        >
-          Lưới
-        </button>
-      </div>
-
-      {view === 'table' && columnControls}
-
-      <div className="relative" ref={exportRoot}>
-        <button
-          className="rounded-lg border border-black/15 px-3 py-2 text-sm hover:bg-black/5"
-          onClick={() => setExportOpen((v) => !v)}
-          aria-haspopup="menu"
-          aria-expanded={exportOpen}
-        >
-          Xuất ▾
-        </button>
-        {exportOpen && (
-          <div
-            role="menu"
-            className="absolute right-0 z-10 mt-1 flex flex-col rounded-lg border border-black/10 bg-white shadow-lg"
+      {/* One group, so the view and file controls wrap together to the right edge. */}
+      <div className={s.end}>
+        <div className={s.seg}>
+          <button
+            aria-pressed={view === 'table'}
+            onClick={() => onViewChange('table')}
+            aria-label="Xem dạng bảng"
           >
-            <button
-              role="menuitem"
-              className="px-4 py-2 text-left text-sm hover:bg-black/5 whitespace-nowrap"
-              onClick={() => { setExportOpen(false); onExportCsv() }}
-            >
-              Xuất CSV
-            </button>
-            <button
-              role="menuitem"
-              className="px-4 py-2 text-left text-sm hover:bg-black/5 whitespace-nowrap"
-              onClick={() => { setExportOpen(false); onExportAnki() }}
-            >
-              Xuất Anki (TSV)
-            </button>
-          </div>
-        )}
-      </div>
+            Bảng
+          </button>
+          <button
+            aria-pressed={view === 'card'}
+            onClick={() => onViewChange('card')}
+            aria-label="Xem dạng lưới"
+          >
+            Lưới
+          </button>
+        </div>
 
-      <button className="rounded-lg border border-black/15 px-3 py-2 text-sm hover:bg-black/5" onClick={onImportClick}>
-        Nhập CSV
-      </button>
+        {view === 'table' && columnControls}
+
+        <div className="relative" ref={exportRoot}>
+          <button
+            className={s.ghost}
+            onClick={() => setExportOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={exportOpen}
+          >
+            Xuất ▾
+          </button>
+          {exportOpen && (
+            <div
+              role="menu"
+              className={`${s.menu} right-0`}
+            >
+              <button
+                role="menuitem"
+                className={s.item}
+                onClick={() => { setExportOpen(false); onExportCsv() }}
+              >
+                Xuất CSV
+              </button>
+              <button
+                role="menuitem"
+                className={s.item}
+                onClick={() => { setExportOpen(false); onExportAnki() }}
+              >
+                Xuất Anki (TSV)
+              </button>
+            </div>
+          )}
+        </div>
+
+        <button className={s.ghost} onClick={onImportClick}>
+          Nhập CSV
+        </button>
+      </div>
     </div>
   )
 }

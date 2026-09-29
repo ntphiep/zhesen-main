@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { TagEditor } from './TagEditor'
+import s from './Wordlist.module.css'
 import { formatPos, parsePos } from '@/lib/dictionary/pos'
 import { STATUS_OPTIONS, type UserWord, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
 
@@ -96,85 +97,85 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
       {word && (
         <div className="p-5 flex flex-col gap-3">
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/55">Nghĩa tiếng Việt</span>
+            <span className={s.label}>Nghĩa tiếng Việt</span>
             <input
               type="text"
               value={meaningVi}
               onChange={(e) => setMeaningVi(e.target.value)}
-              className="rounded-lg border border-black/15 px-3 py-2 text-sm"
+              className={s.field}
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/55">Nghĩa tiếng Anh</span>
+            <span className={s.label}>Nghĩa tiếng Anh</span>
             <input
               type="text"
               value={meaningEn}
               onChange={(e) => setMeaningEn(e.target.value)}
-              className="rounded-lg border border-black/15 px-3 py-2 text-sm"
+              className={s.field}
             />
           </label>
           <div className="flex gap-2">
             <label className="flex flex-col gap-1 flex-1 min-w-0">
-              <span className="text-xs text-black/55">Từ loại</span>
+              <span className={s.label}>Từ loại</span>
               <input
                 type="text"
                 value={pos}
                 onChange={(e) => setPos(e.target.value)}
-                className="rounded-lg border border-black/15 px-3 py-2 text-sm"
+                className={s.field}
               />
             </label>
             <label className="flex flex-col gap-1 flex-1 min-w-0">
-              <span className="text-xs text-black/55">IPA</span>
+              <span className={s.label}>IPA</span>
               <input
                 type="text"
                 value={ipa}
                 onChange={(e) => setIpa(e.target.value)}
-                className="rounded-lg border border-black/15 px-3 py-2 text-sm"
+                className={s.field}
               />
             </label>
           </div>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/55">Trình độ</span>
+            <span className={s.label}>Trình độ</span>
             <input
               type="text"
               value={level}
               onChange={(e) => setLevel(e.target.value)}
-              className="rounded-lg border border-black/15 px-3 py-2 text-sm"
+              className={s.field}
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/55">Câu ví dụ</span>
+            <span className={s.label}>Câu ví dụ</span>
             <input
               type="text"
               value={example}
               onChange={(e) => setExample(e.target.value)}
-              className="rounded-lg border border-black/15 px-3 py-2 text-sm"
+              className={s.field}
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/55">Dịch câu ví dụ</span>
+            <span className={s.label}>Dịch câu ví dụ</span>
             <input
               type="text"
               value={exampleTranslation}
               onChange={(e) => setExampleTranslation(e.target.value)}
-              className="rounded-lg border border-black/15 px-3 py-2 text-sm"
+              className={s.field}
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/55">Ghi chú</span>
+            <span className={s.label}>Ghi chú</span>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="rounded-lg border border-black/15 px-3 py-2 text-sm"
+              className={s.field}
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/55">Trạng thái</span>
+            <span className={s.label}>Trạng thái</span>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as WordStatus)}
-              className="rounded-lg border border-black/15 px-3 py-2 text-sm bg-white"
+              className={s.field}
             >
               {STATUS_OPTIONS.map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
@@ -182,19 +183,19 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/55">Thẻ</span>
+            <span className={s.label}>Thẻ</span>
             <TagEditor tags={tags} onChange={setTags} />
           </label>
 
           <div className="flex justify-end gap-2 mt-1">
             <button
-              className="rounded-lg border border-black/15 px-4 py-2 text-sm"
+              className={s.ghost}
               onClick={onClose}
             >
               Hủy
             </button>
             <button
-              className="rounded-lg bg-black px-4 py-2 text-sm text-white"
+              className={s.btn}
               onClick={handleSave}
               aria-label="Lưu"
             >

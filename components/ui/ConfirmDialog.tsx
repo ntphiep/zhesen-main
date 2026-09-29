@@ -20,19 +20,19 @@ export function ConfirmDialog({
   return (
     <Modal open={open} onClose={onCancel} title={title} titleId="confirm-title" widthClass="max-w-sm">
       <div className="p-5">
-        <p className="text-sm text-black/70">{message}</p>
+        <p className="text-sm text-(--zs-ink)">{message}</p>
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5"
+            className="min-h-10 rounded-full border-[1.5px] border-(--edge) bg-(--zs-bg) px-4 text-sm font-semibold text-(--zs-ink) transition-colors duration-150 ease-std hover:border-sea-400 hover:bg-(--tint-1)"
           >
             Hủy
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+            className="min-h-10 rounded-full bg-(--ink) px-4 text-sm font-bold text-(--zs-bg) transition-opacity duration-150 ease-std hover:opacity-85"
           >
             {confirmLabel}
           </button>

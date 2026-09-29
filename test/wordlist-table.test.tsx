@@ -88,7 +88,7 @@ describe('WordTable', () => {
     show(togglePinned(DEFAULT_PREFS, 'meaningVi'))
     const cell = screen.getByText('Con chó').closest('td')
     expect(cell?.className).toContain('sticky')
-    expect(cell?.className).toContain('bg-white')
+    expect(cell?.className).toContain('bg-(--zs-bg)')
     // Behind the checkbox column, which is always first.
     expect(cell?.style.left).toBe('204px')
   })

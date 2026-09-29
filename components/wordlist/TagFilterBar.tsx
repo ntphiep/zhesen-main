@@ -1,6 +1,7 @@
 'use client'
 import { tagCounts } from '@/lib/wordlist/tags'
 import type { UserWord } from '@/lib/wordlist/types'
+import s from './Wordlist.module.css'
 
 interface Props {
   words: UserWord[]
@@ -14,8 +15,8 @@ export function TagFilterBar({ words, activeTags, onToggle }: Props) {
   const counts = tagCounts(words)
   if (counts.length === 0) return null
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-xs text-black/55">Thẻ:</span>
+    <div className={s.chips}>
+      <span className={s.label}>Thẻ:</span>
       {counts.map(({ tag, count }) => {
         const on = activeTags.has(tag)
         return (
@@ -24,9 +25,7 @@ export function TagFilterBar({ words, activeTags, onToggle }: Props) {
             type="button"
             onClick={() => onToggle(tag)}
             aria-pressed={on}
-            className={`rounded-full px-2.5 py-1 text-xs ${
-              on ? 'bg-black text-white' : 'bg-black/5 text-black/70 hover:bg-black/10'
-            }`}
+            className={s.chip}
           >
             {tag} ({count})
           </button>

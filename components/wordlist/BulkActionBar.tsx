@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { parseTagsInput } from '@/lib/wordlist/tags'
 import { AiTagButton } from '@/components/wordlist/AiTagButton'
 import { STATUS_OPTIONS, type UserWord, type WordStatus } from '@/lib/wordlist/types'
+import s from './Wordlist.module.css'
 
 interface Props {
   /** The selected rows themselves, not just how many: the assistant needs the
@@ -34,8 +35,8 @@ export function BulkActionBar({ selectedWords, allTags, onBulkTag, onAiTag, onBu
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-black/10 bg-black/2 px-3 py-2">
-      <span className="text-sm font-medium">{selectedCount} từ đã chọn</span>
+    <div className={s.bulk}>
+      <span className={s.count}>{selectedCount} từ đã chọn</span>
 
       <input
         type="text"
@@ -45,11 +46,11 @@ export function BulkActionBar({ selectedWords, allTags, onBulkTag, onAiTag, onBu
         // reads as one.
         onKeyDown={(e) => { if (e.key === 'Enter') applyTags() }}
         placeholder="Thẻ, cách nhau bằng dấu phẩy"
-        className="rounded-lg border border-black/15 px-3 py-1.5 text-sm"
+        className={s.field}
       />
       <button
         type="button"
-        className="rounded-lg border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5"
+        className={s.ghost}
         onClick={applyTags}
       >
         Gắn thẻ
@@ -59,7 +60,7 @@ export function BulkActionBar({ selectedWords, allTags, onBulkTag, onAiTag, onBu
       <select
         value={bulkStatus}
         onChange={(e) => setBulkStatus(e.target.value as WordStatus)}
-        className="rounded-lg border border-black/15 bg-white px-3 py-1.5 text-sm"
+        className={s.field}
         aria-label="Trạng thái cho các từ đã chọn"
       >
         {STATUS_OPTIONS.map(([value, label]) => (
@@ -68,7 +69,7 @@ export function BulkActionBar({ selectedWords, allTags, onBulkTag, onAiTag, onBu
       </select>
       <button
         type="button"
-        className="rounded-lg border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5"
+        className={s.ghost}
         onClick={() => onBulkStatus(bulkStatus)}
       >
         Đổi trạng thái
@@ -76,7 +77,7 @@ export function BulkActionBar({ selectedWords, allTags, onBulkTag, onAiTag, onBu
 
       <button
         type="button"
-        className="ml-auto rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white"
+        className={`${s.danger} ml-auto`}
         onClick={onBulkDelete}
       >
         Xóa đã chọn ({selectedCount})

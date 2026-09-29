@@ -1,6 +1,6 @@
 import { Newsreader, Patrick_Hand } from 'next/font/google'
 
-// Declared here, not in the root layout, so only `/` preloads them.
+// Declared here, not in the root layout, so only `/` and `/wordlist` preload them.
 export const newsreader = Newsreader({
   variable: '--font-newsreader',
   subsets: ['latin'],

@@ -22,10 +22,14 @@ import { ImportCsvDialog } from '@/components/wordlist/ImportCsvDialog'
 import { WordDetail } from '@/components/wordlist/WordDetail'
 import { TagChips, WordRowActions } from '@/components/wordlist/WordRowActions'
 import { AudioButton, SourceLink } from '@/components/ui/AudioButton'
-import type { UserWord, WordDraft, WordStatus } from '@/lib/wordlist/types'
+import { STATUS_LABELS, type UserWord, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
 import { Ipa } from '@/components/ui/Ipa'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { NoticeBar, useNotice } from '@/components/ui/Notice'
+import { LANGUAGES } from '@/lib/languages'
+import s from './Wordlist.module.css'
+
+const LANG_NAME = new Map(LANGUAGES.map((l) => [l.code, l.name]))
 
 export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   const supabase = useMemo(() => createClient(), [])
@@ -329,7 +333,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       />
 
       {visible.length === 0 && (
-        <p className="text-center text-sm text-black/55 py-12">
+        <p className={s.empty}>
           {words.length === 0
             ? 'Chưa có từ. Tra một từ để lưu.'
             : 'Không có từ nào khớp bộ lọc. Đổi bộ lọc.'}
@@ -360,60 +364,62 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       )}
 
       {view === 'card' && shown.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {shown.map((w) => (
-            <div
-              key={w.id}
-              className="rounded-xl border border-black/10 p-4 flex flex-col gap-2 bg-white"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(w.id)}
-                    onChange={() => toggleSelect(w.id)}
-                    aria-label={`Chọn từ ${w.headword}`}
+        <ul className={s.cards}>
+          {shown.map((w) => {
+            const due = isDueAt(w.fsrsDueAt)
+            return (
+              <li key={w.id} className={s.card} data-l={w.lang} data-on={selected.has(w.id) || undefined}>
+                <div className={s.meta}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(w.id)}
+                      onChange={() => toggleSelect(w.id)}
+                      aria-label={`Chọn từ ${w.headword}`}
+                    />
+                    {LANG_NAME.get(w.lang) ?? w.lang}
+                  </label>
+                  <span className="inline-flex items-center gap-1">
+                    {w.level && <span className={s.level}>{w.level}</span>}
+                    <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
+                    <SourceLink url={w.audioUrl} />
+                  </span>
+                </div>
+
+                <span className={s.hw} data-l={w.lang} lang={w.lang}>{w.headword}</span>
+                <div className={s.line}>
+                  {w.lang === 'zh' ? w.reading && <span>{w.reading}</span> : <Ipa value={w.ipa} lang={w.lang} />}
+                  <PosTag value={w.pos} />
+                </div>
+                {w.meaningVi && <p className={s.mean}>{w.meaningVi}</p>}
+                {w.example && <p className={s.ex}>{w.example}</p>}
+                <TagChips tags={w.tags} />
+
+                <div className={s.foot}>
+                  <span className="inline-flex items-center gap-3">
+                    <span className={s.status} data-s={w.status}>{STATUS_LABELS[w.status]}</span>
+                    <span className={s.when} data-due={due || undefined}>
+                      {due ? DUE_LABEL : formatWordDate(w.createdAt)}
+                    </span>
+                  </span>
+                  <WordRowActions
+                    word={w}
+                    expanded={expandedId === w.id}
+                    onToggleDetail={() => setExpandedId(expandedId === w.id ? null : w.id)}
+                    onEdit={() => setEditWord(w)}
+                    onDelete={() => handleDelete(w.id, w.headword)}
                   />
-                  <span className="font-semibold">{w.headword}</span>
-                  <Ipa value={w.ipa} lang={w.lang} className="text-xs text-black/55" />
                 </div>
-                <span className="inline-flex items-center gap-1">
-                  <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
-                  <SourceLink url={w.audioUrl} />
-                </span>
-              </div>
 
-              <PosTag value={w.pos} className="text-xs text-black/55" />
-              {w.meaningVi && <p className="text-sm text-black/80">{w.meaningVi}</p>}
-              {w.level && (
-                <span className="self-start rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/55">
-                  {w.level}
-                </span>
-              )}
-              {w.example && <p className="text-xs italic text-black/55">{w.example}</p>}
-              <TagChips tags={w.tags} />
-
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-xs text-black/55">
-                  {isDueAt(w.fsrsDueAt) ? DUE_LABEL : formatWordDate(w.createdAt)}
-                </span>
-                <WordRowActions
-                  word={w}
-                  expanded={expandedId === w.id}
-                  onToggleDetail={() => setExpandedId(expandedId === w.id ? null : w.id)}
-                  onEdit={() => setEditWord(w)}
-                  onDelete={() => handleDelete(w.id, w.headword)}
-                />
-              </div>
-
-              {expandedId === w.id && (
-                <div className="pt-2 border-t border-black/5">
-                  <WordDetail word={w} />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                {expandedId === w.id && (
+                  <div className={s.cardDetail}>
+                    <WordDetail word={w} />
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
       )}
 
       {visible.length > 0 && (

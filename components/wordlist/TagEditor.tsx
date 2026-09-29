@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { parseTagsInput, mergeTags, removeTag } from '@/lib/wordlist/tags'
+import s from './Wordlist.module.css'
 
 interface Props {
   tags: string[]
@@ -23,14 +24,10 @@ export function TagEditor({ tags, onChange }: Props) {
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-1.5">
         {tags.map((t) => (
-          <span
-            key={t}
-            className="inline-flex items-center gap-1 rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/70"
-          >
+          <span key={t} className={s.tag}>
             {t}
             <button
               type="button"
-              className="text-black/55 hover:text-black/80"
               onClick={() => onChange(removeTag(tags, t))}
               aria-label={`Bỏ thẻ ${t}`}
             >
@@ -38,7 +35,7 @@ export function TagEditor({ tags, onChange }: Props) {
             </button>
           </span>
         ))}
-        {tags.length === 0 && <span className="text-xs text-black/55">Chưa có thẻ</span>}
+        {tags.length === 0 && <span className={s.note}>Chưa có thẻ</span>}
       </div>
       <div className="flex gap-2">
         <input
@@ -49,11 +46,11 @@ export function TagEditor({ tags, onChange }: Props) {
             if (e.key === 'Enter') { e.preventDefault(); addFromInput() }
           }}
           placeholder="Thẻ, cách nhau bằng dấu phẩy"
-          className="flex-1 rounded-lg border border-black/15 px-3 py-2 text-sm"
+          className={`${s.field} flex-1 min-w-0`}
         />
         <button
           type="button"
-          className="rounded-lg border border-black/15 px-3 py-2 text-sm hover:bg-black/5"
+          className={s.ghost}
           onClick={addFromInput}
         >
           Thêm thẻ
