@@ -152,7 +152,8 @@ PROVIDER_DOWN = re.compile(r'no active credentials|invalid token|token included|
                            r'not installed|egress IP|\[52[0-9]\]|CLI not found|must be an absolute path|Playwright is not', re.I)
 # A 400 about this request, not the model: a long prompt, or a reply a safety filter stopped.
 REQUEST_REFUSED = re.compile(r'context|too long|too many tokens|maximum|safety|blocked|content', re.I)
-MAX_TOKENS = 16000
+# A layer for a word with many senses runs past 16,000 tokens: en:on was cut there.
+MAX_TOKENS = 32000
 # OmniRoute's web-session providers revoke a token past about 6 calls at once.
 PER_PROVIDER = 4
 
@@ -288,6 +289,8 @@ class Pool:
         elif code == 400 and 'temperature' in body and self.temperature[model]:
             # Reasoning models refuse a temperature.
             self.temperature[model] = False
+        elif code == 400 and self.cap[model] > 4000 and re.search(r'max_tokens|max_output|maximum', body):
+            self.cap[model] //= 2
         elif code == 400 and REQUEST_REFUSED.search(body):
             self.rest(model, 60, 60)
         elif code in (400, 401, 404, 422) or ((code or stream) and DEAD.search(body)):
@@ -355,7 +358,10 @@ class Pool:
                 answer = parse(out)
             except (ValueError, LookupError) as e:
                 last = f'{model}: {e}: {out[:80]!r}'
-                if isinstance(e, ValueError):
+                if str(e).startswith('reply cut') and self.cap[model] < 64000:
+                    with LOCK:
+                        self.cap[model] *= 2
+                elif isinstance(e, ValueError):
                     self.rest(model, 600)
             except Exception as e:
                 last = self.refused(model, e)
