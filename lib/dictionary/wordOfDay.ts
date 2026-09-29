@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { z } from '@/lib/zod'
 import { localDay } from '@/lib/wordlist/activity'
-import { cleanGlossVi } from './textQuality'
+import { PREVIEW_SELECT } from './entrySelect'
+import { entryPreviewRow, toPreview } from './rows'
 import type { LangCode } from '@/lib/languages'
 
 /** The pool is English-only: the frequency ranks that make the pick meaningful
@@ -30,40 +30,28 @@ export function pickByDay<T>(pool: T[], dayNum: number): T | null {
   return pool[((dayNum % pool.length) + pool.length) % pool.length]
 }
 
-const poolRow = z.object({
-  id: z.string(),
-  headword: z.string(),
-  level: z.string().nullable(),
-  senses: z.array(z.object({
-    gloss_vi: z.string().nullable(), gloss_en: z.string().nullable(), sense_order: z.number(),
-  })).nullable(),
-  pronunciations: z.array(z.object({ accent: z.string(), ipa: z.string().nullable() })).nullable(),
-})
-
 /** A common English word chosen deterministically for the given day index. Picks
  * from the 200 most frequent words so the daily word is always learner-relevant. */
 export async function getWordOfDay(supabase: SupabaseClient, dayNum: number): Promise<DailyWord | null> {
   const { data, error } = await supabase
     .schema('lex')
     .from('entries')
-    .select('id, headword, level, senses(gloss_vi, gloss_en, sense_order), pronunciations(accent, ipa)')
+    .select(PREVIEW_SELECT)
     .eq('lang', WORD_OF_DAY_LANG)
     .not('frequency_rank', 'is', null)
     .lte('frequency_rank', 2000)
     .order('frequency_rank', { ascending: true })
     .limit(200)
   if (error) throw error
-  const row = pickByDay(poolRow.array().parse(data ?? []), dayNum)
+  const row = pickByDay(entryPreviewRow.array().parse(data ?? []), dayNum)
   if (!row) return null
-  const primary = [...(row.senses ?? [])].sort((a, b) => a.sense_order - b.sense_order)[0]
-  const prons = row.pronunciations ?? []
-  const ipa = prons.find((p) => p.accent.toLowerCase().includes('us') && p.ipa)?.ipa ?? prons.find((p) => p.ipa)?.ipa ?? null
+  const p = toPreview(row)
   return {
-    id: row.id,
+    id: p.id,
     lang: WORD_OF_DAY_LANG,
-    headword: row.headword,
-    ipa,
-    glossVi: cleanGlossVi(primary?.gloss_vi ?? null) ?? primary?.gloss_en ?? null,
-    level: row.level,
+    headword: p.headword,
+    ipa: p.ipa,
+    glossVi: p.glossVi ?? p.glossEn,
+    level: p.level,
   }
 }

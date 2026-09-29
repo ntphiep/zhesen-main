@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { pickIpa, pickPrimarySense, toSenses } from '@/lib/dictionary/rows'
+import { entryPreviewRow, pickIpa, pickPrimarySense, toPreview, toSenses } from '@/lib/dictionary/rows'
 import { searchEntries, searchAllLanguages, searchAllLanguagesVi, suggestNearby, searchOneDirection, getCommonWords } from '@/lib/dictionary/search'
 import { clientReturning } from './helpers/supabase'
 import { getEntryDetail, getCrossLanguage, getCharacters } from '@/lib/dictionary/entryDetail'
@@ -22,6 +22,30 @@ describe('pickPrimarySense', () => {
     ])
     expect(s?.glossVi).toBe('a')
     expect(pickPrimarySense([])).toBeNull()
+  })
+
+  // en:were on production: sense_frequency ranks inside each part of speech.
+  const were = toSenses([
+    { pos: 'verb', gloss_vi: 'thì, là, ở', gloss_en: 'simple subjunctive of be', sense_order: 1, sense_frequency: '3' },
+    { pos: 'noun', gloss_vi: 'người hóa thú', gloss_en: 'The collective name for any kind of person that changes into another form', sense_order: 2, sense_frequency: '1' },
+    { pos: 'verb', gloss_vi: 'ngôi thứ hai số ít quá khứ của be', gloss_en: 'second-person singular simple past indicative of be', sense_order: 3, sense_frequency: '2' },
+    { pos: 'verb', gloss_vi: 'đã là, đã ở', gloss_en: 'plural simple past indicative of be', sense_order: 4, sense_frequency: '1' },
+  ])
+
+  it('takes the top sense of the first part of speech, as the word page does', () => {
+    expect(were[3].senseFrequency).toBe(1)
+    expect(pickPrimarySense(were)?.glossVi).toBe('Đã là, đã ở')
+  })
+
+  it('leads with a published learner layer', () => {
+    const row = (status: string) => ({
+      id: 'en:are', lang: 'en', headword: 'are', traditional: null, level: 'A1', frequency_rank: 19, attributes: null,
+      senses: [{ pos: 'noun', gloss_vi: 'a, a-rơ', gloss_en: 'unit of area', sense_order: 1, sense_frequency: null }],
+      pronunciations: [],
+      learner_entries: { status, learner_senses: [{ sense_order: 1, vi_terms: ['thì', 'là', 'ở', 'đang'], en_definition: 'present tense of be' }] },
+    })
+    expect(toPreview(entryPreviewRow.parse(row('published')))).toMatchObject({ glossVi: 'Thì, là, ở, đang', glossEn: 'present tense of be' })
+    expect(toPreview(entryPreviewRow.parse(row('draft')))).toMatchObject({ glossVi: 'A, a-rơ', glossEn: 'unit of area' })
   })
 })
 

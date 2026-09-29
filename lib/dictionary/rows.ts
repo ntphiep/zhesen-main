@@ -1,5 +1,6 @@
 import { z } from '@/lib/zod'
 import type { LangCode } from '@/lib/languages'
+import { senseSections } from './wordPage'
 import type { ContainingWord, DictEntryPreview, DictSense, DictPron, SuggestionPreview } from './types'
 import { cleanMtGloss, cleanGlossVi } from './textQuality'
 import { audioMatchesHeadword } from './pronunciation'
@@ -18,9 +19,9 @@ export const senseRow = z.object({
   gloss_vi: z.string().nullable(),
   gloss_en: z.string().nullable(),
   sense_order: z.number(),
+  sense_frequency: z.string().nullable().optional(),
   // Selected only by DETAIL_SELECT.
   id: z.string().optional(),
-  sense_frequency: z.string().nullable().optional(),
   gloss_vi_is_mt: z.boolean().optional(),
 })
 export type SenseRow = z.infer<typeof senseRow>
@@ -44,6 +45,12 @@ export const entryPreviewRow = z.object({
   attributes: z.record(z.string(), z.unknown()).nullable(),
   senses: z.array(senseRow).nullable(),
   pronunciations: z.array(pronRow).nullable(),
+  learner_entries: z.object({
+    status: z.string(),
+    learner_senses: z.array(z.object({
+      sense_order: z.number(), vi_terms: z.array(z.string()), en_definition: z.string().nullable(),
+    })),
+  }).nullable().optional(),
 })
 export type EntryPreviewRow = z.infer<typeof entryPreviewRow>
 
@@ -170,9 +177,21 @@ export function pickIpa(prons: { accent: string; ipa: string | null }[], lang: L
   return prons.find((p) => p.ipa)?.ipa ?? null
 }
 
+/** The sense the word page's overview leads with: the top sense, by `rankSenses`, of the
+ *  part of speech met first. Classifier notes are skipped, so an entry made only of them
+ *  falls back to sense_order 1. */
 export function pickPrimarySense(senses: DictSense[]): DictSense | null {
-  if (senses.length === 0) return null
-  return [...senses].sort((a, b) => a.senseOrder - b.senseOrder)[0]
+  return senseSections(senses)[0]?.senses[0] ?? [...senses].sort((a, b) => a.senseOrder - b.senseOrder)[0] ?? null
+}
+
+/** The first sense of a published AI learner layer, which the word page shows first. Its
+ *  English definition goes with it, so a saved word's two meanings name one sense. */
+function learnerLead(r: EntryPreviewRow): { glossVi: string | null; glossEn: string | null } | null {
+  const layer = r.learner_entries
+  if (layer?.status !== 'published') return null
+  const first = layer.learner_senses.find((s) => s.sense_order === 1)
+  if (!first || first.vi_terms.length === 0) return null
+  return { glossVi: cleanGlossVi(first.vi_terms.join(', ')), glossEn: first.en_definition }
 }
 
 /** `lex.senses.sense_frequency` holds "1" to "5"; anything else is unranked. */
@@ -186,7 +205,8 @@ export function parseSenseFrequency(raw: string | null | undefined): number | nu
 export function toSenses(rows: SenseRow[] | null): DictSense[] {
   return [...(rows ?? [])].sort((a, b) => a.sense_order - b.sense_order).map((r) => ({
     pos: r.pos, glossVi: cleanGlossVi(cleanMtGloss(r.gloss_vi)), glossEn: r.gloss_en, senseOrder: r.sense_order,
-    ...(r.id === undefined ? {} : { id: r.id, senseFrequency: parseSenseFrequency(r.sense_frequency) }),
+    ...(r.id === undefined ? {} : { id: r.id }),
+    ...(r.sense_frequency === undefined ? {} : { senseFrequency: parseSenseFrequency(r.sense_frequency) }),
     ...(r.gloss_vi_is_mt === undefined ? {} : { glossViIsMt: r.gloss_vi_is_mt }),
   }))
 }
@@ -197,7 +217,7 @@ export function toProns(rows: PronRow[] | null): DictPron[] {
 export function toPreview(r: EntryPreviewRow): DictEntryPreview {
   const senses = toSenses(r.senses)
   const prons = toProns(r.pronunciations)
-  const primary = pickPrimarySense(senses)
+  const primary = learnerLead(r) ?? pickPrimarySense(senses)
   return {
     id: r.id, lang: r.lang, headword: r.headword, traditional: r.traditional, level: r.level,
     ipa: pickIpa(prons, r.lang),

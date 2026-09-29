@@ -52,8 +52,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const detail = await getCachedEntryDetail(buildEntryId(lang, percentDecode(id)))
   if (!detail) return {}
   const language = getLanguage(lang)
-  const glosses = detail.senses
-    .map((s) => s.glossVi ?? s.pivotVi ?? s.glossEn)
+  // The lead meaning first, the one lists and the word page show.
+  const glosses = [...new Set([detail.glossVi, ...detail.senses.map((s) => s.glossVi ?? s.pivotVi ?? s.glossEn)])]
     .filter((g): g is string => Boolean(g))
     .slice(0, 3)
     .join('; ')
