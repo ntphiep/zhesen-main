@@ -85,6 +85,27 @@ export async function suggestNearby(
   return suggestRow.array().parse(data ?? []).map(toSuggestion)
 }
 
+type LeadGloss = Pick<DictEntryPreview, 'glossVi' | 'glossEn'>
+
+/** The meaning previews and the word page lead with (`toPreview`), by entry id, in one
+ *  query. `lex.search` and `lex.suggest` read the lowest sense_order, so take read "Cầm,
+ *  nắm". Any failure answers an empty map and the RPC's own gloss stands. */
+async function leadGlosses(supabase: SupabaseClient, ids: string[]): Promise<Map<string, LeadGloss>> {
+  if (ids.length === 0) return new Map()
+  try {
+    const { data, error } = await supabase.schema('lex').from('entries').select(PREVIEW_SELECT).in('id', [...new Set(ids)])
+    if (error) throw error
+    return new Map(entryPreviewRow.array().parse(data ?? []).map(toPreview)
+      .map((p): [string, LeadGloss] => [p.id, { glossVi: p.glossVi, glossEn: p.glossEn }]))
+  } catch {
+    return new Map()
+  }
+}
+
+function withLead(list: DictEntryPreview[], lead: Map<string, LeadGloss>): DictEntryPreview[] {
+  return list.map((e) => ({ ...e, ...lead.get(e.id) }))
+}
+
 /** Which way round the lookup runs. The learner chooses it by which box they type in, so
  *  nothing is guessed from the text: "an", "ban" and "con" are real English and Spanish
  *  headwords as well as Vietnamese words, and no rule can separate them. */
@@ -137,8 +158,10 @@ async function searchTranslation(
         .slice(0, perLang - native[l].length)
       return hits.length > 0 ? [l, { text, entries: hits }] as const : null
     }))
+    const hits = found.filter((f) => f !== null)
+    const lead = await leadGlosses(supabase, hits.flatMap(([, h]) => h.entries.map((e) => e.id)))
     const out: Partial<Record<LangCode, TranslatedHits>> = {}
-    for (const f of found) if (f) out[f[0]] = f[1]
+    for (const [l, h] of hits) out[l] = { ...h, entries: withLead(h.entries, lead) }
     return Object.keys(out).length > 0 ? out : null
   } catch {
     return null
@@ -169,9 +192,14 @@ export async function searchOneDirection(
   const q = query.trim()
   if (!q || langs.length === 0) return { entries: EMPTY_BY_LANG, suggestions: [] }
 
+  // The Vietnamese direction keeps the sense that matched: "lua" is sense 2 of fire.
   const entries = direction === 'vi'
     ? await searchAllLanguagesVi(supabase, q, perLang, langs)
     : await searchAllLanguages(supabase, q, perLang, langs)
+  if (direction === 'fw') {
+    const lead = await leadGlosses(supabase, LANG_CODES.flatMap((l) => entries[l].map((e) => e.id)))
+    for (const l of LANG_CODES) entries[l] = withLead(entries[l], lead)
+  }
 
   const translated = direction === 'vi' ? await searchTranslation(supabase, q, entries, perLang, langs) : null
   if (translated) return { entries, suggestions: [], translated }
@@ -182,7 +210,16 @@ export async function searchOneDirection(
   // those three were in fact the correct answer to "thiêng liêng" all along.
   const want = direction === 'vi' ? 'gloss_vi' : 'headword'
   const suggestions = (await suggestNearby(supabase, q)).filter((s) => s.kind === want)
-  return { entries, suggestions }
+  if (direction === 'vi') return { entries, suggestions }
+  // A headword guess arrives with lex.suggest's lowest sense_order.
+  const lead = await leadGlosses(supabase, suggestions.map((s) => s.id))
+  return {
+    entries,
+    suggestions: suggestions.map((s) => {
+      const l = lead.get(s.id)
+      return l ? { ...s, glossVi: l.glossVi } : s
+    }),
+  }
 }
 
 export interface CommonWordsOptions {

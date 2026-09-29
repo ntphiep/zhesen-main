@@ -19,7 +19,7 @@ const SEARCH_CACHE_SECONDS = 3600
 const cachedSearch = unstable_cache(
   (q: string, langs: LangCode[], direction: Direction) =>
     searchOneDirection(createContentClient(), q, direction, 8, langs),
-  ['dict-search-one-v2'],
+  ['dict-search-one-v3'],
   { revalidate: SEARCH_CACHE_SECONDS, tags: ['lex'] },
 )
 
