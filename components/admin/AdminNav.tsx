@@ -23,6 +23,7 @@ export const NAV_GROUPS: { label: string; links: { href: string; label: string }
       { href: '/admin/router', label: 'AI router' },
       { href: '/admin/users', label: 'Users' },
       { href: '/admin/content', label: 'Content' },
+      { href: '/admin/feedback', label: 'Feedback' },
       { href: '/admin/learner', label: 'Learner layer' },
       { href: '/admin/audit', label: 'Audit log' },
     ],

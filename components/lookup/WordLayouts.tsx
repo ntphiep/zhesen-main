@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { BilingualLayout } from './BilingualLayout'
 import { ClassicLayout } from './ClassicLayout'
+import { FeedbackButton } from './FeedbackButton'
 import { GlanceLayout } from './GlanceLayout'
 import { MapLayout } from './MapLayout'
 import { OverviewLayout } from './OverviewLayout'
@@ -36,7 +37,8 @@ function LayoutPicker({ value, stored, options }: {
   return (
     <>
       <label className="flex items-center gap-2 text-sm sm:hidden">
-        <span className="text-black/60">Bố cục</span>
+        {/* Read out only: shown, it pushed "Góp ý" onto a second row at 375 px. */}
+        <span className="sr-only">Bố cục</span>
         <select
           value={value ?? 'overview'}
           onChange={(e) => {
@@ -120,7 +122,10 @@ export function WordLayouts({ view }: { view: WordView }) {
     >
       <div className={`${CONTAINER} flex flex-wrap items-center justify-between gap-x-3 gap-y-2`}>
         <Link href="/dictionary" className="text-sm text-black/60 hover:underline">← Dịch</Link>
-        <LayoutPicker value={hydrated ? layout : null} stored={hydrated ? stored : null} options={options} />
+        <div className="flex flex-wrap items-center gap-2">
+          <LayoutPicker value={hydrated ? layout : null} stored={hydrated ? stored : null} options={options} />
+          <FeedbackButton entryId={view.head.id} senses={view.senses} />
+        </div>
         {hydrated ? layout !== stored && (
           <p className={NOTE}>Từ này chưa có bố cục {label(stored)}, đang hiện {label(layout)}.</p>
         ) : missing.map((l) => (

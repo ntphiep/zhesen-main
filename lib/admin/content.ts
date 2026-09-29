@@ -143,8 +143,11 @@ export function glossWarning(glossVi: string): string | null {
   return null
 }
 
-/** The refusals the content functions raise (0060), in words. */
+/** The refusals the content functions raise (0060, 0095), in words. */
 export const CONTENT_REFUSALS: Record<string, string> = {
   no_such_sense: 'This sense no longer exists.',
   no_such_entry: 'This entry no longer exists.',
+  no_such_feedback: 'This report no longer exists.',
+  feedback_resolved: 'This report is already closed.',
+  nothing_to_apply: 'Only a wrong-meaning report on one sense, with a suggestion, can be applied.',
 }

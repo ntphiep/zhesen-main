@@ -41,6 +41,7 @@ export const ACTION_LABELS: Record<string, string> = {
   update_sense: 'Edit sense',
   flag_entry: 'Flag entry',
   unflag_entry: 'Unflag entry',
+  resolve_feedback: 'Close word report',
   'infra.start': 'Start instance',
   'infra.stop': 'Stop instance',
   'infra.reboot': 'Reboot instance',
