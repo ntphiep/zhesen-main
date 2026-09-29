@@ -236,9 +236,12 @@ export function buildWordView({
   return {
     head: { ...detail, senses: [], relations: [], senseLinks: [], examples: detail.examples.filter((e) => e.translationVi) },
     // A single character shows every reading it has; a multi-character headword shows one
-    // per character, so the string stays one syllable per glyph.
+    // per character, so the string stays one syllable per glyph. T恤 has one Han character
+    // but is not a single-character headword.
     hanViet: detail.lang === 'zh'
-      ? (characters.length === 1 ? characters[0].hanViet.join(', ') : characters.map((c) => c.hanViet[0]).filter(Boolean).join(' ')) || null
+      ? ([...detail.headword].length === 1 && characters.length === 1
+        ? characters[0].hanViet.join(', ')
+        : characters.map((c) => c.hanViet[0]).filter(Boolean).join(' ')) || null
       : null,
     lemma,
     lemmaPreview: lemma ? previews[lemma.toLowerCase()] ?? null : null,

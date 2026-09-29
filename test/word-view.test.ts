@@ -190,5 +190,11 @@ describe('buildWordView', () => {
       siblings: [],
     })
     expect(multi.hanViet).toBe('ngân hàng')
+
+    // Only 恤 of T恤 is in lex.characters; the word is not the character.
+    const mixed = buildWordView({
+      detail: zhWord('T恤'), characters: [char({ char: '恤', hanViet: ['tuất', 'tuật'] })], siblings: [],
+    })
+    expect(mixed.hanViet).toBe('tuất')
   })
 })
