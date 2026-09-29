@@ -52,7 +52,7 @@ const asForecast = (c: ReviewCard): ForecastWord => ({ id: c.id, lang: c.lang, h
 
 /** One visit's grades on top of what was loaded. A graded card leaves today's count and
  *  lands on the day its new schedule names; the first grade makes today a study day. */
-function summarize(d: Loaded, graded: ReadonlyMap<string, SrsState>): HomeView {
+export function summarize(d: Loaded, graded: ReadonlyMap<string, SrsState>): HomeView {
   const n = graded.size
   const days = n ? [...d.days, localDay(d.now)] : d.days
   const moved = [...graded.entries()].flatMap(([id, next]) => {

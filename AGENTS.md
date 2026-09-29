@@ -208,6 +208,13 @@ header to it by string equality. The auth cookie name is pinned in `lib/supabase
 
 ## Removed, do not rebuild
 
+Verified to have no remaining callers before deletion on 2026-09-29:
+`components/home/LanguageCard.tsx` with its test and `components/home/WordOfDayCard.tsx`.
+The old home page was their only caller. The theory tiles of `components/home/Landing.tsx`
+and the component `TheoryGrid` in `components/home/HomeParts.tsx` replace the first. The
+function `loadDaily` (`lib/home/landing.ts`), which still reads the function
+`getCachedWordOfDay`, feeds the signed-in home's "Từ vựng hôm nay" in place of the second.
+
 Verified to have no remaining callers before deletion on 2026-09-26:
 `components/lookup/WordFamily.tsx`, `components/lookup/WordKin.tsx`,
 `components/lookup/ContainingWords.tsx`, `components/lookup/RelatedWords.tsx` and

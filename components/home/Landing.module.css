@@ -17,7 +17,8 @@
 }
 .landing :focus-visible { outline: 2.5px solid var(--sea-500); outline-offset: 3px; border-radius: 6px; }
 .landing [lang="zh"] { font-family: var(--han); }
-.wrap { max-width: 80rem; margin: 0 auto; padding-left: 2rem; padding-right: 2rem; }
+/* The page container of globals.css and the header, so every edge lines up. */
+.wrap { max-width: var(--container-page); margin: 0 auto; padding-left: 1.5rem; padding-right: 1.5rem; }
 .h2 { margin: 0; max-width: 22ch; font-size: var(--s5); line-height: 1.12; font-weight: 800; letter-spacing: -0.03em; color: var(--zs-ink); text-wrap: balance; }
 .lede { margin: 1rem 0 0; max-width: 40rem; font-size: var(--s2); line-height: 1.55; color: var(--zs-soft); text-wrap: pretty; }
 .go { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1.6rem; min-height: 2.75rem; padding: 0 1.1rem; border-radius: 999px; border: 1.5px solid currentColor; font-weight: 700; text-decoration: none; color: var(--zs-ink); transition: background-color 150ms var(--ease-std), color 150ms var(--ease-std); }
@@ -33,7 +34,7 @@
 .scene { position: absolute; inset: 0; z-index: 1; }
 .map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; visibility: hidden; }
 
-.front { position: absolute; inset: 0; z-index: 2; display: grid; grid-template-columns: minmax(0, 35rem) minmax(0, 1fr); align-items: center; gap: 2rem; max-width: 80rem; margin: 0 auto; padding: 0 2rem 1.5rem; }
+.front { position: absolute; inset: 0; z-index: 2; display: grid; grid-template-columns: minmax(0, 35rem) minmax(0, 1fr); align-items: center; gap: 2rem; max-width: var(--container-page); margin: 0 auto; padding: 0 1.5rem 1.5rem; }
 .intro { will-change: opacity, transform; }
 .globeCol { display: grid; justify-items: center; }
 .lead { margin: 0; font-size: var(--s4); line-height: 1.12; font-weight: 800; letter-spacing: -0.03em; color: var(--zs-ink); }
@@ -137,7 +138,7 @@
 
 /* The three lanes the map becomes */
 .lanes { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); pointer-events: none; }
-.pane { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 1.4rem 2rem 1.8rem; background: transparent; opacity: 0; visibility: hidden; }
+.pane { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 1.4rem 1.5rem 1.8rem; background: transparent; opacity: 0; visibility: hidden; }
 .lanes[data-on] .pane { pointer-events: auto; }
 .pane[data-l="en"] { color: #fff; --pc: #fff; --ps: var(--sea-100); --pb: var(--sea-700); }
 .pane[data-l="zh"] { color: #fff; --pc: #fff; --ps: #fff; --pb: var(--sea-600); }
@@ -183,8 +184,7 @@
 @media (max-height: 760px) { .pane .acts { display: none; } }
 @media (max-width: 1100px) { .front { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .lead { font-size: var(--s3); } }
 @media (max-width: 760px) {
-  .wrap { padding-left: 1rem; padding-right: 1rem; }
-  .front { grid-template-columns: 1fr; align-content: start; gap: 0.8rem; padding: 0.9rem 1rem 0; }
+  .front { grid-template-columns: 1fr; align-content: start; gap: 0.8rem; padding: 0.9rem 1.5rem 0; }
   .lead { font-size: var(--s3); }
   .eg { margin-top: 0.6rem; font-size: var(--s2); }
   .loop, .hint, .key { display: none; }
@@ -195,7 +195,7 @@
   .stage { width: min(100%, calc(100svh - var(--header-h) - 26rem)); }
   .pin b { font-size: 1.15rem; }
   .lanes { grid-template-columns: 1fr; grid-template-rows: repeat(3, minmax(0, 1fr)); }
-  .pane { min-height: 0; padding: 0.7rem 44% 0.8rem 1rem; }
+  .pane { min-height: 0; padding: 0.7rem 44% 0.8rem 1.5rem; }
   .sil, .gl, .also, .acts { display: none; }
   .word { padding-top: 0.2rem; font-size: var(--s4); }
   .word[data-fit] { font-size: var(--s3); }
@@ -352,7 +352,7 @@
 
 /* ---------- Theory ---------- */
 .theory { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.theory > a { position: relative; display: flex; flex-direction: column; padding: 3.2rem 2rem 2.6rem; min-height: 22rem; text-decoration: none; overflow: hidden; color: var(--sea-700); }
+.theory > a { position: relative; display: flex; flex-direction: column; padding: 3.2rem 1.5rem 2.6rem; min-height: 22rem; text-decoration: none; overflow: hidden; color: var(--sea-700); }
 .theory > a[data-l="en"] { background: var(--sea-200); }
 .theory > a[data-l="zh"] { background: var(--sea-100); }
 .theory > a[data-l="es"] { background: var(--sea-50); }
@@ -392,7 +392,7 @@
   .modes button { align-items: center; padding: 0.7rem 0.9rem; }
   .choices, .tiles { grid-template-columns: 1fr; }
   .theory { grid-template-columns: 1fr; }
-  .theory > a { min-height: 0; padding: 2.4rem 1rem; }
+  .theory > a { min-height: 0; padding: 2.4rem 1.5rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .rise { animation-name: fade; }

@@ -31,6 +31,11 @@ Every item here cost time on this project once. Re-check before contradicting on
 - Preflight sets `margin: 0` on every element including `<dialog>`, which removes the UA
   stylesheet's `margin: auto` that centres a modal. `components/ui/Modal.tsx` must keep its
   `m-auto` class. jsdom applies no UA stylesheet, so a test can only assert the class itself.
+- React's `CSSProperties` rejects a custom property: `style={{ '--i': 1 }}` fails `tsc` with
+  TS2353, and a cast is banned. Put a `data-*` attribute on the element and set the property
+  in the CSS Module, as `.landing [data-i="0"] { --i: 0; }` does in
+  `components/home/Landing.module.css`. A value only known at runtime goes through
+  `el.style.setProperty` in an effect.
 
 ## Supabase clients
 

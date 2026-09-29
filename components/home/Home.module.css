@@ -5,7 +5,8 @@
    prefers-reduced-motion. */
 
 .home { padding-bottom: 4rem; }
-.wrap { max-width: 80rem; margin: 0 auto; padding-left: 2rem; padding-right: 2rem; }
+/* The page container of globals.css and the header, so every edge lines up. */
+.wrap { max-width: var(--container-page); margin: 0 auto; padding-left: 1.5rem; padding-right: 1.5rem; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* The date and the layout picker above every layout */
@@ -298,7 +299,6 @@ a.card:hover { transform: translateY(-3px) rotate(-0.4deg); }
   .mine { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }
 @media (max-width: 760px) {
-  .wrap { padding-left: 1rem; padding-right: 1rem; }
   .today { font-size: var(--s4); }
   .top6 { gap: 1.2rem; }
   .recent .lbl { display: block; margin-bottom: 0.4rem; }
