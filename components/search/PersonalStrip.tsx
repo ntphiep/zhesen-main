@@ -6,6 +6,7 @@ import { entryPath } from '@/lib/dictionary/entryId'
 import { recentEntries } from '@/lib/dictionary/recent'
 import type { UserWord } from '@/lib/wordlist/types'
 import { loadSupabaseClient } from '@/lib/supabase/loadClient'
+import s from './Lookup.module.css'
 
 /** Enough to fill one row at 1440px. */
 const SHOW = 8
@@ -59,7 +60,7 @@ export function PersonalStrip() {
     <div className="flex flex-col gap-6">
       {recent.length > 0 && (
         <div>
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-black/55">Tra gần đây</h2>
+          <h2 className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Tra gần đây</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {recent.map((e) => (
               <Link
@@ -69,10 +70,10 @@ export function PersonalStrip() {
                 onMouseEnter={() => setIntent(e.id)}
                 onFocus={() => setIntent(e.id)}
                 onTouchStart={() => setIntent(e.id)}
-                className="rounded-full border border-black/10 px-3 py-1 text-sm hover:bg-black/5"
+                className={`${s.chip} px-3 py-1 text-base`}
                 title={e.glossVi ?? undefined}
               >
-                {e.headword}
+                <span data-hw="" lang={e.lang}>{e.headword}</span>
                 <LinkPending />
               </Link>
             ))}
@@ -82,9 +83,9 @@ export function PersonalStrip() {
 
       <div>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-black/55">Sổ tay</h2>
+          <h2 className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Sổ tay</h2>
           {saved && book.due > 0 && (
-            <span className="text-xs text-black/55">{book.due} từ đến hạn ôn</span>
+            <span className="text-sm font-bold text-(--zs-ink)">{book.due} từ đến hạn ôn</span>
           )}
         </div>
         {saved ? (
@@ -98,23 +99,23 @@ export function PersonalStrip() {
                 onMouseEnter={() => setIntent(w.id)}
                 onFocus={() => setIntent(w.id)}
                 onTouchStart={() => setIntent(w.id)}
-                className="rounded-full border border-black/10 px-3 py-1 text-sm hover:bg-black/5"
+                className={`${s.chip} px-3 py-1 text-base`}
                 title={w.meaningVi ?? undefined}
               >
-                {w.headword}
+                <span data-hw="" lang={w.lang}>{w.headword}</span>
                 <LinkPending />
               </Link>
             ))}
             <Link
               href="/practice"
               prefetch={false}
-              className="rounded-full bg-black px-3 py-1 text-sm font-medium text-white hover:bg-black/85"
+              className="inline-flex min-h-9 items-center rounded-full bg-(--zs-btn) px-4 text-sm font-bold text-(--zs-btn-ink) transition-colors duration-150 ease-std hover:bg-(--zs-btn-hover)"
             >
               Luyện tập
             </Link>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-black/55">
+          <p className="mt-3 text-sm text-(--zs-soft)">
             Chưa có từ. Tra một từ để lưu.
           </p>
         )}

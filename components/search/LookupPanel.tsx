@@ -18,6 +18,7 @@ import type { Direction } from '@/lib/dictionary/search'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
 import { PassageBlock, looksLikeAPassage } from './PassageBlock'
 import { AiSuggest } from './AiSuggest'
+import s from './Lookup.module.css'
 
 /** One entry per prefix typed, not per word, so the map fills fast. */
 const CACHE_LIMIT = 100
@@ -228,17 +229,18 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
           onMouseEnter={() => warm(e.id)}
           onFocus={() => warm(e.id)}
           onTouchStart={() => warm(e.id)}
-          className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-lg px-3 py-2 hover:bg-black/5"
+          className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-xl px-3 py-2 transition-colors duration-150 ease-std hover:bg-(--zs-bg)"
         >
-          <span className="font-medium">{e.headword}</span>
-          <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/55" />
+          <span data-hw="" lang={e.lang} className="text-[1.1875rem] leading-snug">{e.headword}</span>
+          {/* Pinyin is stored in `ipa` for most Chinese rows, in `reading` for the rest. */}
+          <Ipa value={(e.lang === 'zh' && e.reading) || e.ipa} lang={e.lang} className="text-xs text-(--zs-soft)" />
           {e.level && (
-            <span className="rounded-full border border-black/15 px-1.5 py-0.5 text-[0.65rem] text-black/55">
+            <span className="rounded-full border-[1.5px] border-current px-1.5 py-px text-[0.6875rem] font-semibold text-(--zs-soft)">
               {e.level}
             </span>
           )}
-          <PosTag value={e.pos} className="text-xs text-black/55" />
-          {e.glossVi && <span className="text-sm text-black/60">{e.glossVi}</span>}
+          <PosTag value={e.pos} className="text-xs text-(--zs-soft)" />
+          {e.glossVi && <span className="text-[0.9375rem] font-semibold">{e.glossVi}</span>}
           <LinkPending />
         </Link>
       </li>
@@ -253,23 +255,23 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
   function renderCard(l: LangCode, list: DictEntryPreview[], more: DictEntryPreview[]) {
     if (list.length === 0 && more.length === 0 && direction !== 'vi') return null
     return (
-      <section key={l} className="overflow-hidden rounded-xl border border-black/10">
-        <h3 className="border-b border-black/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black/55">
+      <section key={l} data-l={l} className={`${s.pane} px-2 pt-3 pb-2`}>
+        <h3 className="px-3 text-xs font-bold tracking-[0.02em] text-(--zs-soft)">
           {LANG_LABELS[l]}
         </h3>
-        {list.length > 0 && <ul className="flex flex-col gap-0.5 py-1">{list.map(renderRow)}</ul>}
+        {list.length > 0 && <ul className="mt-1 flex flex-col gap-0.5">{list.map(renderRow)}</ul>}
         {more.length > 0 && (
           <>
             {/* Found through the machine translation of the query, not a Vietnamese
                 meaning in the dictionary, so it says which translation it came from. */}
-            <p className={`px-4 pt-2 text-xs text-black/55 ${list.length > 0 ? 'border-t border-black/10' : ''}`}>
+            <p className={`mx-3 pt-2 text-xs text-(--zs-soft) ${list.length > 0 ? 'mt-1 border-t-[1.5px] border-(--edge)' : ''}`}>
               Dịch máy: {translated?.[l]?.text}
             </p>
-            <ul className="flex flex-col gap-0.5 py-1">{more.map(renderRow)}</ul>
+            <ul className="flex flex-col gap-0.5">{more.map(renderRow)}</ul>
           </>
         )}
         {list.length === 0 && more.length === 0 && (
-          <p className="px-4 py-3 text-sm text-black/55">Chưa có từ khớp</p>
+          <p className="px-3 pt-1.5 pb-1 text-sm text-(--zs-soft)">Chưa có từ khớp</p>
         )}
       </section>
     )
@@ -277,7 +279,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
-      <label htmlFor={inputId} className="text-sm font-semibold">{label}</label>
+      <label htmlFor={inputId} className="text-[0.9375rem] font-bold text-(--zs-ink)">{label}</label>
       {/* A textarea rather than an input, because the same box takes a word and a
           paragraph, and tall enough that a pasted paragraph is readable without scrolling
           it. No placeholder: the label above already names the direction, and a sentence
@@ -292,7 +294,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
         onKeyDown={onKeyDown}
         autoComplete="off"
         spellCheck={false}
-        className="min-h-[13rem] w-full resize-y rounded-xl border border-black/15 px-4 py-3 text-base shadow-sm focus:border-black/40 focus:outline-none lg:min-h-[16rem]"
+        className={`${s.box} min-h-[13rem] w-full resize-y px-5 py-4 text-[1.3125rem] leading-normal font-medium lg:min-h-[16rem]`}
       />
 
       {/* A joined segmented control, not the rounded chips the rest of this panel uses for
@@ -303,20 +305,20 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
           <legend className="sr-only">
             {direction === 'vi' ? 'Ngôn ngữ cần dịch sang' : 'Ngôn ngữ cần tìm'}
           </legend>
-          <span aria-hidden className="text-xs uppercase tracking-wide text-black/55">
+          <span aria-hidden className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">
             {direction === 'vi' ? 'Dịch sang' : 'Tìm trong'}
           </span>
-          <div className="inline-flex overflow-hidden rounded-lg border border-black/15">
+          <div className={`${s.seg} inline-flex overflow-hidden rounded-lg border-[1.5px] border-(--edge)`}>
             {LANG_CODES.map((l, i) => {
               const on = stored.includes(l)
               return (
               <label
                 key={l}
-                // The divider is drawn light on a selected segment: with all three on, one
-                // dark border colour made the control read as a single wide button.
-                className={`cursor-pointer px-3 py-1.5 text-xs transition-colors ${
-                  i > 0 ? (on ? 'border-l border-white/25' : 'border-l border-black/15') : ''
-                } ${on ? 'bg-black font-medium text-white' : 'text-black/55 hover:bg-black/5'}`}
+                // The divider is the page colour on a selected segment: with all three on,
+                // one border colour made the control read as a single wide button.
+                className={`cursor-pointer px-3 py-1.5 text-xs font-semibold transition-colors duration-150 ease-std ${
+                  i > 0 ? (on ? 'border-l-[1.5px] border-(--zs-bg)' : 'border-l-[1.5px] border-(--edge)') : ''
+                } ${on ? 'bg-(--zs-btn) text-(--zs-btn-ink) hover:bg-(--zs-btn-hover)' : 'bg-(--zs-bg) text-(--zs-soft) hover:bg-(--tint-1)'}`}
               >
                 <input
                   type="checkbox"
@@ -335,14 +337,14 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
       )}
 
       {showRecent && (
-        <div className="flex flex-wrap gap-2">
-          <span className="text-xs uppercase tracking-wide text-black/55">Tra gần đây</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Tra gần đây</span>
           {recent.map((r) => (
             <button
               key={r}
               type="button"
               onMouseDown={(e) => { e.preventDefault(); setQuery(r) }}
-              className="rounded-full border border-black/15 px-3 py-1 text-xs hover:bg-black/5"
+              className={`${s.chip} px-3 py-1 text-sm`}
             >
               {r}
             </button>
@@ -352,14 +354,14 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
 
       {isPassage && <PassageBlock text={trimmed} direction={direction} targets={targets} />}
 
-      {loading && <p className="text-sm text-black/55">Đang dịch…</p>}
+      {loading && <p className="text-sm text-(--zs-soft)">Đang dịch…</p>}
       {refusal && (
         <div className="flex items-center gap-3">
-          <p className="text-sm text-red-600">{refusal}</p>
+          <p className="text-sm font-semibold text-red-700">{refusal}</p>
           <button
             type="button"
             onClick={() => setAttempt((n) => n + 1)}
-            className="rounded-lg border border-black/15 px-3 py-1.5 text-xs font-medium text-black/70 hover:bg-black/5"
+            className={`${s.chip} px-3 py-1 text-sm font-semibold`}
           >
             Thử lại
           </button>
@@ -369,30 +371,30 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
       {total > 0 && (
         <div className="flex flex-col gap-3">{shown.map(([l, list, more]) => renderCard(l, list, more))}</div>
       )}
-      {showFilteredEmpty && <p className="text-sm text-black/55">Không có từ nào khớp bộ lọc. Đổi bộ lọc.</p>}
+      {showFilteredEmpty && <p className="text-sm text-(--zs-soft)">Không có từ nào khớp bộ lọc. Đổi bộ lọc.</p>}
 
       {showEmpty && (
         data.suggestions.length > 0
           ? (
             <div className="flex flex-col gap-2">
-              <span className="text-xs uppercase tracking-wide text-black/55">Có phải là</span>
+              <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Có phải là</span>
               <div className="flex flex-wrap gap-2">
-                {data.suggestions.map((s) => (
+                {data.suggestions.map((w) => (
                   <Link
-                    key={s.id}
-                    href={entryPath(s.id)}
+                    key={w.id}
+                    href={entryPath(w.id)}
                     prefetch={false}
-                    className="rounded-full border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5"
+                    className={`${s.chip} px-3 py-1.5 text-sm`}
                   >
-                    <span className="font-medium">{s.headword}</span>
-                    {s.glossVi && <span className="ml-2 text-black/55">{s.glossVi}</span>}
+                    <span data-hw="" lang={w.lang} className="text-base">{w.headword}</span>
+                    {w.glossVi && <span className="text-(--zs-soft)">{w.glossVi}</span>}
                     <LinkPending />
                   </Link>
                 ))}
               </div>
             </div>
           )
-          : <p className="text-sm text-black/55">Không tìm thấy từ nào.</p>
+          : <p className="text-sm text-(--zs-soft)">Không tìm thấy từ nào.</p>
       )}
       {/* Renders nothing where `aiConfig()` is null, which is every deployment that
           cannot reach the router. */}
@@ -402,16 +404,14 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
           to filter, and the chips depend on what came back. */}
       {(levelOptions.length > 0 || posOptions.length > 0) && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs uppercase tracking-wide text-black/55">Lọc</span>
+          <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Lọc</span>
           {levelOptions.map((l) => (
             <button
               key={l}
               type="button"
               aria-pressed={levelFilter === l}
               onClick={() => setLevelFilter(levelFilter === l ? null : l)}
-              className={`rounded-full border px-3 py-1 text-xs ${
-                levelFilter === l ? 'border-black/40 bg-black/5 font-medium' : 'border-black/15 text-black/55'
-              }`}
+              className={`${s.chip} px-3 py-1 text-xs ${levelFilter === l ? 'font-bold' : 'font-medium text-(--zs-soft)'}`}
             >
               {l}
             </button>
@@ -422,9 +422,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
               type="button"
               aria-pressed={posFilter === g.key}
               onClick={() => setPosFilter(posFilter === g.key ? null : g.key)}
-              className={`rounded-full border px-3 py-1 text-xs ${
-                posFilter === g.key ? 'border-black/40 bg-black/5 font-medium' : 'border-black/15 text-black/55'
-              }`}
+              className={`${s.chip} px-3 py-1 text-xs ${posFilter === g.key ? 'font-bold' : 'font-medium text-(--zs-soft)'}`}
             >
               {g.labelVi}
             </button>

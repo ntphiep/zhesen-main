@@ -33,7 +33,7 @@ export async function DiscoveryStrip() {
   ) as Record<LangCode, WordChip[]>
 
   return (
-    <section className="mt-14 flex flex-col gap-8 border-t border-black/10 pt-8">
+    <section className="mt-14 flex flex-col gap-8 rounded-[22px] bg-(--tint-2) px-4 py-5 sm:px-6 sm:py-6">
       <CommonWords pools={pools} />
       <PersonalStrip />
     </section>

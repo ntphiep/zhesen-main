@@ -1,0 +1,50 @@
+/* The lookup page (app/dictionary/page.tsx) on the tokens of app/globals.css, after
+   components/home/Home.module.css. The parts keep their Tailwind classes; this holds the
+   fonts, the lookup box, the chips, the per-language panes and the motions, keyed by data-*
+   attributes where a part needs no class of its own. Every motion runs once, under half a
+   second, and is gone under prefers-reduced-motion. */
+
+.page {
+  --latin: var(--font-headword), Georgia, serif;
+  --han: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", serif;
+  background: var(--zs-bg);
+  color: var(--zs-ink);
+  -webkit-font-smoothing: antialiased;
+}
+/* No border-radius here: the outline follows each control's own corners. */
+.page :focus-visible { outline: 2.5px solid var(--sea-500); outline-offset: 2px; }
+
+/* A word set in its own language. */
+.page [data-hw] { font-family: var(--latin); font-weight: 500; letter-spacing: -0.01em; }
+.page [data-hw][lang="es"] { font-style: italic; }
+.page [data-hw][lang="zh"] { font-family: var(--han); font-weight: 700; letter-spacing: 0; }
+
+/* The text box of each direction, as the lookup box on `/`. */
+.box { border: 0; border-radius: 18px; background: var(--zs-field); color: var(--zs-ink); box-shadow: 0 0 0 1.5px var(--sea-700), 0 24px 40px -26px rgb(2 60 133 / 0.6); transition: box-shadow 150ms var(--ease-std); }
+:global(:root[data-theme="dark"]) .box { box-shadow: 0 0 0 1.5px var(--sea-300), 0 24px 40px -26px rgb(0 0 0 / 0.9); }
+.page .box:focus, .page .box:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--sea-500), 0 24px 40px -26px rgb(2 60 133 / 0.6); }
+
+/* A joined control: the direction picker and the language toggles. The checkbox of a
+   toggle is visually hidden, so its label carries the focus ring. */
+.seg label:has(:focus-visible) { outline: 2.5px solid var(--sea-500); outline-offset: -2.5px; }
+
+/* A one-tap chip: recent queries, suggestions, common and saved words. */
+.chip { display: inline-flex; align-items: baseline; gap: 0.4rem; border-radius: 999px; border: 1.5px solid var(--edge); background: var(--zs-bg); color: var(--zs-ink); text-decoration: none; transition: border-color 150ms var(--ease-std), background-color 150ms var(--ease-std); }
+.chip:hover { border-color: var(--sea-400); background: var(--tint-1); }
+/* A filter chip that is on. */
+.chip[aria-pressed="true"] { border-color: var(--zs-ink); background: var(--zs-chip); }
+
+/* One pane per language of answers, on that language's pastel. */
+.pane { border-radius: 18px; }
+.pane[data-l="en"] { background: var(--l-en-t); }
+.pane[data-l="zh"] { background: var(--l-zh-t); }
+.pane[data-l="es"] { background: var(--l-es-t); }
+
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Filled backwards only, so nothing is left transformed under a word popover. */
+  .pane { animation: fade 180ms var(--ease-std) backwards; }
+  .rise { animation: rise 260ms var(--ease-enter) backwards; }
+}

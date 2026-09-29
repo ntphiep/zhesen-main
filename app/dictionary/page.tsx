@@ -1,5 +1,6 @@
 import { LookupPair } from '@/components/search/LookupPair'
 import { DiscoveryStrip } from '@/components/search/DiscoveryStrip'
+import s from '@/components/search/Lookup.module.css'
 import { isLangCode } from '@/lib/languages'
 import { pageMetadata } from '@/lib/site'
 
@@ -22,12 +23,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
   // related word or an inflected form already knows which language it came from.
   const lang = sp.lang && isLangCode(sp.lang) ? sp.lang : undefined
   return (
-    <main className="mx-auto max-w-page px-6 py-10">
-      <h1 className="text-3xl font-bold">Dịch</h1>
-      <div className="mt-6">
-        <LookupPair lang={lang} initialQuery={sp.q ?? ''} autoFocus />
+    <main className={`${s.page} font-ui`}>
+      <div className="mx-auto max-w-page px-6 pt-8 pb-16">
+        <h1 className="text-[2.34375rem] leading-tight font-extrabold tracking-[-0.03em] text-(--zs-ink)">Dịch</h1>
+        <div className="mt-6">
+          <LookupPair lang={lang} initialQuery={sp.q ?? ''} autoFocus />
+        </div>
+        <DiscoveryStrip />
       </div>
-      <DiscoveryStrip />
     </main>
   )
 }

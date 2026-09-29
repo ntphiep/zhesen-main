@@ -15,6 +15,7 @@ import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { TranslateLangCode } from '@/lib/translate/azure'
 import type { Direction } from '@/lib/dictionary/search'
 import type { LangCode } from '@/lib/languages'
+import s from './Lookup.module.css'
 
 /** The ceiling `POST /dictionary/translate` enforces, and the same one Google Translate's
  *  web page uses. The counter appears only near it, because a two-word query does not need
@@ -44,6 +45,9 @@ const TRANSLATE_DEBOUNCE_MS = 900
  *  dictionary is searched for it: "người tham dự" comes back as "Attendees", and attendee
  *  has no Vietnamese meaning the Vietnamese lookup could match. */
 const MAX_LOOKUP_WORDS = 3
+
+/** A word row on the block's pastel ground. */
+const ROW = 'flex flex-wrap items-baseline gap-2 rounded-xl px-2 py-1.5 transition-colors duration-150 ease-std hover:bg-(--zs-bg)'
 
 type State =
   | { kind: 'idle' }
@@ -144,19 +148,19 @@ export function PassageBlock({ text, direction, targets }: {
   if (!trimmed) return null
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-black/10 p-4">
+    <section className={`${s.rise} flex flex-col gap-3 rounded-[18px] bg-(--tint-2) p-4 sm:p-5`}>
       {(nearLimit || tooLong) && (
-        <span className={`text-xs ${tooLong ? 'text-red-600' : 'text-black/55'}`}>
+        <span className={`text-xs font-semibold ${tooLong ? 'text-red-700' : 'text-(--zs-soft)'}`}>
           {trimmed.length}/{MAX_PASSAGE_CHARS} ký tự
         </span>
       )}
 
-      {tooLong && <p className="text-sm text-red-600">Đoạn này quá dài để dịch.</p>}
-      {state.kind === 'loading' && <p className="text-sm text-black/55">Đang dịch…</p>}
+      {tooLong && <p className="text-sm font-semibold text-red-700">Đoạn này quá dài để dịch.</p>}
+      {state.kind === 'loading' && <p className="text-sm text-(--zs-soft)">Đang dịch…</p>}
       {state.kind === 'disabled' && (
-        <p className="text-sm text-black/55">Chưa hỗ trợ dịch cả đoạn.</p>
+        <p className="text-sm text-(--zs-soft)">Chưa hỗ trợ dịch cả đoạn.</p>
       )}
-      {state.kind === 'error' && <p className="text-sm text-red-600">{state.message}</p>}
+      {state.kind === 'error' && <p className="text-sm font-semibold text-red-700">{state.message}</p>}
 
       {state.kind === 'done' && (
         <dl className="flex flex-col gap-2">
@@ -169,11 +173,11 @@ export function PassageBlock({ text, direction, targets }: {
             const untouched = state.from === l
             return (
               <div key={l} className="flex flex-col gap-0.5">
-                <dt className="text-xs uppercase tracking-wide text-black/55">
+                <dt className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">
                   {l === 'vi' ? 'Tiếng Việt' : LANG_LABELS[l]}
-                  {untouched && <span className="ml-2 normal-case text-black/55">nguyên văn</span>}
+                  {untouched && <span className="ml-2 font-normal">nguyên văn</span>}
                 </dt>
-                <dd className="m-0 whitespace-pre-wrap text-base">
+                <dd className="m-0 whitespace-pre-wrap text-[1.0625rem] text-(--zs-ink)">
                   {/* Every word the dictionary holds is tappable, the same popover the
                       example sentences on a word page use. Vietnamese has no headwords
                       indexed, so that direction stays plain text. */}
@@ -183,19 +187,19 @@ export function PassageBlock({ text, direction, targets }: {
                 </dd>
                 {l !== 'vi' && found[l]?.text === value && found[l].entries.length > 0 && (
                   <dd className="m-0 mt-1 flex flex-col gap-0.5">
-                    <span className="text-xs text-black/55">Dịch máy: {value}</span>
+                    <span className="text-xs text-(--zs-soft)">Dịch máy: {value}</span>
                     <ul className="flex flex-col gap-0.5">
                       {found[l].entries.map((e) => (
                         <li key={e.id}>
                           <Link
                             href={entryPath(e.id)}
                             prefetch={false}
-                            className="flex flex-wrap items-baseline gap-2 rounded-lg px-2 py-1.5 hover:bg-black/5"
+                            className={ROW}
                           >
-                            <span className="font-medium">{e.headword}</span>
-                            <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/55" />
-                            <PosTag value={e.pos} className="text-xs text-black/55" />
-                            {e.glossVi && <span className="text-sm text-black/60">{e.glossVi}</span>}
+                            <span data-hw="" lang={e.lang} className="text-[1.0625rem]">{e.headword}</span>
+                            <Ipa value={(e.lang === 'zh' && e.reading) || e.ipa} lang={e.lang} className="text-xs text-(--zs-soft)" />
+                            <PosTag value={e.pos} className="text-xs text-(--zs-soft)" />
+                            {e.glossVi && <span className="text-sm font-semibold">{e.glossVi}</span>}
                             <LinkPending />
                           </Link>
                         </li>
@@ -211,7 +215,7 @@ export function PassageBlock({ text, direction, targets }: {
 
       {words && words.words.length > 0 && (
         <details>
-          <summary className="cursor-pointer text-sm text-black/60">Từng từ trong đoạn</summary>
+          <summary className="cursor-pointer rounded-md text-sm font-semibold text-(--zs-ink)">Từng từ trong đoạn</summary>
           <ul className="mt-2 flex flex-col gap-0.5">
             {words.words.map((w, i) => (
               <li key={`${i}-${w.text}`}>
@@ -220,19 +224,19 @@ export function PassageBlock({ text, direction, targets }: {
                     <Link
                       href={entryPath(w.entry.id)}
                       prefetch={false}
-                      className="flex flex-wrap items-baseline gap-2 rounded-lg px-2 py-1.5 hover:bg-black/5"
+                      className={ROW}
                     >
-                      <span className="font-medium">{w.text}</span>
-                      <Ipa value={w.entry.ipa} lang={w.entry.lang} className="text-xs text-black/55" />
-                      <PosTag value={w.entry.pos} className="text-xs text-black/55" />
-                      {w.entry.glossVi && <span className="text-sm text-black/60">{w.entry.glossVi}</span>}
+                      <span data-hw="" lang={w.entry.lang} className="text-[1.0625rem]">{w.text}</span>
+                      <Ipa value={(w.entry.lang === 'zh' && w.entry.reading) || w.entry.ipa} lang={w.entry.lang} className="text-xs text-(--zs-soft)" />
+                      <PosTag value={w.entry.pos} className="text-xs text-(--zs-soft)" />
+                      {w.entry.glossVi && <span className="text-sm font-semibold">{w.entry.glossVi}</span>}
                       <LinkPending />
                     </Link>
                   )
                   : (
                     <div className="flex flex-wrap items-baseline gap-2 px-2 py-1.5">
-                      <span className="font-medium text-black/55">{w.text}</span>
-                      <span className="text-sm text-black/55">Không có trong từ điển</span>
+                      <span className="text-[1.0625rem] text-(--zs-soft)">{w.text}</span>
+                      <span className="text-sm text-(--zs-soft)">Không có trong từ điển</span>
                     </div>
                   )}
               </li>

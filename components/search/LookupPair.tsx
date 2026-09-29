@@ -80,19 +80,20 @@ export function LookupPair({ lang, initialQuery = '', autoFocus = false }: {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <fieldset className="flex items-center gap-2 border-0 p-0">
           <legend className="sr-only">Dịch từ ngôn ngữ nào</legend>
-          <span aria-hidden className="text-xs text-black/55">Dịch từ:</span>
-          <div className="inline-flex overflow-hidden rounded-lg border border-black/15">
-            {MODES.map((m, i) => (
+          <span aria-hidden className="text-xs font-semibold text-(--zs-soft) sm:text-sm">Dịch từ:</span>
+          {/* The segmented look of LayoutPicker, as on the signed-in home. */}
+          <div className="inline-flex rounded-lg bg-(--zs-chip) p-0.5">
+            {MODES.map((m) => (
               <button
                 key={m.key}
                 type="button"
                 aria-pressed={mode === m.key}
                 onClick={() => chooseMode(m.key)}
-                className={`px-3 py-1.5 text-xs transition-colors ${i > 0 ? 'border-l border-black/15' : ''} ${
-                  mode === m.key ? 'bg-black font-medium text-white' : 'text-black/55 hover:bg-black/5'
+                className={`rounded-md px-2.5 py-1 text-[0.8125rem] font-medium sm:px-3 sm:text-sm transition-colors duration-150 ease-std ${
+                  mode === m.key ? 'bg-(--zs-bg) text-(--zs-ink) shadow-sm' : 'text-(--zs-soft) hover:text-(--zs-ink)'
                 }`}
               >
                 {m.label}
@@ -105,7 +106,7 @@ export function LookupPair({ lang, initialQuery = '', autoFocus = false }: {
           onClick={swap}
           disabled={!both}
           aria-label="Đổi chỗ hai ô"
-          className="rounded-lg border border-black/15 px-2.5 py-1.5 text-black/60 transition-colors hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-35"
+          className="rounded-lg border-[1.5px] border-(--edge) bg-(--zs-bg) px-2.5 py-1.5 text-(--zs-ink) transition-colors duration-150 ease-std hover:border-sea-400 hover:bg-(--tint-1) disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-(--edge) disabled:hover:bg-(--zs-bg)"
         >
           <svg viewBox="0 0 20 20" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 7h13M13 4l3 3-3 3" />
@@ -121,7 +122,7 @@ export function LookupPair({ lang, initialQuery = '', autoFocus = false }: {
             // A stable name per direction is what lets the browser tween the two boxes
             // past each other rather than redraw them in place.
             style={{ viewTransitionName: `lookup-${key}` }}
-            className={both && i === 1 ? 'lg:border-l lg:border-black/10 lg:pl-8' : undefined}
+            className={both && i === 1 ? 'lg:border-l-[1.5px] lg:border-(--zs-line) lg:pl-8' : undefined}
           >
             {panels[key]}
           </div>
