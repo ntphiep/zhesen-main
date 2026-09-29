@@ -154,12 +154,18 @@ PROVIDER_DOWN = re.compile(r'no active credentials|invalid token|token included|
 REQUEST_REFUSED = re.compile(r'context|too long|too many tokens|maximum|safety|blocked|content', re.I)
 # A layer for a word with many senses runs past 16,000 tokens: en:on was cut there.
 MAX_TOKENS = 32000
-# OmniRoute's web-session providers revoke a token past about 6 calls at once.
+# OmniRoute's web-session providers revoke a token past about 6 calls at once, counting the
+# assistant's and enrich.py's, so the one DeepSeek web login takes a single batch call.
 PER_PROVIDER = 4
+PROVIDER_LIMIT = {'omni:ds-web': 1}
+# The members of 9router's `zhesen` combo, which the site's assistant asks first
+# (SSM /zhesen/prod/ai_model): the batch leaves their quota to the readers.
+RESERVED = {'ag/gemini-3.8-flash', 'ag/gemini-3.8-flash-low', 'ag/gpt-oss-120b-medium',
+            'orca/deepseek/deepseek-v4-flash-free', 'kr/glm-5'}
 
 
 def usable(name):
-    if '/' not in name or CLAUDE.search(name) or EXCLUDE.search(name):
+    if '/' not in name or name in RESERVED or CLAUDE.search(name) or EXCLUDE.search(name):
         return False
     # Parameter counts in the name, skipping the active count of a mixture ("120b-a12b").
     sizes = [float(n) for n in re.findall(r'(?<![a-z])e?(\d+(?:\.\d+)?)b(?![a-z])', name.lower())]
@@ -172,7 +178,8 @@ def rank(name):
 
 
 def provider(name):
-    return name.split('/')[0]
+    # OmniRoute lists the one DeepSeek web login under two names.
+    return name.split('/')[0].replace('deepseek-web', 'ds-web')
 
 
 def family(name):
@@ -317,14 +324,15 @@ class Pool:
         """The preferred model when it is ready, else the strongest ready one no other worker is
         calling, so the workers spread over several models rather than trip one rate limit. A
         light model is taken only when no stronger one is ready, busy or not. No provider takes
-        more than PER_PROVIDER calls at once, and no model of a family in `avoid` is taken."""
+        more than its PROVIDER_LIMIT, else PER_PROVIDER, calls at once, and no model of a family
+        in `avoid` is taken."""
         now = time.time()
         with LOCK:
             load = {}
             for m, n in self.busy.items():
                 load[provider(m)] = load.get(provider(m), 0) + n
             ready = [m for m in self.models if self.cool[m] <= now and family(m) not in avoid
-                     and load.get(provider(m), 0) < PER_PROVIDER]
+                     and load.get(provider(m), 0) < PROVIDER_LIMIT.get(provider(m), PER_PROVIDER)]
             free = [m for m in ready if not self.busy[m]]
             if free and ready and rank(free[0]) > len(RANK) >= rank(ready[0]):
                 free = []
