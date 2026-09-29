@@ -24,7 +24,7 @@ const SPAN = { 3: 'lg:col-span-3', 4: 'lg:col-span-4', 5: 'lg:col-span-5', 7: 'l
 const SHOWN_GROUPS = 6
 
 /**
- * The whole word on one screen, as cards on a grey page: the headword, its main meanings
+ * The whole word on one screen, as cards on a pastel page: the headword, its main meanings
  * and the other languages across the top, then every kind of related word in two columns
  * that end close together. On a phone the cards stack under a bar of jump links.
  */
@@ -57,7 +57,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
       node: (
         <Card
           id="forms"
-          label={<span className="flex items-center gap-2.5"><SectionLabel>Dạng từ</SectionLabel>{irregular && <Badge tone="amber">Bất quy tắc</Badge>}</span>}
+          label={<span className="flex items-center gap-2.5"><SectionLabel>Dạng từ</SectionLabel>{irregular && <Badge tone="strong">Bất quy tắc</Badge>}</span>}
           action={<FormLegend irregular={irregular} />}
         >
           <FormTimeline headword={head.headword} baseLabel={baseFormLabel(head.pos)} forms={view.forms} lang={head.lang} />
@@ -86,7 +86,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
           label={
             <span className="flex items-baseline gap-2">
               <SectionLabel>Họ từ</SectionLabel>
-              {view.family.length > 0 && <span className="text-xs text-black/55">cùng gốc <b className="font-semibold text-black">{view.lemma ?? head.headword}</b></span>}
+              {view.family.length > 0 && <span className="text-xs text-(--zs-soft)">cùng gốc <b className="font-semibold text-(--zs-ink)">{view.lemma ?? head.headword}</b></span>}
             </span>
           }
         >
@@ -136,10 +136,10 @@ export function OverviewLayout({ view }: { view: WordView }) {
   return (
     <>
       {jumps.length > 2 && (
-        <nav aria-label="Mục trong trang" className="sticky top-[var(--header-h)] z-10 border-b border-black/[0.06] bg-white/95 backdrop-blur lg:hidden">
+        <nav aria-label="Mục trong trang" className="sticky top-[var(--header-h)] z-10 border-b border-(--zs-line) bg-(--zs-bg)/88 backdrop-blur lg:hidden">
           <div className={`${CONTAINER} flex gap-1.5 overflow-x-auto py-2`}>
             {jumps.map((j) => (
-              <a key={j.href} href={j.href} className="shrink-0 rounded-full bg-black/[0.05] px-3.5 py-1.5 text-[13px] font-medium text-black/75">
+              <a key={j.href} href={j.href} className="shrink-0 rounded-full bg-(--zs-chip) px-3.5 py-1.5 text-[13px] font-medium text-(--zs-soft)">
                 {j.label}
               </a>
             ))}
@@ -147,7 +147,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
         </nav>
       )}
       <div className={`${CONTAINER} grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-5`}>
-        <div className={`flex min-w-0 flex-col gap-4 p-6 sm:p-7 ${CARD} ${SPAN[heroSpan]}`}>
+        <div className={`flex min-w-0 flex-col gap-4 rounded-[18px] bg-(--c-t) p-6 sm:p-7 ${SPAN[heroSpan]}`}>
           <LookupHero
             detail={head}
             hanViet={view.hanViet}
@@ -163,12 +163,12 @@ export function OverviewLayout({ view }: { view: WordView }) {
             id="meaning"
             label="Nghĩa chính"
             className={SPAN[mainSpan]}
-            action={explorer ? <a href="#senses" className="text-[13px] font-semibold text-blue-700 hover:underline">Cả {total} nghĩa</a> : undefined}
+            action={explorer ? <a href="#senses" className="text-[13px] font-semibold text-(--zs-pen) hover:underline">Cả {total} nghĩa</a> : undefined}
           >
             <ol className="flex flex-col">
               {main.flatMap((g) => g.senses).map((s, i) => (
-                <li key={s.id ?? `${s.senseOrder}-${i}`} className="flex gap-3.5 border-t border-black/[0.06] py-3 first:border-0 first:pt-0 last:pb-0">
-                  <span aria-hidden="true" className="w-3 shrink-0 pt-0.5 text-sm font-medium tabular-nums text-black/55">{i + 1}</span>
+                <li key={s.id ?? `${s.senseOrder}-${i}`} className="flex gap-3.5 border-t border-(--zs-line) py-3 first:border-0 first:pt-0 last:pb-0">
+                  <span aria-hidden="true" className="w-3 shrink-0 pt-0.5 text-sm font-medium tabular-nums text-(--zs-soft)">{i + 1}</span>
                   <div className="flex min-w-0 flex-col gap-1">
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span className="font-semibold">
@@ -178,16 +178,16 @@ export function OverviewLayout({ view }: { view: WordView }) {
                       </span>
                       <PosChip value={s.pos} />
                     </span>
-                    {s.glossEn && (s.glossVi || s.pivotVi) && <span className="text-[12.5px] leading-snug text-black/55">{s.glossEn}</span>}
+                    {s.glossEn && (s.glossVi || s.pivotVi) && <span className="text-[12.5px] leading-snug text-(--zs-soft)">{s.glossEn}</span>}
                   </div>
                 </li>
               ))}
             </ol>
             <UntranslatedNote senses={view.senses} />
             {classifiers.length > 0 && (
-              <p className="flex flex-wrap items-center gap-2 border-t border-black/[0.06] pt-3 text-sm">
-                <span className="text-xs text-black/55">Lượng từ</span>
-                {classifiers.map((c) => <span key={c} className="rounded-full bg-black/[0.05] px-2.5 py-0.5 font-medium">{c}</span>)}
+              <p className="flex flex-wrap items-center gap-2 border-t border-(--zs-line) pt-3 text-sm">
+                <span className="text-xs text-(--zs-soft)">Lượng từ</span>
+                {classifiers.map((c) => <span key={c} className="rounded-full bg-(--zs-chip) px-2.5 py-0.5 font-medium">{c}</span>)}
               </p>
             )}
           </Card>
@@ -208,7 +208,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
 
         {columns.map((side) => (
           <div key={side} className={`flex min-w-0 flex-col gap-4 lg:gap-5 ${columns.length === 1 ? SPAN[12] : side === 0 ? SPAN[7] : SPAN[5]}`}>
-            {tiles.map((t, i) => sides[i] === side && <div key={t.key} className="min-w-0">{t.node}</div>)}
+            {tiles.map((t, i) => sides[i] === side && <div key={t.key} data-reveal={Math.min(i, 6)} className="min-w-0">{t.node}</div>)}
           </div>
         ))}
         {/* Out of the balancing: it renders nothing where the assistant is off, which would
@@ -235,7 +235,7 @@ function SenseExplorer({ sections }: { sections: SenseSection[] }) {
         return (
           <div key={sec.key} className="flex flex-wrap items-center gap-1.5">
             <span className="mr-1.5 text-sm font-semibold">
-              {sec.labelVi} <span className="font-normal text-black/55">{sec.senses.length}</span>
+              {sec.labelVi} <span className="font-normal text-(--zs-soft)">{sec.senses.length}</span>
             </span>
             {(all ? groups : groups.slice(0, SHOWN_GROUPS)).map((g, gi) => {
               const on = picked.row === ri && picked.group === gi
@@ -245,7 +245,7 @@ function SenseExplorer({ sections }: { sections: SenseSection[] }) {
                   type="button"
                   aria-pressed={on}
                   onClick={() => setPicked({ row: ri, group: gi })}
-                  className={`rounded-full px-3 py-1 text-[13px] ${on ? 'bg-black font-semibold text-white' : 'bg-black/[0.05] hover:bg-black/10'}`}
+                  className={`rounded-full px-3 py-1 text-[13px] transition-colors duration-150 ease-std ${on ? 'bg-(--zs-btn) font-semibold text-(--zs-btn-ink)' : 'bg-(--zs-chip) hover:bg-(--tint-3)'}`}
                 >
                   {g.label}
                 </button>
@@ -259,7 +259,7 @@ function SenseExplorer({ sections }: { sections: SenseSection[] }) {
                   setOpen((o) => (all ? o.filter((k) => k !== sec.key) : [...o, sec.key]))
                   if (all && picked.row === ri && picked.group >= SHOWN_GROUPS) setPicked({ row: ri, group: 0 })
                 }}
-                className="rounded-full border border-black/10 px-3 py-1 text-[13px] text-black/55 hover:bg-black/[0.04]"
+                className="rounded-full border border-(--zs-line) px-3 py-1 text-[13px] text-(--zs-soft) hover:bg-(--tint-1)"
               >
                 {all ? 'Thu gọn' : `+ ${groups.length - SHOWN_GROUPS} nhóm`}
               </button>
@@ -268,7 +268,7 @@ function SenseExplorer({ sections }: { sections: SenseSection[] }) {
         )
       })}
       {current && (
-        <div className="flex flex-col gap-2 rounded-[14px] bg-black/[0.04] p-4">
+        <div key={`${picked.row}-${picked.group}`} data-swap="" className="flex flex-col gap-2 rounded-[14px] bg-(--tint-2) p-4">
           <span className="text-[15px] font-semibold">{current.label}</span>
           <ol className="flex flex-col gap-2">
             {current.senses.map((s, i) => {
@@ -277,7 +277,7 @@ function SenseExplorer({ sections }: { sections: SenseSection[] }) {
                 <li key={s.id ?? `${s.senseOrder}-${i}`} className="flex flex-col text-sm">
                   {vi && vi !== current.label && <span>{vi}{!s.glossVi && <PivotMark />}</span>}
                   {s.glossEn && (vi
-                    ? <span className="text-black/60">{s.glossEn}</span>
+                    ? <span className="text-(--zs-soft)">{s.glossEn}</span>
                     : <span>{s.glossEn}<EnglishMark /></span>)}
                 </li>
               )

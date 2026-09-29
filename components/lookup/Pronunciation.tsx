@@ -25,10 +25,10 @@ export function Pronunciation({ headword, prons, lang, pill = false }: {
       <div className="flex flex-wrap items-center gap-2">
         {rows.map((r, i) => (
           <span key={i} className="inline-flex items-center gap-1">
-            <span className="inline-flex h-9 items-center gap-1.5 rounded-full border border-black/10 bg-white pl-0.5 pr-3.5 text-sm">
+            <span className="inline-flex h-9 items-center gap-1.5 rounded-full border border-(--zs-line) bg-(--zs-bg) pl-0.5 pr-3.5 text-sm">
               <AudioButton text={headword} lang={lang} audioUrl={r.audioUrl} accent={r.ttsLang} />
-              {r.label && <span className="text-black/60">{r.label}</span>}
-              <IpaLinked value={r.ipa} lang={lang} className="text-black/85" />
+              {r.label && <span className="text-(--zs-soft)">{r.label}</span>}
+              <IpaLinked value={r.ipa} lang={lang} className="text-(--zs-ink)" />
             </span>
             <SourceLink url={r.audioUrl} />
           </span>
@@ -39,9 +39,9 @@ export function Pronunciation({ headword, prons, lang, pill = false }: {
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
       {rows.map((r, i) => (
-        <span key={i} className="inline-flex items-center gap-1.5 text-black/70">
-          {r.label && <span className="text-xs font-semibold uppercase tracking-wide text-black/60">{r.label}</span>}
-          <IpaLinked value={r.ipa} lang={lang} className="text-[0.95rem] text-black/60" />
+        <span key={i} className="inline-flex items-center gap-1.5 text-(--zs-soft)">
+          {r.label && <span className="text-xs font-semibold uppercase tracking-wide text-(--zs-soft)">{r.label}</span>}
+          <IpaLinked value={r.ipa} lang={lang} className="text-[0.95rem] text-(--zs-soft)" />
           <AudioButton text={headword} lang={lang} audioUrl={r.audioUrl} accent={r.ttsLang} />
           <SourceLink url={r.audioUrl} />
         </span>

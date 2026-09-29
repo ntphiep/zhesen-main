@@ -180,7 +180,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
-  /* The header, the footer and the home page. The rest of the site keeps Geist. */
+  /* The header, the footer, the home page and the word page. The rest of the site keeps Geist. */
   --font-ui: var(--font-be-vietnam-pro), system-ui, sans-serif;
   /* The stack the machine already has, not a download. Geist Mono was loaded in
      the root layout, so every page fetched it, and `font-mono` is used in exactly
@@ -448,8 +448,8 @@ html[data-word-layout="glance"] main[data-boot]:not([data-layouts~="glance"]) [d
 html[data-word-layout="map"] main[data-boot][data-layouts~="map"] [data-pick="map"],
 html[data-word-layout="read"] main[data-boot][data-layouts~="read"] [data-pick="read"],
 html[data-word-layout="glance"] main[data-boot][data-layouts~="glance"] [data-pick="glance"] {
-  background-color: var(--color-white);
-  color: var(--color-black);
+  background-color: var(--zs-bg);
+  color: var(--zs-ink);
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 /* `/` is cached for everyone, so components/home/HomeSwitch.tsx draws the landing page
@@ -485,10 +485,10 @@ html[data-home-layout="orbit"] main[data-home-boot] [data-pick="orbit"] {
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
-/* The overview draws on a grey page. */
+/* The overview draws its cards on a pastel page. */
 main[data-rendered-layout="overview"]:not([data-boot]),
 html:not([data-word-layout]) main[data-boot],
 html[data-word-layout="overview"] main[data-boot] {
-  background-color: color-mix(in oklab, var(--color-black) 3.5%, transparent);
+  background-color: var(--tint-1);
 }
 

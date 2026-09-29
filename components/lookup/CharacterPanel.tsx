@@ -20,21 +20,21 @@ export function CharacterPanel({ characters }: { characters: CharInfo[] }) {
         {[...seen.values()].map(({ info: c, times }) => {
           const rad = radicalInfo(c.radical)
           return (
-            <div key={c.char} className="flex items-start gap-4 rounded-lg bg-black/5 px-4 py-3">
-              <span className="text-4xl font-bold leading-none">{c.char}</span>
+            <div key={c.char} className="flex items-start gap-4 rounded-[14px] bg-(--tint-2) px-4 py-3">
+              <span data-hw="" lang="zh" className="text-4xl leading-none">{c.char}</span>
               <div className="flex min-w-0 flex-1 flex-col gap-0.5 text-sm">
-                <div className="flex flex-wrap items-baseline gap-x-3 text-black/70">
+                <div className="flex flex-wrap items-baseline gap-x-3 text-(--zs-soft)">
                   {c.pinyin.length > 0 && <span className="font-medium">{c.pinyin.join(', ')}</span>}
                   {c.hanViet.length > 0 && <span className="italic">{c.hanViet.join(', ')}</span>}
-                  {times > 1 && <span className="text-xs text-black/55">xuất hiện {times} lần</span>}
+                  {times > 1 && <span className="text-xs text-(--zs-soft)">xuất hiện {times} lần</span>}
                 </div>
-                <div className="flex flex-wrap gap-x-3 text-xs text-black/55">
+                <div className="flex flex-wrap gap-x-3 text-xs text-(--zs-soft)">
                   {c.radical && (
                     <span>Bộ: {c.radical}{rad ? ` · ${rad.hanViet} (${rad.meaning})` : ''}</span>
                   )}
                   {c.strokeCount != null && <span>{c.strokeCount} nét</span>}
                 </div>
-                {c.gloss && <span className="text-xs text-black/55">{c.gloss}</span>}
+                {c.gloss && <span className="text-xs text-(--zs-soft)">{c.gloss}</span>}
               </div>
               <StrokeOrder char={c.char} />
             </div>

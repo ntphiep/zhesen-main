@@ -23,38 +23,38 @@ interface Shared {
   mark: string[]
 }
 
-function Sense({ s, n, lang, examples, byText, glosses, synonyms, mark }: Shared & { s: DictSense; n: number }) {
+function Sense({ s, n, more, lang, examples, byText, glosses, synonyms, mark }: Shared & { s: DictSense; n: number; more: boolean }) {
   const example = s.id ? examples[s.id] : undefined
   const words = synonyms.get(s.senseOrder) ?? []
   const vi = s.glossVi ?? s.pivotVi
   return (
-    <li className="flex gap-2.5">
-      <span className="w-5 shrink-0 text-[15px] font-semibold text-black/55">{n}.</span>
+    <li data-more={more || undefined} className="flex gap-2.5">
+      <span className="w-5 shrink-0 text-[15px] font-semibold text-(--zs-soft)">{n}.</span>
       <div className="flex min-w-0 flex-col gap-1.5">
         {/* 25.3% of English senses have no Vietnamese gloss. There the English is the
             meaning, so it takes the meaning's place, marked as English. */}
         {vi || s.glossEn
           ? <span className="font-semibold">{vi ?? s.glossEn}{!s.glossVi && s.pivotVi && <PivotMark />}{!vi && <EnglishMark />}</span>
-          : <span className="italic text-black/55">(chưa có nghĩa)</span>}
-        {s.glossEn && vi && <span className="text-xs text-black/55">{s.glossEn}</span>}
+          : <span className="italic text-(--zs-soft)">(chưa có nghĩa)</span>}
+        {s.glossEn && vi && <span className="text-xs text-(--zs-soft)">{s.glossEn}</span>}
         {example && (
-          <div className="mt-1 flex flex-col gap-0.5 border-l-2 border-blue-600/60 pl-3">
+          <div className="mt-1 flex flex-col gap-0.5 border-l-2 border-sea-300 pl-3">
             <span className="flex items-center gap-1 text-[15px]">
               <span><TappableText text={example.text} lang={lang} resolved={byText.get(example.text)} quiet mark={mark} /></span>
               <AudioButton text={example.text} lang={lang} />
             </span>
             {isSentenceTranslation(example.translationVi, glosses) && (
-              <span className="text-[13px] text-black/55">{example.translationVi}</span>
+              <span className="text-[13px] text-(--zs-soft)">{example.translationVi}</span>
             )}
           </div>
         )}
         {words.length > 0 && (
           <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-            <Badge tone="emerald">Đồng nghĩa</Badge>
+            <Badge tone="light">Đồng nghĩa</Badge>
             {words.map((w, i) => (
               <span key={w.text}>
-                {i > 0 && <span aria-hidden="true" className="mr-2 text-black/25">·</span>}
-                <WordLink word={w} className="text-blue-700 hover:underline" />
+                {i > 0 && <span aria-hidden="true" className="mr-2 text-sea-300">·</span>}
+                <WordLink word={w} className="text-(--zs-pen) hover:underline" />
               </span>
             ))}
           </p>
@@ -71,17 +71,17 @@ function PosSection({ section, ...shared }: Shared & { section: SenseSection }) 
   const documented = section.key && findWordClass(shared.lang, section.key)
   const anchor = useAnchor()
   return (
-    <section id={anchor(section.anchor)} className="flex flex-col gap-4">
-      <div className="flex items-baseline gap-2.5 border-b border-black/10 pb-2.5">
-        <h2 className="text-lg font-bold">
+    <section id={anchor(section.anchor)} data-reveal="" className="flex flex-col gap-4">
+      <div className="flex items-baseline gap-2.5 border-b border-(--zs-line) pb-2.5">
+        <h2 className="text-lg font-extrabold tracking-[-0.01em]">
           {documented
             ? <Link href={wordClassPath(shared.lang, section.key)} className="hover:underline">{section.labelVi}</Link>
             : section.labelVi}
         </h2>
-        <span className="text-[13px] text-black/55">{section.senses.length} nghĩa</span>
+        <span className="text-[13px] text-(--zs-soft)">{section.senses.length} nghĩa</span>
       </div>
       <ol className="flex flex-col gap-5">
-        {visible.map((s, i) => <Sense key={s.id ?? `${s.senseOrder}-${i}`} s={s} n={i + 1} {...shared} />)}
+        {visible.map((s, i) => <Sense key={s.id ?? `${s.senseOrder}-${i}`} s={s} n={i + 1} more={expanded && !shown.includes(s)} {...shared} />)}
       </ol>
       {hiddenCount > 0 && (
         <MoreButton
@@ -126,9 +126,9 @@ export function SenseList({ senses, lang, examples = {}, resolved = [], glosses 
       ))}
       {classifiers.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-xs font-semibold uppercase tracking-wide text-black/55">Lượng từ</span>
+          <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Lượng từ</span>
           {classifiers.map((c) => (
-            <span key={c} className="rounded-full bg-black/5 px-3 py-1 font-medium text-black/80">{c}</span>
+            <span key={c} className="rounded-full bg-(--zs-chip) px-3 py-1 font-medium text-(--zs-ink)">{c}</span>
           ))}
         </div>
       )}

@@ -40,12 +40,12 @@ export function SectionLabel({ children, className = '', as: Heading = 'h2' }: {
   className?: string
   as?: 'h2' | 'h3'
 }) {
-  return <Heading className={`text-[11.5px] font-semibold uppercase tracking-[0.07em] text-black/55 ${className}`}>{children}</Heading>
+  return <Heading className={`text-xs font-bold tracking-[0.02em] text-(--zs-soft) ${className}`}>{children}</Heading>
 }
 
-export const CARD = 'rounded-[18px] border border-black/[0.08] bg-white'
+export const CARD = 'rounded-[18px] border border-(--edge) bg-(--zs-bg) shadow-(--lift)'
 
-/** A white card on the overview's grey page. `label` is a string for the small-caps
+/** A white card on the overview's pastel page. `label` is a string for the small-caps
  *  heading, or a node when the heading carries more. */
 export function Card({ label, id, action, className = '', children }: {
   label?: React.ReactNode
@@ -69,9 +69,9 @@ export function Card({ label, id, action, className = '', children }: {
 }
 
 const BADGE = {
-  amber: 'bg-amber-50 text-amber-700',
-  emerald: 'bg-emerald-50 text-emerald-700',
-  neutral: 'bg-black/[0.05] text-black/70',
+  strong: 'bg-sea-100 text-sea-700',
+  light: 'bg-(--zs-chip) text-(--zs-ink)',
+  neutral: 'bg-(--zs-chip) text-(--zs-soft)',
 } as const
 
 export function Badge({ tone = 'neutral', children }: { tone?: keyof typeof BADGE; children: React.ReactNode }) {
@@ -83,7 +83,7 @@ export function LevelChip({ level, strong = false }: { level: string | null; str
   return (
     <span
       className={`shrink-0 rounded-full font-semibold ${
-        strong ? 'bg-black px-[9px] py-[3px] text-xs text-white' : 'bg-black/[0.05] px-[7px] py-0.5 text-[11px] text-black/75'
+        strong ? 'bg-(--zs-btn) px-[9px] py-[3px] text-xs text-(--zs-btn-ink)' : 'bg-(--zs-chip) px-[7px] py-0.5 text-[11px] text-(--zs-soft)'
       }`}
     >
       {level}
@@ -94,7 +94,7 @@ export function LevelChip({ level, strong = false }: { level: string | null; str
 /** Marks a Vietnamese meaning inferred through English rather than written for the word. */
 export function PivotMark() {
   return (
-    <span className="ml-1 align-middle text-[10px] font-normal uppercase tracking-wide text-amber-700/70" title="Nghĩa suy ra qua tiếng Anh">
+    <span className="ml-1 align-middle text-[10px] font-normal uppercase tracking-wide text-(--zs-soft)" title="Nghĩa suy ra qua tiếng Anh">
       qua tiếng Anh
     </span>
   )
@@ -103,7 +103,7 @@ export function PivotMark() {
 /** An English definition standing in a meaning's slot. */
 export function EnglishMark() {
   return (
-    <span className="ml-1 align-middle text-[10px] font-normal uppercase tracking-wide text-black/55" title="Nghĩa tiếng Anh">
+    <span className="ml-1 align-middle text-[10px] font-normal uppercase tracking-wide text-(--zs-soft)" title="Nghĩa tiếng Anh">
       chưa dịch
     </span>
   )
@@ -111,12 +111,12 @@ export function EnglishMark() {
 
 export function UntranslatedNote({ senses }: { senses: DictSense[] }) {
   const n = untranslatedCount(senses)
-  return n > 0 ? <p className="text-[13px] text-black/55">{n} nghĩa chưa dịch sang tiếng Việt.</p> : null
+  return n > 0 ? <p className="text-[13px] text-(--zs-soft)">{n} nghĩa chưa dịch sang tiếng Việt.</p> : null
 }
 
-/** A part of speech spelled out, as a small grey chip. */
+/** A part of speech spelled out, as a small blue chip. */
 export function PosChip({ value }: { value: string | null | undefined }) {
-  return <PosTag full value={value} className="shrink-0 rounded-full bg-black/[0.05] px-[7px] py-0.5 text-[11px] text-black/55" />
+  return <PosTag full value={value} className="shrink-0 rounded-full bg-(--zs-chip) px-[7px] py-0.5 text-[11px] text-(--zs-soft)" />
 }
 
 /** Five bars for a word in the 3,000 most common, fewer the further down it ranks. */
@@ -129,10 +129,10 @@ export function FrequencyMeter({ rank, small = false }: { rank: number | null | 
   const bars = frequencyBars(rank)
   if (bars === 0) return null
   return (
-    <span className="flex items-center gap-2 text-xs font-semibold text-emerald-700" title="Nằm trong 3000 từ thông dụng nhất của ngôn ngữ này">
+    <span className="flex items-center gap-2 text-xs font-semibold text-(--zs-ink)" title="Nằm trong 3000 từ thông dụng nhất của ngôn ngữ này">
       <span aria-hidden="true" className="flex gap-[3px]">
         {[1, 2, 3, 4, 5].map((i) => (
-          <span key={i} className={`rounded-[2px] ${small ? 'h-3 w-[5px]' : 'h-3.5 w-1.5'} ${i <= bars ? 'bg-emerald-700' : 'bg-black/10'}`} />
+          <span key={i} className={`rounded-[2px] ${small ? 'h-3 w-[5px]' : 'h-3.5 w-1.5'} ${i <= bars ? 'bg-(--zs-pen)' : 'bg-(--zs-chip)'}`} />
         ))}
       </span>
       Hay gặp
@@ -145,24 +145,24 @@ export function baseFormLabel(pos: string | null): string {
   return posGroups(splitPos(pos)).some((g) => g.key === 'verb') ? 'Nguyên thể' : 'Dạng gốc'
 }
 
-/** mis|take: the part outside the stem in violet, the stem in bold ink. */
+/** mis|take: the part outside the stem in blue, the stem in bold ink. */
 export function MorphText({ word }: { word: Pick<FamilyWord, 'before' | 'stem' | 'after'> }) {
   return (
     <>
-      {word.before && <span className="font-semibold text-violet-700">{word.before}</span>}
+      {word.before && <span className="font-semibold text-(--zs-pen)">{word.before}</span>}
       <span className="font-bold">{word.stem}</span>
-      {word.after && <span className="font-semibold text-violet-700">{word.after}</span>}
+      {word.after && <span className="font-semibold text-(--zs-pen)">{word.after}</span>}
     </>
   )
 }
 
-/** t|ook: what a form keeps of the headword in ink, what changes in colour, amber when
- *  the change breaks the rules. */
+/** t|ook: what a form keeps of the headword in ink, what changes in blue, marked on a
+ *  light blue ground when the change breaks the rules. */
 function FormText({ form }: { form: ViewForm }) {
   return (
     <>
       {form.kept}
-      <span className={`font-bold ${form.irregular ? 'text-amber-700' : 'text-emerald-700'}`}>{form.changed}</span>
+      <span className={`font-bold ${form.irregular ? 'rounded-sm bg-sea-100 px-0.5 text-sea-700' : 'text-(--zs-pen)'}`}>{form.changed}</span>
       {form.irregular && <span className="sr-only"> (bất quy tắc)</span>}
     </>
   )
@@ -179,7 +179,7 @@ export function MoreButton({ expanded, label, onClick, className = '' }: {
       type="button"
       onClick={onClick}
       aria-expanded={expanded}
-      className={`w-fit text-left text-[13px] font-semibold text-blue-700 hover:underline ${className}`}
+      className={`w-fit text-left text-[13px] font-semibold text-(--zs-pen) hover:underline ${className}`}
     >
       {expanded ? 'Thu gọn' : label}
     </button>
@@ -187,7 +187,7 @@ export function MoreButton({ expanded, label, onClick, className = '' }: {
 }
 
 export function WordChip({ word, tone = 'blue' }: { word: ViewWord; tone?: 'blue' | 'rose' }) {
-  const colours = tone === 'rose' ? 'bg-rose-50 text-rose-700' : 'bg-blue-50 text-blue-700'
+  const colours = tone === 'rose' ? 'bg-(--zs-bg) text-(--zs-ink) ring-1 ring-inset ring-sea-300' : 'bg-(--zs-chip) text-(--zs-ink)'
   return <WordLink word={word} className={`rounded-full px-[11px] py-1 text-[13px] font-medium hover:underline ${colours}`} />
 }
 
@@ -209,10 +209,10 @@ function GlossChip({ word, tone = 'blue' }: { word: ViewWord; tone?: 'blue' | 'r
   return (
     <WordLink
       word={word}
-      className="inline-flex max-w-full items-baseline gap-1.5 rounded-lg border border-black/10 px-[11px] py-[5px] text-[13px] hover:bg-black/[0.03]"
+      className="inline-flex max-w-full items-baseline gap-1.5 rounded-lg border border-(--zs-line) px-[11px] py-[5px] text-[13px] hover:bg-(--tint-1)"
     >
-      <span className={`shrink-0 font-semibold ${tone === 'rose' ? 'text-rose-700' : 'text-blue-700'}`}>{word.text}</span>
-      {word.gloss && <span className="truncate text-black/55">{word.gloss}</span>}
+      <span className={`shrink-0 font-semibold ${tone === 'rose' ? 'text-(--zs-ink)' : 'text-(--zs-pen)'}`}>{word.text}</span>
+      {word.gloss && <span className="truncate text-(--zs-soft)">{word.gloss}</span>}
       {word.glossIsEnglish && <span className="shrink-0"><EnglishMark /></span>}
     </WordLink>
   )
@@ -240,8 +240,8 @@ export function IrregularNote({ forms }: { forms: ViewForm[] }) {
   if (labels.length === 0) return null
   const list = labels.length === 1 ? labels[0] : `${labels.slice(0, -1).join(', ')} và ${labels[labels.length - 1]}`
   return (
-    <p className="flex flex-wrap items-center gap-2 border-t border-black/[0.06] pt-4 text-[13px]">
-      <Badge tone="amber">Lưu ý</Badge>
+    <p className="flex flex-wrap items-center gap-2 border-t border-(--zs-line) pt-4 text-[13px]">
+      <Badge tone="strong">Lưu ý</Badge>
       {list} không theo quy tắc.
     </p>
   )
@@ -249,9 +249,9 @@ export function IrregularNote({ forms }: { forms: ViewForm[] }) {
 
 export function FormLegend({ irregular }: { irregular: boolean }) {
   return (
-    <span className="flex gap-3.5 text-xs text-black/55">
-      <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-700" />theo quy tắc</span>
-      {irregular && <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-700" />bất quy tắc</span>}
+    <span className="flex gap-3.5 text-xs text-(--zs-soft)">
+      <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-(--zs-pen)" />theo quy tắc</span>
+      {irregular && <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-sea-300" />bất quy tắc</span>}
     </span>
   )
 }
@@ -267,21 +267,21 @@ export function FormTimeline({ headword, baseLabel, forms, lang }: {
 }) {
   const items: FormItem[] = [{ text: headword, label: baseLabel, base: true }, ...forms.map((f) => ({ ...f, base: false as const }))]
   return (
-    <ol className="ml-1 grid gap-4 border-l-2 border-black/10 pl-5 sm:ml-0 sm:grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] sm:gap-x-0 sm:gap-y-6 sm:border-0 sm:pl-0">
+    <ol className="ml-1 grid gap-4 border-l-2 border-(--zs-line) pl-5 sm:ml-0 sm:grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] sm:gap-x-0 sm:gap-y-6 sm:border-0 sm:pl-0">
       {items.map((f, i) => (
         <li key={f.text} className="relative flex items-center justify-between gap-3 sm:flex-col sm:items-stretch sm:justify-start sm:gap-2.5">
           <span aria-hidden="true" className="absolute top-1/2 -left-[26px] -translate-y-1/2 sm:static sm:flex sm:translate-y-0 sm:items-center">
-            <span className={`block size-2.5 shrink-0 rounded-full ${f.base ? 'bg-black' : f.irregular ? 'bg-amber-700' : 'bg-emerald-700'}`} />
-            {i < items.length - 1 && <span className="hidden h-0.5 flex-1 bg-black/10 sm:block" />}
+            <span className={`block size-2.5 shrink-0 rounded-full ${f.base ? 'bg-(--zs-ink)' : f.irregular ? 'bg-sea-300' : 'bg-(--zs-pen)'}`} />
+            {i < items.length - 1 && <span className="hidden h-0.5 flex-1 bg-(--zs-line) sm:block" />}
           </span>
           {f.base
-            ? <span className="pr-3 text-2xl font-bold tracking-[-0.02em] sm:text-[26px]">{f.text}</span>
+            ? <span data-hw="" lang={lang} className="pr-3 text-2xl sm:text-[26px]">{f.text}</span>
             : (
-              <Link href={searchPath(lang, f.text)} className="pr-3 text-2xl font-semibold tracking-[-0.02em] hover:underline sm:text-[26px]">
+              <Link href={searchPath(lang, f.text)} data-hw="" lang={lang} className="pr-3 text-2xl hover:underline sm:text-[26px]">
                 <FormText form={f} />
               </Link>
             )}
-          <span className="text-xs text-black/55">{f.label}</span>
+          <span className="text-xs text-(--zs-soft)">{f.label}</span>
         </li>
       ))}
     </ol>
@@ -289,7 +289,7 @@ export function FormTimeline({ headword, baseLabel, forms, lang }: {
 }
 
 /** Dạng từ as a row of outlined cells. `wide` leads with the headword and fills an
- *  irregular cell amber; `compact` puts the name above each form with its sound. */
+ *  irregular cell light blue; `compact` puts the name above each form with its sound. */
 export function FormCells({ headword, baseLabel, forms, lang, variant }: {
   headword: string
   baseLabel: string
@@ -302,19 +302,19 @@ export function FormCells({ headword, baseLabel, forms, lang, variant }: {
     ...forms.map((f) => ({ ...f, base: false as const })),
   ]
   return (
-    <div className="grid overflow-hidden rounded-xl border border-black/10 sm:grid-cols-[repeat(auto-fit,minmax(8rem,1fr))] [&>*+*]:border-t [&>*+*]:border-black/10 sm:[&>*+*]:border-t-0 sm:[&>*+*]:border-l">
+    <div className="grid overflow-hidden rounded-xl border border-(--zs-line) sm:grid-cols-[repeat(auto-fit,minmax(8rem,1fr))] [&>*+*]:border-t [&>*+*]:border-(--zs-line) sm:[&>*+*]:border-t-0 sm:[&>*+*]:border-l">
       {items.map((f) => {
         const form = f.base
           ? <span className="font-bold">{f.text}</span>
           : <Link href={searchPath(lang, f.text)} className="font-semibold hover:underline"><FormText form={f} /></Link>
         return variant === 'wide' ? (
-          <div key={f.text} className={`flex flex-col gap-1.5 px-4 py-3.5 ${!f.base && f.irregular ? 'bg-amber-50' : ''}`}>
+          <div key={f.text} className={`flex flex-col gap-1.5 px-4 py-3.5 ${!f.base && f.irregular ? 'bg-(--tint-2)' : ''}`}>
             <span className="text-2xl tracking-[-0.02em]">{form}</span>
-            <span className="text-[13px] text-black/55">{lowerFirst(f.label)}</span>
+            <span className="text-[13px] text-(--zs-soft)">{lowerFirst(f.label)}</span>
           </div>
         ) : (
           <div key={f.text} className="flex flex-col gap-1 px-4 py-3">
-            <span className="text-xs text-black/55">{f.label}</span>
+            <span className="text-xs text-(--zs-soft)">{f.label}</span>
             <span className="flex items-center gap-1 text-lg">{form}<AudioButton text={f.text} lang={lang} /></span>
           </div>
         )
@@ -326,7 +326,7 @@ export function FormCells({ headword, baseLabel, forms, lang, variant }: {
 function SynonymRow({ label, words, tone = 'blue' }: { label: string; words: ViewWord[]; tone?: 'blue' | 'rose' }) {
   return (
     <div className="grid gap-1.5 sm:grid-cols-[6rem_minmax(0,1fr)] sm:items-baseline sm:gap-3">
-      <span className={`truncate text-[13px] ${tone === 'rose' ? 'font-semibold text-rose-700' : 'text-black/55'}`} title={label}>{label}</span>
+      <span className={`truncate text-[13px] ${tone === 'rose' ? 'font-semibold text-(--zs-ink)' : 'text-(--zs-soft)'}`} title={label}>{label}</span>
       <ChipRow words={words} tone={tone} shown={6} />
     </div>
   )
@@ -352,7 +352,7 @@ export function SynonymsRows({ view, shownRows = 4 }: {
         <MoreButton expanded={expanded} label={`Xem thêm ${rows.length - shownRows} nhóm`} onClick={() => setExpanded((v) => !v)} />
       )}
       {view.antonyms.length > 0 && (
-        <div className={rows.length > 0 ? 'border-t border-black/[0.06] pt-3.5' : ''}>
+        <div className={rows.length > 0 ? 'border-t border-(--zs-line) pt-3.5' : ''}>
           <SynonymRow label="Trái nghĩa" words={view.antonyms} tone="rose" />
         </div>
       )}
@@ -377,9 +377,9 @@ export function WordTable({ words, head, family = false, level = false, shown = 
   const rows = expanded ? words : words.slice(0, shown)
   return (
     <div className="flex flex-col gap-2.5">
-      <div className="overflow-hidden rounded-[10px] border border-black/10">
+      <div className="overflow-hidden rounded-[10px] border border-(--zs-line)">
         <table className="w-full border-collapse text-sm">
-          <thead className="bg-black/[0.04] text-left text-xs font-semibold text-black/55">
+          <thead className="bg-(--tint-2) text-left text-xs font-semibold text-(--zs-soft)">
             <tr>
               <th scope="col" className="px-3.5 py-2 font-semibold">{head}</th>
               <th scope="col" className="hidden px-3.5 py-2 font-semibold sm:table-cell">Từ loại</th>
@@ -388,16 +388,16 @@ export function WordTable({ words, head, family = false, level = false, shown = 
             </tr>
           </thead>
           <tbody>
-            {rows.map((w) => (
-              <tr key={w.text} className="border-t border-black/10 align-baseline">
+            {rows.map((w, i) => (
+              <tr key={w.text} data-more={i >= shown || undefined} className="border-t border-(--zs-line) align-baseline">
                 <td className="px-3.5 py-2.5">
-                  <WordLink word={w} className={`font-semibold hover:underline ${family ? '' : 'text-blue-700'}`}>
+                  <WordLink word={w} className={`font-semibold hover:underline ${family ? '' : 'text-(--zs-pen)'}`}>
                     {family && 'stem' in w ? <MorphText word={w} /> : w.text}
                   </WordLink>
-                  <PosTag full value={w.pos} className="block text-xs text-black/55 sm:hidden" />
+                  <PosTag full value={w.pos} className="block text-xs text-(--zs-soft) sm:hidden" />
                 </td>
-                <td className="hidden whitespace-nowrap px-3.5 py-2.5 text-black/55 sm:table-cell"><PosTag full value={w.pos} /></td>
-                <td className={`px-3.5 py-2.5 ${w.gloss ? 'text-black/80' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</td>
+                <td className="hidden whitespace-nowrap px-3.5 py-2.5 text-(--zs-soft) sm:table-cell"><PosTag full value={w.pos} /></td>
+                <td className={`px-3.5 py-2.5 ${w.gloss ? 'text-(--zs-ink)' : 'text-(--zs-soft)'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</td>
                 {level && <td className="px-3.5 py-2.5 text-right"><LevelChip level={w.level} /></td>}
               </tr>
             ))}
@@ -437,17 +437,17 @@ export function PhrasesCard({ headword, lang, phrases }: { headword: string; lan
           <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             {cards.map((w) => (
               <li key={w.text} className="min-w-0">
-                <WordLink word={w} className="flex h-full flex-col gap-0.5 rounded-[14px] bg-black/[0.04] p-3.5 hover:bg-black/[0.07]">
-                  <span className="text-xs text-black/55">{headword}</span>
-                  <span className="text-2xl font-bold leading-tight tracking-[-0.02em] text-blue-700">{w.particle}</span>
-                  <span className={`line-clamp-2 text-[13px] leading-[1.35] ${w.gloss ? '' : 'text-black/55'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</span>
+                <WordLink word={w} className="flex h-full flex-col gap-0.5 rounded-[14px] bg-(--tint-2) p-3.5 hover:bg-(--tint-3)">
+                  <span className="text-xs text-(--zs-soft)">{headword}</span>
+                  <span className="text-2xl font-bold leading-tight tracking-[-0.02em] text-(--zs-pen)">{w.particle}</span>
+                  <span className={`line-clamp-2 text-[13px] leading-[1.35] ${w.gloss ? '' : 'text-(--zs-soft)'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</span>
                 </WordLink>
               </li>
             ))}
           </ul>
           {chips.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="mr-1 text-xs font-semibold text-black/55">Cụm từ khác</span>
+              <span className="mr-1 text-xs font-semibold text-(--zs-soft)">Cụm từ khác</span>
               {chips.map((w) => <GlossChip key={w.text} word={w} />)}
             </div>
           )}
@@ -457,7 +457,7 @@ export function PhrasesCard({ headword, lang, phrases }: { headword: string; lan
   )
 }
 
-/** Họ từ as rows: the word with the part it adds in violet, its meaning over its part of
+/** Họ từ as rows: the word with the part it adds in blue, its meaning over its part of
  *  speech, and its level. Words that share the root follow as chips. */
 export function FamilyRows({ family, related, shown = 6 }: { family: FamilyWord[]; related: ViewWord[]; shown?: number }) {
   const [expanded, setExpanded] = useState(false)
@@ -468,13 +468,13 @@ export function FamilyRows({ family, related, shown = 6 }: { family: FamilyWord[
     <div className="@container flex flex-col gap-3">
       {family.length > 0 && (
         <ul className="flex flex-col">
-          {rows.map((w) => (
-            <li key={w.text} className="border-t border-black/[0.06] first:border-0">
-              <WordLink word={w} className="flex flex-col items-start gap-0.5 py-2 hover:bg-black/[0.02] @xs:flex-row @xs:items-center @xs:gap-3">
+          {rows.map((w, i) => (
+            <li key={w.text} data-more={i >= shown || undefined} className="border-t border-(--zs-line) first:border-0">
+              <WordLink word={w} className="flex flex-col items-start gap-0.5 py-2 hover:bg-(--tint-1) @xs:flex-row @xs:items-center @xs:gap-3">
                 <span className="text-lg @xs:min-w-[7.25rem] @xs:shrink-0"><MorphText word={w} /></span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className={`text-sm ${w.gloss ? '' : 'text-black/60'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</span>
-                  <PosTag full value={w.pos} className="text-xs text-black/60" />
+                  <span className={`text-sm ${w.gloss ? '' : 'text-(--zs-soft)'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</span>
+                  <PosTag full value={w.pos} className="text-xs text-(--zs-soft)" />
                 </span>
                 <LevelChip level={w.level} />
               </WordLink>
@@ -487,7 +487,7 @@ export function FamilyRows({ family, related, shown = 6 }: { family: FamilyWord[
       )}
       {related.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs text-black/60">Cùng gốc</span>
+          <span className="text-xs text-(--zs-soft)">Cùng gốc</span>
           <ChipRow words={related} />
         </div>
       )}
@@ -496,7 +496,7 @@ export function FamilyRows({ family, related, shown = 6 }: { family: FamilyWord[
 }
 
 /** Example sentences with the headword in bold and the translation under each. `rows`
- *  divides them with rules, `quote` sets each against a grey bar. */
+ *  divides them with rules, `quote` sets each against a blue bar. */
 export function ExampleRows({ examples, lang, resolved, glosses, mark, shown = 3, variant = 'rows' }: {
   /** Already filtered; see cleanExamples. */
   examples: DictExample[]
@@ -516,15 +516,16 @@ export function ExampleRows({ examples, lang, resolved, glosses, mark, shown = 3
         {visible.map((e, i) => (
           <li
             key={i}
+            data-more={i >= shown || undefined}
             className={variant === 'rows'
-              ? 'flex flex-col gap-0.5 border-t border-black/[0.06] py-3 first:border-0 first:pt-0 last:pb-0'
-              : 'flex flex-col gap-0.5 border-l-2 border-black/10 pl-3'}
+              ? 'flex flex-col gap-0.5 border-t border-(--zs-line) py-3 first:border-0 first:pt-0 last:pb-0'
+              : 'flex flex-col gap-0.5 border-l-2 border-(--zs-line) pl-3'}
           >
             <span className={`flex items-start gap-2 text-[15px] ${variant === 'rows' ? 'justify-between' : ''}`}>
               <span><TappableText text={e.text} lang={lang} resolved={byText.get(e.text)} quiet mark={mark} /></span>
               <span className="-my-1.5"><AudioButton text={e.text} lang={lang} /></span>
             </span>
-            {isSentenceTranslation(e.translationVi, glosses) && <span className="text-[13px] text-black/55">{e.translationVi}</span>}
+            {isSentenceTranslation(e.translationVi, glosses) && <span className="text-[13px] text-(--zs-soft)">{e.translationVi}</span>}
           </li>
         ))}
       </ul>
@@ -542,9 +543,9 @@ export function GrammarList({ points }: { points: GrammarPoint[] }) {
         <li key={p.id}>
           <Link
             href={grammarPointPath(p.id)}
-            className="flex items-baseline gap-2 rounded-lg border border-black/10 px-3 py-2.5 text-sm hover:bg-black/[0.03]"
+            className="flex items-baseline gap-2 rounded-lg border border-(--zs-line) px-3 py-2.5 text-sm hover:bg-(--tint-1)"
           >
-            <span className="shrink-0 text-xs font-semibold text-black/55">{p.level}</span>
+            <span className="shrink-0 text-xs font-semibold text-(--zs-soft)">{p.level}</span>
             {p.titleVi}
           </Link>
         </li>

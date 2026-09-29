@@ -14,7 +14,7 @@ import {
 import { senseSections } from '@/lib/dictionary/wordPage'
 import { cleanExamples, headwordForms, type WordView } from '@/lib/dictionary/wordView'
 
-const RAIL_CARD = 'rounded-[10px] border border-black/10 p-4'
+const RAIL_CARD = 'rounded-[14px] border border-(--edge) bg-(--zs-bg) p-4'
 
 /**
  * A dictionary page in the usual order: the word and its forms, every meaning with its
@@ -47,18 +47,18 @@ export function ClassicLayout({ view }: { view: WordView }) {
       <div className="flex min-w-0 flex-col gap-10">
         <header className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <h1 className="break-words text-[40px] font-bold leading-none tracking-[-0.03em] sm:text-[52px]">{head.headword}</h1>
-            {head.traditional && head.traditional !== head.headword && <span className="text-3xl text-black/55">{head.traditional}</span>}
+            <h1 data-hw="" lang={lang} className="break-words text-[40px] leading-none sm:text-[52px]">{head.headword}</h1>
+            {head.traditional && head.traditional !== head.headword && <span data-hw="" lang="zh" className="text-3xl text-(--zs-soft)">{head.traditional}</span>}
             <LevelChip level={head.level} />
             {frequencyBars(head.frequencyRank) > 0 && (
-              <span title="Nằm trong 3000 từ thông dụng nhất của ngôn ngữ này"><Badge tone="emerald">Hay gặp</Badge></span>
+              <span title="Nằm trong 3000 từ thông dụng nhất của ngôn ngữ này"><Badge tone="light">Hay gặp</Badge></span>
             )}
             <div className="ml-auto">
               <AddToWordlistButton size="lg" entry={{ ...head, pronunciations: [] }} />
             </div>
           </div>
           {(showPinyin || view.hanViet) && (
-            <div className="flex flex-wrap items-center gap-3 text-black/60">
+            <div className="flex flex-wrap items-center gap-3 text-(--zs-soft)">
               {showPinyin && <span className="font-medium">{pinyin}</span>}
               {view.hanViet && <span className="italic">Hán-Việt: {view.hanViet}</span>}
             </div>
@@ -69,7 +69,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
           {view.forms.length > 0 && (
             <section id={anchor('forms')} className="mt-3 flex flex-col gap-3">
               <div className="flex items-center gap-2.5">
-                <h2 className="text-[15px] font-bold">Dạng từ</h2>
+                <h2 className="text-[15px] font-extrabold">Dạng từ</h2>
                 {irregular && <Badge>{baseLabel === 'Nguyên thể' ? 'Động từ bất quy tắc' : 'Bất quy tắc'}</Badge>}
               </div>
               <FormCells headword={head.headword} baseLabel={baseLabel} forms={view.forms} lang={lang} variant="compact" />
@@ -80,8 +80,8 @@ export function ClassicLayout({ view }: { view: WordView }) {
         {parts.length > 1 && (
           <nav aria-label="Mục trong trang" className="-mt-4 flex flex-wrap gap-2">
             {parts.map((p) => (
-              <a key={p.href} href={p.href} className="rounded-full border border-black/10 px-3 py-1.5 text-[13px] font-semibold hover:bg-black/[0.04]">
-                {p.label}{p.count > 0 && <span className="font-normal text-black/55"> · {p.count}</span>}
+              <a key={p.href} href={p.href} className="rounded-full border border-(--edge) px-3 py-1.5 text-[13px] font-semibold transition-colors duration-150 ease-std hover:bg-(--zs-chip)">
+                {p.label}{p.count > 0 && <span className="font-normal text-(--zs-soft)"> · {p.count}</span>}
               </a>
             ))}
           </nav>
@@ -109,7 +109,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
             <WordTable words={view.family} head="Từ" family level />
             {view.related.length > 0 && (
               <div className="flex flex-col gap-2">
-                <span className="text-xs text-black/55">Cùng gốc</span>
+                <span className="text-xs text-(--zs-soft)">Cùng gốc</span>
                 <ChipRow words={view.related} />
               </div>
             )}
@@ -136,7 +136,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
             <SectionLabel>Trên trang này</SectionLabel>
             <ul className="flex flex-col gap-1.5 text-sm">
               {parts.map((p) => (
-                <li key={p.href}><a href={p.href} className="text-blue-700 hover:underline">{p.label}</a></li>
+                <li key={p.href}><a href={p.href} className="text-(--zs-pen) hover:underline">{p.label}</a></li>
               ))}
             </ul>
           </nav>
@@ -149,7 +149,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
           </section>
         )}
         <Backlinks view={view} className={`flex flex-col gap-3 ${RAIL_CARD}`} />
-        <AiCorner lang={lang} headword={head.headword} meaningVi={view.meaningVi} className="rounded-[10px] bg-black/[0.04] p-4" />
+        <AiCorner lang={lang} headword={head.headword} meaningVi={view.meaningVi} className="rounded-[14px] bg-(--tint-2) p-4" />
       </aside>
     </div>
   )
@@ -158,10 +158,10 @@ export function ClassicLayout({ view }: { view: WordView }) {
 function Section({ id, title, note, children }: { id: string; title: string; note?: string; children: React.ReactNode }) {
   const anchor = useAnchor()
   return (
-    <section id={anchor(id)} className="flex flex-col gap-3">
+    <section id={anchor(id)} data-reveal="" className="flex flex-col gap-3">
       <div className="flex items-baseline gap-2.5">
-        <h2 className="text-lg font-bold">{title}</h2>
-        {note && <span className="text-[13px] text-black/55">{note}</span>}
+        <h2 className="text-lg font-extrabold tracking-[-0.01em]">{title}</h2>
+        {note && <span className="text-[13px] text-(--zs-soft)">{note}</span>}
       </div>
       {children}
     </section>

@@ -24,18 +24,18 @@ function Grid({ tenses }: { tenses: ConjTense[] }) {
       <table className="w-full min-w-[28rem] border-collapse text-sm">
         <thead>
           <tr>
-            <th className="px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-black/55"></th>
+            <th className="px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-(--zs-soft)"></th>
             {tenses.map((t) => (
-              <th key={t.key} className="px-3 py-1.5 text-left font-semibold text-black/70">{TENSE_LABELS[t.key]}</th>
+              <th key={t.key} className="px-3 py-1.5 text-left font-semibold text-(--zs-soft)">{TENSE_LABELS[t.key]}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {PERSONS.map((p) => (
-            <tr key={p.key} className="border-t border-black/5">
-              <td className="px-2 py-1.5 text-xs text-black/55">{p.label}</td>
+            <tr key={p.key} className="border-t border-(--zs-line)">
+              <td className="px-2 py-1.5 text-xs text-(--zs-soft)">{p.label}</td>
               {tenses.map((t) => (
-                <td key={t.key} className="px-3 py-1.5 font-medium text-black/80">{t.forms[p.key] ?? '—'}</td>
+                <td key={t.key} className="px-3 py-1.5 font-medium text-(--zs-ink)">{t.forms[p.key] ?? '—'}</td>
               ))}
             </tr>
           ))}
@@ -46,7 +46,7 @@ function Grid({ tenses }: { tenses: ConjTense[] }) {
 }
 
 function Chip({ text }: { text: string }) {
-  return <span className="rounded-full bg-black/5 px-3 py-1 text-sm font-medium text-black/80">{text}</span>
+  return <span className="rounded-full bg-(--zs-chip) px-3 py-1 text-sm font-medium text-(--zs-ink)">{text}</span>
 }
 
 /** Spanish verb conjugation, SpanishDict-style: non-finite forms + present indicative
@@ -59,9 +59,9 @@ export function ConjugationTable({ conjugation: c }: { conjugation: Conjugation 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-        {c.infinitive && <span><span className="text-black/55">Nguyên thể </span><span className="font-medium">{c.infinitive}</span></span>}
-        {c.gerund && <span><span className="text-black/55">Gerundio </span><span className="font-medium">{c.gerund}</span></span>}
-        {c.pastParticiple && <span><span className="text-black/55">Phân từ </span><span className="font-medium">{c.pastParticiple}</span></span>}
+        {c.infinitive && <span><span className="text-(--zs-soft)">Nguyên thể </span><span className="font-medium">{c.infinitive}</span></span>}
+        {c.gerund && <span><span className="text-(--zs-soft)">Gerundio </span><span className="font-medium">{c.gerund}</span></span>}
+        {c.pastParticiple && <span><span className="text-(--zs-soft)">Phân từ </span><span className="font-medium">{c.pastParticiple}</span></span>}
       </div>
 
       {!expanded && <Grid tenses={present} />}
@@ -69,27 +69,27 @@ export function ConjugationTable({ conjugation: c }: { conjugation: Conjugation 
       {expanded && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold uppercase tracking-wide text-black/55">Lối trình bày (Indicativo)</span>
+            <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Lối trình bày (Indicativo)</span>
             <Grid tenses={c.indicative} />
           </div>
           {c.subjunctive.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold uppercase tracking-wide text-black/55">Lối giả định (Subjuntivo)</span>
+              <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Lối giả định (Subjuntivo)</span>
               <Grid tenses={c.subjunctive} />
             </div>
           )}
           {(c.imperativeAffirmative.length > 0 || c.imperativeNegative.length > 0) && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold uppercase tracking-wide text-black/55">Mệnh lệnh (Imperativo)</span>
+              <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Mệnh lệnh (Imperativo)</span>
               {c.imperativeAffirmative.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-black/55">Khẳng định</span>
+                  <span className="text-xs text-(--zs-soft)">Khẳng định</span>
                   {c.imperativeAffirmative.map((f, i) => <Chip key={i} text={f} />)}
                 </div>
               )}
               {c.imperativeNegative.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-black/55">Phủ định</span>
+                  <span className="text-xs text-(--zs-soft)">Phủ định</span>
                   {c.imperativeNegative.map((f, i) => <Chip key={i} text={f} />)}
                 </div>
               )}
@@ -101,7 +101,7 @@ export function ConjugationTable({ conjugation: c }: { conjugation: Conjugation 
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-fit text-sm text-blue-700 hover:underline"
+        className="w-fit text-sm text-(--zs-pen) hover:underline"
       >
         {expanded ? 'Thu gọn' : 'Xem bảng chia đầy đủ'}
       </button>

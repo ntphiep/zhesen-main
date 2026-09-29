@@ -18,8 +18,9 @@ export function StrokeOrder({ char }: { char: string }) {
     if (!el) return
     el.innerHTML = ''
     // hanzi-writer parses colours from strings and cannot take a CSS variable, so the
-    // palette is read from the scheme in force and rebuilt on a flip: #111 vanishes on
-    // dark. The reader's choice, not the OS setting: they disagree whenever one is made.
+    // palette is read from the scheme in force and rebuilt on a flip: #023c85 vanishes on
+    // dark. The values copy --sea-700, --sea-50 and the dark --edge of app/globals.css.
+    // The reader's choice, not the OS setting: they disagree whenever one is made.
     function build(dark: boolean) {
       import('hanzi-writer').then(({ default: HanziWriter }) => {
         if (cancelled || !ref.current) return
@@ -30,8 +31,8 @@ export function StrokeOrder({ char }: { char: string }) {
           padding: 5,
           showCharacter: false,
           showOutline: true,
-          strokeColor: dark ? '#ededed' : '#111',
-          outlineColor: dark ? '#404040' : '#d4d4d4',
+          strokeColor: dark ? '#fff' : '#023c85',
+          outlineColor: dark ? '#10305a' : '#c3e7ef',
           strokeAnimationSpeed: 1,
           delayBetweenStrokes: 280,
           onLoadCharDataError: () => { if (!cancelled) setFailed(true) },
@@ -48,11 +49,11 @@ export function StrokeOrder({ char }: { char: string }) {
   if (failed) return null
   return (
     <div className="flex flex-col items-center gap-1">
-      <div ref={ref} aria-label={`Thứ tự nét chữ ${char}`} className="rounded-lg border border-black/10 bg-white" style={{ width: 88, height: 88 }} />
+      <div ref={ref} aria-label={`Thứ tự nét chữ ${char}`} className="rounded-lg border border-(--zs-line) bg-(--zs-bg)" style={{ width: 88, height: 88 }} />
       <button
         type="button"
         onClick={() => writerRef.current?.animateCharacter()}
-        className="text-xs text-blue-700 hover:underline"
+        className="text-xs text-(--zs-pen) hover:underline"
       >
         ▶ Viết lại
       </button>

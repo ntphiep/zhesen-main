@@ -9,7 +9,7 @@ type Item = { kind: 'core'; sense: LearnerSense } | { kind: 'minor'; minor: Mino
 /** Other senses shown without a fold, so the list stays short enough to stick; take has 80. */
 const MINOR_OPEN = 6
 
-const ROW = 'grid w-full grid-cols-[22px_minmax(0,1fr)_auto] items-baseline gap-x-2 gap-y-1 rounded-[10px] px-2.5 py-2 text-left'
+const ROW = 'grid w-full grid-cols-[22px_minmax(0,1fr)_auto] items-baseline gap-x-2 gap-y-1 rounded-[10px] px-2.5 py-2 text-left transition-colors duration-150 ease-std'
 
 /**
  * "Bản đồ nghĩa": every sense in one list on the left, the chosen one in full beside it, the
@@ -80,19 +80,19 @@ export function MapLayout({ view, layer }: { view: WordView; layer: LearnerLayer
   }
 
   const row = (item: Item, i: number) => (
-    <li key={item.kind === 'core' ? `c${item.sense.order}` : item.minor.senseId}>
+    <li key={item.kind === 'core' ? `c${item.sense.order}` : item.minor.senseId} data-more={(foldable && i >= core) || undefined}>
       <button
         type="button"
         ref={(el) => { buttons.current[i] = el }}
         aria-current={i === at}
         onClick={() => setIndex(i)}
-        className={`${ROW} ${i === at ? 'bg-blue-50' : 'hover:bg-black/[0.04]'}`}
+        className={`${ROW} ${i === at ? 'bg-(--zs-chip)' : 'hover:bg-(--tint-1)'}`}
       >
         {item.kind === 'core' ? (
           <>
-            <span className="font-mono text-xs text-black/60">{item.sense.order}</span>
-            <span className={`text-[14.5px] font-semibold leading-snug ${i === at ? 'text-blue-700' : ''}`}>{item.sense.viTerms.join(', ')}</span>
-            <span className="font-mono text-[11px] text-black/60">{item.sense.cefr}</span>
+            <span className="font-mono text-xs text-(--zs-soft)">{item.sense.order}</span>
+            <span className={`text-[14.5px] font-semibold leading-snug ${i === at ? 'text-(--zs-ink)' : ''}`}>{item.sense.viTerms.join(', ')}</span>
+            <span className="font-mono text-[11px] text-(--zs-soft)">{item.sense.cefr}</span>
             <span className="col-start-2 col-end-4 flex flex-wrap gap-1">
               <PosChip value={item.sense.pos} />
               {item.sense.domain && <Chip tone="domain">{domainLabel(item.sense.domain)}</Chip>}
@@ -100,8 +100,8 @@ export function MapLayout({ view, layer }: { view: WordView; layer: LearnerLayer
           </>
         ) : (
           <>
-            <span aria-hidden="true" className="font-mono text-xs text-black/60">·</span>
-            <span className={`text-[13.5px] font-medium leading-snug ${i === at ? 'text-blue-700' : 'text-black/70'}`}>{minorTerms(item.minor)}</span>
+            <span aria-hidden="true" className="font-mono text-xs text-(--zs-soft)">·</span>
+            <span className={`text-[13.5px] font-medium leading-snug ${i === at ? 'text-(--zs-ink)' : 'text-(--zs-soft)'}`}>{minorTerms(item.minor)}</span>
             <span />
             <span className="col-start-2 col-end-4 flex flex-wrap gap-1">
               {item.minor.domain && <Chip tone="domain">{domainLabel(item.minor.domain)}</Chip>}
@@ -109,7 +109,7 @@ export function MapLayout({ view, layer }: { view: WordView; layer: LearnerLayer
               {item.minor.isInflection && <Chip tone="form">{item.minor.lemma ? `dạng của ${item.minor.lemma}` : 'dạng từ'}</Chip>}
             </span>
             {item.minor.isInflection && item.minor.glossEn && (
-              <span className="col-start-2 col-end-4 text-xs text-black/60">{minorGloss(item.minor)}</span>
+              <span className="col-start-2 col-end-4 text-xs text-(--zs-soft)">{minorGloss(item.minor)}</span>
             )}
           </>
         )}
@@ -121,7 +121,7 @@ export function MapLayout({ view, layer }: { view: WordView; layer: LearnerLayer
     <>
       <li className="flex items-baseline justify-between px-2.5 pb-1 pt-3 first:pt-1">
         <SectionLabel>{label}</SectionLabel>
-        <span className="text-xs text-black/60">{count}</span>
+        <span className="text-xs text-(--zs-soft)">{count}</span>
       </li>
       {items.slice(from, from + count).map((item, j) => row(item, from + j))}
     </>
@@ -155,24 +155,27 @@ export function MapLayout({ view, layer }: { view: WordView; layer: LearnerLayer
 
         {/* A row deep in the unfolded list opens a short sense, which stays beside the row. */}
         <article className={`${CARD} flex min-h-[340px] min-w-0 flex-col gap-6 p-5 sm:px-8 sm:py-7 ${current?.kind === 'minor' ? 'lg:sticky lg:top-[calc(var(--header-h)+1rem)]' : ''}`}>
-          {current?.kind === 'core'
-            ? <SenseBody sense={current.sense} view={view} size="lg" />
-            : current && <MinorBody minor={current.minor} view={view} />}
-          <div className="mt-auto flex items-center justify-between gap-3 border-t border-black/10 pt-4 text-[13.5px]">
-            <button type="button" disabled={at === 0} onClick={() => step(at - 1)} className="rounded-lg px-2.5 py-1.5 text-black/65 hover:bg-black/[0.05] hover:text-black disabled:opacity-35 disabled:hover:bg-transparent">
+          {/* Keyed by the row, so the sense switched to fades in. */}
+          <div key={at} data-swap="">
+            {current?.kind === 'core'
+              ? <SenseBody sense={current.sense} view={view} size="lg" />
+              : current && <MinorBody minor={current.minor} view={view} />}
+          </div>
+          <div className="mt-auto flex items-center justify-between gap-3 border-t border-(--zs-line) pt-4 text-[13.5px]">
+            <button type="button" disabled={at === 0} onClick={() => step(at - 1)} className="rounded-lg px-2.5 py-1.5 text-(--zs-soft) hover:bg-(--tint-2) hover:text-(--zs-ink) disabled:opacity-35 disabled:hover:bg-transparent">
               ← Nghĩa trước
             </button>
-            <span className="hidden text-xs text-black/60 sm:inline">
-              <kbd className="rounded border border-black/10 px-1 font-mono">↑</kbd> <kbd className="rounded border border-black/10 px-1 font-mono">↓</kbd> để chuyển nghĩa
+            <span className="hidden text-xs text-(--zs-soft) sm:inline">
+              <kbd className="rounded border border-(--zs-line) px-1 font-mono">↑</kbd> <kbd className="rounded border border-(--zs-line) px-1 font-mono">↓</kbd> để chuyển nghĩa
             </span>
-            <button type="button" disabled={at >= items.length - 1} onClick={() => step(at + 1)} className="rounded-lg px-2.5 py-1.5 text-black/65 hover:bg-black/[0.05] hover:text-black disabled:opacity-35 disabled:hover:bg-transparent">
+            <button type="button" disabled={at >= items.length - 1} onClick={() => step(at + 1)} className="rounded-lg px-2.5 py-1.5 text-(--zs-soft) hover:bg-(--tint-2) hover:text-(--zs-ink) disabled:opacity-35 disabled:hover:bg-transparent">
               Nghĩa sau →
             </button>
           </div>
           <p aria-live="polite" className="sr-only">{said}</p>
         </article>
 
-        <aside className="flex min-w-0 flex-col gap-4 lg:col-span-2 xl:sticky xl:top-[calc(var(--header-h)+1rem)] xl:col-span-1">
+        <aside data-reveal="2" className="flex min-w-0 flex-col gap-4 lg:col-span-2 xl:sticky xl:top-[calc(var(--header-h)+1rem)] xl:col-span-1">
           <LearnerRail view={view} layer={layer} />
           <div className={PANEL}><LayerNote layer={layer} view={view} /></div>
         </aside>

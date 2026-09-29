@@ -23,22 +23,17 @@ import type { LangCode } from '@/lib/languages'
 
 export const PANEL = `${CARD} flex flex-col gap-2.5 p-4 sm:p-5`
 
-/** One colour per core sense, for the layout that links everything by colour. */
-export const SENSE_TONES = [
-  { badge: 'bg-blue-700 text-white', edge: 'border-l-blue-700', ring: 'ring-blue-700' },
-  { badge: 'bg-emerald-700 text-white', edge: 'border-l-emerald-700', ring: 'ring-emerald-700' },
-  { badge: 'bg-amber-700 text-white', edge: 'border-l-amber-700', ring: 'ring-amber-700' },
-  { badge: 'bg-violet-700 text-white', edge: 'border-l-violet-700', ring: 'ring-violet-700' },
-  { badge: 'bg-rose-700 text-white', edge: 'border-l-rose-700', ring: 'ring-rose-700' },
-] as const
+/** One tone per core sense, for the layout that links everything by colour: the value of
+ *  `data-tone`, whose colour `--t` and ink `--t-ink` Word.module.css sets. */
+const SENSE_TONES = 5
 
-export const toneOf = (order: number) => SENSE_TONES[(order - 1) % SENSE_TONES.length]
+export const toneOf = (order: number) => ((order - 1) % SENSE_TONES) + 1
 
 const CHIP = {
-  neutral: 'bg-black/[0.05] text-black/60',
-  domain: 'bg-amber-50 text-amber-700',
-  register: 'bg-violet-50 text-violet-700',
-  form: 'bg-emerald-50 text-emerald-700',
+  neutral: 'bg-(--zs-chip) text-(--zs-soft)',
+  domain: 'bg-(--tint-3) text-(--zs-ink)',
+  register: 'text-(--zs-ink) ring-1 ring-inset ring-sea-300',
+  form: 'bg-(--tint-2) text-(--zs-ink) ring-1 ring-inset ring-(--edge)',
 } as const
 
 export function Chip({ tone = 'neutral', children }: { tone?: keyof typeof CHIP; children: React.ReactNode }) {
@@ -70,25 +65,25 @@ export function Mention({ link, className = '' }: { link: Pick<LearnerLink, 'tex
   return (
     <WordLink
       word={{ text: link.text, href: entryPath(link.targetEntryId) }}
-      className={`mention font-semibold text-blue-700 hover:underline ${className}`}
+      className={`mention font-semibold text-(--zs-pen) hover:underline ${className}`}
     />
   )
 }
 
 function Marked({ text, view }: { text: string; view: WordView }) {
   const parts = markHeadword(text, view.head.headword, view.head.lang, headwordForms(view))
-  return <>{parts.map((p, i) => (p.mark ? <b key={i} className="font-bold text-blue-700">{p.text}</b> : p.text))}</>
+  return <>{parts.map((p, i) => (p.mark ? <b key={i} className="font-bold text-(--zs-pen)">{p.text}</b> : p.text))}</>
 }
 
 export function ExampleCard({ example, view }: { example: LearnerExample; view: WordView }) {
   return (
-    <li className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-2.5 gap-y-0.5 rounded-xl bg-black/[0.035] px-3.5 py-2.5">
+    <li className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-2.5 gap-y-0.5 rounded-xl bg-(--tint-2) px-3.5 py-2.5">
       <span className="text-[15px]"><Marked text={example.text} view={view} /></span>
       <span className="-my-1.5"><AudioButton text={example.text} lang={view.head.lang} /></span>
-      {example.reading && <span className="col-start-1 text-[13px] text-black/60">{example.reading}</span>}
-      <span className="col-start-1 text-sm text-black/70">{example.vi}</span>
+      {example.reading && <span className="col-start-1 text-[13px] text-(--zs-soft)">{example.reading}</span>}
+      <span className="col-start-1 text-sm text-(--zs-soft)">{example.vi}</span>
       {example.byModel && (
-        <span className="col-start-1 text-[10.5px] font-medium uppercase tracking-wide text-black/60">câu soạn mới</span>
+        <span className="col-start-1 text-[10.5px] font-medium uppercase tracking-wide text-(--zs-soft)">câu soạn mới</span>
       )}
     </li>
   )
@@ -103,10 +98,10 @@ export function Examples({ examples, view }: { examples: LearnerExample[]; view:
 export function CollocationGloss({ link }: { link: LearnerLink }) {
   return (
     <>
-      {link.vi && <span className="block text-[13.5px] text-black/80 sm:text-sm">{link.vi}</span>}
-      {link.example && <span className="block text-[13px] text-black/70">{link.example}</span>}
-      {link.exampleReading && <span className="block text-xs text-black/60">{link.exampleReading}</span>}
-      {link.exampleVi && <span className="block text-[13px] text-black/65">{link.exampleVi}</span>}
+      {link.vi && <span className="block text-[13.5px] text-(--zs-ink) sm:text-sm">{link.vi}</span>}
+      {link.example && <span className="block text-[13px] text-(--zs-soft)">{link.example}</span>}
+      {link.exampleReading && <span className="block text-xs text-(--zs-soft)">{link.exampleReading}</span>}
+      {link.exampleVi && <span className="block text-[13px] text-(--zs-soft)">{link.exampleVi}</span>}
     </>
   )
 }
@@ -122,13 +117,13 @@ function CollocationTable({ links }: { links: LearnerLink[] }) {
       </colgroup>
       <tbody>
         {links.map((k) => (
-          <tr key={k.text} className="border-t border-black/[0.06] align-top first:border-0">
+          <tr key={k.text} className="border-t border-(--zs-line) align-top first:border-0">
             <td className="break-words py-2.5 pr-3">
               <Mention link={k} />
-              {k.reading && <span className="block text-xs text-black/60">{k.reading}</span>}
-              {k.pattern && <span className="block font-mono text-[11px] text-black/60 sm:hidden">{k.pattern}</span>}
+              {k.reading && <span className="block text-xs text-(--zs-soft)">{k.reading}</span>}
+              {k.pattern && <span className="block font-mono text-[11px] text-(--zs-soft) sm:hidden">{k.pattern}</span>}
             </td>
-            <td className="hidden break-words py-2.5 pr-3 pt-3 font-mono text-[11px] text-black/60 sm:table-cell">{k.pattern}</td>
+            <td className="hidden break-words py-2.5 pr-3 pt-3 font-mono text-[11px] text-(--zs-soft) sm:table-cell">{k.pattern}</td>
             <td className="py-2.5">
               <CollocationGloss link={k} />
             </td>
@@ -150,7 +145,7 @@ export function NoteList({ links, columns = false }: { links: LearnerLink[]; col
           className={`grid gap-x-3 gap-y-0.5 ${columns ? 'sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-baseline' : ''}`}
         >
           <Mention link={x} className="break-words" />
-          <span className="text-[13.5px] text-black/70">{x.noteVi}</span>
+          <span className="text-[13.5px] text-(--zs-soft)">{x.noteVi}</span>
         </li>
       ))}
     </ul>
@@ -166,7 +161,7 @@ export function Equivalents({ links }: { links: LearnerLink[] }) {
     <span className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
       {byLang.map((g) => (
         <span key={g.lang}>
-          <span className="mr-1.5 text-[11px] text-black/60">{LANG_LABELS[g.lang]}</span>
+          <span className="mr-1.5 text-[11px] text-(--zs-soft)">{LANG_LABELS[g.lang]}</span>
           {g.words.map((w, i) => <span key={w.text}>{i > 0 && ', '}<Mention link={w} /></span>)}
         </span>
       ))}
@@ -193,11 +188,11 @@ export function SenseBody({ sense, view, size = 'md' }: { sense: LearnerSense; v
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <SenseChips pos={sense.pos} cefr={sense.cefr} domain={sense.domain} register={sense.register} />
-        <h2 className={`font-bold leading-tight tracking-[-0.015em] ${TERMS[size]}`}>
+        <h2 className={`font-extrabold leading-tight tracking-[-0.02em] ${TERMS[size]}`}>
           {sense.viTerms.join(', ')}{sense.pivot && <PivotMark />}
         </h2>
         {sense.viDefinition && <p className="text-[15.5px] leading-relaxed">{sense.viDefinition}</p>}
-        {sense.enDefinition && <p className="text-[13.5px] text-black/60">{sense.enDefinition}</p>}
+        {sense.enDefinition && <p className="text-[13.5px] text-(--zs-soft)">{sense.enDefinition}</p>}
       </div>
       <Examples examples={sense.examples} view={view} />
       {sense.collocations.length > 0 && <Block label="Kết hợp hay gặp"><CollocationTable links={sense.collocations} /></Block>}
@@ -216,7 +211,7 @@ const fromDictionary = (s: { glossEn: string | null }) => s.glossEn !== null
 export function SourceLine({ ids, view }: { ids: string[]; view: WordView }) {
   const numbers = sourceNumbers(ids, view.senses.filter(fromDictionary))
   if (!numbers) return null
-  return <p className="text-[11px] text-black/60">Từ nghĩa {numbers} của {sourceName(view.head.lang)}</p>
+  return <p className="text-[11px] text-(--zs-soft)">Từ nghĩa {numbers} của {sourceName(view.head.lang)}</p>
 }
 
 /** The dictionary the raw senses of a language come from. */
@@ -243,11 +238,11 @@ export function MinorBody({ minor, view }: { minor: MinorSense; view: WordView }
       <SenseChips pos={minor.pos} domain={minor.domain} register={minor.register}>
         {minor.isInflection && <Chip tone="form">dạng từ</Chip>}
       </SenseChips>
-      <h2 className="text-[28px] font-bold leading-tight tracking-[-0.015em] sm:text-[30px]">{minorTerms(minor)}</h2>
+      <h2 className="text-[28px] font-extrabold leading-tight tracking-[-0.02em] sm:text-[30px]">{minorTerms(minor)}</h2>
       {minor.isInflection && minor.lemma && (
         <p className="text-[15.5px]">Là một dạng của <LemmaMention minor={minor} />.</p>
       )}
-      {minor.glossEn && <p className="text-[13.5px] text-black/60">{minorGloss(minor)}</p>}
+      {minor.glossEn && <p className="text-[13.5px] text-(--zs-soft)">{minorGloss(minor)}</p>}
       <SourceLine ids={[minor.senseId]} view={view} />
     </div>
   )
@@ -272,15 +267,15 @@ export function LearnerHeader({ view, layer, minor, forms }: { view: WordView; l
   const showPinyin = pinyin !== null && !head.pronunciations.some((p) => p.ipa?.trim())
   return (
     <div className={CONTAINER}>
-      <header className="grid grid-cols-1 gap-x-6 gap-y-2.5 border-b border-black/10 pb-5 sm:grid-cols-[minmax(0,1fr)_auto]">
+      <header className="grid grid-cols-1 gap-x-6 gap-y-2.5 border-b-2 border-(--c-l) pb-5 sm:grid-cols-[minmax(0,1fr)_auto]">
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-3.5 gap-y-2">
-          <h1 className={`min-w-0 break-words font-extrabold leading-[0.95] tracking-[-0.045em] ${
+          <h1 data-hw="" lang={head.lang} className={`min-w-0 break-words leading-[0.95] ${
             [...head.headword].length > 12 ? 'text-[34px] sm:text-[44px]' : 'text-[44px] sm:text-[60px]'
           }`}>
             {head.headword}
           </h1>
           {head.traditional && head.traditional !== head.headword && (
-            <span className="text-[28px] text-black/60 sm:text-[34px]">{head.traditional}</span>
+            <span data-hw="" lang="zh" className="text-[28px] text-(--zs-soft) sm:text-[34px]">{head.traditional}</span>
           )}
           <span className="flex flex-wrap items-center gap-1.5">
             <LevelChip level={head.level ?? layer.level} strong />
@@ -290,23 +285,23 @@ export function LearnerHeader({ view, layer, minor, forms }: { view: WordView; l
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
-          {showPinyin && <span className="font-medium text-black/70">{pinyin}</span>}
-          {view.hanViet && <span className="italic text-black/70">Hán-Việt: {view.hanViet}</span>}
+          {showPinyin && <span className="font-medium text-(--zs-soft)">{pinyin}</span>}
+          {view.hanViet && <span className="italic text-(--zs-soft)">Hán-Việt: {view.hanViet}</span>}
           <Pronunciation headword={head.headword} prons={head.pronunciations} lang={head.lang} />
         </div>
         {layer.gistVi.length > 0 && (
           <p className="text-[21px] font-semibold leading-snug tracking-[-0.01em] text-balance sm:text-2xl">
             {layer.gistVi.map((g, i) => (
-              <span key={g}>{i > 0 && <span aria-hidden="true" className="font-normal text-black/55"> · </span>}{g}</span>
+              <span key={g}>{i > 0 && <span aria-hidden="true" className="font-normal text-(--zs-soft)"> · </span>}{g}</span>
             ))}
           </p>
         )}
         <div className="flex flex-col items-start gap-2 pt-1 sm:col-start-2 sm:row-span-3 sm:row-start-1 sm:items-end sm:pt-0">
           <AddToWordlistButton size="lg" entry={saveableEntry(head)} />
           {stats.length > 0 && (
-            <p className="text-[12.5px] text-black/60 sm:text-right">
+            <p className="text-[12.5px] text-(--zs-soft) sm:text-right">
               {stats.map((s, i) => (
-                <span key={s.label}>{i > 0 && ' · '}<b className="font-semibold text-black">{s.n}</b> {s.label}</span>
+                <span key={s.label}>{i > 0 && ' · '}<b className="font-semibold text-(--zs-ink)">{s.n}</b> {s.label}</span>
               ))}
             </p>
           )}
@@ -332,7 +327,7 @@ export function LearnerRail({ view, layer, phrases = true }: { view: WordView; l
       {layer.usageNoteVi && (
         <section className={PANEL}>
           <SectionLabel>Mô tả chung</SectionLabel>
-          <p className="text-[14.5px] leading-relaxed text-black/75">{layer.usageNoteVi}</p>
+          <p className="text-[14.5px] leading-relaxed text-(--zs-soft)">{layer.usageNoteVi}</p>
         </section>
       )}
       {layer.confusables.length > 0 && (
@@ -387,10 +382,10 @@ export function BacklinkList({ view }: { view: Pick<WordView, 'backlinks' | 'hea
           <li key={b.entryId} className="flex flex-col">
             <span className="flex flex-wrap items-baseline gap-x-2">
               <Mention link={{ text: b.headword, targetEntryId: b.entryId }} />
-              {b.lang !== view.head.lang && <span className="text-[11px] text-black/60">{LANG_LABELS[b.lang]}</span>}
-              <span className="text-xs text-black/60">{b.kinds.map((k) => LINK_KIND_VI[k]).join(', ')}</span>
+              {b.lang !== view.head.lang && <span className="text-[11px] text-(--zs-soft)">{LANG_LABELS[b.lang]}</span>}
+              <span className="text-xs text-(--zs-soft)">{b.kinds.map((k) => LINK_KIND_VI[k]).join(', ')}</span>
             </span>
-            {b.note && <span className="text-[13px] text-black/70">{b.note}</span>}
+            {b.note && <span className="text-[13px] text-(--zs-soft)">{b.note}</span>}
           </li>
         ))}
       </ul>
@@ -403,7 +398,7 @@ export function PhraseTable({ view }: { view: WordView }) {
   return (
     <>
       <WordTable words={view.phrases} head="Cụm từ" shown={6} />
-      {view.modelPhrases > 0 && <p className="text-xs text-black/60">Một số cụm từ do AI gợi ý.</p>}
+      {view.modelPhrases > 0 && <p className="text-xs text-(--zs-soft)">Một số cụm từ do AI gợi ý.</p>}
     </>
   )
 }
@@ -439,5 +434,5 @@ export function layerNote(layer: Pick<LearnerLayer, 'source' | 'senses'>, view: 
 }
 
 export function LayerNote({ layer, view }: { layer: Pick<LearnerLayer, 'source' | 'senses'>; view: Pick<WordView, 'head' | 'senses'> }) {
-  return <p className="text-xs text-black/60">{layerNote(layer, view)}</p>
+  return <p className="text-xs text-(--zs-soft)">{layerNote(layer, view)}</p>
 }

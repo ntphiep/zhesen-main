@@ -1,0 +1,65 @@
+/* The word page (components/lookup/WordLayouts.tsx) on the tokens of app/globals.css, after
+   components/home/Home.module.css. The layouts keep their Tailwind classes; this holds the
+   fonts, the per-language accent, the sense tones and the motions, keyed by data-*
+   attributes so the parts need no class of their own. Every motion runs once, under half a
+   second, and is gone under prefers-reduced-motion. */
+
+.word {
+  --latin: var(--font-headword), Georgia, serif;
+  --han: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", serif;
+  background: var(--zs-bg);
+  color: var(--zs-ink);
+  -webkit-font-smoothing: antialiased;
+}
+.word :focus-visible { outline: 2.5px solid var(--sea-500); outline-offset: 3px; }
+
+/* The entry's language: --c-l as an accent line, --c-t as a pastel surface. */
+.word[data-l="en"] { --c-l: var(--l-en); --c-t: var(--l-en-t); }
+.word[data-l="zh"] { --c-l: var(--l-zh); --c-t: var(--l-zh-t); }
+.word[data-l="es"] { --c-l: var(--l-es); --c-t: var(--l-es-t); }
+
+/* A word set in its own language: the headword and the words of the other languages. */
+.word [data-hw] { font-family: var(--latin); font-weight: 500; letter-spacing: -0.02em; }
+.word [data-hw][lang="es"] { font-style: italic; }
+.word [data-hw][lang="zh"] { font-family: var(--han); font-weight: 700; letter-spacing: 0; }
+
+/* The layout picker, as on the signed-in home. */
+.picker [role="group"] { background: var(--zs-chip); }
+.picker [data-pick] { color: var(--zs-soft); transition: color 150ms var(--ease-std), background-color 150ms var(--ease-std); }
+.picker [data-pick]:hover { color: var(--zs-ink); }
+.picker [data-pick][aria-pressed="true"] { background: var(--zs-bg); color: var(--zs-ink); }
+.picker [data-hint] { color: var(--zs-soft); }
+.picker select { border-color: var(--edge); background: var(--zs-field); color: var(--zs-ink); }
+
+/* One tone per core sense in the glance layout, from the ramp, dark and light steps
+   alternating so neighbours differ. Small text on #0cafd2 and #0090bf is black. */
+.word [data-tone="1"] { --t: var(--sea-700); --t-ink: #fff; }
+.word [data-tone="2"] { --t: var(--sea-500); --t-ink: #000; }
+.word [data-tone="3"] { --t: var(--sea-300); --t-ink: #000; }
+.word [data-tone="4"] { --t: var(--sea-600); --t-ink: #fff; }
+.word [data-tone="5"] { --t: var(--sea-400); --t-ink: #000; }
+/* #023c85 and #0172b6 all but vanish as a line on black. */
+:global(:root[data-theme="dark"]) .word [data-tone="1"] { --t: var(--sea-100); --t-ink: #000; }
+:global(:root[data-theme="dark"]) .word [data-tone="4"] { --t: var(--sea-200); --t-ink: #000; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+@keyframes fade { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* A block under the headword rises in as the page arrives, and again in a layout picked
+     later, since that one mounts afresh. Filled backwards only, so nothing is left
+     transformed: a transform would trap a word popover under the next card. */
+  .word [data-reveal] { animation: rise 420ms var(--ease-enter) backwards; animation-delay: calc(var(--i, 0) * 45ms); }
+  .word [data-reveal="1"] { --i: 1; }
+  .word [data-reveal="2"] { --i: 2; }
+  .word [data-reveal="3"] { --i: 3; }
+  .word [data-reveal="4"] { --i: 4; }
+  .word [data-reveal="5"] { --i: 5; }
+  .word [data-reveal="6"] { --i: 6; }
+  /* A layout picked on the page. */
+  .word > [data-enter] { animation: fade 200ms var(--ease-std) backwards; }
+  /* Rows a "Xem thêm" button unfolds. */
+  .word [data-more] { animation: rise 260ms var(--ease-enter) backwards; }
+  /* The sense or group a tab-like control switched to. */
+  .word [data-swap] { animation: fade 180ms var(--ease-std) backwards; }
+}

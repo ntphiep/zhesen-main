@@ -17,15 +17,15 @@ export function LemmaLink({ lemma, preview, lang }: {
   const gloss = preview?.glossVi || preview?.glossEn || null
   return (
     <p className="flex flex-wrap items-baseline gap-2 text-sm">
-      <span className="text-black/55">Dạng gốc của</span>
+      <span className="text-(--zs-soft)">Dạng gốc của</span>
       {preview ? (
-        <Link href={searchPath(lang, lemma)} className="font-medium text-blue-700 hover:underline">
+        <Link href={searchPath(lang, lemma)} className="font-semibold text-(--zs-ink) underline decoration-sea-300 decoration-2 underline-offset-[0.2em] hover:decoration-(--zs-ink)">
           {lemma}
         </Link>
       ) : (
-        <span className="font-medium text-black/70">{lemma}</span>
+        <span className="font-medium text-(--zs-soft)">{lemma}</span>
       )}
-      {gloss && <span className="text-black/55">{gloss}{!preview?.glossVi && <EnglishMark />}</span>}
+      {gloss && <span className="text-(--zs-soft)">{gloss}{!preview?.glossVi && <EnglishMark />}</span>}
     </p>
   )
 }

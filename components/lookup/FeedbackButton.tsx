@@ -9,7 +9,7 @@ const KINDS: [FeedbackKind, string][] = [['meaning', 'Nghĩa sai'], ['example', 
 
 type Sent = 'idle' | 'sending' | 'sent' | 'failed'
 
-const FIELD = 'rounded-lg border border-black/15 bg-white px-3 py-2 text-sm'
+const FIELD = 'rounded-lg border border-(--edge) bg-(--zs-bg) px-3 py-2 text-sm'
 
 /**
  * "Góp ý" on the word page, posting to app/dictionary/feedback/route.ts. The page is cached
@@ -23,7 +23,7 @@ export function FeedbackButton({ entryId, senses }: { entryId: string; senses: D
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="whitespace-nowrap rounded-lg border border-black/15 bg-white px-2 py-1.5 text-sm font-medium text-black/70 hover:text-black"
+        className="whitespace-nowrap rounded-lg border border-(--edge) bg-(--zs-bg) px-2 py-1.5 text-sm font-semibold text-(--zs-soft) transition-colors duration-150 ease-std hover:text-(--zs-ink)"
       >
         Góp ý
       </button>
@@ -72,20 +72,20 @@ export function FeedbackDialog({ entryId, senses, onClose }: {
         <div className="flex flex-col gap-4 p-5">
           <p role="status" className="text-sm">Đã gửi góp ý.</p>
           <div className="flex justify-end">
-            <button type="button" onClick={onClose} className="rounded-lg bg-black px-4 py-2 text-sm text-white">Đóng</button>
+            <button type="button" onClick={onClose} className="rounded-full bg-(--zs-btn) px-4 py-2 text-sm font-bold text-(--zs-btn-ink) transition-colors duration-150 ease-std hover:bg-(--zs-btn-hover)">Đóng</button>
           </div>
         </div>
       ) : (
         <form onSubmit={submit} className="flex flex-col gap-3 p-5">
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/55">Nghĩa</span>
+            <span className="text-xs text-(--zs-soft)">Nghĩa</span>
             <select value={senseId} onChange={(e) => setSenseId(e.target.value)} className={FIELD}>
               <option value="">Cả từ</option>
               {options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
             </select>
           </label>
           <fieldset className="flex flex-col gap-1">
-            <legend className="mb-1 text-xs text-black/55">Loại</legend>
+            <legend className="mb-1 text-xs text-(--zs-soft)">Loại</legend>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
               {KINDS.map(([value, label]) => (
                 <label key={value} className="flex items-center gap-1.5 text-sm">
@@ -96,7 +96,7 @@ export function FeedbackDialog({ entryId, senses, onClose }: {
             </div>
           </fieldset>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/55">Vì sao sai</span>
+            <span className="text-xs text-(--zs-soft)">Vì sao sai</span>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -107,7 +107,7 @@ export function FeedbackDialog({ entryId, senses, onClose }: {
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-black/55">Nghĩa đúng</span>
+            <span className="text-xs text-(--zs-soft)">Nghĩa đúng</span>
             <input
               type="text"
               value={suggestion}
@@ -116,13 +116,13 @@ export function FeedbackDialog({ entryId, senses, onClose }: {
               className={FIELD}
             />
           </label>
-          {sent === 'failed' && <p role="alert" className="text-sm text-rose-700">Chưa gửi được. Thử lại.</p>}
+          {sent === 'failed' && <p role="alert" className="text-sm font-semibold text-(--zs-pen)">Chưa gửi được. Thử lại.</p>}
           <div className="mt-1 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="rounded-lg border border-black/15 px-4 py-2 text-sm">Hủy</button>
+            <button type="button" onClick={onClose} className="rounded-full border border-(--edge) px-4 py-2 text-sm font-semibold transition-colors duration-150 ease-std hover:bg-(--tint-1)">Hủy</button>
             <button
               type="submit"
               disabled={!message.trim() || sent === 'sending'}
-              className="rounded-lg bg-black px-4 py-2 text-sm text-white disabled:opacity-40"
+              className="rounded-full bg-(--zs-btn) px-4 py-2 text-sm font-bold text-(--zs-btn-ink) transition-colors duration-150 ease-std hover:bg-(--zs-btn-hover) disabled:opacity-40 disabled:hover:bg-(--zs-btn)"
             >
               Gửi
             </button>

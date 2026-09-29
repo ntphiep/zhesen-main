@@ -42,11 +42,11 @@ export function ReadLayout({ view, layer }: { view: WordView; layer: LearnerLaye
       <a
         href={`#${id}`}
         aria-current={active === id ? 'location' : undefined}
-        className={`grid grid-cols-[22px_minmax(0,1fr)] gap-1.5 rounded-lg px-2 py-1.5 text-sm ${
-          active === id ? 'bg-blue-50 font-semibold text-blue-700' : 'text-black/65 hover:bg-black/[0.04] hover:text-black'
+        className={`grid grid-cols-[22px_minmax(0,1fr)] gap-1.5 rounded-lg px-2 py-1.5 text-sm transition-colors duration-150 ease-std ${
+          active === id ? 'bg-(--zs-chip) font-semibold text-(--zs-ink)' : 'text-(--zs-soft) hover:bg-(--tint-1) hover:text-(--zs-ink)'
         }`}
       >
-        <span className="font-mono text-xs text-black/60">{n}</span>
+        <span className="font-mono text-xs text-(--zs-soft)">{n}</span>
         <span className="truncate">{label}</span>
       </a>
     </li>
@@ -58,13 +58,13 @@ export function ReadLayout({ view, layer }: { view: WordView; layer: LearnerLaye
       <div className={`${CONTAINER} grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,900px)_300px] lg:justify-between lg:gap-12`}>
         <div className="flex min-w-0 flex-col gap-10">
           {layer.senses.map((s) => (
-            <section key={s.order} id={anchor(senseId(s.order))} className="grid scroll-mt-[calc(var(--header-h)+1.5rem)] grid-cols-[34px_minmax(0,1fr)] gap-x-2">
-              <span aria-hidden="true" className="pt-1 font-mono text-[15px] font-semibold text-black/60">{s.order}</span>
+            <section key={s.order} id={anchor(senseId(s.order))} data-reveal={Math.min(s.order - 1, 6)} className="grid scroll-mt-[calc(var(--header-h)+1.5rem)] grid-cols-[34px_minmax(0,1fr)] gap-x-2">
+              <span aria-hidden="true" className="pt-1 font-mono text-[15px] font-semibold text-(--zs-soft)">{s.order}</span>
               <SenseBody sense={s} view={view} />
             </section>
           ))}
           {minor.length > 0 && (
-            <section id={minorId} className="flex scroll-mt-[calc(var(--header-h)+1.5rem)] flex-col gap-2.5">
+            <section id={minorId} data-reveal="" className="flex scroll-mt-[calc(var(--header-h)+1.5rem)] flex-col gap-2.5">
               <SectionLabel>
                 {other.length === 0 ? FORMS_LABEL : 'Nghĩa khác và dạng từ'} · {minor.length}
               </SectionLabel>
@@ -100,15 +100,15 @@ function MinorTable({ label, senses }: { label: string | null; senses: MinorSens
       {label && <SectionLabel as="h3" className="mt-2">{label} · {senses.length}</SectionLabel>}
       <ul className={`${CARD} px-2 py-1`}>
         {senses.map((m) => (
-          <li key={m.senseId} className="grid gap-1.5 border-t border-black/[0.06] px-2.5 py-2.5 text-sm first:border-0 sm:grid-cols-[minmax(0,2fr)_10rem_minmax(0,3fr)] sm:items-baseline sm:gap-3">
+          <li key={m.senseId} className="grid gap-1.5 border-t border-(--zs-line) px-2.5 py-2.5 text-sm first:border-0 sm:grid-cols-[minmax(0,2fr)_10rem_minmax(0,3fr)] sm:items-baseline sm:gap-3">
             <span className="flex flex-col">
               <span className="font-semibold">{minorTerms(m)}</span>
-              {m.isInflection && m.lemma && <span className="text-[13px] text-black/60">dạng của <LemmaMention minor={m} /></span>}
+              {m.isInflection && m.lemma && <span className="text-[13px] text-(--zs-soft)">dạng của <LemmaMention minor={m} /></span>}
             </span>
             <SenseChips pos={m.pos} domain={m.domain} register={m.register}>
               {m.isInflection && <Chip tone="form">dạng từ</Chip>}
             </SenseChips>
-            <span className="line-clamp-3 text-[13px] text-black/60" title={minorGloss(m) ?? undefined}>{minorGloss(m)}</span>
+            <span className="line-clamp-3 text-[13px] text-(--zs-soft)" title={minorGloss(m) ?? undefined}>{minorGloss(m)}</span>
           </li>
         ))}
       </ul>

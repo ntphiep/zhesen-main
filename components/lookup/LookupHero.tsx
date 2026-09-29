@@ -12,7 +12,7 @@ const SIZES: [number, string][] = [
 ]
 const headwordSize =(word: string) => SIZES.find(([n]) => word.length <= n)?.[1] ?? 'text-[34px] sm:text-[44px]'
 
-const CHIP = 'rounded-full bg-black/[0.05] px-[9px] py-[3px] text-xs text-black/60'
+const CHIP = 'rounded-full bg-(--zs-bg) px-[9px] py-[3px] text-xs text-(--zs-soft)'
 
 /** Everything handed to a client component is serialised into the page. The save reads
  *  the entry fields and a translated example, not every sense, relation and sense-linked
@@ -39,11 +39,11 @@ export function LookupHero({ detail, hanViet, summary, stats = [], posLabels = [
   return (
     <header className="flex flex-1 flex-col gap-5">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-        <h1 className={`min-w-0 break-words font-bold leading-[0.82] tracking-[-0.045em] ${headwordSize(detail.headword)}`}>
+        <h1 data-hw="" lang={detail.lang} className={`min-w-0 break-words leading-[0.82] ${headwordSize(detail.headword)}`}>
           {detail.headword}
         </h1>
         {detail.traditional && detail.traditional !== detail.headword && (
-          <span className="text-4xl text-black/55">{detail.traditional}</span>
+          <span data-hw="" lang="zh" className="text-4xl text-(--zs-soft)">{detail.traditional}</span>
         )}
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap gap-1.5">
@@ -55,7 +55,7 @@ export function LookupHero({ detail, hanViet, summary, stats = [], posLabels = [
         </div>
       </div>
       {(showPinyin || hanViet) && (
-        <div className="flex flex-wrap items-center gap-3 text-black/60">
+        <div className="flex flex-wrap items-center gap-3 text-(--zs-soft)">
           {showPinyin && <span className="font-medium">{pinyin}</span>}
           {hanViet && <span className="italic">Hán-Việt: {hanViet}</span>}
         </div>
@@ -63,8 +63,8 @@ export function LookupHero({ detail, hanViet, summary, stats = [], posLabels = [
       <Pronunciation headword={detail.headword} prons={detail.pronunciations} lang={detail.lang} pill />
       {summary && <p className="text-lg leading-snug sm:text-[21px]">{summary}</p>}
       {stats.length > 0 && (
-        <p className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-black/55">
-          {stats.map((s) => <span key={s.label}><b className="font-semibold text-black">{s.n}</b> {s.label}</span>)}
+        <p className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-(--zs-soft)">
+          {stats.map((s) => <span key={s.label}><b className="font-semibold text-(--zs-ink)">{s.n}</b> {s.label}</span>)}
         </p>
       )}
       <div className="mt-auto pt-1">

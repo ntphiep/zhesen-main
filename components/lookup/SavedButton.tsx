@@ -46,7 +46,7 @@ export function SavedButton({ entry, size = 'sm', tone }: { entry: DictEntryPrev
       className={tone === 'pane'
         ? 'h-10 rounded-full bg-(--pc) px-4 text-sm font-bold text-(--pb) disabled:opacity-60'
         : size === 'lg'
-        ? 'h-11 rounded-[10px] bg-black px-[18px] text-sm font-semibold text-white disabled:opacity-50'
+        ? 'h-11 rounded-full bg-(--zs-btn) px-5 text-sm font-bold text-(--zs-btn-ink) transition-colors duration-150 ease-std hover:bg-(--zs-btn-hover) disabled:opacity-50 disabled:hover:bg-(--zs-btn)'
         : 'rounded-lg bg-black px-3 py-1.5 text-sm text-white disabled:opacity-50'}
     >
       {label}
