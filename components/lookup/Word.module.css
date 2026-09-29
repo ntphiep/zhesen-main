@@ -6,6 +6,7 @@
 
 .word {
   --latin: var(--font-headword), Georgia, serif;
+  --latin-italic: var(--font-headword-italic), Georgia, serif;
   --han: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", serif;
   background: var(--zs-bg);
   color: var(--zs-ink);
@@ -20,7 +21,7 @@
 
 /* A word set in its own language: the headword and the words of the other languages. */
 .word [data-hw] { font-family: var(--latin); font-weight: 500; letter-spacing: -0.02em; }
-.word [data-hw][lang="es"] { font-style: italic; }
+.word [data-hw][lang="es"] { font-family: var(--latin-italic); font-style: italic; }
 .word [data-hw][lang="zh"] { font-family: var(--han); font-weight: 700; letter-spacing: 0; }
 
 /* The layout picker, as on the signed-in home. */
@@ -31,16 +32,19 @@
 .picker [data-hint] { color: var(--zs-soft); }
 .picker select { border-color: var(--edge); background: var(--zs-field); color: var(--zs-ink); }
 
-/* One tone per core sense in the glance layout, from the ramp, dark and light steps
-   alternating so neighbours differ. Small text on #0cafd2 and #0090bf is black. */
-.word [data-tone="1"] { --t: var(--sea-700); --t-ink: #fff; }
-.word [data-tone="2"] { --t: var(--sea-500); --t-ink: #000; }
-.word [data-tone="3"] { --t: var(--sea-300); --t-ink: #000; }
-.word [data-tone="4"] { --t: var(--sea-600); --t-ink: #fff; }
-.word [data-tone="5"] { --t: var(--sea-400); --t-ink: #000; }
+/* One tone per core sense in the glance layout. A blue-only ramp gives two steps that hold
+   3:1 as an edge on the page and 4.5:1 under the badge's digits, so each sense also gets
+   its own edge pattern and keeps its number. */
+.word [data-tone] { --t-ink: var(--zs-bg); }
+.word [data-tone="1"] { --t: var(--sea-700); --t-edge: solid; }
+.word [data-tone="2"] { --t: var(--sea-600); --t-edge: dashed; }
+.word [data-tone="3"] { --t: var(--sea-700); --t-edge: dotted; }
+.word [data-tone="4"] { --t: var(--sea-600); --t-edge: double; }
+.word [data-tone="5"] { --t: var(--sea-600); --t-edge: solid; }
+.word article[data-tone] { border-left-style: var(--t-edge); }
 /* #023c85 and #0172b6 all but vanish as a line on black. */
-:global(:root[data-theme="dark"]) .word [data-tone="1"] { --t: var(--sea-100); --t-ink: #000; }
-:global(:root[data-theme="dark"]) .word [data-tone="4"] { --t: var(--sea-200); --t-ink: #000; }
+:global(:root[data-theme="dark"]) .word :is([data-tone="1"], [data-tone="3"]) { --t: var(--sea-100); }
+:global(:root[data-theme="dark"]) .word :is([data-tone="2"], [data-tone="4"], [data-tone="5"]) { --t: var(--sea-500); }
 
 @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 @keyframes fade { from { opacity: 0; } }

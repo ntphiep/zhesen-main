@@ -143,6 +143,9 @@
   --zs-field: #fff;
   --zs-pen: var(--sea-600);
   --zs-chip: var(--sea-50);
+  /* What breaks the rules (an irregular form, its note): a highlighter mark. */
+  --zs-mark: var(--sea-100);
+  --zs-mark-ink: var(--sea-700);
   /* The primary button: white on #0172b6, #023c85 on hover. */
   --zs-btn: var(--sea-600);
   --zs-btn-ink: #fff;
@@ -264,6 +267,8 @@ html {
   --zs-field: #06122c;
   --zs-pen: var(--sea-300);
   --zs-chip: #0b2a52;
+  --zs-mark: var(--sea-100);
+  --zs-mark-ink: #000;
   --zs-btn: #fff;
   --zs-btn-ink: var(--sea-700);
   --zs-btn-hover: var(--sea-100);

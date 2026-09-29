@@ -116,7 +116,15 @@ export function FeedbackDialog({ entryId, senses, onClose }: {
               className={FIELD}
             />
           </label>
-          {sent === 'failed' && <p role="alert" className="text-sm font-semibold text-(--zs-pen)">Chưa gửi được. Thử lại.</p>}
+          {sent === 'failed' && (
+            <p role="alert" className="flex items-center gap-1.5 text-sm font-semibold text-(--zs-ink)">
+              <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0">
+                <path d="M8 1.75 15 14H1z" />
+                <path d="M8 6.25v3.5M8 11.75v.25" />
+              </svg>
+              Chưa gửi được. Thử lại.
+            </p>
+          )}
           <div className="mt-1 flex justify-end gap-2">
             <button type="button" onClick={onClose} className="rounded-full border border-(--edge) px-4 py-2 text-sm font-semibold transition-colors duration-150 ease-std hover:bg-(--tint-1)">Hủy</button>
             <button

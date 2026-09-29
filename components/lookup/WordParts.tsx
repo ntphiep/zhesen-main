@@ -69,7 +69,7 @@ export function Card({ label, id, action, className = '', children }: {
 }
 
 const BADGE = {
-  strong: 'bg-sea-100 text-sea-700',
+  strong: 'bg-(--zs-mark) text-(--zs-mark-ink)',
   light: 'bg-(--zs-chip) text-(--zs-ink)',
   neutral: 'bg-(--zs-chip) text-(--zs-soft)',
 } as const
@@ -94,7 +94,7 @@ export function LevelChip({ level, strong = false }: { level: string | null; str
 /** Marks a Vietnamese meaning inferred through English rather than written for the word. */
 export function PivotMark() {
   return (
-    <span className="ml-1 align-middle text-[10px] font-normal uppercase tracking-wide text-(--zs-soft)" title="Nghĩa suy ra qua tiếng Anh">
+    <span className="ml-1 rounded-sm px-1 py-px align-middle text-[10px] font-normal uppercase tracking-wide text-(--zs-ink) ring-1 ring-(--zs-pen) ring-inset" title="Nghĩa suy ra qua tiếng Anh">
       qua tiếng Anh
     </span>
   )
@@ -156,13 +156,13 @@ export function MorphText({ word }: { word: Pick<FamilyWord, 'before' | 'stem' |
   )
 }
 
-/** t|ook: what a form keeps of the headword in ink, what changes in blue, marked on a
- *  light blue ground when the change breaks the rules. */
+/** t|ook: what a form keeps of the headword in ink, what changes in blue, on the
+ *  highlighter mark when the change breaks the rules. */
 function FormText({ form }: { form: ViewForm }) {
   return (
     <>
       {form.kept}
-      <span className={`font-bold ${form.irregular ? 'rounded-sm bg-sea-100 px-0.5 text-sea-700' : 'text-(--zs-pen)'}`}>{form.changed}</span>
+      <span className={`font-bold ${form.irregular ? 'rounded-sm bg-(--zs-mark) px-0.5 text-(--zs-mark-ink)' : 'text-(--zs-pen)'}`}>{form.changed}</span>
       {form.irregular && <span className="sr-only"> (bất quy tắc)</span>}
     </>
   )
@@ -247,11 +247,19 @@ export function IrregularNote({ forms }: { forms: ViewForm[] }) {
   )
 }
 
+/** A form's stop on the timeline and its key in the legend: a pen dot when regular, a square
+ *  on the mark FormText gives the changed letters when irregular. */
+const STOP = {
+  base: 'rounded-full bg-(--zs-ink)',
+  regular: 'rounded-full bg-(--zs-pen)',
+  irregular: 'rounded-[3px] bg-(--zs-mark) ring-[1.5px] ring-(--zs-mark-ink)',
+} as const
+
 export function FormLegend({ irregular }: { irregular: boolean }) {
   return (
     <span className="flex gap-3.5 text-xs text-(--zs-soft)">
-      <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-(--zs-pen)" />theo quy tắc</span>
-      {irregular && <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-sea-300" />bất quy tắc</span>}
+      <span className="flex items-center gap-1.5"><span className={`size-2 ${STOP.regular}`} />theo quy tắc</span>
+      {irregular && <span className="flex items-center gap-1.5"><span className={`size-2 ${STOP.irregular}`} />bất quy tắc</span>}
     </span>
   )
 }
@@ -271,7 +279,7 @@ export function FormTimeline({ headword, baseLabel, forms, lang }: {
       {items.map((f, i) => (
         <li key={f.text} className="relative flex items-center justify-between gap-3 sm:flex-col sm:items-stretch sm:justify-start sm:gap-2.5">
           <span aria-hidden="true" className="absolute top-1/2 -left-[26px] -translate-y-1/2 sm:static sm:flex sm:translate-y-0 sm:items-center">
-            <span className={`block size-2.5 shrink-0 rounded-full ${f.base ? 'bg-(--zs-ink)' : f.irregular ? 'bg-sea-300' : 'bg-(--zs-pen)'}`} />
+            <span className={`block size-2.5 shrink-0 ${f.base ? STOP.base : f.irregular ? STOP.irregular : STOP.regular}`} />
             {i < items.length - 1 && <span className="hidden h-0.5 flex-1 bg-(--zs-line) sm:block" />}
           </span>
           {f.base
