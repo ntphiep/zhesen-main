@@ -565,7 +565,7 @@ export function AiCorner({ lang, headword, meaningVi, className = `${CARD} p-5 s
   const anchor = useAnchor()
   return (
     <section id={anchor('assistant')} className={`flex flex-col gap-2 [&:has(>div:empty)]:hidden ${className}`}>
-      <SectionLabel>Trợ lý</SectionLabel>
+      <SectionLabel>AI</SectionLabel>
       <div>
         <AiCoach lang={lang} headword={headword} meaningVi={meaningVi} />
       </div>

@@ -47,7 +47,7 @@ export function AiSuggest({ query }: { query: string }) {
     } catch {
       // `callAi` handles fetch failures, but its dynamic task-module import rejects
       // after a redeploy, which would leave this stuck on the loading state.
-      setState({ kind: 'error', message: 'Chưa hỏi được trợ lý. Thử lại.' })
+      setState({ kind: 'error', message: 'Chưa hỏi được AI. Thử lại.' })
     }
   }
 
@@ -58,22 +58,22 @@ export function AiSuggest({ query }: { query: string }) {
         onMouseDown={(e) => { e.preventDefault(); ask() }}
         className="self-start rounded-lg border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5"
       >
-        Hỏi trợ lý xem đây là từ nào
+        Hỏi AI xem đây là từ nào
       </button>
     )
   }
 
-  if (state.kind === 'loading') return <p className="text-sm text-black/55">Đang hỏi trợ lý…</p>
+  if (state.kind === 'loading') return <p className="text-sm text-black/55">Đang hỏi AI…</p>
   if (state.kind === 'error') return <p className="text-sm text-red-600">{state.message}</p>
 
   if (state.words.length === 0) {
-    return <p className="text-sm text-black/55">Trợ lý cũng không nghĩ ra từ nào.</p>
+    return <p className="text-sm text-black/55">AI cũng không nghĩ ra từ nào.</p>
   }
 
   return (
     <div className="flex flex-col gap-2">
       <span className="text-xs font-semibold uppercase tracking-wide text-black/55">
-        Trợ lý gợi ý, chưa qua từ điển
+        AI gợi ý, chưa qua từ điển
       </span>
       <ul className="flex flex-col gap-1">
         {state.words.map((w) => (

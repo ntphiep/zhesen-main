@@ -41,7 +41,7 @@ enforces the rules it can measure; the rest are on the writer.
 | The learner's saved words | sổ tay | danh sách của bạn |
 | A tag on a word | thẻ | nhãn |
 | The card grid view of the wordlist | lưới | thẻ |
-| The AI assistant | trợ lý | AI |
+| The AI assistant | AI | trợ lý |
 
 ## Before and after
 

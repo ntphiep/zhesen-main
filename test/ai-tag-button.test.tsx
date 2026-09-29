@@ -35,7 +35,7 @@ describe('AiTagButton', () => {
     vi.mocked(callAi).mockResolvedValue({ status: 'ok', data: { tags: [{ headword: 'invoice', tags: ['kế toán'] }] } })
     const onTagged = vi.fn()
     render(<AiTagButton words={[mk('invoice')]} existingTags={['văn phòng']} onTagged={onTagged} />)
-    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng AI/i }))
 
     expect(callAi).toHaveBeenCalledWith('tags', {
       words: [{ headword: 'invoice', meaningVi: 'nghĩa của invoice' }],
@@ -53,7 +53,7 @@ describe('AiTagButton', () => {
     })
     const onTagged = vi.fn()
     render(<AiTagButton words={[mk('invoice')]} existingTags={[]} onTagged={onTagged} />)
-    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng AI/i }))
     await waitFor(() => expect(onTagged).toHaveBeenCalledWith(new Map([['en:invoice', ['kế toán']]])))
   })
 
@@ -66,7 +66,7 @@ describe('AiTagButton', () => {
       .mockResolvedValueOnce({ status: 'error', message: 'Trợ lý đang bận.' })
     const onTagged = vi.fn()
     render(<AiTagButton words={words} existingTags={[]} onTagged={onTagged} />)
-    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng AI/i }))
 
     expect(await screen.findByText('Trợ lý đang bận.')).toBeInTheDocument()
     expect(callAi).toHaveBeenCalledTimes(2)
@@ -80,7 +80,7 @@ describe('AiTagButton', () => {
       .mockResolvedValueOnce({ status: 'ok', data: { tags: [{ headword: 'w0', tags: ['văn phòng'] }] } })
       .mockResolvedValueOnce({ status: 'ok', data: { tags: [{ headword: 'w20', tags: ['văn phòng'] }] } })
     render(<AiTagButton words={words} existingTags={[]} onTagged={vi.fn()} />)
-    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng AI/i }))
 
     await waitFor(() => expect(callAi).toHaveBeenCalledTimes(2))
     expect(vi.mocked(callAi).mock.calls[0][1]).toMatchObject({ existing: [] })
@@ -96,7 +96,7 @@ describe('AiTagButton', () => {
       .mockResolvedValueOnce({ status: 'ok', data: { tags: [{ headword: 'w0', tags: ['văn phòng'] }] } })
       .mockResolvedValueOnce({ status: 'ok', data: { tags: [{ headword: 'w20', tags: ['văn phòng'] }] } })
     render(<AiTagButton words={words} existingTags={existingTags} onTagged={vi.fn()} />)
-    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng AI/i }))
 
     await waitFor(() => expect(callAi).toHaveBeenCalledTimes(2))
     const second = vi.mocked(callAi).mock.calls[1][1] as { existing: string[] }
@@ -111,7 +111,7 @@ describe('AiTagButton', () => {
       .mockResolvedValueOnce({ status: 'ok', data: { tags: [{ headword: 'no', tags: ['tiếng Tây Ban Nha'] }] } })
     const onTagged = vi.fn()
     render(<AiTagButton words={[mk('no', 'en'), mk('no', 'es')]} existingTags={[]} onTagged={onTagged} />)
-    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng AI/i }))
 
     await waitFor(() => expect(callAi).toHaveBeenCalledTimes(2))
     expect(onTagged).toHaveBeenCalledWith(
@@ -123,7 +123,7 @@ describe('AiTagButton', () => {
     vi.mocked(callAi).mockResolvedValue({ status: 'error', message: 'Trợ lý gặp lỗi.' })
     const onTagged = vi.fn()
     render(<AiTagButton words={[mk('invoice')]} existingTags={[]} onTagged={onTagged} />)
-    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Gắn thẻ bằng AI/i }))
     expect(await screen.findByText('Trợ lý gặp lỗi.')).toBeInTheDocument()
     expect(onTagged).not.toHaveBeenCalled()
   })

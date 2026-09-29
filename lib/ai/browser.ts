@@ -33,7 +33,7 @@ export async function callAi<K extends TaskName>(
     })
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e
-    return { status: 'error', message: 'Chưa kết nối được trợ lý.' }
+    return { status: 'error', message: 'Chưa kết nối được AI.' }
   }
 
   const body: unknown = res.ok && res.body && res.headers.get('content-type')?.startsWith('application/x-ndjson')
@@ -41,7 +41,7 @@ export async function callAi<K extends TaskName>(
     : await res.json().catch(() => null)
   const message = (body as { error?: unknown } | null)?.error
   if (!res.ok || typeof message === 'string') {
-    return { status: 'error', message: typeof message === 'string' ? message : 'Trợ lý chưa trả lời được.' }
+    return { status: 'error', message: typeof message === 'string' ? message : 'AI chưa trả lời được.' }
   }
 
   // Loaded here rather than at module scope: by now the request has been made
@@ -77,7 +77,7 @@ async function readLines(body: ReadableStream<Uint8Array>, onText?: (text: strin
     }
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e
-    return { error: 'Chưa kết nối được trợ lý.' }
+    return { error: 'Chưa kết nối được AI.' }
   } finally {
     reader.cancel().catch(() => {})
   }

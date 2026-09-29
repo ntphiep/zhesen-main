@@ -323,7 +323,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                   disabled={!headword.trim() || filling}
                   className="rounded-lg border border-black/15 px-3 py-1.5 text-xs font-medium text-black/70 hover:bg-black/5 disabled:opacity-40"
                 >
-                  {filling ? 'Đang điền…' : 'Điền bằng trợ lý'}
+                  {filling ? 'Đang điền…' : 'Điền bằng AI'}
                 </button>
                 <span className="text-xs text-black/55">
                   {fillError ?? 'Chỉ điền ô còn trống.'}

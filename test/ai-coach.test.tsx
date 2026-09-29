@@ -27,19 +27,35 @@ describe('AiCoach', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
+  // The wordlist puts its "Chi tiết" link in the same row, and the link must not vanish
+  // where the assistant is off or once it has answered.
+  it('keeps the actions passed beside it, with or without the assistant', async () => {
+    vi.mocked(aiEnabled).mockResolvedValue(false)
+    const { unmount } = render(<AiCoach lang="en" headword="coverage" meaningVi={null}><a href="/x">Chi tiết</a></AiCoach>)
+    expect(screen.getByRole('link', { name: 'Chi tiết' })).toBeInTheDocument()
+    unmount()
+    resetAiEnabledCache()
+    vi.mocked(aiEnabled).mockResolvedValue(true)
+    vi.mocked(callAi).mockResolvedValue({ status: 'ok', data: full })
+    render(<AiCoach lang="en" headword="coverage" meaningVi={null}><a href="/x">Chi tiết</a></AiCoach>)
+    await userEvent.click(await screen.findByRole('button', { name: 'Hỏi AI về coverage' }))
+    expect(await screen.findByText(full.mnemonic)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Chi tiết' })).toBeInTheDocument()
+  })
+
   // Behind a button on purpose: a model call is the most expensive thing a click
   // can trigger here, and expanding a row usually means wanting the dictionary
   // entry that is already on screen.
   it('asks nothing until the button is pressed', async () => {
     render(<AiCoach lang="en" headword="coverage" meaningVi={null} />)
-    expect(await screen.findByRole('button', { name: /Hỏi trợ lý/i })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Hỏi AI/i })).toBeInTheDocument()
     expect(callAi).not.toHaveBeenCalled()
   })
 
   it('shows every section the assistant filled in', async () => {
     vi.mocked(callAi).mockResolvedValue({ status: 'ok', data: full })
     render(<AiCoach lang="en" headword="coverage" meaningVi="mức bảo hiểm" />)
-    await userEvent.click(await screen.findByRole('button', { name: /Hỏi trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Hỏi AI/i }))
 
     expect(await screen.findByText(full.mnemonic)).toBeInTheDocument()
     expect(screen.getByText('insurance coverage')).toBeInTheDocument()
@@ -56,7 +72,7 @@ describe('AiCoach', () => {
       data: { mnemonic: '', collocations: [], examples: [], confusables: [] },
     })
     render(<AiCoach lang="zh" headword="囍" meaningVi={null} />)
-    await userEvent.click(await screen.findByRole('button', { name: /Hỏi trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Hỏi AI/i }))
     expect(await screen.findByText(/không có gì thêm/i)).toBeInTheDocument()
     expect(screen.queryByText('Mẹo nhớ')).toBeNull()
   })
@@ -64,7 +80,7 @@ describe('AiCoach', () => {
   it('offers a retry after a failure and shows why', async () => {
     vi.mocked(callAi).mockResolvedValue({ status: 'error', message: 'Trợ lý phản hồi quá chậm.' })
     render(<AiCoach lang="en" headword="coverage" meaningVi={null} />)
-    await userEvent.click(await screen.findByRole('button', { name: /Hỏi trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Hỏi AI/i }))
     expect(await screen.findByText('Trợ lý phản hồi quá chậm.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Thử lại/i })).toBeInTheDocument()
   })

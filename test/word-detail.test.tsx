@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { WordDetail, resetDetailCache } from '@/components/wordlist/WordDetail'
 import { fetchEntryDetail } from '@/lib/dictionary/entryResponse'
+import { callAi, aiEnabled } from '@/lib/ai/browser'
+import { resetAiEnabledCache } from '@/lib/hooks/useAiEnabled'
 import type { UserWord } from '@/lib/wordlist/types'
+
+vi.mock('@/lib/ai/browser', () => ({ callAi: vi.fn(), aiEnabled: vi.fn(async () => false) }))
 
 // The expanded row reads the cached /dictionary/entry route, not Supabase: a direct
 // query from the browser paid the full round trip on every first expand.
@@ -30,7 +35,11 @@ const base: UserWord = {
 describe('WordDetail', () => {
   // The component remembers entries for the life of the tab, so a case would
   // otherwise be served the previous case's entry instead of calling the mock.
-  beforeEach(resetDetailCache)
+  beforeEach(() => {
+    resetDetailCache()
+    resetAiEnabledCache()
+    vi.mocked(aiEnabled).mockResolvedValue(false)
+  })
 
   it('loads and shows dictionary detail when entryId present', async () => {
     render(<WordDetail word={base} />)
@@ -84,7 +93,81 @@ describe('WordDetail', () => {
 
   it('links to the word page of a dictionary word', () => {
     render(<WordDetail word={base} />)
-    expect(screen.getByRole('link', { name: 'Mở trang từ' })).toHaveAttribute('href', '/dictionary/en/dog')
+    expect(screen.getByRole('link', { name: 'Chi tiết' })).toHaveAttribute('href', '/dictionary/en/dog')
+  })
+
+  // Three senses, two examples, collocations and synonyms; the word page has the rest.
+  it('shows the gist of a long entry, not the whole page', async () => {
+    const sense = (n: number, glossVi: string | null) => ({ pos: 'noun', glossVi, glossEn: `english ${n}`, senseOrder: n })
+    vi.mocked(fetchEntryDetail).mockResolvedValueOnce({
+      status: 'ok',
+      detail: {
+        id: 'en:guarantee', lang: 'en', headword: 'guarantee', traditional: null, level: 'B1', ipa: null, pos: 'noun',
+        glossVi: 'Sự bảo đảm', glossEn: null, audioUrl: null,
+        senses: [sense(1, 'Sự bảo đảm'), sense(2, 'Bảo lãnh'), sense(3, 'Bảo hành'), sense(4, 'Người bảo lãnh'), sense(5, null)],
+        pronunciations: [],
+        examples: ['One.', 'Two.', 'Three.'].map((text) => ({ text, reading: null, translationVi: null, translationEn: null })),
+        relations: [
+          { relationType: 'collocation', relatedText: 'give a guarantee', relatedEntryId: null },
+          { relationType: 'synonym', relatedText: 'warranty', relatedEntryId: null },
+          { relationType: 'hypernym', relatedText: 'promise', relatedEntryId: null },
+        ],
+        attributes: {},
+      },
+    })
+    render(<WordDetail word={{ ...base, entryId: 'en:guarantee', headword: 'guarantee' }} />)
+    expect(await screen.findByText('Bảo hành')).toBeInTheDocument()
+    expect(screen.queryByText('Người bảo lãnh')).toBeNull()
+    expect(screen.queryByText('english 1')).toBeNull()
+    expect(screen.getByText('Two.')).toBeInTheDocument()
+    expect(screen.queryByText('Three.')).toBeNull()
+    expect(screen.getByText('warranty')).toBeInTheDocument()
+    expect(screen.queryByText('promise')).toBeNull()
+  })
+
+  it('marks a meaning inferred through English and one left in English', async () => {
+    vi.mocked(fetchEntryDetail).mockResolvedValueOnce({
+      status: 'ok',
+      detail: {
+        id: 'en:quay', lang: 'en', headword: 'quay', traditional: null, level: null, ipa: null, pos: 'noun',
+        glossVi: null, glossEn: null, audioUrl: null,
+        senses: [
+          { pos: 'noun', glossVi: null, pivotVi: 'bến tàu', glossEn: 'a wharf', senseOrder: 1 },
+          { pos: 'noun', glossVi: null, glossEn: 'a stone landing place', senseOrder: 2 },
+        ],
+        pronunciations: [], examples: [], relations: [], attributes: {},
+      },
+    })
+    render(<WordDetail word={{ ...base, entryId: 'en:quay', headword: 'quay' }} />)
+    expect(await screen.findByText('bến tàu')).toBeInTheDocument()
+    expect(screen.getByText('qua tiếng Anh')).toBeInTheDocument()
+    expect(screen.getByText('a stone landing place')).toBeInTheDocument()
+    expect(screen.getByText('chưa dịch')).toBeInTheDocument()
+    expect(screen.queryByText('a wharf')).toBeNull()
+  })
+
+  // The button is live while the entry loads; its answer must outlast the load.
+  it('keeps an answer asked for while the entry was loading', async () => {
+    vi.mocked(aiEnabled).mockResolvedValue(true)
+    vi.mocked(callAi).mockResolvedValue({
+      status: 'ok', data: { mnemonic: 'dog nhớ là chó', collocations: [], examples: [], confusables: [] },
+    })
+    let finish: (v: Awaited<ReturnType<typeof fetchEntryDetail>>) => void = () => {}
+    vi.mocked(fetchEntryDetail).mockReturnValueOnce(new Promise((r) => { finish = r }))
+    render(<WordDetail word={base} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Hỏi AI về dog' }))
+    expect(await screen.findByText('dog nhớ là chó')).toBeInTheDocument()
+    finish({
+      status: 'ok',
+      detail: {
+        id: 'en:dog', lang: 'en', headword: 'dog', traditional: null, level: null, ipa: null, pos: 'noun',
+        glossVi: 'Con chó', glossEn: 'dog', audioUrl: null,
+        senses: [{ pos: 'noun', glossVi: 'Con chó', glossEn: 'dog', senseOrder: 1 }],
+        pronunciations: [], examples: [], relations: [], attributes: {},
+      },
+    })
+    expect(await screen.findByText('Con chó')).toBeInTheDocument()
+    expect(screen.getByText('dog nhớ là chó')).toBeInTheDocument()
   })
 
   // A word typed in by hand has no entry to open, so it opens the lookup instead.

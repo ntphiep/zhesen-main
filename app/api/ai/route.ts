@@ -53,14 +53,14 @@ const TIMEOUT_MS = 30_000
 /** The answer depends on the caller's session, so no cache may keep it. */
 const PRIVATE = { 'Cache-Control': 'private, no-store' }
 
-const UNAVAILABLE = 'Trợ lý chưa trả lời được. Thử lại sau.'
+const UNAVAILABLE = 'AI chưa trả lời được. Thử lại sau.'
 
 /** What the browser is told about a failed model call, or null for a failure that
  *  is not the model's and should surface as one. */
 function failure(e: unknown): { error: string; status: number } | null {
   if (e instanceof AiUnavailableError) return { error: UNAVAILABLE, status: 502 }
   if (e instanceof DOMException && e.name === 'TimeoutError') {
-    return { error: 'Trợ lý trả lời quá lâu. Thử lại sau.', status: 504 }
+    return { error: 'AI trả lời quá lâu. Thử lại sau.', status: 504 }
   }
   return null
 }
@@ -123,9 +123,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (!(await signedIn())) return Response.json({ error: 'Đăng nhập để dùng trợ lý.' }, { status: 401 })
+  if (!(await signedIn())) return Response.json({ error: 'Đăng nhập để dùng AI.' }, { status: 401 })
   const cfg = await aiConfig()
-  if (!cfg) return Response.json({ error: 'Chưa bật trợ lý.' }, { status: 503 })
+  if (!cfg) return Response.json({ error: 'Chưa bật AI.' }, { status: 503 })
 
   let body: unknown
   try {
@@ -148,7 +148,7 @@ export async function POST(request: Request) {
   // Budget is spent here, not on arrival. The global bucket is one bucket for
   // everyone, so charging a request that never reaches the model turned it into
   // a lever: sixty pieces of junk a minute cost the sender nothing and answered
-  // every real user with "Trợ lý đang bận". Only a request that is about to cost
+  // every real user with "AI đang bận". Only a request that is about to cost
   // something takes a slot. Malformed input is still refused instantly above.
   const caller = clientKey(request)
   const allowance = caller ? rateLimit(caller) : globalBudget('all')
@@ -160,7 +160,7 @@ export async function POST(request: Request) {
   }
   if (caller && !globalBudget('all').allowed) {
     return Response.json(
-      { error: 'Trợ lý đang bận. Thử lại sau ít giây.' },
+      { error: 'AI đang bận. Thử lại sau ít giây.' },
       { status: 429, headers: { 'Retry-After': '60' } },
     )
   }

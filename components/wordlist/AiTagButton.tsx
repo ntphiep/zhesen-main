@@ -92,7 +92,7 @@ export function AiTagButton({
         onClick={run}
         className="rounded-lg border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5 disabled:opacity-40"
       >
-        {busy ? 'Đang gắn thẻ…' : 'Gắn thẻ bằng trợ lý'}
+        {busy ? 'Đang gắn thẻ…' : 'Gắn thẻ bằng AI'}
       </button>
       {error && <span className="text-sm text-red-600">{error}</span>}
     </>

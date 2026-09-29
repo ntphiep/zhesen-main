@@ -93,11 +93,11 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
         onClick={() => setOpen(true)}
         className="fixed bottom-5 right-5 z-40 rounded-full bg-blue-700 px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-blue-800"
       >
-        Hỏi trợ lý
+        Hỏi AI
       </button>
       <dialog
         ref={dialogRef}
-        aria-label="Trợ lý Zhesen"
+        aria-label="Hỏi AI"
         onClose={() => setOpen(false)}
         // No display utility on the dialog itself: `flex` would beat the UA's
         // `display: none` for a closed dialog. `top-auto left-auto` undo the UA's
@@ -107,11 +107,11 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
         {open && (
           <div className="flex max-h-[min(32rem,80vh)] flex-col">
             <header className="flex items-center gap-2 border-b border-black/10 px-4 py-3">
-              <span className="mr-auto text-sm font-semibold">Trợ lý Zhesen</span>
+              <span className="mr-auto text-sm font-semibold">Hỏi AI</span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Đóng trợ lý"
+                aria-label="Đóng"
                 className="rounded-lg px-2 py-1 text-sm text-black/55 hover:bg-black/5"
               >
                 Đóng
@@ -121,7 +121,7 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
             <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 text-sm">
               {turns.length === 0 && (
                 <p className="text-black/55">
-                  Hỏi về từ đang xem, nhờ sửa câu hoặc hỏi nên ôn gì. Câu trả lời do trợ lý viết, chưa qua từ điển.
+                  Hỏi về từ đang xem, nhờ sửa câu hoặc hỏi nên ôn gì. Câu trả lời do AI viết, chưa qua từ điển.
                 </p>
               )}
               {turns.map((t, i) => (
@@ -157,7 +157,7 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
                   // two lines, and reaching for the button by mouse costs more.
                   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send() }
                 }}
-                aria-label="Câu hỏi cho trợ lý"
+                aria-label="Câu hỏi cho AI"
                 placeholder="Nhập câu hỏi…"
                 className="flex-1 resize-none rounded-xl border border-black/15 px-3 py-2 text-sm outline-none focus:border-blue-600"
               />

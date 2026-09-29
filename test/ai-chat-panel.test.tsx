@@ -16,11 +16,11 @@ beforeEach(() => {
 
 async function openPanel() {
   render(<AiChatPanel />)
-  await userEvent.click(await screen.findByRole('button', { name: 'Hỏi trợ lý' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Hỏi AI' }))
 }
 
 async function ask(text: string) {
-  await userEvent.type(screen.getByLabelText('Câu hỏi cho trợ lý'), text)
+  await userEvent.type(screen.getByLabelText('Câu hỏi cho AI'), text)
   await userEvent.click(screen.getByRole('button', { name: 'Gửi' }))
 }
 
@@ -36,7 +36,7 @@ describe('AiChatPanel', () => {
   // components that call useAiEnabled() with no argument.
   it('asks nothing when the server has already answered', async () => {
     render(<AiChatPanel enabled />)
-    expect(await screen.findByRole('button', { name: 'Hỏi trợ lý' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Hỏi AI' })).toBeInTheDocument()
     expect(aiEnabled).not.toHaveBeenCalled()
   })
 
@@ -50,7 +50,7 @@ describe('AiChatPanel', () => {
   // nothing out, so the room left under the page is asserted by its class.
   it('leaves room at the end of the page for the launcher', async () => {
     const { container } = render(<AiChatPanel enabled />)
-    const launcher = await screen.findByRole('button', { name: 'Hỏi trợ lý' })
+    const launcher = await screen.findByRole('button', { name: 'Hỏi AI' })
     expect(launcher).toHaveClass('bottom-5')
     const spacer = container.querySelector('[aria-hidden="true"]')
     expect(spacer).toHaveClass('h-20', 'shrink-0')
@@ -58,8 +58,8 @@ describe('AiChatPanel', () => {
 
   it('stays closed until the button is pressed', async () => {
     render(<AiChatPanel />)
-    expect(await screen.findByRole('button', { name: 'Hỏi trợ lý' })).toBeInTheDocument()
-    expect(screen.queryByLabelText('Câu hỏi cho trợ lý')).toBeNull()
+    expect(await screen.findByRole('button', { name: 'Hỏi AI' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('Câu hỏi cho AI')).toBeNull()
   })
 
   // Without it, "từ này" in a question has no referent and the answer is a
@@ -149,7 +149,7 @@ describe('AiChatPanel', () => {
     await ask('từ này nghĩa gì')
     await userEvent.click(await screen.findByRole('button', { name: 'Dừng' }))
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Dừng' })).toBeNull())
-    expect(screen.getByLabelText('Câu hỏi cho trợ lý')).toHaveFocus()
+    expect(screen.getByLabelText('Câu hỏi cho AI')).toHaveFocus()
   })
 
   // A modal <dialog> is what gives Escape, the focus trap and focus restore; jsdom
@@ -158,8 +158,8 @@ describe('AiChatPanel', () => {
     const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal')
     await openPanel()
     expect(showModal).toHaveBeenCalledTimes(1)
-    expect(screen.getByRole('dialog', { name: 'Trợ lý Zhesen' })).toHaveAttribute('open')
-    expect(screen.getByLabelText('Câu hỏi cho trợ lý')).toHaveFocus()
+    expect(screen.getByRole('dialog', { name: 'Hỏi AI' })).toHaveAttribute('open')
+    expect(screen.getByLabelText('Câu hỏi cho AI')).toHaveFocus()
     showModal.mockRestore()
   })
 
@@ -167,10 +167,10 @@ describe('AiChatPanel', () => {
   // has to follow the dialog's close event or the next open finds it already open.
   it('follows the browser closing it, as Escape does, and opens again', async () => {
     await openPanel()
-    const dialog = screen.getByRole('dialog', { name: 'Trợ lý Zhesen' }) as HTMLDialogElement
+    const dialog = screen.getByRole('dialog', { name: 'Hỏi AI' }) as HTMLDialogElement
     act(() => dialog.close())
-    expect(screen.queryByLabelText('Câu hỏi cho trợ lý')).toBeNull()
-    await userEvent.click(screen.getByRole('button', { name: 'Hỏi trợ lý' }))
+    expect(screen.queryByLabelText('Câu hỏi cho AI')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Hỏi AI' }))
     expect(dialog).toHaveAttribute('open')
   })
 })

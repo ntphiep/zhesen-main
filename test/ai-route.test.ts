@@ -239,7 +239,7 @@ describe('/api/ai', () => {
         { type: 'error', error: { type: 'overloaded_error', message: 'Overloaded' } },
       ]))
       const lines = await ndjsonLines(await post(chat))
-      expect(lines.at(-1)).toEqual({ error: 'Trợ lý chưa trả lời được. Thử lại sau.' })
+      expect(lines.at(-1)).toEqual({ error: 'AI chưa trả lời được. Thử lại sau.' })
       expect(lines.some((l) => typeof l === 'object' && l !== null && 'data' in l)).toBe(false)
     })
 
@@ -269,7 +269,7 @@ describe('/api/ai', () => {
 
     it('still holds the reply to the task schema', async () => {
       globalThis.fetch = vi.fn(async () => anthropicStream(['   ']))
-      expect((await ndjsonLines(await post(chat))).at(-1)).toEqual({ error: 'Trợ lý chưa trả lời được. Thử lại sau.' })
+      expect((await ndjsonLines(await post(chat))).at(-1)).toEqual({ error: 'AI chưa trả lời được. Thử lại sau.' })
     })
   })
 })

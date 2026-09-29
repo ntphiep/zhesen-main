@@ -31,14 +31,14 @@ describe('AiSuggest', () => {
   // waits for the learner to say the search really is finished.
   it('asks nothing until the button is pressed', async () => {
     render(<AiSuggest query="hoãn cuộc họp" />)
-    expect(await screen.findByRole('button', { name: /Hỏi trợ lý/i })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Hỏi AI/i })).toBeInTheDocument()
     expect(callAi).not.toHaveBeenCalled()
   })
 
   it('sends each suggestion back through the dictionary', async () => {
     vi.mocked(callAi).mockResolvedValue({ status: 'ok', data: two })
     render(<AiSuggest query="hoãn cuộc họp" />)
-    await userEvent.click(await screen.findByRole('button', { name: /Hỏi trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Hỏi AI/i }))
 
     expect(callAi).toHaveBeenCalledWith('suggest', { query: 'hoãn cuộc họp' })
     const link = await screen.findByRole('link', { name: /postpone/ })
@@ -50,21 +50,21 @@ describe('AiSuggest', () => {
   it('labels the list as generated', async () => {
     vi.mocked(callAi).mockResolvedValue({ status: 'ok', data: two })
     render(<AiSuggest query="hoãn cuộc họp" />)
-    await userEvent.click(await screen.findByRole('button', { name: /Hỏi trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Hỏi AI/i }))
     expect(await screen.findByText(/chưa qua từ điển/i)).toBeInTheDocument()
   })
 
   it('says so when the assistant has no candidate either', async () => {
     vi.mocked(callAi).mockResolvedValue({ status: 'ok', data: { words: [] } })
     render(<AiSuggest query="qwertyuiop" />)
-    await userEvent.click(await screen.findByRole('button', { name: /Hỏi trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Hỏi AI/i }))
     expect(await screen.findByText(/không nghĩ ra từ nào/i)).toBeInTheDocument()
   })
 
   it('shows the refusal rather than an empty list', async () => {
     vi.mocked(callAi).mockResolvedValue({ status: 'error', message: 'Trợ lý đang bận.' })
     render(<AiSuggest query="hoãn cuộc họp" />)
-    await userEvent.click(await screen.findByRole('button', { name: /Hỏi trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Hỏi AI/i }))
     expect(await screen.findByText('Trợ lý đang bận.')).toBeInTheDocument()
   })
 
@@ -73,11 +73,11 @@ describe('AiSuggest', () => {
   it('drops the previous answer when the query changes', async () => {
     vi.mocked(callAi).mockResolvedValue({ status: 'ok', data: two })
     const { rerender } = render(<AiSuggest query="hoãn cuộc họp" />)
-    await userEvent.click(await screen.findByRole('button', { name: /Hỏi trợ lý/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Hỏi AI/i }))
     expect(await screen.findByText('postpone')).toBeInTheDocument()
 
     rerender(<AiSuggest query="huỷ cuộc họp" />)
     expect(screen.queryByText('postpone')).toBeNull()
-    expect(screen.getByRole('button', { name: /Hỏi trợ lý/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Hỏi AI/i })).toBeInTheDocument()
   })
 })

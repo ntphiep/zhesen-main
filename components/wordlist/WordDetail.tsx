@@ -1,12 +1,14 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { fetchEntryDetail } from '@/lib/dictionary/entryResponse'
 import { entryPath, searchPath } from '@/lib/dictionary/entryId'
 import { AiCoach } from '@/components/ai/AiCoach'
 import { Pronunciation } from '@/components/lookup/Pronunciation'
-import { classifyRelations, RELATION_CAP, RELATION_SECTIONS } from '@/lib/dictionary/relations'
-import { pickExamples, isSentenceTranslation } from '@/lib/dictionary/textQuality'
+import { classifyRelations, RELATION_SECTIONS, type ClassifiedRelations } from '@/lib/dictionary/relations'
+import { isSentenceTranslation } from '@/lib/dictionary/textQuality'
+import { entryGlosses, mainSenses, planExamples, senseSections } from '@/lib/dictionary/wordPage'
+import { EnglishMark, PivotMark } from '@/components/lookup/WordParts'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 import type { UserWord } from '@/lib/wordlist/types'
 import { PosTag } from '@/components/ui/PosTag'
@@ -27,23 +29,51 @@ export function resetDetailCache(): void {
   detailCache.clear()
 }
 
-/** The expanded row, with a way out to the word's own page. A word typed in by hand has
- *  no entry, so it opens the lookup for its headword instead. */
+/** A glance, not the word page: three senses, two short examples and two relation lists.
+ *  The page behind "Chi tiết" has the rest. */
+const SHOWN_SENSES = 3
+const SHOWN_EXAMPLES = 2
+/** take's first example was 131 characters of 17th-century verse. */
+const MAX_EXAMPLE_LENGTH = 100
+const GIST_RELATIONS: (keyof ClassifiedRelations)[] = ['collocations', 'synonyms']
+const GIST_RELATION_CAP = 6
+/** A longer synonym list mixes every sense: take's 249 opened with exterminate and shag. */
+const FOCUSED_SYNONYMS = 12
+
+/** The expanded row: the gist of the entry, then the way to the word's own page beside the
+ *  assistant. A word typed in by hand has no entry, so it opens the lookup for its headword. */
 export function WordDetail({ word }: { word: UserWord }) {
-  return (
-    <div className="flex flex-col gap-3">
+  const actions = (
+    <AiCoach lang={word.lang} headword={word.headword} meaningVi={word.meaningVi}>
       <Link
         href={word.entryId ? entryPath(word.entryId) : searchPath(word.lang, word.headword)}
-        className="self-start rounded-lg border border-black/15 px-3 py-1.5 text-xs font-medium hover:bg-black/5"
+        className="rounded-lg border border-black/15 px-3 py-1.5 text-xs font-medium hover:bg-black/5"
       >
-        {word.entryId ? 'Mở trang từ' : 'Tra từ này'}
+        {word.entryId ? 'Chi tiết' : 'Tra từ này'}
       </Link>
-      <DetailBody word={word} />
+    </AiCoach>
+  )
+  return <DetailBody word={word} actions={actions} />
+}
+
+/** Every state draws `actions` at the same place in the tree, so an answer the assistant
+ *  gave while the entry was loading survives the load. Two columns only where the row is
+ *  wide: the grid view's card is a third of the screen. */
+function Frame({ left, right, actions }: { left: ReactNode; right?: ReactNode; actions: ReactNode }) {
+  return (
+    <div className="@container">
+      <div className="grid gap-x-8 gap-y-3 text-sm @2xl:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          {left}
+          <div className="mt-1">{actions}</div>
+        </div>
+        {right && <div className="flex flex-col gap-2">{right}</div>}
+      </div>
     </div>
   )
 }
 
-function DetailBody({ word }: { word: UserWord }) {
+function DetailBody({ word, actions }: { word: UserWord; actions: ReactNode }) {
   const [state, setState] = useState<DetailState>(() => {
     const id = word.entryId
     return id && detailCache.has(id)
@@ -74,79 +104,91 @@ function DetailBody({ word }: { word: UserWord }) {
 
   if (!word.entryId) {
     return (
-      <div className="flex flex-col gap-3 text-sm text-black/80">
-        {word.meaningVi && <p>{word.meaningVi}</p>}
-        {word.example && <p className="italic text-black/60">{word.example}</p>}
-        {word.notes && <p className="text-black/55">{word.notes}</p>}
-        <AiCoach lang={word.lang} headword={word.headword} meaningVi={word.meaningVi} />
-      </div>
+      <Frame
+        actions={actions}
+        left={
+          <div className="flex flex-col gap-3 text-black/80">
+            {word.meaningVi && <p>{word.meaningVi}</p>}
+            {word.example && <p className="italic text-black/60">{word.example}</p>}
+            {word.notes && <p className="text-black/55">{word.notes}</p>}
+          </div>
+        }
+      />
     )
   }
 
   if (state.status === 'loading') {
-    return <p className="text-sm text-black/55">Đang tải…</p>
+    return <Frame actions={actions} left={<p className="text-black/55">Đang tải…</p>} />
   }
 
   if (state.status === 'error') {
-    return <p className="text-sm text-red-500">Chưa tải được chi tiết. Thử lại.</p>
+    return <Frame actions={actions} left={<p className="text-red-500">Chưa tải được chi tiết. Thử lại.</p>} />
   }
 
   const { detail } = state
-  if (!detail) return null
+  if (!detail) return <Frame actions={actions} left={null} />
 
-  const glosses = [detail.glossVi, ...detail.senses.map((sense) => sense.glossVi)]
-  const examples = pickExamples(detail.examples)
-
+  const sections = senseSections(detail.senses)
+  const main = mainSenses(sections, SHOWN_SENSES).flatMap((g) => g.senses)
+  const glosses = entryGlosses(detail)
+  // The example of each sense shown first, then the rest with a real translation first.
+  const plan = planExamples(sections, detail.examples, glosses)
+  const examples = [...main.flatMap((s) => (s.id && plan.bySense[s.id] ? [plan.bySense[s.id]] : [])), ...plan.others]
+    .filter((e) => e.text.length <= MAX_EXAMPLE_LENGTH)
+    .slice(0, SHOWN_EXAMPLES)
   const relations = classifyRelations(detail.relations)
-  const relationGroups = RELATION_SECTIONS.filter((s) => relations[s.key].length > 0)
+  const relationGroups = RELATION_SECTIONS.filter((s) => GIST_RELATIONS.includes(s.key) && relations[s.key].length > 0
+    && (s.key !== 'synonyms' || relations[s.key].length <= FOCUSED_SYNONYMS))
 
   return (
-    <div className="flex flex-col gap-3 text-sm">
-      {detail.senses.length > 0 && (
-        <div className="flex flex-col gap-1">
-          {detail.senses.map((s, i) => (
-            <div key={i} className="flex gap-2 items-baseline">
-              <PosTag value={s.pos} className="text-xs font-medium text-black/55" />
-              {s.glossVi && <span className="text-black/80">{s.glossVi}</span>}
-              {s.glossEn && <span className="text-black/55">{s.glossEn}</span>}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {detail.pronunciations.length > 0 && (
-        <Pronunciation headword={detail.headword} prons={detail.pronunciations} lang={detail.lang} />
-      )}
-
-      {/* Filtered exactly like the lookup page: the same corrupted sentences and the
-          same gloss-copied-into-the-translation rows are in this data. */}
-      {examples.length > 0 && (
-        <div className="flex flex-col gap-1 border-l-2 border-black/10 pl-3">
-          {examples.map((e, i) => (
-            <div key={i} className="flex flex-col gap-0.5">
-              <p className="italic text-black/70">{e.text}</p>
-              {isSentenceTranslation(e.translationVi, glosses) && (
-                <p className="text-black/55">{e.translationVi}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {relationGroups.length > 0 && (
-        <div className="flex flex-col gap-1">
-          {relationGroups.map((s) => (
-            <div key={s.key} className="flex gap-2 items-baseline flex-wrap">
-              <span className="text-xs font-medium text-black/55 uppercase">{s.label}</span>
-              {relations[s.key].slice(0, RELATION_CAP).map((w) => (
-                <span key={w} className="text-black/70">{w}</span>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <AiCoach lang={detail.lang} headword={detail.headword} meaningVi={word.meaningVi} />
-    </div>
+    <Frame
+      actions={actions}
+      left={<>
+        {main.length > 0 && (
+          <ul className="flex flex-col gap-1">
+            {main.map((s, i) => (
+              <li key={s.id ?? i} className="flex gap-2 items-baseline">
+                <PosTag value={s.pos} className="text-xs font-medium text-black/55" />
+                {/* English only where no Vietnamese exists. */}
+                {s.glossVi ? (
+                  <span className="text-black/85">{s.glossVi}</span>
+                ) : s.pivotVi ? (
+                  <span className="text-black/85">{s.pivotVi}<PivotMark /></span>
+                ) : s.glossEn ? (
+                  <span className="text-black/60">{s.glossEn}<EnglishMark /></span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+        {detail.pronunciations.length > 0 && (
+          <Pronunciation headword={detail.headword} prons={detail.pronunciations} lang={detail.lang} />
+        )}
+      </>}
+      right={<>
+        {/* Filtered exactly like the lookup page: the same corrupted sentences and the
+            same gloss-copied-into-the-translation rows are in this data. */}
+        {examples.length > 0 && (
+          <ul className="flex flex-col gap-1 border-l-2 border-black/10 pl-3">
+            {examples.map((e, i) => (
+              <li key={i} className="flex flex-col gap-0.5">
+                <p className="italic text-black/70">{e.text}</p>
+                {isSentenceTranslation(e.translationVi, glosses) && (
+                  <p className="text-black/55">{e.translationVi}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        {relationGroups.map((s) => (
+          <div key={s.key} className="flex gap-2 items-baseline flex-wrap">
+            <span className="text-xs font-medium text-black/55 uppercase">{s.label}</span>
+            {relations[s.key].slice(0, GIST_RELATION_CAP).map((w) => (
+              <span key={w} className="text-black/70">{w}</span>
+            ))}
+          </div>
+        ))}
+      </>}
+    />
   )
 }

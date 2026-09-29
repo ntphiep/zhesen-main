@@ -43,7 +43,7 @@ describe('LookupView', () => {
   // everything above it is sourced, what it says is generated.
   it('offers the assistant below the sourced content', async () => {
     render(<LookupView detail={base} characters={[]} siblings={[]} />)
-    const coach = await screen.findByRole('button', { name: /Hỏi trợ lý/i })
+    const coach = await screen.findByRole('button', { name: /Hỏi AI/i })
     const meaning = screen.getAllByText('con chó')[0]
     expect(meaning.compareDocumentPosition(coach) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })

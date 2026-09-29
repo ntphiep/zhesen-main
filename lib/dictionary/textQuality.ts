@@ -193,11 +193,3 @@ export function hasUnknownLongWord(segments: Segment[], known: Set<string>, minL
   return segments.some((s) =>
     s.word && s.text.length >= minLength && /^\p{Script=Latin}+$/u.test(s.text) && !known.has(s.text.toLowerCase()))
 }
-
-/** How many examples an entry page shows. */
-export const MAX_EXAMPLES = 6
-
-/** The examples the wordlist's word detail renders. */
-export function pickExamples<T extends { text: string }>(examples: T[]): T[] {
-  return examples.filter((e) => isCleanExample(e.text)).slice(0, MAX_EXAMPLES)
-}
