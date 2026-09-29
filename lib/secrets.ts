@@ -10,7 +10,8 @@ import { clients } from '@/lib/admin/ssm'
  */
 export const APP_KEYS = [
   'AZURE_TRANSLATOR_KEY', 'AZURE_TRANSLATOR_REGION', 'AZURE_TRANSLATOR_ENDPOINT',
-  'AI_BASE_URL', 'AI_API_KEY', 'AI_MODEL', 'REVALIDATE_SECRET', 'VERCEL_TOKEN',
+  'AI_BASE_URL', 'AI_API_KEY', 'AI_MODEL', 'AI_FALLBACK_BASE_URL', 'AI_FALLBACK_API_KEY',
+  'REVALIDATE_SECRET', 'VERCEL_TOKEN',
 ] as const
 
 export type AppKey = (typeof APP_KEYS)[number]

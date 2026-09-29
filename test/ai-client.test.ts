@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { z } from 'zod'
-import { askJson, extractJson, streamText, AiUnavailableError } from '@/lib/ai/client'
+import { askJson, extractJson, streamText, AiUnavailableError, FIRST_ROUTER_MS } from '@/lib/ai/client'
 import type { AiConfig } from '@/lib/ai/config'
 import { anthropicStream } from './helpers/stream'
 
@@ -149,5 +149,95 @@ describe('streamText', () => {
   it('takes the text whole from a router that answers one body', async () => {
     globalThis.fetch = reply({ choices: [{ message: { content: 'Hoãn lại.' } }] })
     expect(await collect(await streamText(cfg, opts))).toEqual(['Hoãn lại.'])
+  })
+})
+
+describe('the fallback router', () => {
+  const realFetch = globalThis.fetch
+  afterEach(() => { globalThis.fetch = realFetch })
+  const both: AiConfig = { ...cfg, fallback: { baseUrl: 'http://omni.test/v1', apiKey: 'k2', model: 'zhesen' } }
+  const ask = (c: AiConfig, signal?: AbortSignal) => askJson(c, { system: 's', user: 'u', parse, maxTokens: 10, signal })
+
+  it('answers from OmniRoute when 9router refuses', async () => {
+    const f = vi.fn(async (url: string) => (url.startsWith('http://router.test')
+      ? new Response('{"error":"quota"}', { status: 503 })
+      : Response.json({ content: [{ type: 'text', text: '{"answer":"dự phòng"}' }] })))
+    globalThis.fetch = f as unknown as typeof fetch
+    await expect(ask(both)).resolves.toEqual({ answer: 'dự phòng' })
+    const [url, init] = f.mock.calls[1] as unknown as [string, RequestInit]
+    expect(url).toBe('http://omni.test/v1/messages')
+    expect(JSON.parse(init.body as string).model).toBe('zhesen')
+    expect((init.headers as Record<string, string>).authorization).toBe('Bearer k2')
+  })
+
+  it('answers from OmniRoute when 9router cannot be reached', async () => {
+    globalThis.fetch = vi.fn(async (url: string) => {
+      if (url.startsWith('http://router.test')) throw new TypeError('fetch failed')
+      return Response.json({ content: [{ type: 'text', text: '{"answer":"b"}' }] })
+    }) as unknown as typeof fetch
+    await expect(ask(both)).resolves.toEqual({ answer: 'b' })
+  })
+
+  it('names both failures when both routers refuse', async () => {
+    globalThis.fetch = vi.fn(async () => new Response('{"error":"quota"}', { status: 503 })) as unknown as typeof fetch
+    await expect(ask(both)).rejects.toThrow(/HTTP 503.*fallback: .*HTTP 503/)
+  })
+
+  it('does not call OmniRoute once the caller gave up', async () => {
+    const abort = new AbortController()
+    const f = vi.fn(async () => { abort.abort(); throw new DOMException('aborted', 'AbortError') })
+    globalThis.fetch = f as unknown as typeof fetch
+    await expect(ask(both, abort.signal)).rejects.toThrow('aborted')
+    expect(f).toHaveBeenCalledOnce()
+  })
+
+  it('never calls OmniRoute when 9router answers', async () => {
+    const f = reply({ content: [{ type: 'text', text: '{"answer":"a"}' }] })
+    globalThis.fetch = f
+    await ask(both)
+    expect(f).toHaveBeenCalledOnce()
+  })
+
+  it('streams from OmniRoute when 9router refuses the stream', async () => {
+    globalThis.fetch = vi.fn(async (url: string) => (url.startsWith('http://router.test')
+      ? new Response('{"error":"quota"}', { status: 429 })
+      : anthropicStream(['Dự ', 'phòng.']))) as unknown as typeof fetch
+    const pieces: string[] = []
+    for await (const p of await streamText(both, { system: 's', user: 'u', maxTokens: 10 })) pieces.push(p)
+    expect(pieces).toEqual(['Dự ', 'phòng.'])
+  })
+
+  describe('with a clock', () => {
+    beforeEach(() => { vi.useFakeTimers() })
+    afterEach(() => { vi.useRealTimers() })
+
+    // Hangs until its signal aborts, as a router whose provider never answers.
+    const hang = (url: string, init: RequestInit) => new Promise<Response>((_, reject) => {
+      init.signal?.addEventListener('abort', () => reject(init.signal?.reason))
+      void url
+    })
+
+    it('asks OmniRoute once 9router has been silent for FIRST_ROUTER_MS', async () => {
+      const f = vi.fn(async (url: string, init: RequestInit) => (url.startsWith('http://router.test')
+        ? hang(url, init)
+        : Response.json({ content: [{ type: 'text', text: '{"answer":"muộn"}' }] })))
+      globalThis.fetch = f as unknown as typeof fetch
+      const answer = ask(both)
+      await vi.advanceTimersByTimeAsync(FIRST_ROUTER_MS)
+      await expect(answer).resolves.toEqual({ answer: 'muộn' })
+      expect(f).toHaveBeenCalledTimes(2)
+    })
+
+    it("keeps the caller's timeout when OmniRoute outlives the deadline", async () => {
+      const deadline = new AbortController()
+      globalThis.fetch = vi.fn(async (url: string, init: RequestInit) => (url.startsWith('http://router.test')
+        ? new Response('{"error":"quota"}', { status: 503 })
+        : hang(url, init))) as unknown as typeof fetch
+      const answer = ask(both, deadline.signal)
+      const settled = expect(answer).rejects.toMatchObject({ name: 'TimeoutError' })
+      await vi.advanceTimersByTimeAsync(1000)
+      deadline.abort(new DOMException('deadline', 'TimeoutError'))
+      await settled
+    })
   })
 })

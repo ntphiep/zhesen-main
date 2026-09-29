@@ -29,6 +29,8 @@ export const INSTANCE_SERVICES = {
   SECRET_KEY_BASE: [],
   VAULT_ENC_KEY: [],
   ROUTER_PASSWORD: ['ai-router'],
+  OMNIROUTE_PASSWORD: ['omniroute'],
+  OMNIROUTE_STORAGE_KEY: ['omniroute'],
 } as const satisfies Record<string, readonly string[]>
 
 export type InstanceVariable = keyof typeof INSTANCE_SERVICES
@@ -81,6 +83,8 @@ const APP: Record<AppKey, Pick<SecretDef, 'purpose' | 'secure' | 'generate' | 't
   AI_BASE_URL: { purpose: 'Base URL of the 9router endpoint the assistant calls, with /v1.', secure: false, test: 'ai', ...URL_PATTERN },
   AI_API_KEY: { purpose: '9router API key for the assistant.', secure: true, test: 'ai', ...NO_SPACE },
   AI_MODEL: { purpose: 'Model the assistant asks 9router for; ag/gemini-3.8-flash when unset.', secure: false, test: 'ai', ...NO_SPACE },
+  AI_FALLBACK_BASE_URL: { purpose: 'Base URL of the OmniRoute endpoint the assistant calls when 9router fails, with /v1.', secure: false, test: 'ai', ...URL_PATTERN },
+  AI_FALLBACK_API_KEY: { purpose: 'OmniRoute API key for the assistant; it asks for the combo zhesen.', secure: true, test: 'ai', ...NO_SPACE },
   REVALIDATE_SECRET: { purpose: 'Header secret for POST /api/revalidate, which flushes the dictionary cache.', secure: true, generate: 40, ...NO_SPACE },
   VERCEL_TOKEN: { purpose: 'Vercel API token this page uses to write Vercel env vars and start a redeploy. Optional.', secure: true, ...NO_SPACE },
 }
@@ -109,6 +113,11 @@ export const SECRETS: SecretDef[] = [
     purpose: 'Rendered into .env; no service here reads it (Supavisor would).' },
   { id: 'router_password', group: 'Instance', parameter: `${PREFIX}/router_password`, variable: 'ROUTER_PASSWORD', secure: true, apply: 'instance', generate: 32, ...ALNUM(16),
     purpose: 'Password of the 9router dashboard, shown on /admin/router. Each ai-router start drops any password 9router stored itself, so this one holds.' },
+  { id: 'omniroute_password', group: 'Instance', parameter: `${PREFIX}/omniroute_password`, variable: 'OMNIROUTE_PASSWORD', secure: true, apply: 'instance', generate: 32, ...ALNUM(16),
+    purpose: 'Password of the OmniRoute dashboard, shown on /admin/router. Each omniroute start drops any password OmniRoute stored itself, so this one holds.' },
+  { id: 'omniroute_storage_key', group: 'Instance', parameter: `${PREFIX}/omniroute_storage_key`, variable: 'OMNIROUTE_STORAGE_KEY', secure: true, apply: null,
+    locked: 'OmniRoute encrypted its stored provider logins with this key; a new value makes them unreadable.',
+    purpose: 'STORAGE_ENCRYPTION_KEY of OmniRoute.' },
   { id: 'admin_rescue_secret', group: 'Instance', parameter: `${PREFIX}/admin_rescue_secret`, secure: true, apply: 'ssm', generate: 40, ...ALNUM(16),
     purpose: 'Secret for /rescue, the way in when the database is down.' },
   { id: 'alert_channels', group: 'Instance', parameter: `${PREFIX}/alert_channels`, secure: true, apply: null, locked: 'Edited on /admin/infra under Alerts.',

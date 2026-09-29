@@ -55,19 +55,24 @@ resource "aws_vpc_security_group_ingress_rule" "cloudfront_http" {
 }
 
 # Studio, the Envoy admin port and the unused Realtime, Storage and Functions
-# prefixes are all reachable from the origin. The edge answers only the three
-# prefixes the app uses, so nothing else is exposed to the internet. /ai/v1/ is
-# 9router's API, which checks its own key.
+# prefixes are all reachable from the origin. The edge answers only the four
+# prefixes the app uses. /ai/v1/ is 9router's API and /omni/v1/ OmniRoute's, each
+# checking its own key. Envoy normalises the path after this check, so a dot segment,
+# plain or percent-encoded, or an encoded slash would climb out of the prefix: measured,
+# /omni/v1/../../ reached Studio's basic auth. Such a path is refused here.
 resource "aws_cloudfront_function" "api_paths" {
   name    = "${var.name_prefix}-api-paths"
   runtime = "cloudfront-js-2.0"
   publish = true
-  comment = "Allow only /auth/v1/, /rest/v1/ and /ai/v1/"
+  comment = "Allow only /auth/v1/, /rest/v1/, /ai/v1/ and /omni/v1/"
 
   code = <<-JS
     function handler(event) {
       var uri = event.request.uri;
-      if (uri.startsWith('/auth/v1/') || uri.startsWith('/rest/v1/') || uri.startsWith('/ai/v1/')) {
+      var escapes = /(^|\/)(\.|%2e){1,2}(\/|$)|%2f|%5c|\\/i;
+      if (!escapes.test(uri) &&
+          (uri.startsWith('/auth/v1/') || uri.startsWith('/rest/v1/') || uri.startsWith('/ai/v1/') ||
+           uri.startsWith('/omni/v1/'))) {
         return event.request;
       }
       return {
@@ -191,6 +196,77 @@ resource "aws_cloudfront_distribution" "router" {
 
     # 9router compresses its own responses.
     compress = false
+
+    cache_policy_id          = data.aws_cloudfront_cache_policy.disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+  }
+
+  viewer_certificate {
+    cloudfront_default_certificate = true
+    minimum_protocol_version       = "TLSv1"
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+}
+
+# OmniRoute's dashboard, set up like 9router's: its own distribution, CloudFront reaching
+# the container's host port directly, and OmniRoute's login (omniroute_password) guarding it.
+resource "aws_cloudfront_vpc_origin" "omniroute" {
+  vpc_origin_endpoint_config {
+    name                   = "${var.name_prefix}-omniroute"
+    arn                    = var.instance_arn
+    http_port              = 20130
+    https_port             = 443
+    origin_protocol_policy = "http-only"
+
+    origin_ssl_protocols {
+      items    = ["TLSv1.2"]
+      quantity = 1
+    }
+  }
+
+  tags = {
+    Name = "${var.name_prefix}-omniroute"
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "cloudfront_omniroute" {
+  security_group_id            = var.security_group_id
+  description                  = "OmniRoute, from the CloudFront VPC origin only"
+  ip_protocol                  = "tcp"
+  from_port                    = 20130
+  to_port                      = 20130
+  referenced_security_group_id = data.aws_security_group.cloudfront_vpc_origins.id
+}
+
+resource "aws_cloudfront_distribution" "omniroute" {
+  enabled         = true
+  comment         = "zhesen OmniRoute dashboard"
+  http_version    = "http2and3"
+  price_class     = "PriceClass_200"
+  is_ipv6_enabled = true
+
+  origin {
+    origin_id   = "ec2-omniroute"
+    domain_name = var.instance_private_dns
+
+    vpc_origin_config {
+      vpc_origin_id            = aws_cloudfront_vpc_origin.omniroute.id
+      origin_read_timeout      = 60
+      origin_keepalive_timeout = 5
+    }
+  }
+
+  default_cache_behavior {
+    target_origin_id       = "ec2-omniroute"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods         = ["GET", "HEAD"]
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = false
 
     cache_policy_id          = data.aws_cloudfront_cache_policy.disabled.id
     origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id

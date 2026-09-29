@@ -12,7 +12,7 @@ import {
 } from '@/lib/admin/secrets'
 import { envRecordIds, redeployProduction, setEnv, vercelTarget, VercelError, type VercelTarget } from '@/lib/admin/vercel'
 import { resetRuntimeEnv, CACHE_MS } from '@/lib/secrets'
-import { aiConfig } from '@/lib/ai/config'
+import { aiEndpoints, type AiEndpoint } from '@/lib/ai/config'
 import { azureTranslatorConfig } from '@/lib/translate/config'
 import { translateText } from '@/lib/translate/azure'
 
@@ -188,10 +188,20 @@ async function runTest(kind: 'azure' | 'ai'): Promise<string> {
       return `Azure failed after ${ms()}: ${e instanceof Error ? e.message : 'error'}.`
     }
   }
-  const cfg = await aiConfig()
-  if (!cfg) return 'Not configured: ai_base_url or ai_api_key is set in neither SSM nor Vercel.'
+  const { nineRouter, omniRoute } = await aiEndpoints()
+  if (!nineRouter && !omniRoute) return 'Not configured: neither ai_base_url with ai_api_key nor ai_fallback_base_url with ai_fallback_api_key is set.'
+  const lines = await Promise.all([
+    nineRouter ? pingRouter('9router', nineRouter) : '9router: not configured.',
+    omniRoute ? pingRouter('OmniRoute', omniRoute) : 'OmniRoute: not configured.',
+  ])
+  return lines.join(' ')
+}
+
+/** One token through an endpoint the assistant uses, with its headers (lib/ai/client.ts). */
+async function pingRouter(name: string, cfg: AiEndpoint): Promise<string> {
+  const started = Date.now()
+  const ms = () => `${Date.now() - started} ms`
   try {
-    // One token through the endpoint the assistant uses, with its headers (lib/ai/client.ts).
     const res = await fetch(`${cfg.baseUrl}/messages`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': cfg.apiKey, authorization: `Bearer ${cfg.apiKey}`, 'anthropic-version': '2023-06-01' },
@@ -199,10 +209,10 @@ async function runTest(kind: 'azure' | 'ai'): Promise<string> {
       signal: AbortSignal.timeout(20_000),
     })
     return res.ok
-      ? `The router answered a one-token call to ${cfg.model} in ${ms()}.`
-      : `The router answered HTTP ${res.status} for ${cfg.model} in ${ms()}.`
+      ? `${name} answered a one-token call to ${cfg.model} in ${ms()}.`
+      : `${name} answered HTTP ${res.status} for ${cfg.model} in ${ms()}.`
   } catch (e) {
-    return `Could not reach the router (${e instanceof Error ? e.name : 'Error'}) after ${ms()}.`
+    return `Could not reach ${name} (${e instanceof Error ? e.name : 'Error'}) after ${ms()}.`
   }
 }
 

@@ -1,5 +1,5 @@
 import { z } from '@/lib/zod'
-import type { AiConfig } from './config'
+import type { AiConfig, AiEndpoint } from './config'
 
 /**
  * Requests to the model: `askJson` answers validated JSON, `streamText` plain text in
@@ -63,7 +63,40 @@ export interface AskOptions<T> extends TextOptions {
   parse: (value: unknown) => T | null
 }
 
+/** How long the first router has to answer before the fallback is asked. The caller's
+ *  deadline covers both (30 s in app/api/ai/route.ts), so the fallback keeps the rest. */
+export const FIRST_ROUTER_MS = 15_000
+
+/** The first router, then the fallback when the first refuses, cannot be reached or has
+ *  not answered within FIRST_ROUTER_MS. A caller's own abort never falls through. */
 async function send(cfg: AiConfig, opts: TextOptions, stream: boolean): Promise<Response> {
+  if (!cfg.fallback) return sendTo(cfg, opts, stream)
+  try {
+    return await sendTo(cfg, opts, stream, FIRST_ROUTER_MS)
+  } catch (e) {
+    if (opts.signal?.aborted) throw e
+    return sendTo(cfg.fallback, opts, stream).catch((second: unknown) => {
+      if (opts.signal?.aborted) throw second
+      throw new AiUnavailableError(`${message(e)}; fallback: ${message(second)}`)
+    })
+  }
+}
+
+const message = (e: unknown): string => (e instanceof Error ? e.message : String(e))
+
+/** `answerMs` bounds the wait for the response headers only, never a stream in progress. */
+async function sendTo(cfg: AiEndpoint, opts: TextOptions, stream: boolean, answerMs?: number): Promise<Response> {
+  const late = new AbortController()
+  const timer = answerMs === undefined ? undefined
+    : setTimeout(() => late.abort(new AiUnavailableError(`no answer within ${answerMs / 1000} s`)), answerMs)
+  try {
+    return await request(cfg, opts, stream, opts.signal ? AbortSignal.any([opts.signal, late.signal]) : late.signal)
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function request(cfg: AiEndpoint, opts: TextOptions, stream: boolean, signal: AbortSignal): Promise<Response> {
   const res = await fetch(`${cfg.baseUrl}/messages`, {
     method: 'POST',
     headers: {
@@ -79,7 +112,7 @@ async function send(cfg: AiConfig, opts: TextOptions, stream: boolean): Promise<
       system: opts.system,
       messages: [{ role: 'user', content: opts.user }],
     }),
-    signal: opts.signal,
+    signal,
   })
   if (!res.ok) {
     const detail = await res.text().catch(() => '')

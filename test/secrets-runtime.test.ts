@@ -56,10 +56,11 @@ describe('runtimeEnv', () => {
     const cmd = send.mock.calls[0][0] as GetParametersCommand
     expect(cmd.input.Names).toEqual([
       '/zhesen/prod/azure_translator_key', '/zhesen/prod/azure_translator_region', '/zhesen/prod/azure_translator_endpoint',
-      '/zhesen/prod/ai_base_url', '/zhesen/prod/ai_api_key', '/zhesen/prod/ai_model', '/zhesen/prod/revalidate_secret',
+      '/zhesen/prod/ai_base_url', '/zhesen/prod/ai_api_key', '/zhesen/prod/ai_model',
+      '/zhesen/prod/ai_fallback_base_url', '/zhesen/prod/ai_fallback_api_key', '/zhesen/prod/revalidate_secret',
       '/zhesen/prod/vercel_token',
     ])
-    expect(APP_KEYS).toHaveLength(8)
+    expect(APP_KEYS).toHaveLength(10)
     expect(cmd.input.Names?.length).toBeLessThanOrEqual(10)
     expect(cmd.input.WithDecryption).toBe(true)
   })

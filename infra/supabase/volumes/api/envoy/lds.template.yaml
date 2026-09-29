@@ -287,6 +287,34 @@ resources:
                                     principals:
                                       - any: true
 
+                      # Not upstream: OmniRoute's API, the assistant's second router. Like
+                      # /ai/v1/, OmniRoute checks its own key in Authorization.
+                      - name: omni-v1-all
+                        match:
+                          prefix: /omni/v1/
+                        route:
+                          cluster: omniroute
+                          prefix_rewrite: /v1/
+                          timeout: 0s
+                          idle_timeout: 120s
+                        typed_per_filter_config:
+                          envoy.filters.http.basic_auth:
+                            '@type': >-
+                              type.googleapis.com/envoy.config.route.v3.FilterConfig
+                            disabled: true
+                          envoy.filters.http.rbac:
+                            '@type': >-
+                              type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBACPerRoute
+                            rbac:
+                              rules:
+                                action: ALLOW
+                                policies:
+                                  allow_all:
+                                    permissions:
+                                      - any: true
+                                    principals:
+                                      - any: true
+
                       - name: functions-v1-all
                         match:
                           prefix: /functions/v1/

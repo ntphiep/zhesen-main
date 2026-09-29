@@ -31,6 +31,7 @@ import {
   INSTANCE_SERVICES, POSTGRES_ROLES, SECRETS, applyScript, buildInventory, postgresPasswordScript, rotatedKeys, signJwt,
 } from '@/lib/admin/secrets'
 import { GET, POST } from '@/app/api/admin/secrets/route'
+import { resetRuntimeEnv } from '@/lib/secrets'
 
 const ROLE = 'arn:aws:iam::014498663963:role/zhesen-vercel-health'
 const DASHBOARD = 'Dashb0ardPasswordThatMustNotLeak'
@@ -364,5 +365,39 @@ describe('jwt_secret rotation', () => {
     await expect(res.json()).resolves.toMatchObject({ error: expect.stringContaining('back as they were') })
     expect(store.get('/zhesen/prod/jwt_secret')?.value).toBe(OLD_SECRET)
     expect(steps()).not.toContain('shell')
+  })
+})
+
+describe('the assistant test', () => {
+  beforeEach(() => {
+    resetRuntimeEnv()
+    store.set('/zhesen/prod/ai_base_url', { value: 'http://nine.test/v1', type: 'String' })
+    store.set('/zhesen/prod/ai_api_key', { value: 'k1', type: 'SecureString' })
+    store.set('/zhesen/prod/ai_fallback_base_url', { value: 'http://omni.test/v1', type: 'String' })
+    store.set('/zhesen/prod/ai_fallback_api_key', { value: 'k2', type: 'SecureString' })
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    resetRuntimeEnv()
+  })
+
+  it('pings both routers, each with its own key and model', async () => {
+    const fetchMock = vi.fn(async (url: string) => (url.startsWith('http://nine.test')
+      ? new Response('{"error":"quota"}', { status: 503 })
+      : Response.json({ content: [{ type: 'text', text: 'p' }] })))
+    vi.stubGlobal('fetch', fetchMock)
+    const { result } = await (await post({ action: 'test', id: 'ai_fallback_base_url' })).json() as { result: string }
+    expect(result).toMatch(/^9router answered HTTP 503 for ag\/gemini-3\.8-flash in \d+ ms\. OmniRoute answered a one-token call to zhesen in \d+ ms\.$/)
+    const calls = fetchMock.mock.calls as unknown as [string, RequestInit][]
+    expect(calls.map(([u, init]) => [u, (init.headers as Record<string, string>)['x-api-key']])).toEqual([
+      ['http://nine.test/v1/messages', 'k1'], ['http://omni.test/v1/messages', 'k2'],
+    ])
+  })
+
+  it('names the router that is not set', async () => {
+    store.delete('/zhesen/prod/ai_fallback_api_key')
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ content: [{ type: 'text', text: 'p' }] })))
+    const { result } = await (await post({ action: 'test', id: 'ai_base_url' })).json() as { result: string }
+    expect(result).toMatch(/ OmniRoute: not configured\.$/)
   })
 })

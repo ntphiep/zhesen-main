@@ -400,5 +400,45 @@ services:
       # CloudFront speaks plain HTTP to the origin, so 9router cannot tell the viewer used HTTPS.
       AUTH_COOKIE_SECURE: "true"
 
+  # Not upstream: OmniRoute, the assistant's second model router, which lib/ai/ calls when
+  # 9router fails. Envoy serves its /v1/ API at /omni/v1/, where OmniRoute checks its own
+  # API key; the dashboard has its own CloudFront distribution on port 20130. Provider
+  # logins are encrypted with OMNIROUTE_STORAGE_KEY, so that key must travel with the data.
+  omniroute:
+    container_name: zhesen-omniroute
+    image: diegosouzapw/omniroute:3.8.50
+    restart: unless-stopped
+    stop_grace_period: 40s
+    deploy:
+      resources:
+        limits:
+          # Page cache counts against the limit, and OmniRoute sheds requests at 92% of it.
+          memory: 1200m
+    ports:
+      - "20130:20128"
+    volumes:
+      - /opt/zhesen/omniroute/data:/app/data
+    # Like ai-router: drop a password OmniRoute stored itself, so INITIAL_PASSWORD holds.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        [ ! -f /app/data/storage.sqlite ] || node -e '
+          const db = require("/app/node_modules/better-sqlite3")("/app/data/storage.sqlite", { fileMustExist: true });
+          const n = db.prepare("delete from key_value where namespace = ? and key = ?").run("settings", "password").changes;
+          if (n) console.log("Dropped the stored dashboard password; INITIAL_PASSWORD applies.");
+          db.close();
+        ' || echo "Could not drop the stored dashboard password." >&2
+        exec /app/check-permissions.sh "$$@"
+      - --
+    command: ["node", "dev/run-standalone.mjs"]
+    environment:
+      STORAGE_ENCRYPTION_KEY: ${OMNIROUTE_STORAGE_KEY}
+      INITIAL_PASSWORD: ${OMNIROUTE_PASSWORD}
+      REQUIRE_API_KEY: "true"
+      OMNIROUTE_MEMORY_MB: "512"
+      NODE_OPTIONS: --max-old-space-size=512
+      AUTH_COOKIE_SECURE: "true"
+
 volumes:
   db-config:

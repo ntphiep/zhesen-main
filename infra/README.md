@@ -8,12 +8,14 @@ truth; nothing on the instance is edited by hand.
 flowchart LR
   B[Browser] --> CF
   V[Vercel functions, icn1] --> CF
-  CF[CloudFront<br/>admits /auth/v1/, /rest/v1/ and /ai/v1/ only] -->|VPC origin, port 80| E
+  CF[CloudFront<br/>admits /auth/v1/, /rest/v1/, /ai/v1/ and /omni/v1/ only] -->|VPC origin, port 80| E
   B -->|9router dashboard| CR[CloudFront, 9router] -->|VPC origin, port 20128| NR
+  B -->|OmniRoute dashboard| CO[CloudFront, OmniRoute] -->|VPC origin, port 20130| OR
   subgraph EC2 [EC2 t4g.medium, ap-northeast-2a]
     E[Envoy] --> A[GoTrue]
     E --> R[PostgREST]
     E -->|/ai/v1/| NR[9router]
+    E -->|/omni/v1/| OR[OmniRoute]
     A --> D[(Postgres 17 + PGroonga)]
     R --> D
     S[Studio] --> M[postgres-meta] --> D
@@ -22,8 +24,8 @@ flowchart LR
   EC2 -.->|pg_dump, nightly| BK[(S3 backups)]
 ```
 
-The instance has no open inbound port. CloudFront reaches Envoy and the 9router dashboard
-through VPC origins, the security group admits ports 80 and 20128 from their own security
+The instance has no open inbound port. CloudFront reaches Envoy and the two router dashboards
+through VPC origins, the security group admits ports 80, 20128 and 20130 from their own security
 group and nothing else, and the shell is SSM Session Manager. Secrets live in SSM Parameter Store and are
 rendered into the instance's `.env` at boot.
 
@@ -46,8 +48,8 @@ infra/
       instance/              the host: security group, EC2, IAM role, generated
                              secrets, the assets bucket, CloudWatch alarms, cloud-init
       edge/                  CloudFront: the API distribution with its path-allowlist
-                             function, the 9router distribution, their VPC origins and
-                             ingress rules
+                             function, the 9router and OmniRoute distributions, their
+                             VPC origins and ingress rules
       backup/                S3 bucket for the pg_dump files, 30-day expiry
       alerts/                SNS topic, HTTPS subscription, monthly budget
       settings/              SSM parameters carrying the API URL and bucket names
@@ -98,7 +100,7 @@ upstream's `utils/upgrade-pg17.sh` is the pattern for that.
 ## Operating it
 
 Shell: `aws ssm start-session --region ap-northeast-2 --target <instance_id>`, then
-`sudo -i`. Compose lives in `/opt/zhesen/supabase`; `docker ps` shows eight containers.
+`sudo -i`. Compose lives in `/opt/zhesen/supabase`; `docker ps` shows nine containers.
 
 Metrics: `zhesen-sampler` writes host and container counters to `admin.host_samples` every
 5 s and keeps one hour. `/admin/infra` reads them through PostgREST and falls back to one SSM
@@ -119,9 +121,18 @@ infra/supabase/bin/router-tunnel.ps1`, then `http://localhost:20128/dashboard`. 
 and keys live in `/opt/zhesen/9router/db/data.sqlite`, which the nightly backup copies to
 `9router/`.
 
+OmniRoute: the second model router, container `zhesen-omniroute`, asked only when 9router
+fails (`lib/ai/client.ts`). The app calls `https://<cloudfront>/omni/v1/` with an OmniRoute API
+key held in SSM `/zhesen/prod/ai_fallback_api_key` and the model `zhesen`, a combo of DeepSeek
+web models. Its dashboard has its own distribution (`terraform output omniroute_url`), guarded
+by OmniRoute's login; the password is SSM `/zhesen/prod/omniroute_password`, applied the same
+way as 9router's. Provider logins live encrypted in `/opt/zhesen/omniroute/data/storage.sqlite`
+under SSM `/zhesen/prod/omniroute_storage_key`, which cannot be rotated without losing them.
+The nightly backup copies that file to `omniroute/`.
+
 Backup: `bin/backup.sh` at 03:30 UTC writes `pg_dump -Fc` plus `pg_dumpall --globals-only`
-to `s3://zhesen-db-backups-<account>/postgres/`, and a copy of the 9router database to
-`9router/`, all kept 30 days; a failure posts to SNS. Restore 9router by stopping
+to `s3://zhesen-db-backups-<account>/postgres/`, and copies of the 9router and OmniRoute
+databases to `9router/` and `omniroute/`, all kept 30 days; a failure posts to SNS. Restore 9router by stopping
 `zhesen-9router` and putting the file back as `/opt/zhesen/9router/db/data.sqlite`.
 The root volume outlives the instance (`delete_on_termination = false`), so a dead host
 is rebuilt around the same volume; there is no volume snapshot.

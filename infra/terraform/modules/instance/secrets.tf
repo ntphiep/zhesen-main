@@ -33,6 +33,13 @@ resource "random_password" "router_password" {
   special = false
 }
 
+# OmniRoute's dashboard password, handed to it as INITIAL_PASSWORD. Its storage key is
+# not generated: it must match the one the imported provider logins were encrypted with.
+resource "random_password" "omniroute_password" {
+  length  = 32
+  special = false
+}
+
 # Written once. `ignore_changes` keeps a later apply from rotating a password out
 # from under a running database.
 resource "aws_ssm_parameter" "generated" {
@@ -43,6 +50,7 @@ resource "aws_ssm_parameter" "generated" {
     secret_key_base    = random_password.secret_key_base.result
     vault_enc_key      = random_password.vault_enc_key.result
     router_password    = random_password.router_password.result
+    omniroute_password = random_password.omniroute_password.result
   }
 
   name  = "${var.ssm_prefix}/${each.key}"
@@ -69,5 +77,12 @@ data "aws_ssm_parameter" "anon_key" {
 
 data "aws_ssm_parameter" "service_role_key" {
   name            = "${var.ssm_prefix}/service_role_key"
+  with_decryption = false
+}
+
+# Also by hand: the key the OmniRoute logins were first encrypted with. A new value would
+# make every stored login unreadable.
+data "aws_ssm_parameter" "omniroute_storage_key" {
+  name            = "${var.ssm_prefix}/omniroute_storage_key"
   with_decryption = false
 }

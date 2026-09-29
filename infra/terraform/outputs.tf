@@ -18,6 +18,11 @@ output "router_url" {
   value       = "https://${module.edge.router_domain_name}"
 }
 
+output "omniroute_url" {
+  description = "The OmniRoute dashboard's distribution; open it from /admin/router."
+  value       = "https://${module.edge.omniroute_domain_name}"
+}
+
 output "assets_bucket" {
   description = "Bucket holding infra/supabase, synced by cloud-init."
   value       = local.assets_bucket

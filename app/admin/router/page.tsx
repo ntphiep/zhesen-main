@@ -3,54 +3,58 @@ import { requireAdmin } from '@/lib/auth/admin'
 import { awsHealthConfig } from '@/lib/admin/aws'
 import { clients } from '@/lib/admin/ssm'
 import { readValues } from '@/lib/admin/secrets'
-import { readCombos, ROUTER_PARAMETERS, type Combo } from '@/lib/admin/router'
-import { aiConfig } from '@/lib/ai/config'
+import { readCombos, ROUTERS, type Combo, type RouterName } from '@/lib/admin/router'
+import { aiEndpoints, type AiEndpoint } from '@/lib/ai/config'
 import { TASKS } from '@/lib/ai/tasks'
 import { PageHeader, Section } from '@/components/admin/Page'
 
-export const metadata = { title: '9router · Admin' }
+export const metadata = { title: 'AI router · Admin' }
 
-async function readRouter(): Promise<{ url?: string; password?: string; error?: string }> {
-  const cfg = awsHealthConfig()
-  if (!cfg) return { error: 'AWS access is not configured for this deployment (AWS_ROLE_ARN).' }
-  try {
-    const values = await readValues(clients(cfg).ssm, Object.values(ROUTER_PARAMETERS))
-    return { url: values.get(ROUTER_PARAMETERS.url), password: values.get(ROUTER_PARAMETERS.password) }
-  } catch (e) {
-    return { error: `Could not read SSM (${e instanceof Error ? e.name : 'Error'}).` }
-  }
+interface RouterState {
+  name: RouterName
+  url?: string
+  password?: string
+  /** The router's combos, or why they could not be read. */
+  combos: Combo[] | string
 }
 
-export default async function AdminRouterPage() {
-  const supabase = await createClient()
-  await requireAdmin(supabase)
-  const [router, ai] = await Promise.all([readRouter(), aiConfig()])
-  const combos: Combo[] | string = router.url && router.password
-    ? await readCombos(router.url, router.password).catch((e: unknown) => (e instanceof Error ? e.message : 'Error'))
-    : 'The dashboard link or password is missing.'
-  const combo = typeof combos === 'string' ? undefined : combos.find((c) => c.name === ai?.model)
+async function readRouters(): Promise<RouterState[] | string> {
+  const cfg = awsHealthConfig()
+  if (!cfg) return 'AWS access is not configured for this deployment (AWS_ROLE_ARN).'
+  let values: Map<string, string>
+  try {
+    values = await readValues(clients(cfg).ssm, ROUTERS.flatMap((r) => [r.url, r.password]))
+  } catch (e) {
+    return `Could not read SSM (${e instanceof Error ? e.name : 'Error'}).`
+  }
+  return Promise.all(ROUTERS.map(async (r): Promise<RouterState> => {
+    const url = values.get(r.url)
+    const password = values.get(r.password)
+    const combos = url && password
+      ? await readCombos(url, password, r.name).catch((e: unknown) => (e instanceof Error ? e.message : 'Error'))
+      : 'The dashboard link or password is missing.'
+    return { name: r.name, url, password, combos }
+  }))
+}
 
+function RouterSection({ router, endpoint, role }: { router: RouterState; endpoint?: AiEndpoint; role: string }) {
+  const combos = router.combos
+  const combo = endpoint && typeof combos !== 'string' ? combos.find((c) => c.name === endpoint.model) : undefined
   return (
-    <div>
-      <PageHeader title="9router" lead="The model router behind the assistant: provider logins, API keys, combos and usage." />
-      <Section title="Dashboard">
-        {router.error ? <p className="text-sm text-rose-700">{router.error}</p> : (
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-            <dt className="font-medium">Link</dt>
-            <dd className="min-w-0 break-all">
-              {router.url ? <a href={router.url} target="_blank" rel="noreferrer" className="underline">{router.url}</a> : 'Not set in SSM.'}
-            </dd>
-            <dt className="font-medium">Password</dt>
-            <dd className="min-w-0 break-all font-mono select-all">{router.password ?? 'Not set in SSM.'}</dd>
-          </dl>
-        )}
-      </Section>
-      <Section title="Used by zhesen">
-        {!ai ? <p className="text-sm text-black/60">The assistant is off: AI_BASE_URL or AI_API_KEY is not set.</p> : (
-          <div className="flex flex-col gap-2 text-sm">
+    <Section title={router.name}>
+      <div className="flex flex-col gap-4 text-sm">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+          <dt className="font-medium">Link</dt>
+          <dd className="min-w-0 break-all">
+            {router.url ? <a href={router.url} target="_blank" rel="noreferrer" className="underline">{router.url}</a> : 'Not set in SSM.'}
+          </dd>
+          <dt className="font-medium">Password</dt>
+          <dd className="min-w-0 break-all font-mono select-all">{router.password ?? 'Not set in SSM.'}</dd>
+        </dl>
+        {!endpoint ? <p className="text-black/60">The assistant does not use {router.name}: its base URL or API key is not set.</p> : (
+          <div className="flex flex-col gap-2">
             <p>
-              Every assistant task ({Object.keys(TASKS).join(', ')}) asks 9router for AI_MODEL{' '}
-              <code className="font-mono">{ai.model}</code>
+              {role} The assistant asks for <code className="font-mono">{endpoint.model}</code>
               {combo ? ', a combo of these models:' : typeof combos === 'string' ? '.' : ', a single model.'}
             </p>
             {combo && (
@@ -58,10 +62,36 @@ export default async function AdminRouterPage() {
                 {combo.models.map((m) => <li key={m}>{m}</li>)}
               </ol>
             )}
-            {typeof combos === 'string' && <p className="text-rose-700">Could not read the combos from 9router: {combos}</p>}
           </div>
         )}
-      </Section>
+        {typeof combos === 'string' && <p className="text-rose-700">Could not read the combos from {router.name}: {combos}</p>}
+      </div>
+    </Section>
+  )
+}
+
+export default async function AdminRouterPage() {
+  const supabase = await createClient()
+  await requireAdmin(supabase)
+  const [routers, ai] = await Promise.all([readRouters(), aiEndpoints()])
+  const byName = (name: RouterName) => (typeof routers === 'string' ? undefined : routers.find((r) => r.name === name))
+  const nine = byName('9router')
+  const omni = byName('OmniRoute')
+
+  return (
+    <div>
+      <PageHeader
+        title="AI router"
+        lead={`Every assistant task (${Object.keys(TASKS).join(', ')}) ${ai.nineRouter && ai.omniRoute
+          ? 'asks 9router first and OmniRoute when 9router fails.'
+          : `asks ${ai.nineRouter ? '9router' : ai.omniRoute ? 'OmniRoute' : 'no router'} only.`}`}
+      />
+      {typeof routers === 'string' && <p className="text-sm text-rose-700">{routers}</p>}
+      {!ai.nineRouter && !ai.omniRoute && (
+        <p className="text-sm text-black/60">The assistant is off: neither router has a base URL and API key set.</p>
+      )}
+      {nine && <RouterSection router={nine} endpoint={ai.nineRouter} role={ai.omniRoute ? 'First router.' : 'Only router.'} />}
+      {omni && <RouterSection router={omni} endpoint={ai.omniRoute} role={ai.nineRouter ? 'Fallback router.' : 'Only router.'} />}
     </div>
   )
 }

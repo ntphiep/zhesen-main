@@ -83,6 +83,9 @@ module "settings" {
 
     # The 9router dashboard link on /admin/router.
     router_url = "https://${module.edge.router_domain_name}"
+
+    # The OmniRoute dashboard link beside it.
+    omniroute_url = "https://${module.edge.omniroute_domain_name}"
   }
 }
 

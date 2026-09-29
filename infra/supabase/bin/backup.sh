@@ -37,24 +37,33 @@ mkdir -p "$LOCAL_DIR"
 DUMP="$LOCAL_DIR/postgres-$STAMP.dump"
 GLOBALS="$LOCAL_DIR/globals-$STAMP.sql"
 ROUTER="$LOCAL_DIR/9router-$STAMP.sqlite"
+OMNI="$LOCAL_DIR/omniroute-$STAMP.sqlite"
 
 # -Fc so pg_restore can pick single objects out of it later.
 docker exec "$CONTAINER" pg_dump -U supabase_admin -Fc postgres >"$DUMP"
 # Roles and their settings live outside any one database.
 docker exec "$CONTAINER" pg_dumpall -U supabase_admin --globals-only >"$GLOBALS"
 
-# 9router's provider logins and API keys; the backup API copies a consistent snapshot
-# while the router keeps writing.
-python3 -c 'import sqlite3, sys
-src, dst = sqlite3.connect(sys.argv[1]), sqlite3.connect(sys.argv[2])
-src.backup(dst)
-dst.close()' /opt/zhesen/9router/db/data.sqlite "$ROUTER"
-
 aws s3 cp "$DUMP" "s3://$BUCKET/postgres/" --region "$REGION"
 aws s3 cp "$GLOBALS" "s3://$BUCKET/postgres/" --region "$REGION"
+
+# The routers' provider logins and API keys, after the dump so a router fault cannot cost
+# it. The backup API copies a consistent snapshot while the router keeps writing; mode=ro
+# fails on a missing file instead of creating an empty one.
+snapshot() {
+  python3 -c 'import sqlite3, sys
+src = sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True)
+dst = sqlite3.connect(sys.argv[2])
+src.backup(dst)
+dst.close()' "$1" "$2"
+}
+snapshot /opt/zhesen/9router/db/data.sqlite "$ROUTER"
 aws s3 cp "$ROUTER" "s3://$BUCKET/9router/" --region "$REGION"
+# OmniRoute's logins stay encrypted with SSM omniroute_storage_key.
+snapshot /opt/zhesen/omniroute/data/storage.sqlite "$OMNI"
+aws s3 cp "$OMNI" "s3://$BUCKET/omniroute/" --region "$REGION"
 
 find "$LOCAL_DIR" -type f -mtime "+$KEEP_LOCAL_DAYS" -delete
 
-echo "backup: $STAMP -> s3://$BUCKET/postgres/ and 9router/"
-du -h "$DUMP" "$GLOBALS" "$ROUTER"
+echo "backup: $STAMP -> s3://$BUCKET/postgres/, 9router/ and omniroute/"
+du -h "$DUMP" "$GLOBALS" "$ROUTER" "$OMNI"

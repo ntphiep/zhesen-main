@@ -7,20 +7,38 @@ import { runtimeEnv } from '@/lib/secrets'
  * returning null is a supported state -- the router is on a private network, so a
  * deployment that cannot reach it serves the dictionary with the assistant buttons absent.
  */
-export interface AiConfig {
+export interface AiEndpoint {
   /** Base URL including the version segment, e.g. http://host:20128/v1 */
   baseUrl: string
   apiKey: string
   model: string
 }
 
+/** 9router, then OmniRoute when 9router fails (lib/ai/client.ts). */
+export interface AiConfig extends AiEndpoint {
+  fallback?: AiEndpoint
+}
+
 /** Default model: the cheap fast tier of the family the project owner pays for. */
 const DEFAULT_MODEL = 'ag/gemini-3.8-flash'
+/** The OmniRoute combo the assistant asks for; its members are set in OmniRoute's dashboard. */
+export const FALLBACK_MODEL = 'zhesen'
+
+/** Each router the assistant can reach, undefined where its base URL or key is unset. */
+export async function aiEndpoints(): Promise<{ nineRouter?: AiEndpoint; omniRoute?: AiEndpoint }> {
+  const env = await runtimeEnv()
+  const endpoint = (url: string | undefined, apiKey: string | undefined, model: string) => {
+    const baseUrl = url?.replace(/\/$/, '')
+    return baseUrl && apiKey ? { baseUrl, apiKey, model } : undefined
+  }
+  return {
+    nineRouter: endpoint(env.AI_BASE_URL, env.AI_API_KEY, env.AI_MODEL || DEFAULT_MODEL),
+    omniRoute: endpoint(env.AI_FALLBACK_BASE_URL, env.AI_FALLBACK_API_KEY, FALLBACK_MODEL),
+  }
+}
 
 export async function aiConfig(): Promise<AiConfig | null> {
-  const env = await runtimeEnv()
-  const baseUrl = env.AI_BASE_URL?.replace(/\/$/, '')
-  const apiKey = env.AI_API_KEY
-  if (!baseUrl || !apiKey) return null
-  return { baseUrl, apiKey, model: env.AI_MODEL || DEFAULT_MODEL }
+  const { nineRouter, omniRoute } = await aiEndpoints()
+  if (!nineRouter) return omniRoute ?? null
+  return omniRoute ? { ...nineRouter, fallback: omniRoute } : nineRouter
 }
