@@ -16,6 +16,7 @@ import type { TranslateLangCode } from '@/lib/translate/azure'
 import type { Direction } from '@/lib/dictionary/search'
 import type { LangCode } from '@/lib/languages'
 import s from './Lookup.module.css'
+import { ErrorLine } from './ErrorLine'
 
 /** The ceiling `POST /dictionary/translate` enforces, and the same one Google Translate's
  *  web page uses. The counter appears only near it, because a two-word query does not need
@@ -150,17 +151,17 @@ export function PassageBlock({ text, direction, targets }: {
   return (
     <section className={`${s.rise} flex flex-col gap-3 rounded-[18px] bg-(--tint-2) p-4 sm:p-5`}>
       {(nearLimit || tooLong) && (
-        <span className={`text-xs font-semibold ${tooLong ? 'text-red-700' : 'text-(--zs-soft)'}`}>
+        <span className={`text-xs ${tooLong ? 'font-extrabold text-(--zs-ink)' : 'font-semibold text-(--zs-soft)'}`}>
           {trimmed.length}/{MAX_PASSAGE_CHARS} ký tự
         </span>
       )}
 
-      {tooLong && <p className="text-sm font-semibold text-red-700">Đoạn này quá dài để dịch.</p>}
+      {tooLong && <ErrorLine>Đoạn này quá dài để dịch.</ErrorLine>}
       {state.kind === 'loading' && <p className="text-sm text-(--zs-soft)">Đang dịch…</p>}
       {state.kind === 'disabled' && (
         <p className="text-sm text-(--zs-soft)">Chưa hỗ trợ dịch cả đoạn.</p>
       )}
-      {state.kind === 'error' && <p className="text-sm font-semibold text-red-700">{state.message}</p>}
+      {state.kind === 'error' && <ErrorLine>{state.message}</ErrorLine>}
 
       {state.kind === 'done' && (
         <dl className="flex flex-col gap-2">

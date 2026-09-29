@@ -6,6 +6,7 @@
 
 .page {
   --latin: var(--font-headword), Georgia, serif;
+  --latin-italic: var(--font-headword-italic), Georgia, serif;
   --han: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", serif;
   background: var(--zs-bg);
   color: var(--zs-ink);
@@ -14,9 +15,9 @@
 /* No border-radius here: the outline follows each control's own corners. */
 .page :focus-visible { outline: 2.5px solid var(--sea-500); outline-offset: 2px; }
 
-/* A word set in its own language. */
-.page [data-hw] { font-family: var(--latin); font-weight: 500; letter-spacing: -0.01em; }
-.page [data-hw][lang="es"] { font-style: italic; }
+/* A word set in its own language, as components/lookup/Word.module.css sets it. */
+.page [data-hw] { font-family: var(--latin); font-weight: 500; letter-spacing: -0.02em; }
+.page [data-hw][lang="es"] { font-family: var(--latin-italic); font-style: italic; }
 .page [data-hw][lang="zh"] { font-family: var(--han); font-weight: 700; letter-spacing: 0; }
 
 /* The text box of each direction, as the lookup box on `/`. */

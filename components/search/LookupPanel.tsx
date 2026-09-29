@@ -17,6 +17,7 @@ import { fetchSearch, searchQueryString } from '@/lib/dictionary/searchClient'
 import type { Direction } from '@/lib/dictionary/search'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
 import { PassageBlock, looksLikeAPassage } from './PassageBlock'
+import { ErrorLine } from './ErrorLine'
 import { AiSuggest } from './AiSuggest'
 import s from './Lookup.module.css'
 
@@ -357,7 +358,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
       {loading && <p className="text-sm text-(--zs-soft)">Đang dịch…</p>}
       {refusal && (
         <div className="flex items-center gap-3">
-          <p className="text-sm font-semibold text-red-700">{refusal}</p>
+          <ErrorLine>{refusal}</ErrorLine>
           <button
             type="button"
             onClick={() => setAttempt((n) => n + 1)}

@@ -7,6 +7,7 @@ import { searchPath } from '@/lib/dictionary/entryId'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import type { SuggestOutput } from '@/lib/ai/tasks'
 import s from './Lookup.module.css'
+import { ErrorLine } from './ErrorLine'
 
 type State =
   | { kind: 'idle' }
@@ -65,7 +66,7 @@ export function AiSuggest({ query }: { query: string }) {
   }
 
   if (state.kind === 'loading') return <p className="text-sm text-(--zs-soft)">Đang hỏi AI…</p>
-  if (state.kind === 'error') return <p className="text-sm font-semibold text-red-700">{state.message}</p>
+  if (state.kind === 'error') return <ErrorLine>{state.message}</ErrorLine>
 
   if (state.words.length === 0) {
     return <p className="text-sm text-(--zs-soft)">AI cũng không nghĩ ra từ nào.</p>
