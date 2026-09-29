@@ -204,6 +204,11 @@
   .fig span { font-size: var(--s1); }
   .fact .long { display: none; }
   .fact .short { display: block; margin-top: 0.25rem; font-size: 0.8125rem; }
+  /* A lane is a third of the screen. The fact's line and the empty state together run 49px
+     into the next lane at 390x844, where that lane covers the suggestions. */
+  .pane:has(.none) .fact .short { display: none; }
+  .none { font-size: var(--s1); line-height: 1.3; }
+  .try { margin-top: 0.3rem; }
 }
 /* Without motion nothing unrolls: the hero sits in the flow and the finished lanes follow it. */
 .world[data-still] { height: auto; }

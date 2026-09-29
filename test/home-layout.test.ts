@@ -14,8 +14,8 @@ const boot = () => new Function(HOME_BOOT_SCRIPT)()
 const HOUR = 3600
 const nowSec = () => Math.floor(Date.now() / 1000)
 /** What @supabase/ssr 0.12 writes: auth-js's session JSON as `base64-` plus base64url. */
-const session = (user: { email: string; is_anonymous: boolean }, expiresAt = nowSec() + HOUR) =>
-  `base64-${Buffer.from(JSON.stringify({ access_token: 'a', refresh_token: 'r', expires_at: expiresAt, user: { id: 'u', ...user } })).toString('base64url')}`
+const session = (user: { email: string; is_anonymous: boolean }, expiresAt = nowSec() + HOUR, refreshToken: string | null = 'r') =>
+  `base64-${Buffer.from(JSON.stringify({ access_token: 'a', refresh_token: refreshToken, expires_at: expiresAt, user: { id: 'u', ...user } })).toString('base64url')}`
 const PERMANENT = session({ email: 'a@b.com', is_anonymous: false })
 const ANONYMOUS = session({ email: '', is_anonymous: true })
 
@@ -72,8 +72,20 @@ describe('HOME_BOOT_SCRIPT', () => {
     expect(html).not.toHaveAttribute('data-session')
   })
 
-  it('never marks an expired session, which may not come back', () => {
-    document.cookie = `${SUPABASE_AUTH_COOKIE}=${session({ email: 'a@b.com', is_anonymous: false }, nowSec() - 1)}; path=/`
+  it('marks an expired session that carries a refresh token, which the browser renews', () => {
+    document.cookie = `${SUPABASE_AUTH_COOKIE}=${session({ email: 'a@b.com', is_anonymous: false }, nowSec() - HOUR)}; path=/`
+    boot()
+    expect(html).toHaveAttribute('data-session')
+  })
+
+  it('never marks an expired session with nothing to renew it', () => {
+    document.cookie = `${SUPABASE_AUTH_COOKIE}=${session({ email: 'a@b.com', is_anonymous: false }, nowSec() - 1, null)}; path=/`
+    boot()
+    expect(html).not.toHaveAttribute('data-session')
+  })
+
+  it('never marks an expired anonymous session, refresh token or not', () => {
+    document.cookie = `${SUPABASE_AUTH_COOKIE}=${session({ email: '', is_anonymous: true }, nowSec() - HOUR)}; path=/`
     boot()
     expect(html).not.toHaveAttribute('data-session')
   })

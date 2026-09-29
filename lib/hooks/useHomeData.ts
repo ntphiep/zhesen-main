@@ -14,6 +14,9 @@ import type { LangCode } from '@/lib/languages'
 export const FORECAST_DAYS = 7
 /** Enough newest words for four per language on the globe layout. */
 const RECENT = 24
+/** How long the reads may go on after a request first fails. Its own retries take 7 s to
+ *  give up (`onRequestFailure`); the first of them goes out 1 s after the failure. */
+const FAILURE_GRACE_MS = 2500
 
 interface Loaded {
   now: number
@@ -130,9 +133,10 @@ export function useHomeData(enabled: boolean): {
   useEffect(() => {
     if (!enabled) return
     let live = true
+    let stop = () => {}
     void (async () => {
       try {
-        const { createClient } = await loadSupabaseClient()
+        const { createClient, onRequestFailure } = await loadSupabaseClient()
         const supabase = createClient()
         const { data: auth } = await supabase.auth.getSession()
         if (!live) return
@@ -145,14 +149,21 @@ export function useHomeData(enabled: boolean): {
         ])
         if (!live) return
         const now = Date.now()
-        const [rows, days, queue, recent, leeches, upcoming] = await Promise.all([
+        const failing = new Promise<never>((_, reject) => {
+          let timer: ReturnType<typeof setTimeout> | undefined
+          const off = onRequestFailure(() => {
+            timer ??= setTimeout(() => reject(new Error('a home read is still failing')), FAILURE_GRACE_MS)
+          })
+          stop = () => { off(); clearTimeout(timer) }
+        })
+        const [rows, days, queue, recent, leeches, upcoming] = await Promise.race([Promise.all([
           stats.fetchStatRows(supabase),
           getActivityDays(supabase),
           review.listDueCards(supabase, now, review.SESSION_LIMITS),
           store.listRecentWords(supabase, RECENT),
           store.listLeeches(supabase, store.LEECH_LAPSES, 6),
           listUpcoming(supabase, now, FORECAST_DAYS),
-        ])
+        ]), failing]).finally(() => stop())
         if (!live) return
         const data: Loaded = {
           now, rows, days, queue, recent, leeches, upcoming,
@@ -166,7 +177,7 @@ export function useHomeData(enabled: boolean): {
         if (live) setStatus('failed')
       }
     })()
-    return () => { live = false }
+    return () => { live = false; stop() }
   }, [enabled, attempt])
 
   const view = useMemo(() => (loaded ? summarize(loaded.data, marks, again) : null), [loaded, marks, again])

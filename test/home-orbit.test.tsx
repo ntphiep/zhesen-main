@@ -8,7 +8,7 @@ import type { StatRow } from '@/lib/wordlist/stats'
 // jsdom has no canvas for the globe.
 vi.mock('@/lib/hooks/useGlobe', () => ({ useGlobe: () => ({ globe: null, world: null }) }))
 
-import { OrbitLayout, notebookMarks, stageKey } from '@/components/home/OrbitLayout'
+import { OrbitLayout, notebookMarks, pinLook, stageKey } from '@/components/home/OrbitLayout'
 
 const NOW = Date.parse('2026-09-29T03:00:00.000Z')
 const row = (i: number): StatRow => ({
@@ -34,6 +34,17 @@ describe('the globe of the notebook', () => {
   it('says how many of the due words carry a label when not all of them fit', () => {
     expect(stageKey(18, 20)).toBe('Mỗi chấm là một từ trong sổ tay. 18 trong 20 từ đến hạn hôm nay có nhãn.')
     expect(stageKey(5, 5)).toBe('Mỗi chấm là một từ trong sổ tay. Từ đến hạn hôm nay có nhãn.')
+  })
+
+  it('lets only a label at full strength take focus', () => {
+    expect(pinLook(0.2, false)).toEqual({ off: true, opacity: 0, inert: true })
+    // Drawn at opacity 0.14 and 0.05: shown, but too faint to carry a focus ring.
+    expect(pinLook(0.306, false)).toMatchObject({ off: false, inert: true })
+    expect(pinLook(0.27, false)).toMatchObject({ off: false, inert: true })
+    expect(pinLook(0.5, false)).toMatchObject({ off: false, inert: true })
+    expect(pinLook(0.65, false)).toEqual({ off: false, opacity: 1, inert: false })
+    expect(pinLook(1, false)).toEqual({ off: false, opacity: 1, inert: false })
+    expect(pinLook(1, true)).toEqual({ off: true, opacity: 0, inert: true })
   })
 
   it('keeps a pin out of the tab order until the globe shows it', () => {

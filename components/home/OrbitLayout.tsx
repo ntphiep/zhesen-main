@@ -25,6 +25,16 @@ const CITIES: Record<LangCode, LatLon[]> = {
 const PINS = 18
 /** A label stands above its point, so near the rim it hangs off the globe: hide it first. */
 const PIN_EDGE = 0.25
+/** Where a label has faded fully in. Below it the label is too faint to show a focus ring. */
+const PIN_FULL = 0.65
+
+/** How a pin's label looks at a point's `alpha` from `Globe.project`. Only a label at full
+ *  strength takes focus or a click; a fading one is inert. */
+export function pinLook(alpha: number, dimmed: boolean): { off: boolean; opacity: number; inert: boolean } {
+  const off = dimmed || alpha < PIN_EDGE
+  const opacity = off ? 0 : Math.round(Math.min(1, (alpha - PIN_EDGE) / (PIN_FULL - PIN_EDGE)) * 100) / 100
+  return { off, opacity, inert: opacity < 1 }
+}
 
 interface Dot { lang: LangCode; at: LatLon }
 interface Pin { card: ReviewCard; at: LatLon }
@@ -103,12 +113,11 @@ export function OrbitLayout({ view, failed, onRetry, picker }: { view: HomeView 
         const el = pinEls.current.get(p.card.id)
         if (!el) continue
         const s = g.project(p.at)
-        const hide = s.alpha < PIN_EDGE || (only !== null && p.card.lang !== only)
-        if (hide) el.dataset.off = ''
+        const look = pinLook(s.alpha, only !== null && p.card.lang !== only)
+        if (look.off) el.dataset.off = ''
         else delete el.dataset.off
-        // A pin behind the globe is out of sight, so out of the tab order and the tree too.
-        el.inert = hide
-        el.style.opacity = hide ? '' : Math.min(1, (s.alpha - PIN_EDGE) * 2.5).toFixed(2)
+        el.inert = look.inert
+        el.style.opacity = look.off ? '' : String(look.opacity)
         el.style.transform = `translate(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px) translate(-50%, calc(-100% - 8px))`
       }
     }

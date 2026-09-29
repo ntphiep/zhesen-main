@@ -72,10 +72,12 @@ export function sessionMarked(): boolean {
   return document.documentElement.hasAttribute('data-session')
 }
 
-/** Runs in <head> before the first paint. Marks <html> with `data-session` only for an
- *  unexpired session of a permanent account, so an anonymous or expired one never paints a
- *  frame of the home, and with the stored layout when it is one the page still draws, which
- *  `app/globals.css` reads to show one panel of `/`.
+/** Runs in <head> before the first paint. Marks <html> with `data-session` only for a
+ *  permanent account's session that is unexpired or carries a refresh token, so an anonymous
+ *  one never paints a frame of the home, and with the stored layout when it is one the page
+ *  still draws, which `app/globals.css` reads to show one panel of `/`. `/` is cached and
+ *  outside `proxy.ts`, so an expired token is refreshed only in the browser; if that fails,
+ *  HomeSwitch drops the mark once `useAccount` answers.
  *
  *  `@supabase/ssr` 0.12 keeps auth-js's session JSON in the cookie whole, or in chunks `.0`,
  *  `.1`... joined in order, as `base64-` plus base64url, and sets `httpOnly: false`
@@ -89,7 +91,7 @@ export const HOME_BOOT_SCRIPT =
   `var raw=decodeURIComponent(whole!==null?whole:parts.join(''));` +
   `if(raw.indexOf('base64-')===0)raw=atob(raw.slice(7).replace(/-/g,'+').replace(/_/g,'/'));` +
   `var s=JSON.parse(raw),u=s&&s.user;` +
-  `if(u&&u.email&&!u.is_anonymous&&s.expires_at*1000>Date.now())d.dataset.session=''}catch(e){}` +
+  `if(u&&u.email&&!u.is_anonymous&&(s.refresh_token||s.expires_at*1000>Date.now()))d.dataset.session=''}catch(e){}` +
   `try{var v=localStorage.getItem('${KEY}');` +
   `if(${JSON.stringify(HOME_LAYOUTS.map((l) => l.key).filter((k) => k !== DEFAULT_HOME_LAYOUT))}.indexOf(v)>=0)` +
   `d.dataset.homeLayout=v}catch(e){}})()`
