@@ -16,8 +16,9 @@ const SavedButton = dynamic(() => import('./SavedButton').then((m) => m.SavedBut
  * came from, since signing in must not cost them where they were reading.
  *
  * `lg` is the word page's primary action: 44px tall, the height of a touch target.
+ * `tone="pane"` draws it in the colours of the landing page's language lanes.
  */
-export function AddToWordlistButton({ entry, size = 'sm' }: { entry: DictEntryPreview | DictEntryDetail; size?: 'sm' | 'lg' }) {
+export function AddToWordlistButton({ entry, size = 'sm', tone }: { entry: DictEntryPreview | DictEntryDetail; size?: 'sm' | 'lg'; tone?: 'pane' }) {
   const { kind } = useAccount()
 
   if (kind === null) return null
@@ -26,7 +27,9 @@ export function AddToWordlistButton({ entry, size = 'sm' }: { entry: DictEntryPr
       <Link
         href={`${signInHref(kind)}?next=${encodeURIComponent(entryPath(entry.id))}`}
         prefetch={false}
-        className={size === 'lg'
+        className={tone === 'pane'
+          ? 'inline-flex h-10 items-center rounded-full border-[1.5px] border-current px-4 text-sm font-bold hover:bg-current/10'
+          : size === 'lg'
           ? 'inline-flex h-11 items-center rounded-[10px] border border-black/15 bg-white px-[18px] text-sm font-semibold hover:bg-black/5'
           : 'rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium text-black/70 hover:bg-black/5'}
       >
@@ -35,5 +38,5 @@ export function AddToWordlistButton({ entry, size = 'sm' }: { entry: DictEntryPr
       </Link>
     )
   }
-  return <SavedButton entry={entry} size={size} />
+  return <SavedButton entry={entry} size={size} tone={tone} />
 }

@@ -1,0 +1,17 @@
+{
+  "en": {
+    "official": 91,
+    "continents": 6,
+    "worldPercent": 21.4
+  },
+  "zh": {
+    "vnTimes": 12.5
+  },
+  "es": {
+    "latamCountries": 18,
+    "latamCountriesPercent": 85.1,
+    "americas": {
+      "percent": 37.9
+    }
+  }
+}

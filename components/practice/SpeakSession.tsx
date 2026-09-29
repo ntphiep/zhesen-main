@@ -10,28 +10,9 @@ import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { gradeForMode } from '@/lib/practice/grading'
 import { speechLang, type LangCode } from '@/lib/languages'
+import { getRecognitionCtor, type SpeechRecognitionLike } from '@/lib/practice/recognition'
 
 const SIZE = 10
-
-// Minimal shape of the Web Speech API we use (not in the TS DOM lib).
-interface SpeechRecognitionLike {
-  lang: string
-  interimResults: boolean
-  maxAlternatives: number
-  onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void
-  onerror: (e: { error?: string }) => void
-  onend: () => void
-  start: () => void
-  stop: () => void
-}
-function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
-  if (typeof window === 'undefined') return null
-  const w = window as unknown as {
-    SpeechRecognition?: new () => SpeechRecognitionLike
-    webkitSpeechRecognition?: new () => SpeechRecognitionLike
-  }
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
-}
 
 /** Recogniser error codes worth explaining. Anything else falls back to one line. */
 const RECOGNITION_ERRORS: Record<string, string> = {

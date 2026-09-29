@@ -7,7 +7,7 @@ import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 type State = 'idle' | 'saving' | 'added' | 'exists' | 'error'
 
 /** The real save, mounted only once an account is in place. */
-export function SavedButton({ entry, size = 'sm' }: { entry: DictEntryPreview | DictEntryDetail; size?: 'sm' | 'lg' }) {
+export function SavedButton({ entry, size = 'sm', tone }: { entry: DictEntryPreview | DictEntryDetail; size?: 'sm' | 'lg'; tone?: 'pane' }) {
   const supabase = useMemo(() => createClient(), [])
   const [state, setState] = useState<State>('idle')
 
@@ -43,7 +43,9 @@ export function SavedButton({ entry, size = 'sm' }: { entry: DictEntryPreview | 
       type="button"
       onClick={onClick}
       disabled={state === 'saving' || state === 'added' || state === 'exists'}
-      className={size === 'lg'
+      className={tone === 'pane'
+        ? 'h-10 rounded-full bg-(--pc) px-4 text-sm font-bold text-(--pb) disabled:opacity-60'
+        : size === 'lg'
         ? 'h-11 rounded-[10px] bg-black px-[18px] text-sm font-semibold text-white disabled:opacity-50'
         : 'rounded-lg bg-black px-3 py-1.5 text-sm text-white disabled:opacity-50'}
     >

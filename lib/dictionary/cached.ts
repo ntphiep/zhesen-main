@@ -17,7 +17,7 @@ import { unstable_cache } from 'next/cache'
 export const LEX_REVALIDATE = 604800
 import { createContentClient } from '@/lib/supabase/content'
 import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getTermPreviews } from './entryDetail'
-import { getCommonWords, type CommonWordsOptions } from './search'
+import { getCommonWords, searchOneDirection, type CommonWordsOptions, type Direction } from './search'
 import { resolveTappableTexts, type ResolvedText } from './tappable'
 import { getEntriesContaining } from './containing'
 import { getWordKin } from './kin'
@@ -25,6 +25,22 @@ import { getWordOfDay, dayNumber, type DailyWord } from './wordOfDay'
 import { getLevelsForLanguage, getEntriesByLevel, type LevelSummary, type LevelPage } from './levels'
 import type { ContainingWord, DictEntryDetail, DictEntryPreview, CrossLangSibling, TermPreview, CharInfo, WordForm } from './types'
 import type { LangCode } from '@/lib/languages'
+
+/** How long a search answer stays cached. One number for the cache and for the cold-query
+ *  limiter in `app/dictionary/search/route.ts`: the limiter treats a query as free because
+ *  the cache holds the answer, so the two have to forget it at the same moment. */
+export const SEARCH_CACHE_SECONDS = 3600
+
+/** One direction of the lookup, as `GET /dictionary/search` and the home page ask it. The
+ *  language list and the direction are part of the key, not a filter applied to a cached
+ *  answer: each combination asks the database something different. Shared, so the page and
+ *  the route read one cache entry for the same arguments. */
+export const getCachedSearch = unstable_cache(
+  (q: string, langs: LangCode[], direction: Direction) =>
+    searchOneDirection(createContentClient(), q, direction, 8, langs),
+  ['dict-search-one-v3'],
+  { revalidate: SEARCH_CACHE_SECONDS, tags: ['lex'] },
+)
 
 export const getCachedEntryDetail = unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),

@@ -1,53 +1,12 @@
-import Link from 'next/link'
-import { LANGUAGES } from '@/lib/languages'
-import { LanguageCard } from '@/components/home/LanguageCard'
-import { WordOfDayCard } from '@/components/home/WordOfDayCard'
-import { LookupPair } from '@/components/search/LookupPair'
-import { getCachedWordOfDay } from '@/lib/dictionary/cached'
+import { Landing } from '@/components/home/Landing'
+import { loadExample, loadTake, slips } from '@/lib/home/landing'
+import { worldFacts } from '@/lib/home/worldFacts'
+import stats from '@/lib/home/world/stats.json'
 
-const SECTIONS = [
-  { href: '/dictionary', title: 'Dịch', desc: 'Tra một từ hay dịch cả đoạn' },
-  { href: '/theory', title: 'Lý thuyết', desc: 'Học phát âm, từ loại, câu, ngữ pháp và collocation' },
-  { href: '/practice', title: 'Luyện tập', desc: 'Ôn từ đã lưu bằng nhiều cách' },
-  { href: '/wordlist', title: 'Sổ tay', desc: 'Xem và sửa các từ đã lưu' },
-]
+// Every read below is cached for an hour or longer, so the page is rebuilt at most hourly.
+export const revalidate = 3600
 
 export default async function Home() {
-  const languages = LANGUAGES
-  const wordOfDay = await getCachedWordOfDay()
-  return (
-    <main className="mx-auto max-w-page px-6 py-16">
-      <h1 className="text-4xl font-bold">Zhesen</h1>
-      <p className="mt-2 text-black/60">Học tiếng Trung, Tây Ban Nha và Anh.</p>
-      <div className="mt-8">
-        <LookupPair />
-      </div>
-      <div className="mt-6">
-        <WordOfDayCard word={wordOfDay} />
-      </div>
-
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {SECTIONS.map((s) => (
-          // The header links the same four sections and owns their prefetch: from here
-          // /practice and /wordlist, which read the session, were prefetched as well.
-          <Link
-            key={s.href}
-            href={s.href}
-            prefetch={false}
-            className="group rounded-2xl border border-black/10 p-5 transition hover:border-black/30 hover:shadow-lg hover:-translate-y-0.5"
-          >
-            <div className="text-lg font-semibold">{s.title}</div>
-            <div className="mt-1 text-sm text-black/55">{s.desc}</div>
-          </Link>
-        ))}
-      </div>
-
-      <h2 className="mt-10 mb-3 text-sm font-semibold uppercase tracking-wide text-black/55">Học theo ngôn ngữ</h2>
-      <div className="grid gap-4 sm:grid-cols-3">
-        {languages.map((l) => (
-          <LanguageCard key={l.code} language={l} />
-        ))}
-      </div>
-    </main>
-  )
+  const [example, take] = await Promise.all([loadExample(), loadTake()])
+  return <Landing example={example} facts={worldFacts(stats)} take={take} slips={slips()} />
 }

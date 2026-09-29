@@ -85,6 +85,12 @@ function canPlay(url: string): boolean {
   return true
 }
 
+const TONES = {
+  icon: 'h-8 w-8 text-black/60 hover:bg-black/10 hover:text-black',
+  pane: 'h-10 gap-1.5 border-[1.5px] border-current px-4 text-sm font-bold hover:bg-current/10',
+  chip: 'h-9 gap-1.5 bg-(--sea-50) px-3.5 text-sm font-bold text-(--sea-700) hover:bg-(--sea-100)',
+}
+
 const NO_VOICE: Record<LangCode, string> = {
   zh: 'Máy chưa cài giọng đọc tiếng Trung',
   es: 'Máy chưa cài giọng đọc tiếng Tây Ban Nha',
@@ -95,10 +101,13 @@ const NO_VOICE: Record<LangCode, string> = {
  * Pronunciation button: a recorded file when there is one, browser speech synthesis
  * otherwise and on any playback failure. It says so when the browser has no voice
  * for the language; the Chinese entries carry no recordings at all.
+ *
+ * A `tone` draws the landing page's labelled pill instead of the bare icon: `pane` on a
+ * coloured lane, `chip` on a card.
  */
 export function AudioButton({
-  text, lang, audioUrl, accent, label,
-}: { text: string; lang: LangCode; audioUrl?: string | null; accent?: string; label?: string }) {
+  text, lang, audioUrl, accent, label, tone,
+}: { text: string; lang: LangCode; audioUrl?: string | null; accent?: string; label?: string; tone?: 'pane' | 'chip' }) {
   const [busy, setBusy] = useState(false)
   const [noVoice, setNoVoice] = useState(false)
   const bcp47 = accent || speechLang(lang)
@@ -128,7 +137,7 @@ export function AudioButton({
       aria-label={noVoice ? NO_VOICE[lang] : (label ?? `Phát âm ${text}`)}
       aria-busy={busy}
       title={noVoice ? NO_VOICE[lang] : undefined}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-black/60 hover:bg-black/10 hover:text-black ${busy ? 'opacity-60' : ''} ${noVoice ? 'opacity-40' : ''}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full ${TONES[tone ?? 'icon']} ${busy ? 'opacity-60' : ''} ${noVoice ? 'opacity-40' : ''}`}
     >
       {busy
         ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-black/20 border-t-black/60" />
@@ -138,6 +147,7 @@ export function AudioButton({
             {noVoice ? <path d="m22 9-6 6m0-6 6 6" /> : <><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M19 5a10 10 0 0 1 0 14" /></>}
           </svg>
         )}
+      {tone && <span>{label}</span>}
     </button>
   )
 }

@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "npm run lint && npm run typecheck && npm run test"
+    "verify": "npm run lint && npm run typecheck && npm run test",
+    "world:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/world/build.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch": "^3.1138.0",
@@ -26,11 +27,14 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.108.2",
     "@vercel/oidc-aws-credentials-provider": "^3.3.9",
+    "d3-geo": "3.1.1",
     "hanzi-writer": "^3.7.3",
     "next": "16.3.5",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "topojson-client": "3.1.0",
     "ts-fsrs": "5.4.2",
+    "world-atlas": "2.0.2",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -38,9 +42,11 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
+    "@types/d3-geo": "^3.1.1",
     "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/topojson-client": "^3.1.5",
     "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.5",

@@ -1,27 +1,8 @@
-import { unstable_cache } from 'next/cache'
-import { createContentClient } from '@/lib/supabase/content'
-import { searchOneDirection, type Direction } from '@/lib/dictionary/search'
+import { getCachedSearch, SEARCH_CACHE_SECONDS } from '@/lib/dictionary/cached'
+import type { Direction } from '@/lib/dictionary/search'
 import { EMPTY_SEARCH_RESPONSE } from '@/lib/dictionary/response'
 import { clientKey, createColdQueryLimiter, createRateLimiter } from '@/lib/http/rateLimit'
 import { isLangCode, LANG_CODES, type LangCode } from '@/lib/languages'
-
-// Cache search results server-side, keyed by the normalized query. This removes the
-// per-keystroke cross-region round-trip to Supabase for any prefix anyone has typed
-// before; the CDN/edge can also serve repeats via the Cache-Control header.
-// One number for both the cache and the cold-query limiter below: the limiter
-// treats a query as free because the cache holds the answer, so the two have to
-// forget it at the same moment.
-const SEARCH_CACHE_SECONDS = 3600
-
-// The language list and the direction are part of the key, not a filter applied to a
-// cached answer: each combination asks the database something different, so one cannot be
-// served from another's entry.
-const cachedSearch = unstable_cache(
-  (q: string, langs: LangCode[], direction: Direction) =>
-    searchOneDirection(createContentClient(), q, direction, 8, langs),
-  ['dict-search-one-v3'],
-  { revalidate: SEARCH_CACHE_SECONDS, tags: ['lex'] },
-)
 
 /** The `langs` parameter, in the canonical order, or all three when it names none of
  *  them. Canonical because the list is part of the cache key, and `en,es` and `es,en`
@@ -71,7 +52,7 @@ const MAX_QUERY_CHARS = 64
 // a browser, which then applies heuristic freshness and answers from its own copy
 // even after /api/revalidate has cleared the server's. `max-age=0,
 // must-revalidate` makes the browser ask every time, which is cheap because the
-// server answer comes from `cachedSearch`. The shared cache keeps the long window.
+// server answer comes from `getCachedSearch`. The shared cache keeps the long window.
 //
 // Set-Cookie and this header can meet on one response, when the proxy rotates a
 // session token on a search request. Vercel's CDN does not cache a response
@@ -135,7 +116,7 @@ export async function GET(request: Request) {
   if (!cold.allowed) return tooFast(cold.retryAfterSeconds)
 
   try {
-    const data = await cachedSearch(key, langs, direction)
+    const data = await getCachedSearch(key, langs, direction)
     return Response.json(data, { headers: CACHE_HEADERS })
   } catch (e) {
     if (isStatementTimeout(e)) return tooSlow()

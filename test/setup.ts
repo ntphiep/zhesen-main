@@ -32,3 +32,22 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
     } as MediaQueryList
   }
 }
+
+// jsdom has no IntersectionObserver or ResizeObserver. The stubs observe nothing and never
+// call back, which is what an element that never enters a viewport would see.
+if (typeof window !== 'undefined') {
+  window.IntersectionObserver ??= class implements IntersectionObserver {
+    readonly root = null
+    readonly rootMargin = '0px'
+    readonly thresholds: readonly number[] = [0]
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords(): IntersectionObserverEntry[] { return [] }
+  }
+  window.ResizeObserver ??= class implements ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+}

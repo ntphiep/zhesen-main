@@ -26,6 +26,7 @@ documented in `.env.example`; only the two Supabase values are required.
 | `npm run dev` | Development server |
 | `npm run build` then `npm run start` | Production build, served locally |
 | `npm run verify` | Lint, typecheck and the full test suite |
+| `npm run world:build` | Rebuild `lib/home/world/` (the globe's languages and the landing's figures) from Unicode CLDR 48.2.0 and world-atlas |
 
 ## Layout
 
@@ -34,6 +35,7 @@ app/          routes and layouts
 components/   UI, grouped by feature
 infra/        AWS account (Terraform) and what the database instance runs
 lib/          logic with no UI dependency
+scripts/      build steps run by hand, such as world:build
 supabase/     database schema, one numbered migration per change
 test/         Vitest suites
 ```

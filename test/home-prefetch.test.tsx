@@ -11,7 +11,15 @@ vi.mock('next/link', () => ({
 vi.mock('next/navigation', () => ({ usePathname: () => '/' }))
 vi.mock('@/components/account/AccountLink', () => ({ AccountLink: () => null }))
 vi.mock('@/components/search/LookupPair', () => ({ LookupPair: () => null }))
-vi.mock('@/lib/dictionary/cached', () => ({ getCachedWordOfDay: vi.fn(async () => null) }))
+vi.mock('@/lib/dictionary/cached', () => ({
+  getCachedWordOfDay: vi.fn(async () => null),
+  getCachedSearch: vi.fn(async () => ({ entries: { en: [], es: [], zh: [] } })),
+  getCachedEntryDetail: vi.fn(async () => null),
+}))
+vi.mock('@/lib/dictionary/learnerCached', () => ({ getCachedLearnerLayer: vi.fn(async () => null) }))
+// next/font only works under the Next compiler, and jsdom has no canvas for the globe.
+vi.mock('@/components/home/fonts', () => ({ newsreader: { variable: '' }, patrickHand: { variable: '' } }))
+vi.mock('@/lib/hooks/useGlobe', () => ({ useGlobe: () => ({ globe: null, world: null }) }))
 // Signed in, so the footer draws its /account link too.
 vi.mock('@/lib/hooks/useAccount', () => ({ useAccount: () => ({ kind: 'permanent', email: 'a@b.com' }) }))
 
