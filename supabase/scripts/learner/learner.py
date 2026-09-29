@@ -163,6 +163,10 @@ RESERVED = {'ag/gemini-3.8-flash', 'ag/gemini-3.8-flash-low', 'ag/gpt-oss-120b-m
             'orca/deepseek/deepseek-v4-flash-free', 'kr/glm-5',
             'antigravity/gemini-3.8-flash-tiered', 'antigravity/gemini-3.7-flash-medium',
             'openrouter/qwen/qwen3.8-27b:free', 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free'}
+# Both combos lean on Antigravity, whose quota may be the account's rather than each model's,
+# so the batch calls it only from 23:00 to 07:00 in Vietnam, when few readers ask.
+NIGHT_ONLY = {'ag', 'omni:antigravity'}
+NIGHT_UTC = range(16, 24)
 
 
 def usable(name):
@@ -328,11 +332,13 @@ class Pool:
         more than its PROVIDER_LIMIT, else PER_PROVIDER, calls at once, and no model of a family
         in `avoid` is taken."""
         now = time.time()
+        night = datetime.now(timezone.utc).hour in NIGHT_UTC
         with LOCK:
             load = {}
             for m, n in self.busy.items():
                 load[provider(m)] = load.get(provider(m), 0) + n
             ready = [m for m in self.models if self.cool[m] <= now and family(m) not in avoid
+                     and (night or provider(m) not in NIGHT_ONLY)
                      and load.get(provider(m), 0) < PROVIDER_LIMIT.get(provider(m), PER_PROVIDER)]
             free = [m for m in ready if not self.busy[m]]
             if free and ready and rank(free[0]) > len(RANK) >= rank(ready[0]):
