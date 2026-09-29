@@ -72,7 +72,7 @@ export function WordLayouts({ view }: { view: WordView }) {
     >
       <div className={`${CONTAINER} flex flex-wrap items-center justify-between gap-x-3 gap-y-2`}>
         <Link href="/dictionary" className="text-sm font-semibold text-(--zs-soft) transition-colors duration-150 ease-std hover:text-(--zs-ink) hover:underline">← Dịch</Link>
-        <div className={`${w.picker} flex flex-wrap items-center gap-2`}>
+        <div className="flex flex-wrap items-center gap-2">
           <LayoutPicker
             value={hydrated ? layout : null}
             stored={hydrated ? stored : null}

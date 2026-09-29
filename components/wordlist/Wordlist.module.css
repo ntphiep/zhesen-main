@@ -53,8 +53,8 @@ select.field { padding-right: 0.5rem; cursor: pointer; }
 }
 .seg { display: inline-flex; flex: none; padding: 3px; border-radius: 12px; background: var(--zs-chip); }
 .seg button { min-height: 2.125rem; padding: 0 0.85rem; border: 0; border-radius: 9px; background: none; color: var(--zs-soft); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background-color 150ms var(--ease-std), color 150ms var(--ease-std), box-shadow 150ms var(--ease-std); }
-.seg button:hover { color: var(--zs-ink); }
-.seg [aria-pressed="true"], .seg [aria-selected="true"] { background: var(--zs-bg); color: var(--zs-ink); box-shadow: 0 1px 3px rgb(2 60 133 / 0.14); }
+.seg button:hover:not([aria-pressed="true"], [aria-selected="true"]) { color: var(--zs-ink); }
+.seg [aria-pressed="true"], .seg [aria-selected="true"] { background: var(--zs-btn); color: var(--zs-btn-ink); box-shadow: 0 1px 3px rgb(2 60 133 / 0.14); }
 
 /* Dropdown menus: export, columns */
 .menu { position: absolute; z-index: 30; margin-top: 0.35rem; padding: 0.3rem; border-radius: 14px; background: var(--zs-bg); color: var(--zs-ink); box-shadow: 0 0 0 1.5px var(--edge), 0 18px 36px -18px rgb(2 60 133 / 0.45); transform-origin: top right; animation: menuIn 170ms var(--ease-enter) both; }

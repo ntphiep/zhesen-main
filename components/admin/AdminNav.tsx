@@ -54,7 +54,7 @@ export function AdminNav() {
                   href={l.href}
                   prefetch={false}
                   aria-current={on ? 'page' : undefined}
-                  className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-colors duration-150 ease-std motion-reduce:transition-none ${on ? 'bg-(--zs-bg) font-semibold text-(--zs-ink) shadow-sm' : 'font-medium text-(--zs-soft) hover:bg-(--zs-bg)/60 hover:text-(--zs-ink)'}`}
+                  className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-colors duration-150 ease-std motion-reduce:transition-none ${on ? 'bg-(--zs-btn) font-semibold text-(--zs-btn-ink) shadow-sm' : 'font-medium text-(--zs-soft) hover:bg-(--zs-bg)/60 hover:text-(--zs-ink)'}`}
                 >
                   {l.label}
                   <LinkPending />

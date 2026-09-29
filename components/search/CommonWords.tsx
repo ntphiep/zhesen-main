@@ -49,14 +49,12 @@ export function CommonWords({ pools }: { pools: Record<LangCode, WordChip[]> }) 
   const reduced = useReducedMotion()
 
   const longest = Math.max(...LANG_CODES.map((l) => pools[l].length))
-  const rotates = longest > PER_PAGE && !reduced
 
   useEffect(() => {
-    if (held || stopped || longest <= PER_PAGE) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (held || stopped || reduced || longest <= PER_PAGE) return
     const timer = setInterval(() => setFrom((f) => (f + PER_PAGE) % longest), ROTATE_MS)
     return () => clearInterval(timer)
-  }, [held, stopped, longest])
+  }, [held, stopped, reduced, longest])
 
   return (
     <div
@@ -67,13 +65,17 @@ export function CommonWords({ pools }: { pools: Record<LangCode, WordChip[]> }) 
     >
       <div className="flex items-center gap-2">
         <h2 className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Từ thông dụng</h2>
-        {rotates && (
+        {/* Kept in the layout under reduced motion, hidden and inert, so the row does not
+            shift when the setting is read after hydration. */}
+        {longest > PER_PAGE && (
           <button
             type="button"
             aria-pressed={stopped}
-            aria-label={stopped ? 'Cho từ đổi tiếp' : 'Dừng đổi từ'}
+            aria-label="Dừng đổi từ"
+            aria-hidden={reduced || undefined}
+            disabled={reduced}
             onClick={() => setStopped((v) => !v)}
-            className="grid size-7 place-items-center rounded-full border-[1.5px] border-(--edge) bg-(--zs-bg) text-(--zs-ink) transition-colors duration-150 ease-std hover:border-sea-400"
+            className={`grid size-7 place-items-center rounded-full border-[1.5px] border-(--edge) bg-(--zs-bg) text-(--zs-ink) transition-colors duration-150 ease-std hover:border-sea-400 ${reduced ? 'invisible' : ''}`}
           >
             {stopped ? PLAY : PAUSE}
           </button>

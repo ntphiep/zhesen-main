@@ -94,7 +94,7 @@ export function HomeBar({ now, picker }: { now: number | null; picker: PickerSta
   return (
     <div className={`${h.wrap} ${h.bar}`}>
       <p className={h.eyebrow}>{now !== null && longDate(now)}</p>
-      <div className={h.picker}>
+      <div>
         <LayoutPicker
           value={picker.value}
           stored={picker.stored}

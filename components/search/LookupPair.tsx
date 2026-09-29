@@ -93,7 +93,7 @@ export function LookupPair({ lang, initialQuery = '', autoFocus = false }: {
                 aria-pressed={mode === m.key}
                 onClick={() => chooseMode(m.key)}
                 className={`rounded-md px-2.5 py-1 text-[0.8125rem] font-medium sm:px-3 sm:text-sm transition-colors duration-150 ease-std ${
-                  mode === m.key ? 'bg-(--zs-bg) text-(--zs-ink) shadow-sm' : 'text-(--zs-soft) hover:text-(--zs-ink)'
+                  mode === m.key ? 'bg-(--zs-btn) text-(--zs-btn-ink) shadow-sm' : 'text-(--zs-soft) hover:text-(--zs-ink)'
                 }`}
               >
                 {m.label}

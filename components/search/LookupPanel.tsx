@@ -233,8 +233,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
           className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-xl px-3 py-2 transition-colors duration-150 ease-std hover:bg-(--zs-bg)"
         >
           <span data-hw="" lang={e.lang} className="text-[1.1875rem] leading-snug">{e.headword}</span>
-          {/* Pinyin is stored in `ipa` for most Chinese rows, in `reading` for the rest. */}
-          <Ipa value={(e.lang === 'zh' && e.reading) || e.ipa} lang={e.lang} className="text-xs text-(--zs-soft)" />
+          <Ipa value={e.ipa} lang={e.lang} className="text-xs text-(--zs-soft)" />
           {e.level && (
             <span className="rounded-full border-[1.5px] border-current px-1.5 py-px text-[0.6875rem] font-semibold text-(--zs-soft)">
               {e.level}
@@ -309,7 +308,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
           <span aria-hidden className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">
             {direction === 'vi' ? 'Dịch sang' : 'Tìm trong'}
           </span>
-          <div className={`${s.seg} inline-flex overflow-hidden rounded-lg border-[1.5px] border-(--edge)`}>
+          <div className={`${s.seg} inline-flex rounded-lg border-[1.5px] border-(--edge)`}>
             {LANG_CODES.map((l, i) => {
               const on = stored.includes(l)
               return (
@@ -412,7 +411,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
               type="button"
               aria-pressed={levelFilter === l}
               onClick={() => setLevelFilter(levelFilter === l ? null : l)}
-              className={`${s.chip} px-3 py-1 text-xs ${levelFilter === l ? 'font-bold' : 'font-medium text-(--zs-soft)'}`}
+              className={`${s.chip} px-3 py-1 text-xs ${levelFilter === l ? 'font-bold' : 'font-medium'}`}
             >
               {l}
             </button>
@@ -423,7 +422,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
               type="button"
               aria-pressed={posFilter === g.key}
               onClick={() => setPosFilter(posFilter === g.key ? null : g.key)}
-              className={`${s.chip} px-3 py-1 text-xs ${posFilter === g.key ? 'font-bold' : 'font-medium text-(--zs-soft)'}`}
+              className={`${s.chip} px-3 py-1 text-xs ${posFilter === g.key ? 'font-bold' : 'font-medium'}`}
             >
               {g.labelVi}
             </button>

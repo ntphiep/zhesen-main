@@ -12,12 +12,6 @@
 /* The date and the layout picker above every layout */
 .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem 1rem; padding-top: 1.4rem; }
 .eyebrow { margin: 0; min-height: 1.5em; font-size: 0.9375rem; font-weight: 700; color: var(--zs-soft); }
-.picker [role="group"] { background: var(--zs-chip); }
-.picker [data-pick] { color: var(--zs-soft); }
-.picker [data-pick]:hover { color: var(--zs-ink); }
-.picker [data-pick][aria-pressed="true"] { background: var(--zs-bg); color: var(--zs-ink); }
-.picker [data-hint] { color: var(--zs-soft); }
-.picker select { border-color: var(--edge); background: var(--zs-field); color: var(--zs-ink); }
 
 .today { margin: 0.35rem 0 0; font-size: var(--s5); line-height: 1.05; font-weight: 800; letter-spacing: -0.035em; color: var(--zs-ink); text-wrap: balance; }
 .num { display: inline-block; min-width: 0.6em; font-variant-numeric: tabular-nums; }

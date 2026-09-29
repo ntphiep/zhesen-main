@@ -181,7 +181,7 @@ export function OrbitLayout({ view, failed, onRetry, picker }: { view: HomeView 
               className={h.motion}
               hidden={reduced || !globe}
               aria-pressed={stopped}
-              aria-label={stopped ? 'Cho quả cầu chạy tiếp' : 'Dừng quả cầu'}
+              aria-label="Dừng quả cầu"
               onClick={toggleMotion}
             >
               {stopped ? PLAY : PAUSE}

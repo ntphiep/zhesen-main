@@ -59,6 +59,36 @@ describe('CommonWords', () => {
     window.matchMedia = original
   })
 
+  it('stops rotating while the pause button is pressed, and says so', () => {
+    vi.useFakeTimers()
+    render(<CommonWords pools={POOLS} />)
+    const pause = screen.getByRole('button', { name: 'Dừng đổi từ' })
+    expect(pause).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(pause)
+    expect(pause).toHaveAttribute('aria-pressed', 'true')
+    act(() => { vi.advanceTimersByTime(20000) })
+    expect(screen.getByRole('link', { name: 'en0' })).toBeInTheDocument()
+  })
+
+  it('rotates again once the pause button is released', () => {
+    vi.useFakeTimers()
+    render(<CommonWords pools={POOLS} />)
+    const pause = screen.getByRole('button', { name: 'Dừng đổi từ' })
+    fireEvent.click(pause)
+    fireEvent.click(pause)
+    expect(pause).toHaveAttribute('aria-pressed', 'false')
+    act(() => { vi.advanceTimersByTime(5000) })
+    expect(screen.getByRole('link', { name: 'en10' })).toBeInTheDocument()
+  })
+
+  it('offers no pause button to a reader who asked for reduced motion', () => {
+    const original = window.matchMedia
+    window.matchMedia = ((q: string) => ({ ...original(q), matches: true })) as typeof window.matchMedia
+    render(<CommonWords pools={POOLS} />)
+    expect(screen.queryByRole('button', { name: 'Dừng đổi từ' })).toBeNull()
+    window.matchMedia = original
+  })
+
   it('does not rotate a pool that fits on one row', () => {
     vi.useFakeTimers()
     render(<CommonWords pools={{ en: pool('en', 4), es: pool('es', 4), zh: pool('zh', 4) }} />)

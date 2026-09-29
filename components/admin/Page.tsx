@@ -31,7 +31,7 @@ export const BUTTON = `rounded-full border border-(--edge) bg-(--zs-bg) px-3.5 p
 /** A row of mutually exclusive options, drawn like components/ui/LayoutPicker.tsx. */
 export const SEGMENTS = 'inline-flex flex-wrap gap-0.5 rounded-lg bg-(--zs-chip) p-0.5 text-sm'
 export const segment = (on: boolean) =>
-  `rounded-md px-3 py-1 ${MOTION} ${on ? 'bg-(--zs-bg) font-semibold text-(--zs-ink) shadow-sm' : 'text-(--zs-soft) hover:bg-(--zs-bg)/60'}`
+  `rounded-md px-3 py-1 ${MOTION} ${on ? 'bg-(--zs-btn) font-semibold text-(--zs-btn-ink) shadow-sm' : 'text-(--zs-soft) hover:bg-(--zs-bg)/60'}`
 
 export function clock(d: Date | string): string {
   return new Date(d).toLocaleTimeString('vi-VN', { timeZone: STUDY_TIMEZONE, hour12: false })

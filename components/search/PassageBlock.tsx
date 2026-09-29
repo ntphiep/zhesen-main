@@ -198,7 +198,7 @@ export function PassageBlock({ text, direction, targets }: {
                             className={ROW}
                           >
                             <span data-hw="" lang={e.lang} className="text-[1.0625rem]">{e.headword}</span>
-                            <Ipa value={(e.lang === 'zh' && e.reading) || e.ipa} lang={e.lang} className="text-xs text-(--zs-soft)" />
+                            <Ipa value={e.ipa} lang={e.lang} className="text-xs text-(--zs-soft)" />
                             <PosTag value={e.pos} className="text-xs text-(--zs-soft)" />
                             {e.glossVi && <span className="text-sm font-semibold">{e.glossVi}</span>}
                             <LinkPending />
@@ -228,7 +228,7 @@ export function PassageBlock({ text, direction, targets }: {
                       className={ROW}
                     >
                       <span data-hw="" lang={w.entry.lang} className="text-[1.0625rem]">{w.text}</span>
-                      <Ipa value={(w.entry.lang === 'zh' && w.entry.reading) || w.entry.ipa} lang={w.entry.lang} className="text-xs text-(--zs-soft)" />
+                      <Ipa value={w.entry.ipa} lang={w.entry.lang} className="text-xs text-(--zs-soft)" />
                       <PosTag value={w.entry.pos} className="text-xs text-(--zs-soft)" />
                       {w.entry.glossVi && <span className="text-sm font-semibold">{w.entry.glossVi}</span>}
                       <LinkPending />

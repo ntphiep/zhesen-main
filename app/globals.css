@@ -453,8 +453,8 @@ html[data-word-layout="glance"] main[data-boot]:not([data-layouts~="glance"]) [d
 html[data-word-layout="map"] main[data-boot][data-layouts~="map"] [data-pick="map"],
 html[data-word-layout="read"] main[data-boot][data-layouts~="read"] [data-pick="read"],
 html[data-word-layout="glance"] main[data-boot][data-layouts~="glance"] [data-pick="glance"] {
-  background-color: var(--zs-bg);
-  color: var(--zs-ink);
+  background-color: var(--zs-btn);
+  color: var(--zs-btn-ink);
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 /* `/` is cached for everyone, so components/home/HomeSwitch.tsx draws the landing page
@@ -485,8 +485,8 @@ html:not([data-home-layout]) main[data-home-boot] [data-pick="desk"],
 html[data-home-layout="desk"] main[data-home-boot] [data-pick="desk"],
 html[data-home-layout="today"] main[data-home-boot] [data-pick="today"],
 html[data-home-layout="orbit"] main[data-home-boot] [data-pick="orbit"] {
-  background-color: var(--zs-bg);
-  color: var(--zs-ink);
+  background-color: var(--zs-btn);
+  color: var(--zs-btn-ink);
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 

@@ -216,7 +216,7 @@ export function LandingWorld({ example, facts }: { example: Answers | null; fact
                 className={s.motion}
                 hidden={reduced || !globe}
                 aria-pressed={stopped}
-                aria-label={stopped ? 'Cho quả cầu chạy tiếp' : 'Dừng quả cầu'}
+                aria-label="Dừng quả cầu"
                 onClick={toggleMotion}
               >
                 {stopped ? PLAY : PAUSE}

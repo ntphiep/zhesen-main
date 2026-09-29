@@ -54,9 +54,11 @@
 .w[data-state="land"] { animation: land 420ms var(--ease-spring) both; }
 @keyframes land { from { opacity: 0.16; transform: translateY(0.12em); } }
 
-.box { position: relative; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr; column-gap: 0.6rem; height: 5rem; margin-top: 1.6rem; padding: 0.55rem 0.5rem 0.3rem 1.3rem; border-radius: 18px; background: var(--zs-field); box-shadow: 0 0 0 1.5px var(--sea-700), 0 24px 40px -26px rgb(2 60 133 / 0.6); transition: box-shadow 150ms var(--ease-std); }
+.box { position: relative; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr; column-gap: 0.6rem; height: 5rem; margin-top: 1.6rem; padding: 0.55rem 0.5rem 0.3rem 1.3rem; border: 1px solid transparent; border-radius: 18px; background: var(--zs-field); box-shadow: 0 0 0 1.5px var(--sea-700), 0 24px 40px -26px rgb(2 60 133 / 0.6); transition: box-shadow 150ms var(--ease-std); }
 :global(:root[data-theme="dark"]) .box { box-shadow: 0 0 0 1.5px var(--sea-300), 0 24px 40px -26px rgb(0 0 0 / 0.9); }
-.box:focus-within { box-shadow: 0 0 0 3px var(--sea-500), 0 24px 40px -26px rgb(2 60 133 / 0.6); }
+/* The transparent border and outline are what forced-colors mode draws, since it drops
+   box-shadow. */
+.box:focus-within { outline: 2px solid transparent; outline-offset: 2px; box-shadow: 0 0 0 3px var(--sea-500), 0 24px 40px -26px rgb(2 60 133 / 0.6); }
 .box label { grid-column: 1; grid-row: 1; font-size: var(--s0); font-weight: 700; color: var(--zs-soft); line-height: 1.2; }
 .box input { grid-column: 1; grid-row: 2; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font: inherit; font-size: var(--s3); font-weight: 700; letter-spacing: -0.015em; color: var(--zs-ink); }
 .box input::placeholder { color: var(--sea-500); }

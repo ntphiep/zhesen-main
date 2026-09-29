@@ -31,14 +31,16 @@ export function LayoutPicker<K extends string>({ value, stored, options, icons, 
             const next = options.find((l) => l.key === e.target.value)
             if (next) onPick(next.key)
           }}
-          className="rounded-lg border border-black/15 bg-white px-2.5 py-1.5 text-sm font-medium"
+          className="rounded-lg border border-(--edge) bg-(--zs-field) px-2.5 py-1.5 text-sm font-medium text-(--zs-ink)"
         >
           {options.map((l) => (
             <option key={l.key} value={l.key}>{l.key === stored ? `${l.label} (mặc định)` : l.label}</option>
           ))}
         </select>
       </label>
-      <div role="group" aria-label="Bố cục" className="hidden flex-wrap rounded-lg bg-black/5 p-0.5 sm:flex">
+      {/* The chosen layout is filled with the primary button colour: 3.92:1 against the
+          group in light, 14.31:1 in dark. */}
+      <div role="group" aria-label="Bố cục" className="hidden flex-wrap rounded-lg bg-(--zs-chip) p-0.5 sm:flex">
         {options.map((l) => (
           <button
             key={l.key}
@@ -47,8 +49,8 @@ export function LayoutPicker<K extends string>({ value, stored, options, icons, 
             aria-pressed={value === l.key}
             onClick={() => onPick(l.key)}
             title={l.label}
-            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm font-medium ${
-              value === l.key ? 'bg-white text-black shadow-sm' : 'text-black/60 hover:text-black'
+            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm font-medium transition-colors duration-150 ease-std ${
+              value === l.key ? 'bg-(--zs-btn) text-(--zs-btn-ink) shadow-sm' : 'text-(--zs-soft) hover:text-(--zs-ink)'
             }`}
           >
             <svg aria-hidden="true" viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
@@ -56,7 +58,7 @@ export function LayoutPicker<K extends string>({ value, stored, options, icons, 
             </svg>
             <span>{l.label}</span>
             {(stored === null || l.key === stored) && (
-              <span aria-hidden="true" data-hint={stored === null || undefined} className="text-[10.5px] font-normal text-black/60">mặc định</span>
+              <span aria-hidden="true" data-hint={stored === null || undefined} className="text-[10.5px] font-normal">mặc định</span>
             )}
           </button>
         ))}

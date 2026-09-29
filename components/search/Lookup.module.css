@@ -21,19 +21,30 @@
 .page [data-hw][lang="zh"] { font-family: var(--han); font-weight: 700; letter-spacing: 0; }
 
 /* The text box of each direction, as the lookup box on `/`. */
-.box { border: 0; border-radius: 18px; background: var(--zs-field); color: var(--zs-ink); box-shadow: 0 0 0 1.5px var(--sea-700), 0 24px 40px -26px rgb(2 60 133 / 0.6); transition: box-shadow 150ms var(--ease-std); }
+/* The transparent border and outline are what forced-colors mode draws, since it drops
+   box-shadow. */
+.box { border: 1px solid transparent; border-radius: 18px; background: var(--zs-field); color: var(--zs-ink); box-shadow: 0 0 0 1.5px var(--sea-700), 0 24px 40px -26px rgb(2 60 133 / 0.6); transition: box-shadow 150ms var(--ease-std); }
 :global(:root[data-theme="dark"]) .box { box-shadow: 0 0 0 1.5px var(--sea-300), 0 24px 40px -26px rgb(0 0 0 / 0.9); }
-.page .box:focus, .page .box:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--sea-500), 0 24px 40px -26px rgb(2 60 133 / 0.6); }
+.page .box:focus, .page .box:focus-visible { outline: 2px solid transparent; outline-offset: 2px; box-shadow: 0 0 0 3px var(--sea-500), 0 24px 40px -26px rgb(2 60 133 / 0.6); }
 
-/* A joined control: the direction picker and the language toggles. The checkbox of a
-   toggle is visually hidden, so its label carries the focus ring. */
-.seg label:has(:focus-visible) { outline: 2.5px solid var(--sea-500); outline-offset: -2.5px; }
+/* The language toggles. The checkbox is visually hidden, so its label carries the focus
+   ring: ink outside a page-coloured gap, 10.57:1 against that gap in light and 21:1 in
+   dark, where the gap is 5.14:1 and 21:1 against a toggle that is on. */
+.seg label:first-child { border-top-left-radius: 6.5px; border-bottom-left-radius: 6.5px; }
+.seg label:last-child { border-top-right-radius: 6.5px; border-bottom-right-radius: 6.5px; }
+.seg label:has(:focus-visible) { position: relative; z-index: 1; outline: 2px solid var(--zs-ink); outline-offset: 2px; box-shadow: 0 0 0 2px var(--zs-bg); }
 
-/* A one-tap chip: recent queries, suggestions, common and saved words. */
-.chip { display: inline-flex; align-items: baseline; gap: 0.4rem; border-radius: 999px; border: 1.5px solid var(--edge); background: var(--zs-bg); color: var(--zs-ink); text-decoration: none; transition: border-color 150ms var(--ease-std), background-color 150ms var(--ease-std); }
+/* A one-tap chip: recent queries, suggestions, common and saved words. Colour is set here
+   per state, because an unlayered module rule beats a Tailwind utility. */
+.chip { display: inline-flex; align-items: baseline; gap: 0.4rem; border-radius: 999px; border: 1.5px solid var(--edge); background: var(--zs-bg); color: var(--zs-ink); text-decoration: none; transition: border-color 150ms var(--ease-std), background-color 150ms var(--ease-std), color 150ms var(--ease-std); }
 .chip:hover { border-color: var(--sea-400); background: var(--tint-1); }
-/* A filter chip that is on. */
-.chip[aria-pressed="true"] { border-color: var(--zs-ink); background: var(--zs-chip); }
+/* The gap already spaces the pending dot of components/ui/LinkPending.tsx. */
+.chip :global(.link-pending) { margin-left: 0; }
+/* A filter chip: off in soft ink, on filled like the primary button, 5.14:1 against the
+   page in light and 21:1 in dark. */
+.chip[aria-pressed="false"] { color: var(--zs-soft); }
+.chip[aria-pressed="true"] { border-color: var(--zs-btn); background: var(--zs-btn); color: var(--zs-btn-ink); }
+.chip[aria-pressed="true"]:hover { border-color: var(--zs-btn-hover); background: var(--zs-btn-hover); }
 
 /* One pane per language of answers, on that language's pastel. */
 .pane { border-radius: 18px; }
