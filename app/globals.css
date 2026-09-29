@@ -51,6 +51,21 @@
 
   --color-violet-50: var(--violet-50);
   --color-violet-700: var(--violet-700);
+
+  /* The owner's blue ramp, the same in both schemes: a surface that must change with the
+     scheme uses a --zs-* token below instead. #03045a is banned. */
+  --color-sea-50: var(--sea-50);
+  --color-sea-100: var(--sea-100);
+  --color-sea-200: var(--sea-200);
+  --color-sea-300: var(--sea-300);
+  --color-sea-400: var(--sea-400);
+  --color-sea-500: var(--sea-500);
+  --color-sea-600: var(--sea-600);
+  --color-sea-700: var(--sea-700);
+
+  --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-std: cubic-bezier(0.2, 0, 0, 1);
+  --ease-spring: linear(0, 0.102, 0.3, 0.5, 0.665, 0.788, 0.873, 0.928, 0.962, 0.982, 0.993, 0.998, 1.001, 1.001, 1.001, 1.001, 1);
 }
 
 :root {
@@ -62,9 +77,9 @@
   color-scheme: light;
 
   /* The site header is sticky, so anything else that sticks has to start below it and
-     any anchor has to clear it. Measured on the running build: 57px, and 101px under
+     any anchor has to clear it. Measured on the running build: 64px, and 96px under
      640px where the nav takes a line of its own. Change SiteHeader and change this. */
-  --header-h: 57px;
+  --header-h: 64px;
 
   --background: #ffffff;
   --foreground: #171717;
@@ -110,12 +125,63 @@
 
   --violet-50: oklch(96.9% 0.016 293.756);
   --violet-700: oklch(49.1% 0.27 292.581);
+
+  --sea-50: #c3e7ef;
+  --sea-100: #a7dfea;
+  --sea-200: #8bd6e8;
+  --sea-300: #45c2db;
+  --sea-400: #0cafd2;
+  --sea-500: #0090bf;
+  --sea-600: #0172b6;
+  --sea-700: #023c85;
+
+  /* The blue chrome. --ink stays black: at the 55% text floor #023c85 falls to 3.2:1. */
+  --zs-bg: #fff;
+  --zs-ink: var(--sea-700);
+  --zs-soft: var(--sea-700);
+  --zs-line: var(--sea-50);
+  --zs-field: #fff;
+  --zs-pen: var(--sea-600);
+  --zs-chip: var(--sea-50);
+  /* The primary button: white on #0172b6, #023c85 on hover. */
+  --zs-btn: var(--sea-600);
+  --zs-btn-ink: #fff;
+  --zs-btn-hover: var(--sea-700);
+
+  --tint-1: color-mix(in srgb, var(--sea-50) 22%, #fff);
+  --tint-2: color-mix(in srgb, var(--sea-50) 45%, #fff);
+  --tint-3: color-mix(in srgb, var(--sea-100) 55%, #fff);
+  --edge: color-mix(in srgb, var(--sea-100) 70%, #fff);
+  --lift: 0 1px 0 rgb(2 60 133 / 0.04), 0 14px 30px -22px rgb(2 60 133 / 0.4);
+
+  /* One fill per language, shared by the globe and the signed-in home. */
+  --l-en: var(--sea-700);
+  --l-zh: var(--sea-600);
+  --l-es: var(--sea-300);
+  --l-en-t: color-mix(in srgb, var(--sea-50) 40%, #fff);
+  --l-zh-t: color-mix(in srgb, var(--sea-100) 38%, #fff);
+  --l-es-t: color-mix(in srgb, var(--sea-200) 32%, #fff);
+
+  --g-ocean: #fff;
+  --g-land: var(--sea-50);
+  --g-border: #fff;
+  --g-rim: var(--sea-100);
+  --g-grat: rgb(2 60 133 / 0.07);
+  --g-vn: #000;
+  --g-night: rgb(2 60 133 / 0.2);
+  --g-en: var(--l-en);
+  --g-zh: var(--l-zh);
+  --g-es: var(--l-es);
+  --g-halo: #fff;
+  --g-shade: rgb(2 60 133 / 0.1);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
+  /* The header, the footer and the home page. The rest of the site keeps Geist. */
+  --font-ui: var(--font-be-vietnam-pro), system-ui, sans-serif;
   /* The stack the machine already has, not a download. Geist Mono was loaded in
      the root layout, so every page fetched it, and `font-mono` is used in exactly
      one place: the pattern line on a grammar point
@@ -129,7 +195,7 @@
    with JavaScript off gets the light scheme above. */
 @media (max-width: 639px) {
   :root {
-    --header-h: 101px;
+    --header-h: 96px;
   }
 }
 
@@ -190,6 +256,40 @@ html {
 
   --violet-50: oklch(28.3% 0.141 291.089);
   --violet-700: oklch(70.2% 0.183 293.541);
+
+  --zs-bg: #000;
+  --zs-ink: #fff;
+  --zs-soft: var(--sea-100);
+  --zs-line: #0d2a4a;
+  --zs-field: #06122c;
+  --zs-pen: var(--sea-300);
+  --zs-chip: #0b2a52;
+  --zs-btn: #fff;
+  --zs-btn-ink: var(--sea-700);
+  --zs-btn-hover: var(--sea-100);
+
+  --tint-1: #050d20;
+  --tint-2: #081733;
+  --tint-3: #0b2248;
+  --edge: #10305a;
+  --lift: 0 14px 30px -20px rgb(0 0 0 / 0.9);
+
+  --l-en: var(--sea-600);
+  --l-zh: var(--sea-400);
+  --l-es: var(--sea-100);
+  --l-en-t: #071a3a;
+  --l-zh-t: #082444;
+  --l-es-t: #0a2b4a;
+
+  --g-ocean: #000;
+  --g-land: #0b2a52;
+  --g-border: #000;
+  --g-rim: var(--sea-700);
+  --g-grat: rgb(255 255 255 / 0.07);
+  --g-vn: #fff;
+  --g-night: rgb(0 0 0 / 0.45);
+  --g-halo: #000;
+  --g-shade: rgb(0 0 0 / 0.35);
 }
 
 /* No font-family here: a value on body would beat Tailwind's preflight cascade

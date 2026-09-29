@@ -12,18 +12,29 @@ vi.mock('next/navigation', () => ({ usePathname: () => '/' }))
 vi.mock('@/components/account/AccountLink', () => ({ AccountLink: () => null }))
 vi.mock('@/components/search/LookupPair', () => ({ LookupPair: () => null }))
 vi.mock('@/lib/dictionary/cached', () => ({ getCachedWordOfDay: vi.fn(async () => null) }))
+// Signed in, so the footer draws its /account link too.
+vi.mock('@/lib/hooks/useAccount', () => ({ useAccount: () => ({ kind: 'permanent', email: 'a@b.com' }) }))
 
 import Home from '@/app/page'
 import { SiteHeader } from '@/components/layout/SiteHeader'
+import { SiteFooter } from '@/components/layout/SiteFooter'
 
 describe('home page with the header', () => {
   it('prefetches each URL from one link at most, and never a route that reads the session', async () => {
-    render(<><SiteHeader />{await Home()}</>)
+    render(<><SiteHeader />{await Home()}<SiteFooter /></>)
     const prefetched = screen.getAllByRole('link')
       .filter((a) => a.dataset.prefetch === 'on')
       .map((a) => a.getAttribute('href'))
     expect(prefetched.length).toBe(new Set(prefetched).size)
     expect(prefetched).not.toContain('/practice')
     expect(prefetched).not.toContain('/wordlist')
+  })
+
+  it('never prefetches from the footer, where the session routes are linked', () => {
+    render(<SiteFooter />)
+    const links = screen.getAllByRole('link')
+    const hrefs = links.map((a) => a.getAttribute('href'))
+    expect(hrefs).toEqual(expect.arrayContaining(['/practice', '/wordlist', '/account']))
+    expect(links.filter((a) => a.dataset.prefetch === 'on')).toEqual([])
   })
 })

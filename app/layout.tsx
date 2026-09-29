@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
+import { Be_Vietnam_Pro, Geist } from 'next/font/google'
 import './globals.css'
 import { SiteHeader } from '@/components/layout/SiteHeader'
+import { SiteFooter } from '@/components/layout/SiteFooter'
 import { AiChatPanel } from '@/components/ai/AiChatPanel'
 import { SITE_URL } from '@/lib/site'
 import { THEME_BOOT_SCRIPT } from '@/lib/theme'
@@ -10,6 +11,13 @@ import { WORD_LAYOUT_BOOT_SCRIPT } from '@/lib/dictionary/wordLayout'
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
+})
+
+// Not a variable font on Google Fonts, so each weight is a file: only the four the chrome draws.
+const beVietnamPro = Be_Vietnam_Pro({
+  variable: '--font-be-vietnam-pro',
+  subsets: ['latin', 'vietnamese'],
+  weight: ['400', '600', '700', '800'],
 })
 
 const DESCRIPTION =
@@ -47,7 +55,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${geistSans.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${beVietnamPro.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
@@ -63,6 +71,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <SiteHeader />
         <div className="flex-1">{children}</div>
+        <SiteFooter />
         {/* Asks GET /api/ai after hydration: the answer depends on the account and on
             SSM, and reading either here would make every page dynamic. */}
         <AiChatPanel />

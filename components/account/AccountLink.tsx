@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { useAccount } from '@/lib/hooks/useAccount'
 import { LinkPending } from '@/components/ui/LinkPending'
 
+const QUIET = 'rounded-lg px-3 py-1.5 text-sm font-semibold text-(--zs-soft) transition-colors duration-150 ease-std hover:bg-(--zs-chip) hover:text-(--zs-ink) sm:text-[0.9375rem]'
+
 /**
  * The account corner of the header: the signed-in address, or sign in and sign up.
  *
@@ -22,7 +24,7 @@ export function AccountLink() {
       <Link
         href="/account"
         prefetch={false}
-        className="relative ml-2 max-w-40 truncate rounded-lg px-3 py-1.5 text-sm text-black/60 hover:bg-black/5"
+        className={`relative ml-2 max-w-40 truncate ${QUIET}`}
         title={email ?? undefined}
       >
         {email}
@@ -36,7 +38,7 @@ export function AccountLink() {
       <Link
         href="/login"
         prefetch={false}
-        className="relative rounded-lg px-3 py-1.5 text-sm text-black/60 hover:bg-black/5"
+        className={`relative ${QUIET}`}
       >
         Đăng nhập
         <LinkPending />
@@ -44,7 +46,7 @@ export function AccountLink() {
       <Link
         href="/register"
         prefetch={false}
-        className="relative rounded-lg bg-black px-3 py-1.5 text-sm font-medium text-white hover:bg-black/85"
+        className="relative rounded-lg bg-(--zs-btn) px-3 py-1.5 text-sm font-semibold text-(--zs-btn-ink) transition-colors duration-150 ease-std hover:bg-(--zs-btn-hover) sm:text-[0.9375rem]"
       >
         Đăng ký
         <LinkPending />
