@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/admin'
-import { PageHeader, Section, Status, when } from '@/components/admin/Page'
+import { CARD, PageHeader, Section, Status, when } from '@/components/admin/Page'
 import { LearnerStatusButton } from '@/components/admin/LearnerStatusButton'
 import { getLearnerAudit, type AuditSense } from '@/lib/admin/learner'
 import { entryPath } from '@/lib/dictionary/entryId'
@@ -17,7 +17,7 @@ const TD = 'py-2 pr-4 align-top'
 function Role({ sense }: { sense: AuditSense }) {
   const l = sense.label
   if (!l) return <span className="text-rose-700">unlabelled</span>
-  if (l.coreSenseOrder !== null) return <span>core {l.coreSenseOrder}{l.coreTerms && <span className="block text-black/55">{l.coreTerms}</span>}</span>
+  if (l.coreSenseOrder !== null) return <span>core {l.coreSenseOrder}{l.coreTerms && <span className="block text-(--zs-soft)">{l.coreTerms}</span>}</span>
   return <span>{l.isInflection ? `form of ${l.lemma ?? '?'}` : 'minor'}</span>
 }
 
@@ -33,7 +33,7 @@ export default async function AdminLearnerAuditPage({ params }: { params: Params
     return (
       <div>
         <PageHeader title="Learner layer" />
-        <p className="mt-6 text-sm text-black/60">No layer for {entryId}.</p>
+        <p className="mt-6 text-sm text-(--zs-soft)">No layer for {entryId}.</p>
         <Link href="/admin/learner" prefetch={false} className="mt-2 inline-block text-sm hover:underline">All layers</Link>
       </div>
     )
@@ -45,15 +45,15 @@ export default async function AdminLearnerAuditPage({ params }: { params: Params
       <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
         <Status tone={audit.status === 'published' ? 'ok' : 'idle'}>{audit.status}</Status>
         <LearnerStatusButton entryId={audit.entryId} status={audit.status} />
-        <Link href={entryPath(audit.entryId)} prefetch={false} className="text-black/60 hover:underline">Open entry page</Link>
-        <Link href="/admin/learner" prefetch={false} className="text-black/60 hover:underline">All layers</Link>
+        <Link href={entryPath(audit.entryId)} prefetch={false} className="text-(--zs-soft) hover:underline">Open entry page</Link>
+        <Link href="/admin/learner" prefetch={false} className="text-(--zs-soft) hover:underline">All layers</Link>
       </div>
 
       <Section title="Senses" aside={`${audit.senses.length} raw senses`}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-black/10 text-left text-xs uppercase tracking-wide text-black/55">
+              <tr className="border-b border-(--edge) text-left text-xs uppercase tracking-wide text-(--zs-soft)">
                 <th className={TH}>Sense</th>
                 <th className={TH}>Wiktionary</th>
                 <th className={TH}>Vietnamese now</th>
@@ -66,21 +66,21 @@ export default async function AdminLearnerAuditPage({ params }: { params: Params
               {audit.senses.map((s) => {
                 const l = s.label
                 return (
-                  <tr key={s.id} className="border-b border-black/5">
-                    <td className={`${TD} whitespace-nowrap font-mono text-xs`}>{s.id}{s.pos && <span className="block text-black/55">{s.pos}</span>}</td>
-                    <td className={`${TD} min-w-64 text-black/70`}>{s.glossEn}</td>
-                    <td className={`${TD} min-w-48`}>{s.glossVi ?? <span className="text-black/55">empty</span>}</td>
+                  <tr key={s.id} className="border-b border-(--zs-line)">
+                    <td className={`${TD} whitespace-nowrap font-mono text-xs`}>{s.id}{s.pos && <span className="block text-(--zs-soft)">{s.pos}</span>}</td>
+                    <td className={`${TD} min-w-64 text-(--zs-soft)`}>{s.glossEn}</td>
+                    <td className={`${TD} min-w-48`}>{s.glossVi ?? <span className="text-(--zs-soft)">empty</span>}</td>
                     <td className={`${TD} whitespace-nowrap`}><Role sense={s} /></td>
-                    <td className={`${TD} text-xs text-black/60`}>
+                    <td className={`${TD} text-xs text-(--zs-soft)`}>
                       {l && [l.viTerms.join(', '), l.domain, l.register].filter(Boolean).join(' · ')}
                     </td>
                     <td className={`${TD} min-w-64 text-xs`}>
                       {l?.fixVi && (
                         <>
-                          {l.previousGlossVi !== null && <span className="block text-black/55 line-through">{l.previousGlossVi}</span>}
+                          {l.previousGlossVi !== null && <span className="block text-(--zs-soft) line-through">{l.previousGlossVi}</span>}
                           <span className="block">{l.fixVi}</span>
-                          <span className="block text-black/55">{l.fixedAt ? `applied ${when(l.fixedAt)}` : 'not applied: a person wrote the gloss, or it already matched'}</span>
-                          {l.fixReason && <span className="block text-black/55">{l.fixReason}</span>}
+                          <span className="block text-(--zs-soft)">{l.fixedAt ? `applied ${when(l.fixedAt)}` : 'not applied: a person wrote the gloss, or it already matched'}</span>
+                          {l.fixReason && <span className="block text-(--zs-soft)">{l.fixReason}</span>}
                         </>
                       )}
                     </td>
@@ -93,16 +93,16 @@ export default async function AdminLearnerAuditPage({ params }: { params: Params
       </Section>
 
       <Section title="Reviewer issues" aside={`${audit.issues.length}`}>
-        {audit.issues.length === 0 ? <p className="text-sm text-black/60">The reviewer raised none.</p> : (
+        {audit.issues.length === 0 ? <p className="text-sm text-(--zs-soft)">The reviewer raised none.</p> : (
           <ul className="flex flex-col gap-3 text-sm">
             {audit.issues.map((i, n) => (
-              <li key={n} className="rounded-lg border border-black/10 px-4 py-3">
+              <li key={n} className={`${CARD} px-4 py-3`}>
                 <div className="flex flex-wrap items-baseline gap-2 text-xs">
                   {i.severity && <Status tone={i.severity === 'high' ? 'bad' : i.severity === 'medium' ? 'warn' : 'idle'}>{i.severity}</Status>}
-                  {i.path && <span className="font-mono text-black/55">{i.path}</span>}
+                  {i.path && <span className="font-mono text-(--zs-soft)">{i.path}</span>}
                 </div>
                 {i.problem && <p className="mt-1">{i.problem}</p>}
-                {i.fix && <p className="mt-1 break-words text-black/60">Fix: {i.fix}</p>}
+                {i.fix && <p className="mt-1 break-words text-(--zs-soft)">Fix: {i.fix}</p>}
               </li>
             ))}
           </ul>
@@ -110,11 +110,11 @@ export default async function AdminLearnerAuditPage({ params }: { params: Params
       </Section>
 
       <Section title="Rejected by the writer" aside={`${audit.rejected.length}`}>
-        {audit.rejected.length === 0 ? <p className="text-sm text-black/60">The writer applied every issue.</p> : (
+        {audit.rejected.length === 0 ? <p className="text-sm text-(--zs-soft)">The writer applied every issue.</p> : (
           <ul className="flex flex-col gap-2 text-sm">
             {audit.rejected.map((r, n) => (
               <li key={n}>
-                {r.path && <span className="font-mono text-xs text-black/55">{r.path}</span>}
+                {r.path && <span className="font-mono text-xs text-(--zs-soft)">{r.path}</span>}
                 {r.reason && <p>{r.reason}</p>}
               </li>
             ))}

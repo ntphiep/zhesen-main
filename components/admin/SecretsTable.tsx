@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { z } from '@/lib/zod'
 import { postAdmin } from '@/lib/admin/browser'
-import { ago, Section, Status } from '@/components/admin/Page'
+import { CARD, ago, Section, Status, BUTTON } from '@/components/admin/Page'
 import { GuardDialog } from '@/components/admin/GuardDialog'
 
 const PATH = '/api/admin/secrets'
@@ -38,8 +38,7 @@ const GROUPS = ['App keys', 'Instance', 'Vercel', 'Config'] as const
 /** A revealed value goes back into hiding after this. */
 const SHOW_MS = 30_000
 
-const button = 'rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium hover:bg-black/[0.04] disabled:opacity-40'
-const input = 'w-full rounded-lg border border-black/15 px-3 py-2 font-mono text-sm'
+const input = 'w-full rounded-lg border border-(--edge) bg-(--zs-field) px-3 py-2 font-mono text-sm'
 
 function consequence(r: Row): string {
   const services = r.services.length ? `recreates ${r.services.join(', ')}` : 'no service reads it, so nothing is recreated'
@@ -84,9 +83,9 @@ export function SecretsTable() {
     return () => clearTimeout(t)
   }, [shown])
 
-  if (state === 'disabled') return <p className="mt-6 text-sm text-black/60">AWS access is not configured for this deployment (AWS_ROLE_ARN).</p>
+  if (state === 'disabled') return <p className="mt-6 text-sm text-(--zs-soft)">AWS access is not configured for this deployment (AWS_ROLE_ARN).</p>
   if (state === 'error') return <p className="mt-6 text-sm text-rose-700">The secrets could not be read.</p>
-  if (state === null) return <p className="mt-6 text-sm text-black/55">Reading…</p>
+  if (state === null) return <p className="mt-6 text-sm text-(--zs-soft)">Reading…</p>
 
   const note = (id: string, tone: 'ok' | 'bad', text: string) => setNotes((n) => ({ ...n, [id]: { tone, text } }))
 
@@ -130,7 +129,7 @@ export function SecretsTable() {
         if (rows.length === 0) return null
         return (
           <Section key={g} title={g}>
-            <ul className="divide-y divide-black/5 rounded-lg border border-black/10">
+            <ul className={`divide-y divide-(--zs-line) ${CARD}`}>
               {rows.map((r) => {
                 const blocked = r.locked ?? vercelMissing(r)
                 const n = notes[r.id]
@@ -139,8 +138,8 @@ export function SecretsTable() {
                     <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-1">
                       <div className="min-w-0 flex-1">
                         <code className="font-mono font-bold wrap-anywhere">{r.id}</code>
-                        <p className="text-black/60">{r.purpose}</p>
-                        <p className="text-xs text-black/55 wrap-anywhere">{r.where}</p>
+                        <p className="text-(--zs-soft)">{r.purpose}</p>
+                        <p className="text-xs text-(--zs-soft) wrap-anywhere">{r.where}</p>
                       </div>
                       <div className="text-right">
                         {r.group === 'Config' ? (
@@ -149,29 +148,29 @@ export function SecretsTable() {
                           <Status tone={r.set ? 'ok' : 'idle'}>{r.set ? (r.last4 ? `Set, ends …${r.last4}` : 'Set') : 'Not set'}</Status>
                         )}
                         {r.version !== null && r.changedAt && (
-                          <div className="text-xs text-black/55">v{r.version} · changed {ago(r.changedAt)}</div>
+                          <div className="text-xs text-(--zs-soft)">v{r.version} · changed {ago(r.changedAt)}</div>
                         )}
                       </div>
                     </div>
 
                     {shown?.id === r.id && (
-                      <div className="flex flex-wrap items-center gap-2 rounded-md bg-black/[0.04] px-3 py-2">
+                      <div className="flex flex-wrap items-center gap-2 rounded-md bg-(--tint-2) px-3 py-2">
                         <code className="min-w-0 flex-1 font-mono text-xs break-all">{shown.value}</code>
-                        <button type="button" className={button} onClick={() => void navigator.clipboard.writeText(shown.value)}>Copy</button>
-                        <button type="button" className={button} onClick={() => setShown(null)}>Hide</button>
+                        <button type="button" className={BUTTON} onClick={() => void navigator.clipboard.writeText(shown.value)}>Copy</button>
+                        <button type="button" className={BUTTON} onClick={() => setShown(null)}>Hide</button>
                       </div>
                     )}
                     {n && <p role="status" className={`text-xs ${n.tone === 'ok' ? 'text-emerald-800' : 'text-rose-700'}`}>{n.text}</p>}
-                    {blocked && r.group !== 'Config' && <p className="text-xs text-black/55">{blocked}</p>}
+                    {blocked && r.group !== 'Config' && <p className="text-xs text-(--zs-soft)">{blocked}</p>}
 
                     {(r.revealable || r.test || !blocked) && (
                       <div className="flex flex-wrap gap-2">
                         {r.revealable && (
-                          <button type="button" className={button} disabled={busy === r.id} onClick={() => void reveal(r)}>Reveal</button>
+                          <button type="button" className={BUTTON} disabled={busy === r.id} onClick={() => void reveal(r)}>Reveal</button>
                         )}
-                        {!blocked && r.apply && <button type="button" className={button} onClick={() => edit(r)}>Edit</button>}
+                        {!blocked && r.apply && <button type="button" className={BUTTON} onClick={() => edit(r)}>Edit</button>}
                         {r.test && (
-                          <button type="button" className={button} disabled={busy === r.id} onClick={() => void test(r)}>
+                          <button type="button" className={BUTTON} disabled={busy === r.id} onClick={() => void test(r)}>
                             {busy === r.id ? 'Testing…' : 'Test'}
                           </button>
                         )}
@@ -227,7 +226,7 @@ export function SecretsTable() {
               <label className="flex flex-col gap-1">
                 <span>New value</span>
                 <input value={draft} onChange={(e) => setDraft(e.target.value)} autoComplete="off" spellCheck={false} className={input} />
-                {editing.hint && <span className="text-xs text-black/55">{editing.hint}</span>}
+                {editing.hint && <span className="text-xs text-(--zs-soft)">{editing.hint}</span>}
               </label>
             )}
           </div>

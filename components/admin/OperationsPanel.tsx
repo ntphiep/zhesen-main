@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { postAdmin } from '@/lib/admin/browser'
+import { CARD, BUTTON } from '@/components/admin/Page'
 
 type Feedback = { tone: 'ok' | 'bad'; text: string } | null
 
@@ -20,10 +21,10 @@ export function OperationsPanel() {
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/10 px-4 py-3">
+    <div className={`flex flex-wrap items-center justify-between gap-3 ${CARD} px-4 py-3`}>
       <div>
         <div className="text-sm font-medium">Dictionary cache · 7 days</div>
-        <p className="text-sm text-black/60">Flush after loading or editing data so the dictionary page reads the new version.</p>
+        <p className="text-sm text-(--zs-soft)">Flush after loading or editing data so the dictionary page reads the new version.</p>
       </div>
       <div className="flex items-center gap-3">
         {feedback && (
@@ -33,7 +34,7 @@ export function OperationsPanel() {
           type="button"
           onClick={() => void flush()}
           disabled={busy}
-          className="rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium hover:bg-black/[0.04] disabled:opacity-40"
+          className={BUTTON}
         >
           Flush cache
         </button>

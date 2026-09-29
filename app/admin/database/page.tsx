@@ -21,7 +21,7 @@ async function readDumps(): Promise<Dumps | null | 'error'> {
   }
 }
 
-const NO_AWS = <p className="text-sm text-black/60">AWS access is not configured for this deployment (AWS_ROLE_ARN).</p>
+const NO_AWS = <p className="text-sm text-(--zs-soft)">AWS access is not configured for this deployment (AWS_ROLE_ARN).</p>
 
 export default async function AdminDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const supabase = await createClient()

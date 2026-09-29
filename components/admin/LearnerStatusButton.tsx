@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { NoticeBar, useNotice } from '@/components/ui/Notice'
 import { postAdmin } from '@/lib/admin/browser'
+import { PRIMARY, BUTTON } from '@/components/admin/Page'
 
 /** Hide a published layer from the word page, or publish a hidden one, through
  *  app/api/admin/learner/route.ts, then re-read the page. */
@@ -29,8 +30,8 @@ export function LearnerStatusButton({ entryId, status }: { entryId: string; stat
         onClick={() => void send()}
         disabled={busy}
         className={status === 'published'
-          ? 'rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-40'
-          : 'rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40'}
+          ? BUTTON
+          : PRIMARY}
       >
         {status === 'published' ? 'Hide' : 'Publish'}
       </button>

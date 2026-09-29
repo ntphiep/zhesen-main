@@ -20,11 +20,11 @@ export default async function AdminLearnerPage() {
         title="Learner layer"
         lead="The senses, examples and collocations a model wrote over the Wiktionary entries, with what the reviewing model said about each."
       />
-      {layers.length === 0 ? <p className="mt-6 text-sm text-black/60">No layers loaded.</p> : (
+      {layers.length === 0 ? <p className="mt-6 text-sm text-(--zs-soft)">No layers loaded.</p> : (
         <div className="mt-6 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-black/10 text-left text-xs uppercase tracking-wide text-black/55">
+              <tr className="border-b border-(--edge) text-left text-xs uppercase tracking-wide text-(--zs-soft)">
                 <th className={TH}>Entry</th>
                 <th className={TH}>Status</th>
                 <th className={TH}>Model</th>
@@ -39,20 +39,20 @@ export default async function AdminLearnerPage() {
             </thead>
             <tbody>
               {layers.map((l) => (
-                <tr key={l.entryId} className="border-b border-black/5">
+                <tr key={l.entryId} className="border-b border-(--zs-line)">
                   <td className={TD}>
                     <Link href={auditHref(l.entryId)} prefetch={false} className="font-medium hover:underline">{l.headword}</Link>
-                    <span className="ml-1.5 font-mono text-xs text-black/55">{l.lang}</span>
+                    <span className="ml-1.5 font-mono text-xs text-(--zs-soft)">{l.lang}</span>
                   </td>
                   <td className={TD}><Status tone={l.status === 'published' ? 'ok' : 'idle'}>{l.status}</Status></td>
-                  <td className={`${TD} font-mono text-xs`}>{l.model}{l.reviewer && <span className="block text-black/55">reviewed by {l.reviewer}</span>}</td>
+                  <td className={`${TD} font-mono text-xs`}>{l.model}{l.reviewer && <span className="block text-(--zs-soft)">reviewed by {l.reviewer}</span>}</td>
                   <td className={`${TD} font-mono text-xs`}>{l.promptVersion}</td>
                   <td className={NUM}>{l.senses}</td>
                   <td className={NUM}>{l.links}</td>
                   <td className={NUM}>{l.labels}</td>
                   <td className={NUM}>{l.issues}</td>
                   <td className={NUM}>{l.rejected}</td>
-                  <td className="py-1.5 text-xs tabular-nums text-black/55">{when(l.createdAt)}</td>
+                  <td className="py-1.5 text-xs tabular-nums text-(--zs-soft)">{when(l.createdAt)}</td>
                 </tr>
               ))}
             </tbody>

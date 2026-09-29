@@ -5,7 +5,7 @@ import { usePoll } from '@/lib/hooks/usePoll'
 import { postAdmin } from '@/lib/admin/browser'
 import { parseHostResponse, type HostResponse } from '@/lib/admin/monitor'
 import { formatBytes } from '@/lib/admin/metrics'
-import { clock, num, when, Section, Status, type Tone } from '@/components/admin/Page'
+import { CARD, clock, num, when, Section, Status, type Tone, BUTTON } from '@/components/admin/Page'
 import { GuardDialog } from '@/components/admin/GuardDialog'
 
 const INSTANCE_NAME = 'zhesen-supabase'
@@ -46,8 +46,6 @@ type Pending =
   | { kind: 'resize' }
   | { kind: 'backup' }
 
-const button = 'rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium hover:bg-black/[0.04] disabled:opacity-40'
-
 const pct = (n: number) => `${Math.round(n)}%`
 const usd = (n: number) => `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
 
@@ -62,23 +60,23 @@ function Ring({ label, share, note }: { label: string; share: number | null; not
   const r = 34
   const c = 2 * Math.PI * r
   const s = share === null ? 0 : Math.min(1, Math.max(0, share))
-  const tone = s >= 0.9 ? 'text-rose-700' : s >= 0.8 ? 'text-amber-700' : 'text-black/70'
+  const tone = s >= 0.9 ? 'text-rose-700' : s >= 0.8 ? 'text-amber-700' : 'text-(--zs-pen)'
   return (
     <div className="flex flex-col items-center gap-1.5">
       <div className="relative size-20" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={share === null ? undefined : Math.round(s * 100)}>
         <svg viewBox="0 0 80 80" className="size-20 -rotate-90" aria-hidden>
-          <circle cx="40" cy="40" r={r} fill="none" strokeWidth="7" stroke="currentColor" className="text-black/[0.08]" />
+          <circle cx="40" cy="40" r={r} fill="none" strokeWidth="7" stroke="currentColor" className="text-(--tint-3)" />
           {share !== null && (
             <circle cx="40" cy="40" r={r} fill="none" strokeWidth="7" stroke="currentColor" strokeLinecap="round"
               strokeDasharray={`${s * c} ${c}`} className={tone} />
           )}
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-base font-semibold tabular-nums">
+        <span className="absolute inset-0 flex items-center justify-center text-base font-bold tabular-nums">
           {share === null ? '–' : pct(s * 100)}
         </span>
       </div>
-      <div className="text-sm text-black/60">{label}</div>
-      {note && <div className="-mt-1 text-xs text-black/55 tabular-nums">{note}</div>}
+      <div className="text-sm text-(--zs-soft)">{label}</div>
+      {note && <div className="-mt-1 text-xs text-(--zs-soft) tabular-nums">{note}</div>}
     </div>
   )
 }
@@ -86,7 +84,7 @@ function Ring({ label, share, note }: { label: string; share: number | null; not
 function Row({ term, children }: { term: string; children: ReactNode }) {
   return (
     <div className="flex min-w-0 justify-between gap-3 sm:justify-start">
-      <dt className="text-black/55">{term}</dt>
+      <dt className="text-(--zs-soft)">{term}</dt>
       <dd className="min-w-0 break-words tabular-nums">{children}</dd>
     </div>
   )
@@ -94,10 +92,10 @@ function Row({ term, children }: { term: string; children: ReactNode }) {
 
 function Fact({ label, value, note, title }: { label: string; value: ReactNode; note?: string; title?: string }) {
   return (
-    <div className="min-w-0 rounded-lg bg-black/[0.03] px-3 py-2.5" title={title}>
-      <div className="text-xs text-black/55">{label}</div>
+    <div className="min-w-0 rounded-lg bg-(--tint-2) px-3 py-2.5" title={title}>
+      <div className="text-xs text-(--zs-soft)">{label}</div>
       <div className="mt-0.5 truncate text-base font-medium tabular-nums">{value}</div>
-      {note && <div className="mt-0.5 truncate text-xs text-black/55 tabular-nums">{note}</div>}
+      {note && <div className="mt-0.5 truncate text-xs text-(--zs-soft) tabular-nums">{note}</div>}
     </div>
   )
 }
@@ -125,7 +123,7 @@ export function InfraControls() {
   useEffect(() => { void loadTypes() }, [])
 
   const s = poll.state === 'loading' ? undefined : poll.data
-  if (s && 'enabled' in s) return <p className="text-sm text-black/60">AWS access is not configured for this deployment (AWS_ROLE_ARN).</p>
+  if (s && 'enabled' in s) return <p className="text-sm text-(--zs-soft)">AWS access is not configured for this deployment (AWS_ROLE_ARN).</p>
   const state = s?.state
   const host = hostPoll.state === 'loading' ? undefined : hostPoll.data
   const h = host && !('enabled' in host) ? host : null
@@ -192,18 +190,18 @@ export function InfraControls() {
   return (
     <>
       <Section title="EC2">
-        <div className="rounded-lg border border-black/10">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 px-4 py-3">
+        <div className={CARD}>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-(--edge) px-4 py-3">
             <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
               <span className="font-mono text-sm font-medium">{i?.name ?? INSTANCE_NAME}</span>
-              {i && <span className="font-mono text-xs text-black/55">{i.id}</span>}
-              <span className="text-sm">{state ? <Status tone={TONE[state] ?? 'idle'}>{state}</Status> : <span className="text-black/55">reading</span>}</span>
+              {i && <span className="font-mono text-xs text-(--zs-soft)">{i.id}</span>}
+              <span className="text-sm">{state ? <Status tone={TONE[state] ?? 'idle'}>{state}</Status> : <span className="text-(--zs-soft)">reading</span>}</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button type="button" className={button} disabled={state !== 'stopped'} onClick={() => setPending({ kind: 'power', op: 'start' })}>Start</button>
-              <button type="button" className={button} disabled={!running} onClick={() => setPending({ kind: 'power', op: 'reboot' })}>Reboot</button>
-              <button type="button" className={button} disabled={!running} onClick={() => void openResize()}>Change type</button>
-              <button type="button" className={`${button} text-rose-700`} disabled={!running} onClick={() => setPending({ kind: 'power', op: 'stop' })}>Stop</button>
+              <button type="button" className={BUTTON} disabled={state !== 'stopped'} onClick={() => setPending({ kind: 'power', op: 'start' })}>Start</button>
+              <button type="button" className={BUTTON} disabled={!running} onClick={() => setPending({ kind: 'power', op: 'reboot' })}>Reboot</button>
+              <button type="button" className={BUTTON} disabled={!running} onClick={() => void openResize()}>Change type</button>
+              <button type="button" className={`${BUTTON} text-rose-700`} disabled={!running} onClick={() => setPending({ kind: 'power', op: 'stop' })}>Stop</button>
             </div>
           </div>
           <div className="grid gap-5 px-4 py-4 lg:grid-cols-[auto_1fr]">
@@ -227,31 +225,31 @@ export function InfraControls() {
                 note={i?.arch ?? undefined} />
             </div>
           </div>
-          <dl className="grid grid-cols-1 gap-x-6 gap-y-1 border-t border-black/10 px-4 py-3 text-xs sm:grid-cols-3">
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-1 border-t border-(--edge) px-4 py-3 text-xs sm:grid-cols-3">
             <Row term="Instance ID"><span className="font-mono">{i?.id ?? '–'}</span></Row>
             <Row term="AZ">{i?.az ?? '–'}</Row>
             <Row term="Private IP"><span className="font-mono">{i?.privateIp ?? '–'}</span></Row>
           </dl>
           {(poll.state === 'error' || hostPoll.state === 'error') && (
-            <p className="border-t border-black/10 px-4 py-2 text-xs text-rose-700">
+            <p className="border-t border-(--edge) px-4 py-2 text-xs text-rose-700">
               {poll.state === 'error' ? poll.message : hostPoll.state === 'error' ? hostPoll.message : ''}
             </p>
           )}
         </div>
-        <p className="mt-2 text-xs text-black/55">If the instance is stopped this page cannot load; start it from /rescue.</p>
+        <p className="mt-2 text-xs text-(--zs-soft)">If the instance is stopped this page cannot load; start it from /rescue.</p>
       </Section>
 
       <Section title="Backup">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/10 px-4 py-3">
-          <p className="text-sm text-black/55">Daily at 10:30 ICT</p>
-          <button type="button" className={button} disabled={!running} onClick={() => setPending({ kind: 'backup' })}>Backup now</button>
+        <div className={`flex flex-wrap items-center justify-between gap-3 ${CARD} px-4 py-3`}>
+          <p className="text-sm text-(--zs-soft)">Daily at 10:30 ICT</p>
+          <button type="button" className={BUTTON} disabled={!running} onClick={() => setPending({ kind: 'backup' })}>Backup now</button>
         </div>
       </Section>
 
       {result && (
-        <div role="status" className="mt-4 rounded-lg border border-black/10 px-4 py-3">
+        <div role="status" className={`mt-4 ${CARD} px-4 py-3`}>
           <div className="text-sm font-medium">{result.title}, {clock(result.at)}</div>
-          {result.text && <pre className="mt-1.5 overflow-x-auto font-mono text-xs whitespace-pre-wrap text-black/70">{result.text}</pre>}
+          {result.text && <pre className="mt-1.5 overflow-x-auto font-mono text-xs whitespace-pre-wrap text-(--zs-soft)">{result.text}</pre>}
         </div>
       )}
 
@@ -293,22 +291,22 @@ export function InfraControls() {
                     const current = t.type === i?.type
                     return (
                       <label key={t.type}
-                        className={`flex flex-col rounded-lg border px-3 py-2 ${current ? 'border-black/10 opacity-60' : 'cursor-pointer border-black/15 hover:bg-black/[0.03]'} has-[:checked]:border-black has-[:checked]:bg-black/[0.04]`}>
+                        className={`flex flex-col rounded-lg border px-3 py-2 ${current ? 'border-(--edge) opacity-60' : 'cursor-pointer border-(--edge) hover:bg-(--tint-2)'} has-[:checked]:border-sea-500 has-[:checked]:bg-(--tint-2)`}>
                         <input type="radio" name="instance-type" value={t.type} className="sr-only" disabled={current || resizing}
                           checked={chosen === t.type} onChange={() => setChosen(t.type)} />
                         <span className="flex items-baseline justify-between gap-2">
-                          <span className="font-mono text-sm font-medium text-black">{t.type}</span>
-                          {current && <span className="text-xs text-black/55">current</span>}
+                          <span className="font-mono text-sm font-medium text-(--zs-ink)">{t.type}</span>
+                          {current && <span className="text-xs text-(--zs-soft)">current</span>}
                         </span>
-                        <span className="text-xs text-black/60 tabular-nums">{spec(t) || '–'}</span>
-                        <span className="text-xs text-black/60 tabular-nums">{t.usdPerMonth === null ? '–' : `~${usd(t.usdPerMonth)}/month`}</span>
+                        <span className="text-xs text-(--zs-soft) tabular-nums">{spec(t) || '–'}</span>
+                        <span className="text-xs text-(--zs-soft) tabular-nums">{t.usdPerMonth === null ? '–' : `~${usd(t.usdPerMonth)}/month`}</span>
                       </label>
                     )
                   })}
                 </div>
               )}
               <p className="mt-3">The web app is down for 2 to 3 minutes while the instance stops and starts.</p>
-              {resizing && <p role="status" className="mt-2 text-black">Stopping, changing the type, starting. Keep this page open.</p>}
+              {resizing && <p role="status" className="mt-2 text-(--zs-ink)">Stopping, changing the type, starting. Keep this page open.</p>}
             </>
           ) : (
             <p>{dialog.text}</p>

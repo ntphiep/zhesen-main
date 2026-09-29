@@ -2,7 +2,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { z } from '@/lib/zod'
 import { postAdmin } from '@/lib/admin/browser'
-import { Status } from '@/components/admin/Page'
+import { CARD, Status, BUTTON } from '@/components/admin/Page'
 import { GuardDialog } from '@/components/admin/GuardDialog'
 
 /** `GET /api/admin/alerts` (lib/admin/alerts.ts maskChannels). */
@@ -21,8 +21,7 @@ type TestResult = z.infer<typeof testSchema>['results'][number]
 
 type Pending = { title: string; label: string; text: string; body: Record<string, unknown> }
 
-const button = 'rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium hover:bg-black/[0.04] disabled:opacity-40'
-const input = 'rounded-lg border border-black/15 px-3 py-2 font-mono text-sm'
+const input = 'rounded-lg border border-(--edge) bg-(--zs-field) px-3 py-2 font-mono text-sm'
 
 /** Where the owner's alerts go. Saving goes through GuardDialog; the secrets never come
  *  back from the server, so a field left empty keeps what is saved. */
@@ -46,7 +45,7 @@ export function AlertSettings() {
       .catch(() => setState('error'))
   }, [])
 
-  if (state === 'disabled') return <p className="text-sm text-black/60">AWS access is not configured for this deployment (AWS_ROLE_ARN).</p>
+  if (state === 'disabled') return <p className="text-sm text-(--zs-soft)">AWS access is not configured for this deployment (AWS_ROLE_ARN).</p>
   const saved = state !== null && state !== 'error' ? state : null
 
   function save(e: FormEvent) {
@@ -86,7 +85,7 @@ export function AlertSettings() {
           )}
         </span>
         {detail && (
-          <button type="button" className={`${button} text-rose-700`}
+          <button type="button" className={`${BUTTON} text-rose-700`}
             onClick={() => setPending({ title: `Remove ${label}`, label: 'Remove', text: `Alerts stop going to ${label}.`, body: { action: 'save', [channel]: null } })}>
             Remove
           </button>
@@ -97,8 +96,8 @@ export function AlertSettings() {
 
   const dirty = Boolean(slackUrl.trim() || botToken.trim() || chatId.trim())
   return (
-    <div className="rounded-lg border border-black/10">
-      <ul className="divide-y divide-black/5 border-b border-black/10">
+    <div className={CARD}>
+      <ul className="divide-y divide-(--zs-line) border-b border-(--edge)">
         {line('slack', 'Slack', saved?.slack ? `webhook ${saved.slack.webhookUrl}` : null)}
         {line('telegram', 'Telegram', saved?.telegram ? `token ${saved.telegram.botToken}, chat ${saved.telegram.chatId}` : null)}
       </ul>
@@ -120,13 +119,13 @@ export function AlertSettings() {
               placeholder={saved?.telegram?.chatId ?? '-1001234567890'} className={input} />
           </label>
         </div>
-        <p className="text-xs text-black/55">An empty field keeps what is saved.</p>
+        <p className="text-xs text-(--zs-soft)">An empty field keeps what is saved.</p>
         {message && <p role="alert" className="text-sm text-rose-700">{message}</p>}
         <div className="flex flex-wrap justify-end gap-2">
-          <button type="button" className={button} disabled={testing || !(saved?.slack || saved?.telegram)} onClick={() => void test()}>
+          <button type="button" className={BUTTON} disabled={testing || !(saved?.slack || saved?.telegram)} onClick={() => void test()}>
             {testing ? 'Sending…' : 'Send test'}
           </button>
-          <button type="submit" className={button} disabled={!dirty || saved === null}>Save</button>
+          <button type="submit" className={BUTTON} disabled={!dirty || saved === null}>Save</button>
         </div>
       </form>
 

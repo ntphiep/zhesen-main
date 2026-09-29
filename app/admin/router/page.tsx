@@ -51,7 +51,7 @@ function RouterSection({ router, endpoint, role }: { router: RouterState; endpoi
           <dt className="font-medium">Password</dt>
           <dd className="min-w-0 break-all font-mono select-all">{router.password ?? 'Not set in SSM.'}</dd>
         </dl>
-        {!endpoint ? <p className="text-black/60">The assistant does not use {router.name}: its base URL or API key is not set.</p> : (
+        {!endpoint ? <p className="text-(--zs-soft)">The assistant does not use {router.name}: its base URL or API key is not set.</p> : (
           <div className="flex flex-col gap-2">
             <p>
               {role} The assistant asks for <code className="font-mono">{endpoint.model}</code>
@@ -88,7 +88,7 @@ export default async function AdminRouterPage() {
       />
       {typeof routers === 'string' && <p className="text-sm text-rose-700">{routers}</p>}
       {!ai.nineRouter && !ai.omniRoute && (
-        <p className="text-sm text-black/60">The assistant is off: neither router has a base URL and API key set.</p>
+        <p className="text-sm text-(--zs-soft)">The assistant is off: neither router has a base URL and API key set.</p>
       )}
       {nine && <RouterSection router={nine} endpoint={ai.nineRouter} role={ai.omniRoute ? 'First router.' : 'Only router.'} />}
       {omni && <RouterSection router={omni} endpoint={ai.omniRoute} role={ai.nineRouter ? 'Fallback router.' : 'Only router.'} />}

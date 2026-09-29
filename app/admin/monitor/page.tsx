@@ -33,7 +33,7 @@ async function readSlow(supabase: Awaited<ReturnType<typeof createClient>>): Pro
 
 function AwsMissing({ aws }: { aws: Exclude<Aws, { state: 'ok' }> }) {
   return aws.state === 'off'
-    ? <p className="text-sm text-black/60">AWS read not configured (AWS_ROLE_ARN).</p>
+    ? <p className="text-sm text-(--zs-soft)">AWS read not configured (AWS_ROLE_ARN).</p>
     : <p className="text-sm text-rose-700">AWS unreadable ({aws.name}).</p>
 }
 

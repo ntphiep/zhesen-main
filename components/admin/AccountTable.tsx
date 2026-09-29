@@ -7,6 +7,7 @@ import { postAdmin } from '@/lib/admin/browser'
 import { confirmationFor, type AdminAccount } from '@/lib/admin/users'
 import { formatWordDate } from '@/lib/wordlist/format'
 import { z } from '@/lib/zod'
+import { PRIMARY, BUTTON } from '@/components/admin/Page'
 
 const merged = z.object({ moved: z.number(), kept: z.number(), days: z.number() })
 
@@ -67,7 +68,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
       <div className="relative overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-black/10 text-left text-xs font-medium uppercase tracking-wide text-black/55">
+            <tr className="border-b border-(--edge) text-left text-xs font-medium uppercase tracking-wide text-(--zs-soft)">
               <th className="py-2 pr-4">Account</th>
               <th className="py-2 pr-4">Kind</th>
               <th className="py-2 pr-4 text-right">Saved words</th>
@@ -78,15 +79,15 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
           </thead>
           <tbody>
             {accounts.map((a) => (
-              <tr key={a.id} className="border-b border-black/5">
+              <tr key={a.id} className="border-b border-(--zs-line)">
                 <td className="py-2 pr-4">
                   <div className="font-medium">{name(a)}</div>
-                  {a.displayName && <div className="text-xs text-black/55">{a.displayName}</div>}
+                  {a.displayName && <div className="text-xs text-(--zs-soft)">{a.displayName}</div>}
                 </td>
                 <td className="whitespace-nowrap py-2 pr-4">
                   {a.kind === 'permanent' ? 'Email' : 'Anonymous'}
                   {a.role === 'admin' && (
-                    <span className="ml-2 rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/60">Admin</span>
+                    <span className="ml-2 rounded-full bg-(--zs-chip) px-2 py-0.5 text-xs text-(--zs-soft)">Admin</span>
                   )}
                 </td>
                 <td className="py-2 pr-4 text-right tabular-nums">{a.words.toLocaleString('vi-VN')}</td>
@@ -97,7 +98,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
                     type="button"
                     onClick={() => open({ kind: 'merge', account: a })}
                     disabled={a.words === 0}
-                    className="rounded-lg px-2 py-1 text-black/60 hover:bg-black/5 disabled:opacity-30"
+                    className="rounded-lg px-2 py-1 text-(--zs-soft) hover:bg-(--zs-chip) disabled:opacity-30"
                   >
                     Merge into…
                   </button>
@@ -114,7 +115,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
             ))}
           </tbody>
           <tfoot>
-            <tr className="text-sm text-black/60">
+            <tr className="text-sm text-(--zs-soft)">
               <td className="py-2 pr-4">{accounts.length} accounts</td>
               <td />
               <td className="py-2 pr-4 text-right tabular-nums">{total.toLocaleString('vi-VN')}</td>
@@ -136,7 +137,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
             className="p-5"
             onSubmit={(e) => { e.preventDefault(); void confirmDelete(target) }}
           >
-            <p className="text-sm text-black/70">
+            <p className="text-sm text-(--zs-soft)">
               Deletes {name(target)}, {target.words} saved words and practice history; recoverable only from backup.
             </p>
             <label className="mt-4 block text-sm">
@@ -145,21 +146,21 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
                 autoComplete="off"
-                className="mt-1 w-full rounded-lg border border-black/15 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-(--edge) bg-(--zs-field) px-3 py-2 text-sm"
               />
             </label>
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setPending(null)}
-                className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5"
+                className={BUTTON}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={busy || typed.trim().toLowerCase() !== confirmationFor(target).toLowerCase()}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-40"
+                className="rounded-full bg-red-600 px-4 py-1.5 text-sm font-semibold text-white enabled:hover:bg-red-700 disabled:opacity-40"
               >
                 Delete permanently
               </button>
@@ -180,7 +181,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
             className="p-5"
             onSubmit={(e) => { e.preventDefault(); void confirmMerge(target) }}
           >
-            <p className="text-sm text-black/70">
+            <p className="text-sm text-(--zs-soft)">
               Moves {target.words} words from {name(target)} to the target account; duplicates stay in the source, and the source is not deleted.
             </p>
             <label className="mt-4 block text-sm">
@@ -188,7 +189,7 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
               <select
                 value={into}
                 onChange={(e) => setInto(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-(--edge) bg-(--zs-field) px-3 py-2 text-sm"
               >
                 <option value="">Choose an account</option>
                 {others.map((a) => (
@@ -200,14 +201,14 @@ export function AccountTable({ accounts }: { accounts: AdminAccount[] }) {
               <button
                 type="button"
                 onClick={() => setPending(null)}
-                className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5"
+                className={BUTTON}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={busy || !into}
-                className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+                className={PRIMARY}
               >
                 Merge
               </button>

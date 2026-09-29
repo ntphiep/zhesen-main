@@ -42,10 +42,10 @@ export function AdminNav() {
   const active = current(usePathname() || '/admin')
   return (
     <nav aria-label="Admin" className="-mx-4 overflow-x-auto px-4 lg:mx-0 lg:overflow-visible lg:px-0">
-      <div className="flex gap-1 lg:flex-col lg:gap-6">
+      <div className="flex w-max gap-0.5 rounded-lg bg-(--zs-chip) p-0.5 lg:w-auto lg:flex-col lg:gap-5 lg:rounded-none lg:bg-transparent lg:p-0">
         {NAV_GROUPS.map((g) => (
-          <div key={g.label} className="flex shrink-0 gap-1 lg:flex-col lg:gap-0.5">
-            <div className="hidden px-3 pb-1 text-xs font-medium text-black/55 lg:block">{g.label}</div>
+          <div key={g.label} className="flex shrink-0 gap-0.5 lg:flex-col">
+            <div className="hidden px-3 pb-1 text-xs font-semibold text-(--zs-soft) lg:block">{g.label}</div>
             {g.links.map((l) => {
               const on = l.href === active
               return (
@@ -54,7 +54,7 @@ export function AdminNav() {
                   href={l.href}
                   prefetch={false}
                   aria-current={on ? 'page' : undefined}
-                  className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm ${on ? 'bg-black/[0.07] font-medium text-black' : 'text-black/60 hover:bg-black/5 hover:text-black'}`}
+                  className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-colors duration-150 ease-std motion-reduce:transition-none ${on ? 'bg-(--zs-bg) font-semibold text-(--zs-ink) shadow-sm' : 'font-medium text-(--zs-soft) hover:bg-(--zs-bg)/60 hover:text-(--zs-ink)'}`}
                 >
                   {l.label}
                   <LinkPending />

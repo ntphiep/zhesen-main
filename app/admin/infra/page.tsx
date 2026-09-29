@@ -6,7 +6,7 @@ import { getCosts, type Costs } from '@/lib/admin/control'
 import { costsByService, serviceFacts, SERVICES, type ServiceFacts, type ServiceId } from '@/lib/admin/services'
 import { edgeHost, probeAuth } from '@/lib/admin/architecture'
 import { formatBytes } from '@/lib/admin/metrics'
-import { ago, PageHeader, Section, Figure } from '@/components/admin/Page'
+import { CARD, ago, PageHeader, Section, Figure } from '@/components/admin/Page'
 import { AlertSettings } from '@/components/admin/AlertSettings'
 import { InfraControls } from '@/components/admin/InfraControls'
 import { ShellConsole } from '@/components/admin/Console'
@@ -33,7 +33,7 @@ const usd = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits
 const BUDGET_USD = 45
 
 function CostSection({ c }: { c: Costs | null | 'error' }) {
-  if (c === null) return <p className="text-sm text-black/60">AWS access is not configured for this deployment (AWS_ROLE_ARN).</p>
+  if (c === null) return <p className="text-sm text-(--zs-soft)">AWS access is not configured for this deployment (AWS_ROLE_ARN).</p>
   if (c === 'error') return <p className="text-sm text-rose-700">Cost Explorer could not be read.</p>
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -67,28 +67,28 @@ function ServicesTable({ c, f, edge }: { c: Costs | null | 'error'; f: ServiceFa
   const d = details(f, edge)
   const cell = 'px-4 py-2 align-top'
   return (
-    <div className="overflow-x-auto rounded-lg border border-black/10">
+    <div className={`overflow-x-auto ${CARD}`}>
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-black/10 text-left text-xs text-black/55">
+          <tr className="border-b border-(--edge) text-left text-xs text-(--zs-soft)">
             <th className={`${cell} font-medium`}>Service</th>
             <th className={`${cell} font-medium`}>Now</th>
             <th className={`${cell} text-right font-medium`}>MTD</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-black/5">
+        <tbody className="divide-y divide-(--zs-line)">
           {SERVICES.map((s) => (
             <tr key={s.id}>
               <td className={cell}>
                 <div className="font-medium">{s.name}</div>
-                <div className="text-xs text-black/55">{s.role}</div>
+                <div className="text-xs text-(--zs-soft)">{s.role}</div>
               </td>
-              <td className={`${cell} wrap-anywhere text-black/70`}>{d[s.id]}</td>
+              <td className={`${cell} wrap-anywhere text-(--zs-soft)`}>{d[s.id]}</td>
               <td className={`${cell} text-right tabular-nums`}>{costs ? usd(costs.rows.get(s.id) ?? 0) : '–'}</td>
             </tr>
           ))}
           {costs?.other.map((o) => (
-            <tr key={o.service} className="text-black/55">
+            <tr key={o.service} className="text-(--zs-soft)">
               <td className={cell}>{o.service}</td>
               <td className={cell}>Elsewhere in the account, not zhesen</td>
               <td className={`${cell} text-right tabular-nums`}>{usd(o.usage)}</td>

@@ -7,7 +7,7 @@ import {
   type HostResponse, type LiveSample, type LogsResponse, type Rates,
 } from '@/lib/admin/monitor'
 import { formatBytes } from '@/lib/admin/metrics'
-import { clock, num, Status, type Tone } from '@/components/admin/Page'
+import { CARD, BUTTON, clock, num, segment, SEGMENTS, Status, type Tone } from '@/components/admin/Page'
 
 const LIVE_MS = 10_000
 const HOST_MS = 5_000
@@ -37,17 +37,17 @@ export function Trail({ values, label, slots = KEEP }: { values: number[]; label
   const d = values.map((v, i) => `${i === 0 ? 'M' : 'L'}${(offset + i * step).toFixed(2)},${(30 - (v / max) * 28).toFixed(2)}`).join(' ')
   return (
     <svg viewBox="0 0 100 32" preserveAspectRatio="none" className="h-8 w-full" role="img" aria-label={label}>
-      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" className="text-black/60" />
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" className="text-(--zs-pen)" />
     </svg>
   )
 }
 
 function Reading({ label, value, note, trail }: { label: string; value: string; note?: string; trail?: number[] }) {
   return (
-    <div className="min-w-0 rounded-lg border border-black/10 px-4 pt-3 pb-2">
-      <div className="text-2xl font-semibold tabular-nums">{value}</div>
-      <div className="text-sm text-black/60">{label}</div>
-      {note && <div className="text-xs text-black/55">{note}</div>}
+    <div className={`min-w-0 ${CARD} px-4 pt-3 pb-2`}>
+      <div className="text-2xl font-extrabold tracking-[-0.02em] tabular-nums">{value}</div>
+      <div className="text-sm text-(--zs-soft)">{label}</div>
+      {note && <div className="text-xs text-(--zs-soft)">{note}</div>}
       {trail && <div className="mt-1"><Trail values={trail} label={`${label}, last 10 minutes`} /></div>}
     </div>
   )
@@ -107,23 +107,23 @@ export function LivePanel() {
               trail={trail.map((t) => t.r.rowsWrittenPerSec)}
             />
           </div>
-          {!last && <p className="mt-2 text-xs text-black/55">Rates appear after the second sample, in 10 s.</p>}
+          {!last && <p className="mt-2 text-xs text-(--zs-soft)">Rates appear after the second sample, in 10 s.</p>}
 
           <h3 className="mt-5 mb-2 text-sm font-medium">Running queries ({live.running.length})</h3>
           {live.running.length === 0 ? (
-            <p className="text-sm text-black/55">None besides this read.</p>
+            <p className="text-sm text-(--zs-soft)">None besides this read.</p>
           ) : (
-            <ul className="divide-y divide-black/5 rounded-lg border border-black/10">
+            <ul className={`divide-y divide-(--zs-line) ${CARD}`}>
               {live.running.map((q) => (
                 <li key={q.pid} className="px-4 py-2.5">
-                  <div className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-xs text-black/55 tabular-nums">
-                    <span className="font-medium text-black/80">{q.seconds !== null ? `${rate(q.seconds)} s` : '–'}</span>
+                  <div className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-xs text-(--zs-soft) tabular-nums">
+                    <span className="font-semibold text-(--zs-ink)">{q.seconds !== null ? `${rate(q.seconds)} s` : '–'}</span>
                     <span>{q.user ?? 'unknown'}{q.application ? ` via ${q.application}` : ''}</span>
                     <span>{CONNECTION_STATE[q.state ?? ''] ?? q.state}</span>
                     {q.wait && <span className="text-amber-800">waiting {q.wait}</span>}
                     <span>pid {q.pid}</span>
                   </div>
-                  <code className="mt-1 block font-mono text-xs break-all text-black/70">{q.query}</code>
+                  <code className="mt-1 block font-mono text-xs break-all text-(--zs-soft)">{q.query}</code>
                 </li>
               ))}
             </ul>
@@ -136,17 +136,17 @@ export function LivePanel() {
 
 function Meter({ label, used, total, format }: { label: string; used: number; total: number; format: (n: number) => string }) {
   const share = total > 0 ? used / total : 0
-  const tone = share >= 0.9 ? 'bg-rose-700' : share >= 0.8 ? 'bg-amber-700' : 'bg-black/60'
+  const tone = share >= 0.9 ? 'bg-rose-700' : share >= 0.8 ? 'bg-amber-700' : 'bg-(--zs-pen)'
   return (
-    <div className="min-w-0 rounded-lg border border-black/10 px-4 py-3">
+    <div className={`min-w-0 ${CARD} px-4 py-3`}>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-sm text-black/60">{label}</span>
+        <span className="text-sm text-(--zs-soft)">{label}</span>
         <span className="text-sm tabular-nums">{pct(share * 100)}</span>
       </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/[0.06]" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)}>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-(--tint-3)" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)}>
         <div className={`h-full ${tone}`} style={{ width: `${Math.min(100, share * 100)}%` }} />
       </div>
-      <div className="mt-1.5 text-xs text-black/55 tabular-nums">{format(used)} of {format(total)}</div>
+      <div className="mt-1.5 text-xs text-(--zs-soft) tabular-nums">{format(used)} of {format(total)}</div>
     </div>
   )
 }
@@ -171,7 +171,7 @@ export function HostPanel() {
   const poll = usePoll<HostResponse>('/api/admin/monitor?part=host', HOST_MS, parseHostResponse)
   const host = poll.state === 'loading' ? undefined : poll.data
   if (host && 'enabled' in host) {
-    return <p className="text-sm text-black/60">AWS read not configured (AWS_ROLE_ARN).</p>
+    return <p className="text-sm text-(--zs-soft)">AWS read not configured (AWS_ROLE_ARN).</p>
   }
   const now = host ? Date.parse(host.at) : 0
 
@@ -184,27 +184,27 @@ export function HostPanel() {
             {host.memory && <Meter label="Memory" used={host.memory.total - host.memory.available} total={host.memory.total} format={formatBytes} />}
             {host.disk && <Meter label="Disk" used={host.disk.used} total={host.disk.size} format={formatBytes} />}
             {host.load && (
-              <div className="min-w-0 rounded-lg border border-black/10 px-4 py-3">
-                <div className="text-2xl font-semibold tabular-nums">{host.load[0].toLocaleString('en-US')}</div>
-                <div className="text-sm text-black/60">Load average, 1 min</div>
-                <div className="text-xs text-black/55 tabular-nums">
+              <div className={`min-w-0 ${CARD} px-4 py-3`}>
+                <div className="text-2xl font-extrabold tracking-[-0.02em] tabular-nums">{host.load[0].toLocaleString('en-US')}</div>
+                <div className="text-sm text-(--zs-soft)">Load average, 1 min</div>
+                <div className="text-xs text-(--zs-soft) tabular-nums">
                   5 min {host.load[1].toLocaleString('en-US')} · 15 min {host.load[2].toLocaleString('en-US')}
                   {host.cpus ? ` · ${host.cpus} vCPU` : ''}
                 </div>
               </div>
             )}
             {host.uptimeSeconds !== null && (
-              <div className="min-w-0 rounded-lg border border-black/10 px-4 py-3">
-                <div className="text-2xl font-semibold tabular-nums">{duration(host.uptimeSeconds)}</div>
-                <div className="text-sm text-black/60">Uptime</div>
+              <div className={`min-w-0 ${CARD} px-4 py-3`}>
+                <div className="text-2xl font-extrabold tracking-[-0.02em] tabular-nums">{duration(host.uptimeSeconds)}</div>
+                <div className="text-sm text-(--zs-soft)">Uptime</div>
               </div>
             )}
           </div>
 
-          <div className="mt-4 overflow-x-auto rounded-lg border border-black/10">
+          <div className={`mt-4 overflow-x-auto ${CARD}`}>
             <table className="w-full min-w-[40rem] text-sm">
               <thead>
-                <tr className="border-b border-black/10 text-left text-xs text-black/55">
+                <tr className="border-b border-(--edge) text-left text-xs text-(--zs-soft)">
                   <th className="px-4 py-2 font-medium">Container</th>
                   <th className="px-4 py-2 font-medium">Status</th>
                   <th className="px-4 py-2 text-right font-medium">CPU</th>
@@ -212,12 +212,12 @@ export function HostPanel() {
                   <th className="px-4 py-2 font-medium">Up for</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/5">
+              <tbody className="divide-y divide-(--zs-line)">
                 {host.containers.map((c) => (
                   <tr key={c.name}>
                     <td className="px-4 py-2">
                       <div className="font-mono">{c.name}</div>
-                      <div className="font-mono text-xs text-black/55">{c.image}</div>
+                      <div className="font-mono text-xs text-(--zs-soft)">{c.image}</div>
                     </td>
                     <td className="px-4 py-2">
                       <Status tone={containerTone(c.status, c.health)}>
@@ -228,16 +228,16 @@ export function HostPanel() {
                     <td className="px-4 py-2 text-right tabular-nums">{c.cpuPercent !== null ? pct(c.cpuPercent) : '–'}</td>
                     <td className="px-4 py-2 text-right tabular-nums">
                       {c.memBytes !== null ? formatBytes(c.memBytes) : '–'}
-                      {c.memLimitBytes !== null && <div className="text-xs text-black/55">limit {formatBytes(c.memLimitBytes)}</div>}
+                      {c.memLimitBytes !== null && <div className="text-xs text-(--zs-soft)">limit {formatBytes(c.memLimitBytes)}</div>}
                     </td>
-                    <td className="px-4 py-2 text-black/70 tabular-nums">{c.startedAt ? duration(Math.max(0, (now - Date.parse(c.startedAt)) / 1000)) : '–'}</td>
+                    <td className="px-4 py-2 text-(--zs-soft) tabular-nums">{c.startedAt ? duration(Math.max(0, (now - Date.parse(c.startedAt)) / 1000)) : '–'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <p className="mt-2 text-sm">
-            <Link href="/admin/containers" prefetch={false} className="underline underline-offset-2 hover:text-black/70">All containers</Link>
+            <Link href="/admin/containers" prefetch={false} className="underline underline-offset-2 hover:text-(--zs-pen)">All containers</Link>
           </p>
         </>
       )}
@@ -291,7 +291,7 @@ export function LogViewer({ fixed }: { fixed?: Service } = {}) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        {!fixed && <div role="radiogroup" aria-label="Container" className="flex flex-wrap gap-1 rounded-lg border border-black/10 p-1">
+        {!fixed && <div role="radiogroup" aria-label="Container" className={SEGMENTS}>
           {LOG_SERVICES.map((s) => (
             <button
               key={s}
@@ -299,7 +299,7 @@ export function LogViewer({ fixed }: { fixed?: Service } = {}) {
               role="radio"
               aria-checked={service === s}
               onClick={() => setService(s)}
-              className={`rounded-md px-3 py-1 font-mono text-sm ${service === s ? 'bg-black text-white' : 'text-black/65 hover:bg-black/[0.05]'}`}
+              className={`font-mono ${segment(service === s)}`}
             >
               {s}
             </button>
@@ -309,27 +309,27 @@ export function LogViewer({ fixed }: { fixed?: Service } = {}) {
           type="button"
           onClick={() => void load()}
           disabled={logs.state === 'busy'}
-          className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/[0.04] disabled:opacity-40"
+          className={BUTTON}
         >
           {logs.state === 'busy' ? 'Reading' : 'Read last 15 min'}
         </button>
       </div>
 
       {logs.state === 'error' && <p role="status" className="mt-3 text-sm text-rose-700">{logs.message}</p>}
-      {data && 'enabled' in data && <p className="mt-3 text-sm text-black/60">AWS read not configured (AWS_ROLE_ARN).</p>}
+      {data && 'enabled' in data && <p className="mt-3 text-sm text-(--zs-soft)">AWS read not configured (AWS_ROLE_ARN).</p>}
       {data && !('enabled' in data) && (
         <div className="mt-3">
-          <p className="mb-1.5 text-xs text-black/55">
+          <p className="mb-1.5 text-xs text-(--zs-soft)">
             supabase-{data.service} · {num(data.lines.length)} lines · read {clock(data.at)} · newest last
             {data.truncated && ' · oldest lines cut at the SSM limit'}
           </p>
           {data.lines.length === 0 ? (
-            <p className="text-sm text-black/55">No log lines in the last 15 minutes.</p>
+            <p className="text-sm text-(--zs-soft)">No log lines in the last 15 minutes.</p>
           ) : (
-            <pre ref={box} className="max-h-[28rem] overflow-auto rounded-lg border border-black/10 bg-black/[0.03] p-3 font-mono text-xs leading-relaxed">
+            <pre ref={box} className="max-h-[28rem] overflow-auto rounded-lg border border-(--edge) bg-(--tint-2) p-3 font-mono text-xs leading-relaxed">
               {data.lines.map((l, i) => (
                 <div key={i} className="whitespace-pre-wrap break-all">
-                  {l.at && <span className="text-black/55 select-none">{clock(l.at)} </span>}
+                  {l.at && <span className="text-(--zs-soft) select-none">{clock(l.at)} </span>}
                   {l.text}
                 </div>
               ))}

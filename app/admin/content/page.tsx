@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/admin'
-import { num as count, PageHeader } from '@/components/admin/Page'
+import { num as count, PageHeader, PRIMARY } from '@/components/admin/Page'
 import { getAdminEntry, getCoverage } from '@/lib/admin/content'
 import { searchOneDirection } from '@/lib/dictionary/search'
 import { LANGUAGES } from '@/lib/languages'
@@ -35,11 +35,11 @@ export default async function AdminContentPage({
       <PageHeader title="Content" />
       <div className="mt-6 flex flex-col gap-10">
       <section>
-        <h2 className="mb-3 text-base font-semibold">Coverage</h2>
+        <h2 className="mb-3 text-base font-bold">Coverage</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-black/10 text-left text-xs font-medium uppercase tracking-wide text-black/55">
+              <tr className="border-b border-(--edge) text-left text-xs font-medium uppercase tracking-wide text-(--zs-soft)">
                 <th className="py-2 pr-4">Language</th>
                 <th className="py-2 pr-4 text-right">Entries</th>
                 <th className="py-2 pr-4 text-right">Senses</th>
@@ -50,7 +50,7 @@ export default async function AdminContentPage({
             </thead>
             <tbody>
               {coverage.languages.map((l) => (
-                <tr key={l.lang} className="border-b border-black/5">
+                <tr key={l.lang} className="border-b border-(--zs-line)">
                   <td className="py-1.5 pr-4 font-mono">{l.lang}</td>
                   <td className="py-1.5 pr-4 text-right tabular-nums">{count(l.entries)}</td>
                   <td className="py-1.5 pr-4 text-right tabular-nums">{count(l.senses)}</td>
@@ -69,7 +69,7 @@ export default async function AdminContentPage({
                 <Link href={editHref(f.entryId)} prefetch={false} className="font-medium hover:underline">
                   {f.headword}
                 </Link>
-                <span className="text-black/55"> · {f.lang} · {f.reason}</span>
+                <span className="text-(--zs-soft)"> · {f.lang} · {f.reason}</span>
               </li>
             ))}
           </ul>
@@ -77,29 +77,29 @@ export default async function AdminContentPage({
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-semibold">Find an entry</h2>
+        <h2 className="mb-3 text-base font-bold">Find an entry</h2>
         <form action="/admin/content" className="flex flex-wrap items-center gap-2">
           <input
             name="q"
             defaultValue={q}
             placeholder="Headword or gloss"
             aria-label="Search"
-            className="min-w-56 flex-1 rounded-lg border border-black/15 px-3 py-2 text-sm"
+            className="min-w-56 flex-1 rounded-lg border border-(--edge) bg-(--zs-field) px-3 py-2 text-sm"
           />
           <select
             name="dir"
             defaultValue={dir}
             aria-label="Direction"
-            className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm"
+            className="rounded-lg border border-(--edge) bg-(--zs-field) px-3 py-2 text-sm"
           >
             <option value="fw">By headword</option>
             <option value="vi">By Vietnamese gloss</option>
           </select>
-          <button type="submit" className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white">
+          <button type="submit" className={PRIMARY}>
             Search
           </button>
         </form>
-        {q && results.length === 0 && <p className="mt-3 text-sm text-black/60">No match.</p>}
+        {q && results.length === 0 && <p className="mt-3 text-sm text-(--zs-soft)">No match.</p>}
         {results.length > 0 && (
           <ul className="mt-3 flex flex-col gap-1 text-sm">
             {results.map((r) => (
@@ -107,7 +107,7 @@ export default async function AdminContentPage({
                 <Link href={editHref(r.id)} prefetch={false} className="font-medium hover:underline">
                   {r.headword}
                 </Link>
-                <span className="text-black/55"> · {r.lang}{r.glossVi ? ` · ${r.glossVi}` : ''}</span>
+                <span className="text-(--zs-soft)"> · {r.lang}{r.glossVi ? ` · ${r.glossVi}` : ''}</span>
               </li>
             ))}
           </ul>
@@ -116,9 +116,9 @@ export default async function AdminContentPage({
 
       {entryId && (
         <section>
-          <h2 className="mb-3 text-base font-semibold">Edit entry</h2>
+          <h2 className="mb-3 text-base font-bold">Edit entry</h2>
           {entry ? <EntryEditor key={entry.id} entry={entry} /> : (
-            <p className="text-sm text-black/60">No entry {entryId}.</p>
+            <p className="text-sm text-(--zs-soft)">No entry {entryId}.</p>
           )}
         </section>
       )}

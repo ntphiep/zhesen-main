@@ -3,7 +3,7 @@ import { Fragment, useState } from 'react'
 import Link from 'next/link'
 import type { DictColumn, DictLink, DictTable, Dictionary } from '@/lib/admin/dictionary'
 import { formatBytes } from '@/lib/admin/metrics'
-import { num } from '@/components/admin/Page'
+import { CARD, num } from '@/components/admin/Page'
 import { Erd } from '@/components/admin/Erd'
 
 /** 0041 and 0061 prefix every table comment with "zhesen:" to mark ownership in Studio. */
@@ -26,10 +26,10 @@ const documented = (id: string) => SCHEMAS.some((s) => id.startsWith(`${s.name}.
 
 function TableName({ id, children }: { id: string; children: string }) {
   if (!documented(id)) {
-    return <span className="font-mono text-black/75" title="Supabase table, not documented here">{children}</span>
+    return <span className="font-mono text-(--zs-soft)" title="Supabase table, not documented here">{children}</span>
   }
   return (
-    <Link href={tableHref(id)} prefetch={false} className="font-mono text-black/75 underline decoration-black/20 hover:decoration-black">
+    <Link href={tableHref(id)} prefetch={false} className="font-mono text-(--zs-soft) underline decoration-(--zs-pen)/35 hover:decoration-(--zs-pen)">
       {children}
     </Link>
   )
@@ -37,34 +37,34 @@ function TableName({ id, children }: { id: string; children: string }) {
 
 function Tag({ children, tone = 'plain', title }: { children: string; tone?: 'plain' | 'key'; title?: string }) {
   return (
-    <span title={title} className={`rounded px-1.5 py-px text-[11px] font-medium ${tone === 'key' ? 'bg-amber-50 text-amber-800' : 'bg-black/[0.05] text-black/60'}`}>
+    <span title={title} className={`rounded px-1.5 py-px text-[11px] font-medium ${tone === 'key' ? 'bg-amber-50 text-amber-800' : 'bg-(--tint-2) text-(--zs-soft)'}`}>
       {children}
     </span>
   )
 }
 
-const chip = 'rounded-full border border-black/10 px-2 py-0.5 text-xs text-black/60 tabular-nums'
-const th = 'px-4 py-2 text-xs font-medium text-black/55'
+const chip = 'rounded-full border border-(--edge) px-2 py-0.5 text-xs text-(--zs-soft) tabular-nums'
+const th = 'px-4 py-2 text-xs font-medium text-(--zs-soft)'
 
 /** A table's columns, one compact line each, shown when its row is expanded. */
 function ColumnGrid({ t }: { t: DictTable }) {
   return (
-    <div className="border-t border-black/5 bg-black/[0.02] px-4 py-3">
-      <ul className="divide-y divide-black/5">
+    <div className="border-t border-(--zs-line) bg-(--tint-1) px-4 py-3">
+      <ul className="divide-y divide-(--zs-line)">
         {t.columns.map((c) => (
           <li key={c.name} className="grid gap-x-4 gap-y-0.5 py-1.5 sm:grid-cols-[minmax(0,13rem)_minmax(0,10rem)_7rem_minmax(0,1fr)] sm:items-baseline">
             <span className="font-mono text-xs font-medium break-all">{c.name}</span>
-            <span className="font-mono text-xs text-black/55 break-all">{c.type}</span>
+            <span className="font-mono text-xs text-(--zs-soft) break-all">{c.type}</span>
             <span className="flex flex-wrap gap-1">
               {c.primaryKey && <Tag tone="key">PK</Tag>}
               {c.references && <Tag title={`${c.references.table}.${c.references.column}`}>FK</Tag>}
               {c.nullable && <Tag>nullable</Tag>}
             </span>
-            <span className="text-xs text-black/65">{c.comment ?? <span className="text-black/55">No description.</span>}</span>
+            <span className="text-xs text-(--zs-soft)">{c.comment ?? <span className="text-(--zs-soft)">No description.</span>}</span>
           </li>
         ))}
       </ul>
-      <Link href={tableHref(t.id)} prefetch={false} className="mt-2 inline-block text-sm font-medium underline decoration-black/20 hover:decoration-black">
+      <Link href={tableHref(t.id)} prefetch={false} className="mt-2 inline-block text-sm font-medium underline decoration-(--zs-pen)/35 hover:decoration-(--zs-pen)">
         Open table
       </Link>
     </div>
@@ -76,10 +76,10 @@ function SchemaTable({ tables }: { tables: DictTable[] }) {
   const [open, setOpen] = useState<string | null>(null)
   const largest = Math.max(1, ...tables.map((t) => t.bytes))
   return (
-    <div className="overflow-hidden rounded-lg border border-black/10">
+    <div className={`overflow-hidden ${CARD}`}>
       <table className="w-full table-fixed text-sm">
-        <thead className="bg-black/[0.02]">
-          <tr className="border-b border-black/10 text-left">
+        <thead className="bg-(--tint-1)">
+          <tr className="border-b border-(--edge) text-left">
             <th scope="col" className={`${th} sm:w-60`}>Table</th>
             <th scope="col" className={`${th} w-24 text-right`}>Rows</th>
             <th scope="col" className={`${th} w-32 sm:w-44`}>Size</th>
@@ -92,7 +92,7 @@ function SchemaTable({ tables }: { tables: DictTable[] }) {
             const panel = `columns-${t.id.replace('.', '-')}`
             return (
               <Fragment key={t.id}>
-                <tr className={`border-b border-black/5 last:border-0 hover:bg-black/[0.03] ${expanded ? 'bg-black/[0.03]' : ''}`}>
+                <tr className={`border-b border-(--zs-line) last:border-0 hover:bg-(--tint-2) ${expanded ? 'bg-(--tint-2)' : ''}`}>
                   <td className="px-2 py-1.5">
                     <button
                       type="button"
@@ -101,25 +101,25 @@ function SchemaTable({ tables }: { tables: DictTable[] }) {
                       onClick={() => setOpen(expanded ? null : t.id)}
                       className="flex w-full min-w-0 items-center gap-1.5 rounded px-2 py-1 text-left"
                     >
-                      <span aria-hidden className={`text-[10px] text-black/55 transition-transform ${expanded ? 'rotate-90' : ''}`}>▶</span>
+                      <span aria-hidden className={`text-[10px] text-(--zs-soft) transition-transform ${expanded ? 'rotate-90' : ''}`}>▶</span>
                       <span className="min-w-0 font-mono text-[13px] font-medium break-all">{t.name}</span>
                     </button>
                   </td>
                   <td className="px-4 py-1.5 text-right tabular-nums">{num(t.rows)}</td>
                   <td className="px-4 py-1.5">
                     <div className="flex items-center gap-2">
-                      <span className="w-14 shrink-0 text-right tabular-nums text-black/70">{formatBytes(t.bytes)}</span>
-                      <span aria-hidden className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-black/[0.06]">
-                        <span className="block h-full rounded-full bg-black/40" style={{ width: `${(t.bytes / largest) * 100}%` }} />
+                      <span className="w-14 shrink-0 text-right tabular-nums text-(--zs-soft)">{formatBytes(t.bytes)}</span>
+                      <span aria-hidden className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-(--tint-3)">
+                        <span className="block h-full rounded-full bg-(--zs-pen)/60" style={{ width: `${(t.bytes / largest) * 100}%` }} />
                       </span>
                     </div>
                   </td>
-                  <td className="hidden truncate px-4 py-1.5 text-black/60 sm:table-cell" title={purpose(t.comment)}>{purpose(t.comment)}</td>
+                  <td className="hidden truncate px-4 py-1.5 text-(--zs-soft) sm:table-cell" title={purpose(t.comment)}>{purpose(t.comment)}</td>
                 </tr>
                 {expanded && (
-                  <tr id={panel} className="border-b border-black/5 last:border-0">
+                  <tr id={panel} className="border-b border-(--zs-line) last:border-0">
                     <td colSpan={4} className="p-0">
-                      <p className="px-4 pt-3 text-sm text-black/70 sm:hidden">{purpose(t.comment)}</p>
+                      <p className="px-4 pt-3 text-sm text-(--zs-soft) sm:hidden">{purpose(t.comment)}</p>
                       <ColumnGrid t={t} />
                     </td>
                   </tr>
@@ -149,7 +149,7 @@ export function TableIndex({ dict }: { dict: Dictionary }) {
               <span className={chip}>{tables.length} tables</span>
               <span className={chip}>{formatBytes(bytes)}</span>
             </div>
-            <p className="mt-1 text-sm text-black/55">{s.about}</p>
+            <p className="mt-1 text-sm text-(--zs-soft)">{s.about}</p>
             <div className="mt-3"><Erd tables={dict.tables} schema={s.name} href={href} /></div>
             <div className="mt-3"><SchemaTable tables={tables} /></div>
           </section>
@@ -164,22 +164,22 @@ function Column({ c }: { c: DictColumn }) {
     <li className="grid gap-x-6 gap-y-1 px-4 py-3 sm:grid-cols-[15rem_1fr]">
       <div className="min-w-0">
         <div className="font-mono text-sm font-medium break-all">{c.name}</div>
-        <div className="font-mono text-xs text-black/55 break-all">{c.type}</div>
+        <div className="font-mono text-xs text-(--zs-soft) break-all">{c.type}</div>
       </div>
       <div className="min-w-0">
-        <p className="text-sm">{c.comment ?? <span className="text-black/55">No description.</span>}</p>
+        <p className="text-sm">{c.comment ?? <span className="text-(--zs-soft)">No description.</span>}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           {c.primaryKey && <Tag tone="key">PK</Tag>}
           <Tag>{c.nullable ? 'nullable' : 'not null'}</Tag>
           {c.generated && <Tag>generated</Tag>}
           {c.identity && <Tag>identity</Tag>}
           {c.default && (
-            <span className="text-xs text-black/55">
-              default <code className="font-mono break-all text-black/70">{c.default}</code>
+            <span className="text-xs text-(--zs-soft)">
+              default <code className="font-mono break-all text-(--zs-soft)">{c.default}</code>
             </span>
           )}
           {c.references && (
-            <span className="text-xs text-black/55">
+            <span className="text-xs text-(--zs-soft)">
               references{' '}
               <TableName id={c.references.table}>{`${c.references.table}.${c.references.column}`}</TableName>
               , on delete {c.references.onDelete}
@@ -193,16 +193,16 @@ function Column({ c }: { c: DictColumn }) {
 
 function Links({ title, links }: { title: string; links: DictLink[] }) {
   return (
-    <div className="rounded-lg border border-black/10 px-4 py-3">
+    <div className={`${CARD} px-4 py-3`}>
       <h3 className="text-sm font-medium">{title}</h3>
       {links.length === 0 ? (
-        <p className="mt-1 text-sm text-black/55">None</p>
+        <p className="mt-1 text-sm text-(--zs-soft)">None</p>
       ) : (
         <ul className="mt-1.5 flex flex-col gap-1 text-sm">
           {links.map((l) => (
             <li key={`${l.table}:${l.columns.join(',')}`} className="min-w-0">
               <TableName id={l.table}>{l.table}</TableName>
-              <span className="text-black/55"> via <code className="font-mono">{l.columns.join(', ')}</code>, on delete {l.onDelete}</span>
+              <span className="text-(--zs-soft)"> via <code className="font-mono">{l.columns.join(', ')}</code>, on delete {l.onDelete}</span>
             </li>
           ))}
         </ul>
@@ -222,35 +222,35 @@ export function TableDetail({ t }: { t: DictTable }) {
   ]
   return (
     <div>
-      <Link href="/admin/database" prefetch={false} className="text-sm text-black/55 hover:underline">Database</Link>
-      <h1 className="mt-2 font-mono text-2xl font-semibold tracking-tight break-all">{t.id}</h1>
-      <p className="mt-2 max-w-3xl text-sm text-black/70">{purpose(t.comment)}</p>
+      <Link href="/admin/database" prefetch={false} className="text-sm text-(--zs-soft) hover:underline">Database</Link>
+      <h1 className="mt-2 font-mono text-2xl font-bold tracking-tight break-all">{t.id}</h1>
+      <p className="mt-2 max-w-3xl text-sm text-(--zs-soft)">{purpose(t.comment)}</p>
       <ul className="mt-3 flex flex-wrap gap-2">
         {facts.map((f) => <li key={f} className={chip}>{f}</li>)}
       </ul>
 
-      <h2 className="mt-8 mb-3 text-base font-semibold">Columns</h2>
-      <ul className="divide-y divide-black/5 rounded-lg border border-black/10">
+      <h2 className="mt-8 mb-3 text-base font-bold">Columns</h2>
+      <ul className={`divide-y divide-(--zs-line) ${CARD}`}>
         {t.columns.map((c) => <Column key={c.name} c={c} />)}
       </ul>
 
-      <h2 className="mt-8 mb-3 text-base font-semibold">Foreign keys</h2>
+      <h2 className="mt-8 mb-3 text-base font-bold">Foreign keys</h2>
       <div className="grid gap-3 lg:grid-cols-2">
         <Links title="References" links={t.references} />
         <Links title="Referenced by" links={t.referencedBy} />
       </div>
 
-      <h2 className="mt-8 mb-3 text-base font-semibold">Indexes</h2>
-      <ul className="divide-y divide-black/5 rounded-lg border border-black/10">
+      <h2 className="mt-8 mb-3 text-base font-bold">Indexes</h2>
+      <ul className={`divide-y divide-(--zs-line) ${CARD}`}>
         {t.indexes.map((i) => (
           <li key={i.name} className="px-4 py-2.5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="font-mono text-sm break-all">{i.name}</span>
-              <span className="text-xs text-black/55 tabular-nums">
+              <span className="text-xs text-(--zs-soft) tabular-nums">
                 {/pgroonga/i.test(i.definition) ? 'stored outside Postgres' : formatBytes(i.bytes)}
               </span>
             </div>
-            <code className="mt-0.5 block font-mono text-xs break-all text-black/55">{i.definition}</code>
+            <code className="mt-0.5 block font-mono text-xs break-all text-(--zs-soft)">{i.definition}</code>
           </li>
         ))}
       </ul>

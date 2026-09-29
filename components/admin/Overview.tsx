@@ -3,7 +3,7 @@ import { formatBytes, rowsOf, type Metrics } from '@/lib/admin/metrics'
 import type { AlarmStatus, BackupStatus } from '@/lib/admin/aws'
 import type { Probe } from '@/lib/admin/architecture'
 import { LANGUAGES } from '@/lib/languages'
-import { Figure, Status, ago, num, type Tone } from '@/components/admin/Page'
+import { CARD, Figure, Status, ago, num, type Tone } from '@/components/admin/Page'
 
 /** infra/terraform/variables.tf `root_volume_gb`. */
 export const VOLUME_BYTES = 30 * 1024 ** 3
@@ -68,9 +68,9 @@ export function SystemStrip({ checks }: { checks: SystemCheck[] }) {
   return (
     <ul className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
       {checks.map((c) => (
-        <li key={c.label} className="min-w-0 rounded-lg border border-black/10 px-3 py-2">
-          <div className="text-[11px] font-semibold tracking-wide text-black/55 uppercase">{c.label}</div>
-          <div className="mt-0.5 text-sm"><Status tone={c.tone}><span className="text-black/75">{c.text}</span></Status></div>
+        <li key={c.label} className={`min-w-0 ${CARD} px-3 py-2`}>
+          <div className="text-[11px] font-semibold tracking-wide text-(--zs-soft) uppercase">{c.label}</div>
+          <div className="mt-0.5 text-sm"><Status tone={c.tone}><span className="text-(--zs-soft)">{c.text}</span></Status></div>
         </li>
       ))}
     </ul>

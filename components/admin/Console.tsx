@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { z } from '@/lib/zod'
 import { postAdmin } from '@/lib/admin/browser'
 import { formatBytes } from '@/lib/admin/metrics'
-import { clock, num, when } from '@/components/admin/Page'
+import { CARD, clock, num, when, segment, SEGMENTS, PRIMARY } from '@/components/admin/Page'
 import { GuardDialog } from '@/components/admin/GuardDialog'
 
 const INSTANCE_NAME = 'zhesen-supabase'
@@ -17,27 +17,24 @@ const runSchema = z.object({
 })
 type Run = z.infer<typeof runSchema>
 
-const tab = (on: boolean) => `rounded-md px-3 py-1 text-sm ${on ? 'bg-black text-white' : 'text-black/65 hover:bg-black/[0.05]'}`
-const button = 'rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40'
-
 function Output({ run, at }: { run: Run; at: Date }) {
   const ok = run.exitCode === 0
   const rows = run.table && run.table.length > 0 ? run.table : null
   return (
     <div className="mt-3">
-      <p className={`text-xs tabular-nums ${ok ? 'text-black/55' : 'text-rose-700'}`}>
+      <p className={`text-xs tabular-nums ${ok ? 'text-(--zs-soft)' : 'text-rose-700'}`}>
         {ok ? `Done in ${num(Math.round(run.ms / 100) / 10)} s` : `Failed · exit ${run.exitCode}`}
         {rows ? ` · ${num(rows.length - 1)} rows` : ''} · {clock(at)}{run.truncated ? ` · ${LIMIT_NOTE}` : ''}
       </p>
       {rows ? (
-        <div className="mt-1.5 max-h-[28rem] overflow-auto rounded-lg border border-black/10">
+        <div className={`mt-1.5 max-h-[28rem] overflow-auto ${CARD}`}>
           <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-white">
-              <tr className="border-b border-black/10 text-left">
-                {rows[0].map((h, i) => <th key={i} className="px-3 py-1.5 font-mono text-xs font-medium text-black/60">{h}</th>)}
+            <thead className="sticky top-0 bg-(--zs-bg)">
+              <tr className="border-b border-(--edge) text-left">
+                {rows[0].map((h, i) => <th key={i} className="px-3 py-1.5 font-mono text-xs font-medium text-(--zs-soft)">{h}</th>)}
               </tr>
             </thead>
-            <tbody className="divide-y divide-black/5">
+            <tbody className="divide-y divide-(--zs-line)">
               {rows.slice(1).map((r, i) => (
                 <tr key={i}>{r.map((c, j) => <td key={j} className="px-3 py-1 align-top font-mono text-xs whitespace-pre-wrap break-all">{c}</td>)}</tr>
               ))}
@@ -45,7 +42,7 @@ function Output({ run, at }: { run: Run; at: Date }) {
           </table>
         </div>
       ) : run.stdout && (
-        <pre className="mt-1.5 max-h-[28rem] overflow-auto rounded-lg border border-black/10 bg-black/[0.03] p-3 font-mono text-xs whitespace-pre-wrap">{run.stdout}</pre>
+        <pre className="mt-1.5 max-h-[28rem] overflow-auto rounded-lg border border-(--edge) bg-(--tint-2) p-3 font-mono text-xs whitespace-pre-wrap">{run.stdout}</pre>
       )}
       {run.stderr && (
         <pre className="mt-1.5 max-h-60 overflow-auto rounded-lg border border-rose-200 bg-rose-50 p-3 font-mono text-xs whitespace-pre-wrap text-rose-800">{run.stderr}</pre>
@@ -84,11 +81,11 @@ export function SqlConsole() {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3">
-        <div role="radiogroup" aria-label="Mode" className="inline-flex gap-1 rounded-lg border border-black/10 p-1">
-          <button type="button" role="radio" aria-checked={mode === 'read'} className={tab(mode === 'read')} onClick={() => setMode('read')}>Read only</button>
-          <button type="button" role="radio" aria-checked={mode === 'write'} className={tab(mode === 'write')} onClick={() => setMode('write')}>Write</button>
+        <div role="radiogroup" aria-label="Mode" className={SEGMENTS}>
+          <button type="button" role="radio" aria-checked={mode === 'read'} className={segment(mode === 'read')} onClick={() => setMode('read')}>Read only</button>
+          <button type="button" role="radio" aria-checked={mode === 'write'} className={segment(mode === 'write')} onClick={() => setMode('write')}>Write</button>
         </div>
-        <p className={`text-sm ${mode === 'read' ? 'text-black/55' : 'text-amber-800'}`}>
+        <p className={`text-sm ${mode === 'read' ? 'text-(--zs-soft)' : 'text-amber-800'}`}>
           {mode === 'read'
             ? 'Read-only transaction, 30 s timeout. psql \\ commands do not run.'
             : 'Runs exactly as typed on production and cannot be undone; stops after 2 minutes.'}
@@ -100,13 +97,13 @@ export function SqlConsole() {
         rows={6}
         spellCheck={false}
         aria-label="SQL"
-        className="mt-3 w-full rounded-lg border border-black/15 px-3 py-2 font-mono text-sm"
+        className="mt-3 w-full rounded-lg border border-(--edge) bg-(--zs-field) px-3 py-2 font-mono text-sm"
       />
       <div className="mt-2 flex items-center gap-3">
-        <button type="button" className={button} disabled={busy || !sql.trim()} onClick={() => (mode === 'read' ? void runRead() : setGuard({ reauthFirst: false }))}>
+        <button type="button" className={PRIMARY} disabled={busy || !sql.trim()} onClick={() => (mode === 'read' ? void runRead() : setGuard({ reauthFirst: false }))}>
           {busy ? 'Running' : mode === 'read' ? 'Run' : 'Run write'}
         </button>
-        <span className="font-mono text-xs text-black/55">supabase_admin · postgres</span>
+        <span className="font-mono text-xs text-(--zs-soft)">supabase_admin · postgres</span>
       </div>
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
       {run && <Output run={run.run} at={run.at} />}
@@ -126,7 +123,7 @@ export function SqlConsole() {
               ? 'Runs as supabase_admin on production and cannot be undone; Backup now on Infrastructure first is recommended.'
               : 'SQL can read every table, including accounts, so it needs a sign-in within the last 10 minutes.'}
           </p>
-          <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/[0.04] p-2 font-mono text-xs whitespace-pre-wrap">{sql}</pre>
+          <pre className="mt-2 max-h-40 overflow-auto rounded bg-(--tint-2) p-2 font-mono text-xs whitespace-pre-wrap">{sql}</pre>
         </GuardDialog>
       )}
     </div>
@@ -147,17 +144,17 @@ export function ShellConsole() {
         rows={3}
         spellCheck={false}
         aria-label="Shell command"
-        className="w-full rounded-lg border border-black/15 px-3 py-2 font-mono text-sm"
+        className="w-full rounded-lg border border-(--edge) bg-(--zs-field) px-3 py-2 font-mono text-sm"
       />
       <div className="mt-2 flex flex-wrap items-center gap-3">
-        <button type="button" className={button} disabled={!command.trim()} onClick={() => setGuard(true)}>Run</button>
-        <label className="flex items-center gap-2 text-sm text-black/60">
+        <button type="button" className={PRIMARY} disabled={!command.trim()} onClick={() => setGuard(true)}>Run</button>
+        <label className="flex items-center gap-2 text-sm text-(--zs-soft)">
           Timeout
           <input type="number" min={5} max={240} value={timeout} onChange={(e) => setTimeoutSeconds(Number(e.target.value))}
-            className="w-20 rounded-lg border border-black/15 px-2 py-1 tabular-nums" />
+            className="w-20 rounded-lg border border-(--edge) bg-(--zs-field) px-2 py-1 tabular-nums" />
           s
         </label>
-        <span className="text-xs text-black/55">root via SSM</span>
+        <span className="text-xs text-(--zs-soft)">root via SSM</span>
       </div>
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
       {run && <Output run={run.run} at={run.at} />}
@@ -171,7 +168,7 @@ export function ShellConsole() {
         onDone={take}
       >
         <p>Runs as root on the production server, writes an audit log and sends an email.</p>
-        <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/[0.04] p-2 font-mono text-xs whitespace-pre-wrap">{command}</pre>
+        <pre className="mt-2 max-h-40 overflow-auto rounded bg-(--tint-2) p-2 font-mono text-xs whitespace-pre-wrap">{command}</pre>
       </GuardDialog>
     </div>
   )
@@ -202,31 +199,31 @@ export function RestorePanel({ dumps }: { dumps: { key: string; at: string; byte
     return () => clearInterval(t)
   }, [db, status?.state])
 
-  if (dumps.length === 0) return <p className="text-sm text-black/60">No dumps in the backup bucket.</p>
+  if (dumps.length === 0) return <p className="text-sm text-(--zs-soft)">No dumps in the backup bucket.</p>
   return (
     <div>
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-sm">
           <span>Dump</span>
-          <select value={key} onChange={(e) => setKey(e.target.value)} className="rounded-lg border border-black/15 px-3 py-2 font-mono text-sm">
+          <select value={key} onChange={(e) => setKey(e.target.value)} className="rounded-lg border border-(--edge) bg-(--zs-field) px-3 py-2 font-mono text-sm">
             {dumps.map((d) => <option key={d.key} value={d.key}>{when(d.at)}, {formatBytes(d.bytes)}</option>)}
           </select>
         </label>
-        <button type="button" className={button} disabled={!key || (status?.state === 'running')} onClick={() => setGuard(true)}>Restore</button>
+        <button type="button" className={PRIMARY} disabled={!key || (status?.state === 'running')} onClick={() => setGuard(true)}>Restore</button>
       </div>
-      <p className="mt-2 text-sm text-black/55">Restores into a new database; the production database is not touched.</p>
+      <p className="mt-2 text-sm text-(--zs-soft)">Restores into a new database; the production database is not touched.</p>
       {error && <p role="alert" className="mt-2 text-sm text-rose-700">{error}</p>}
       {db && (
-        <div role="status" className="mt-3 rounded-lg border border-black/10 px-4 py-3 text-sm">
+        <div role="status" className={`mt-3 ${CARD} px-4 py-3 text-sm`}>
           <div>
             Database <code className="font-mono">{db}</code>:{' '}
             {!status || status.state === 'running' ? 'Restoring · checked every 10 s'
               : status.state === 'done' ? `Done · lex.entries ${num(status.entries ?? 0)} rows${status.warnings ? ` · pg_restore exit ${status.warnings}, see log` : ''}`
                 : status.state === 'failed' ? 'Failed' : 'No log yet'}
           </div>
-          {status?.tail && <pre className="mt-1.5 max-h-48 overflow-auto font-mono text-xs whitespace-pre-wrap text-black/60">{status.tail}</pre>}
+          {status?.tail && <pre className="mt-1.5 max-h-48 overflow-auto font-mono text-xs whitespace-pre-wrap text-(--zs-soft)">{status.tail}</pre>}
           {status?.state === 'done' && (
-            <p className="mt-1.5 text-xs text-black/55">
+            <p className="mt-1.5 text-xs text-(--zs-soft)">
               Read: <code className="font-mono">docker exec supabase-db psql -U supabase_admin -d {db} -c &quot;...&quot;</code>
               <br />
               Drop when done (Write): <code className="font-mono">drop database {db};</code>

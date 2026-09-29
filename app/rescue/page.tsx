@@ -9,9 +9,9 @@ export const metadata = { title: 'Rescue', robots: { index: false, follow: false
 export default async function RescuePage() {
   const unlocked = (await cookies()).has(RESCUE_COOKIE)
   return (
-    <main className="mx-auto w-full max-w-lg px-4 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Rescue</h1>
-      <p className="mt-2 text-sm text-black/60">
+    <main className="mx-auto w-full max-w-lg px-4 py-10 font-ui text-(--zs-ink)">
+      <h1 className="text-[1.75rem] leading-tight font-extrabold tracking-[-0.03em]">Rescue</h1>
+      <p className="mt-2 text-sm text-(--zs-soft)">
         Turns the instance back on when admin cannot open it. Every unlock and start sends an email.
       </p>
       <div className="mt-6">

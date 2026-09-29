@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { NoticeBar, useNotice } from '@/components/ui/Notice'
 import { postAdmin } from '@/lib/admin/browser'
+import { PRIMARY, BUTTON } from '@/components/admin/Page'
 
 /** Close one word page report through app/api/admin/content/route.ts, then re-read the
  *  page. Apply writes the suggestion as the sense's Vietnamese gloss. */
@@ -28,7 +29,7 @@ export function FeedbackActions({ id, canApply }: { id: number; canApply: boolea
           type="button"
           onClick={() => void send('applied')}
           disabled={busy}
-          className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          className={PRIMARY}
         >
           Apply
         </button>
@@ -37,7 +38,7 @@ export function FeedbackActions({ id, canApply }: { id: number; canApply: boolea
         type="button"
         onClick={() => void send('dismissed')}
         disabled={busy}
-        className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-40"
+        className={BUTTON}
       >
         Dismiss
       </button>
