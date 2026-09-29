@@ -154,14 +154,15 @@ PROVIDER_DOWN = re.compile(r'no active credentials|invalid token|token included|
 REQUEST_REFUSED = re.compile(r'context|too long|too many tokens|maximum|safety|blocked|content', re.I)
 # A layer for a word with many senses runs past 16,000 tokens: en:on was cut there.
 MAX_TOKENS = 32000
-# OmniRoute's web-session providers revoke a token past about 6 calls at once, counting the
-# assistant's and enrich.py's, so the one DeepSeek web login takes a single batch call.
 PER_PROVIDER = 4
-PROVIDER_LIMIT = {'omni:ds-web': 1}
-# The members of 9router's `zhesen` combo, which the site's assistant asks first
-# (SSM /zhesen/prod/ai_model): the batch leaves their quota to the readers.
+# The site's assistant asks the `zhesen` combo on 9router, then the one on OmniRoute, so the
+# batch leaves their members' quota to readers. The one DeepSeek web login backs the OmniRoute
+# combo and revokes its token past about 6 calls at once, so the batch never calls it.
+PROVIDER_LIMIT = {'omni:ds-web': 0}
 RESERVED = {'ag/gemini-3.8-flash', 'ag/gemini-3.8-flash-low', 'ag/gpt-oss-120b-medium',
-            'orca/deepseek/deepseek-v4-flash-free', 'kr/glm-5'}
+            'orca/deepseek/deepseek-v4-flash-free', 'kr/glm-5',
+            'antigravity/gemini-3.8-flash-tiered', 'antigravity/gemini-3.7-flash-medium',
+            'openrouter/qwen/qwen3.8-27b:free', 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free'}
 
 
 def usable(name):
