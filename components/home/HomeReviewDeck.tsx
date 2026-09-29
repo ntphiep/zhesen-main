@@ -30,7 +30,8 @@ interface Last { card: ReviewCard; again: boolean; dueAt: number }
  * Today's session on the home page: reveal, then grade yourself. Each grade goes through
  * `gradeForMode('review', ...)` and `gradeWordById`, like every practice mode, and waits for
  * the write before moving on, so a lost write shows here rather than in a count that lies.
- * A card graded Lại comes back at the end carrying the schedule it just earned.
+ * A card graded Lại comes back at the end carrying the schedule it just earned; `onGraded`
+ * says so, so `cards` holds it too when the deck mounts again after a layout switch.
  */
 export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
   cards: ReviewCard[]
@@ -39,7 +40,7 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
   now: number
   /** Saved words in all, to tell an empty notebook from a finished session. */
   total: number
-  onGraded: (id: string, next: SrsState) => void
+  onGraded: (id: string, next: SrsState, back: boolean) => void
 }) {
   const reduced = useReducedMotion()
   const labelId = useId()
@@ -81,8 +82,8 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
       return
     }
     if (!logged.current) { logged.current = true; logDay() }
-    if (next) onGraded(current.id, next)
     const again = g.grade === 'again'
+    if (next) onGraded(current.id, next, again)
     setLast(next ? { card: current, again, dueAt: next.dueAt } : null)
     setReviewed((n) => n + 1)
     const advance = () => {

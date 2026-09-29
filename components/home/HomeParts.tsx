@@ -64,7 +64,16 @@ export function CountUp({ value, ms = 700 }: { value: number | null; ms?: number
   return <span className={h.num}>{reduced ? value : shown}</span>
 }
 
-export function DueTitle({ due }: { due: number | null }) {
+/** How many words the next session hands over; a failed read says so and offers the retry. */
+export function DueTitle({ due, failed, onRetry }: { due: number | null; failed: boolean; onRetry: () => void }) {
+  if (failed) {
+    return (
+      <div role="alert">
+        <h1 className={h.today}>Chưa tải được.</h1>
+        <button type="button" className={`${h.btn} ${h.retry}`} onClick={onRetry}>Thử lại</button>
+      </div>
+    )
+  }
   return <h1 className={h.today}><CountUp value={due} ms={800} /> từ đến hạn ôn hôm nay.</h1>
 }
 

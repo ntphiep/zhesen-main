@@ -1,12 +1,15 @@
 'use client'
-import { useEffect, useSyncExternalStore, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useSyncExternalStore, type ReactNode } from 'react'
 import { homeLayout, sessionMarked, type HomeLayout } from '@/lib/home/homeLayout'
 import { useAccount } from '@/lib/hooks/useAccount'
 import { useHomeData } from '@/lib/hooks/useHomeData'
-import { DeskLayout } from './DeskLayout'
-import { OrbitLayout } from './OrbitLayout'
-import { TodayLayout, type DailyTrio } from './TodayLayout'
+import type { DailyTrio } from './TodayLayout'
 import { newsreader } from './fonts'
+
+// Loaded only where a layout renders: the server draws all three, a visitor's browser none.
+const DeskLayout = lazy(() => import('./DeskLayout').then((m) => ({ default: m.DeskLayout })))
+const TodayLayout = lazy(() => import('./TodayLayout').then((m) => ({ default: m.TodayLayout })))
+const OrbitLayout = lazy(() => import('./OrbitLayout').then((m) => ({ default: m.OrbitLayout })))
 import l from './Landing.module.css'
 import h from './Home.module.css'
 
@@ -42,7 +45,8 @@ export function HomeSwitch({ landing, daily }: { landing: ReactNode; daily: Dail
   const marked = useMarked()
   const { kind } = useAccount()
   const signed = kind === null ? marked : kind === 'permanent'
-  const { view, status, supabase, graded } = useHomeData(hydrated && signed)
+  // The mark only says what the cookie claims; nothing is read until the account is known.
+  const { view, status, supabase, graded, retry } = useHomeData(hydrated && kind === 'permanent')
 
   useEffect(() => {
     if (kind === null) return
@@ -58,14 +62,15 @@ export function HomeSwitch({ landing, daily }: { landing: ReactNode; daily: Dail
   const picker = { value: hydrated ? stored : null, stored: hydrated ? stored : null }
   const failed = status === 'failed'
 
-  function body(key: Panel): ReactNode {
+  function layout(key: HomeLayout): ReactNode {
     switch (key) {
-      case 'landing': return landing
-      case 'desk': return <DeskLayout view={view} failed={failed} picker={picker} />
-      case 'today': return <TodayLayout view={view} failed={failed} picker={picker} daily={daily} supabase={supabase} onGraded={graded} />
-      case 'orbit': return <OrbitLayout view={view} failed={failed} picker={picker} />
+      case 'desk': return <DeskLayout view={view} failed={failed} onRetry={retry} picker={picker} />
+      case 'today': return <TodayLayout view={view} failed={failed} onRetry={retry} picker={picker} daily={daily} supabase={supabase} onGraded={graded} />
+      case 'orbit': return <OrbitLayout view={view} failed={failed} onRetry={retry} picker={picker} />
     }
   }
+  // A boundary per layout, so one still loading holds its own server HTML while hydrating.
+  const body = (key: Panel): ReactNode => (key === 'landing' ? landing : <Suspense>{layout(key)}</Suspense>)
 
   return (
     <main data-home-boot={hydrated ? undefined : ''} data-rendered-home={chosen}>

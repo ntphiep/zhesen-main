@@ -103,7 +103,9 @@ const NO_VOICE: Record<LangCode, string> = {
  * for the language; the Chinese entries carry no recordings at all.
  *
  * A `tone` draws the landing page's labelled pill instead of the bare icon: `pane` on a
- * coloured lane, `chip` on a card.
+ * coloured lane, `chip` on a card. The pill shows `label` and its accessible name adds
+ * `text`, so a row of them says which word each plays. Without a tone, `label` replaces the
+ * name whole, which lets the typing drill keep the word unsaid.
  */
 export function AudioButton({
   text, lang, audioUrl, accent, label, tone,
@@ -134,7 +136,7 @@ export function AudioButton({
     <button
       type="button"
       onClick={onClick}
-      aria-label={noVoice ? NO_VOICE[lang] : (label ?? `Phát âm ${text}`)}
+      aria-label={noVoice ? NO_VOICE[lang] : tone && label ? `${label} ${text}` : (label ?? `Phát âm ${text}`)}
       aria-busy={busy}
       title={noVoice ? NO_VOICE[lang] : undefined}
       className={`inline-flex shrink-0 items-center justify-center rounded-full ${TONES[tone ?? 'icon']} ${busy ? 'opacity-60' : ''} ${noVoice ? 'opacity-40' : ''}`}

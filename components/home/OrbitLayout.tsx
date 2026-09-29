@@ -15,7 +15,7 @@ import h from './Home.module.css'
 
 /** Cities in countries where most people speak the language, far enough apart that two
  *  labels rarely meet. The app stores no place for a word, so the city carries no data:
- *  due words take them in queue order, the rest scatter around them. */
+ *  labelled words take them in queue order, every dot scatters around them. */
 const CITIES: Record<LangCode, LatLon[]> = {
   en: [[-0.13, 51.5], [-74.0, 40.71], [151.2, -33.87], [-118.24, 34.05], [-79.38, 43.65], [174.76, -36.85], [-6.26, 53.35], [-87.63, 41.88], [115.86, -31.95], [-123.1, 49.28]],
   zh: [[116.4, 39.9], [121.56, 25.03], [104.07, 30.67], [103.82, 1.35], [121.47, 31.23], [113.26, 23.13], [108.94, 34.34], [126.53, 45.8], [102.71, 25.04]],
@@ -31,9 +31,35 @@ interface Pin { card: ReviewCard; at: LatLon }
 
 const hash = (n: number) => Math.imul(n + 1, 2654435761) >>> 0
 
+/** Every saved word is a dot near a city of its language; the first `PINS` words of the
+ *  session also carry a label. */
+export function notebookMarks(view: Pick<HomeView, 'rows' | 'pending'>): { dots: Dot[]; pins: Pin[] } {
+  const dots: Dot[] = []
+  const pins: Pin[] = []
+  const used: Record<LangCode, number> = { en: 0, zh: 0, es: 0 }
+  for (const card of view.pending.slice(0, PINS)) {
+    const c = CITIES[card.lang]
+    pins.push({ card, at: c[used[card.lang]++ % c.length] })
+  }
+  view.rows.forEach((r, i) => {
+    const k = hash(i)
+    const base = CITIES[r.lang][k % CITIES[r.lang].length]
+    const a = (k % 360) * Math.PI / 180
+    const d = 1.2 + (k % 7) * 0.45
+    dots.push({ lang: r.lang, at: [base[0] + Math.cos(a) * d, base[1] + Math.sin(a) * d * 0.7] })
+  })
+  return { dots, pins }
+}
+
+/** The key under the globe, true to what it draws when the labels run out. */
+export function stageKey(pinned: number, due: number): string {
+  const labels = pinned < due ? `${pinned} trong ${due} từ đến hạn hôm nay có nhãn.` : 'Từ đến hạn hôm nay có nhãn.'
+  return `Mỗi chấm là một từ trong sổ tay. ${labels}`
+}
+
 /** "Quả cầu của tôi": the landing page's globe holding the reader's notebook. Every saved
- *  word is a dot in a country of its language; the words due today carry their headword. */
-export function OrbitLayout({ view, failed, picker }: { view: HomeView | null; failed: boolean; picker: PickerState }) {
+ *  word is a dot in a country of its language; the first words due today carry their headword. */
+export function OrbitLayout({ view, failed, onRetry, picker }: { view: HomeView | null; failed: boolean; onRetry: () => void; picker: PickerState }) {
   const lookup = useHomeLookup()
   const reduced = useReducedMotion()
   const [open, setOpen] = useState<LangCode | null>(null)
@@ -42,25 +68,7 @@ export function OrbitLayout({ view, failed, picker }: { view: HomeView | null; f
   const pinEls = useRef(new Map<string, HTMLAnchorElement>())
   const { globe } = useGlobe(canvas, { center: [120, 25], spin: 4 })
 
-  const { dots, pins } = useMemo(() => {
-    const dots: Dot[] = []
-    const pins: Pin[] = []
-    if (!view) return { dots, pins }
-    const used: Record<LangCode, number> = { en: 0, zh: 0, es: 0 }
-    for (const card of view.pending.slice(0, PINS)) {
-      const c = CITIES[card.lang]
-      pins.push({ card, at: c[used[card.lang]++ % c.length] })
-    }
-    view.rows.forEach((r, i) => {
-      if (Date.parse(r.srsDueAt) <= view.now) return
-      const k = hash(i)
-      const base = CITIES[r.lang][k % CITIES[r.lang].length]
-      const a = (k % 360) * Math.PI / 180
-      const d = 1.2 + (k % 7) * 0.45
-      dots.push({ lang: r.lang, at: [base[0] + Math.cos(a) * d, base[1] + Math.sin(a) * d * 0.7] })
-    })
-    return { dots, pins }
-  }, [view])
+  const { dots, pins } = useMemo(() => (view ? notebookMarks(view) : { dots: [], pins: [] }), [view])
 
   const state = useRef({ dots, pins, open })
   useEffect(() => { state.current = { dots, pins, open }; globe?.kick(); globe?.draw() }, [dots, pins, open, globe])
@@ -98,6 +106,8 @@ export function OrbitLayout({ view, failed, picker }: { view: HomeView | null; f
         const hide = s.alpha < PIN_EDGE || (only !== null && p.card.lang !== only)
         if (hide) el.dataset.off = ''
         else delete el.dataset.off
+        // A pin behind the globe is out of sight, so out of the tab order and the tree too.
+        el.inert = hide
         el.style.opacity = hide ? '' : Math.min(1, (s.alpha - PIN_EDGE) * 2.5).toFixed(2)
         el.style.transform = `translate(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px) translate(-50%, calc(-100% - 8px))`
       }
@@ -129,13 +139,12 @@ export function OrbitLayout({ view, failed, picker }: { view: HomeView | null; f
       <HomeBar now={view?.now ?? null} picker={picker} />
       <section className={`${h.wrap} ${h.mine}`} aria-label="Hôm nay">
         <div>
-          <DueTitle due={view?.due ?? null} />
+          <DueTitle due={view?.due ?? null} failed={failed} onRetry={onRetry} />
           <div className={h.sub}>
             <Link className={h.btn} href="/practice/review" prefetch={false}>Ôn ngay</Link>
             {view && <span>Sổ tay có {view.total} từ, {view.learned} từ đã thuộc.</span>}
           </div>
           <LookupBox lookup={lookup} placeholder="giấc mơ" />
-          {failed && <p className={h.fail}>Chưa tải được sổ tay. Tải lại trang.</p>}
           {view && <Languages view={view} open={open} onToggle={toggle} />}
         </div>
         <div className={h.globeCol}>
@@ -149,6 +158,7 @@ export function OrbitLayout({ view, failed, picker }: { view: HomeView | null; f
                   className={h.dpin}
                   data-l={p.card.lang}
                   data-off=""
+                  inert
                   href={p.card.entryId ? entryPath(p.card.entryId) : '/wordlist'}
                   prefetch={false}
                 >
@@ -168,7 +178,7 @@ export function OrbitLayout({ view, failed, picker }: { view: HomeView | null; f
               {stopped ? PLAY : PAUSE}
             </button>
           </div>
-          <p className={h.stageKey}><i />Mỗi chấm là một từ trong sổ tay. Từ đến hạn hôm nay có nhãn.</p>
+          <p className={h.stageKey}><i />{stageKey(pins.length, view?.pending.length ?? 0)}</p>
         </div>
       </section>
 

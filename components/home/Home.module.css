@@ -21,7 +21,7 @@
 
 .today { margin: 0.35rem 0 0; font-size: var(--s5); line-height: 1.05; font-weight: 800; letter-spacing: -0.035em; color: var(--zs-ink); text-wrap: balance; }
 .num { display: inline-block; min-width: 0.6em; font-variant-numeric: tabular-nums; }
-.num[data-wait] { width: 1.2em; height: 0.8em; border-radius: 10px; background: var(--zs-chip); vertical-align: -0.02em; animation: wait 1.2s var(--ease-std) infinite alternate; }
+.num[data-wait] { width: 1.2em; height: 0.8em; border-radius: 10px; background: var(--zs-chip); vertical-align: -0.02em; animation: wait 1.2s var(--ease-std) 4 alternate; }
 @keyframes wait { from { opacity: 0.45; } }
 .sub { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; margin: 1rem 0 0; min-height: 2.75rem; font-size: 1.0625rem; color: var(--zs-soft); }
 .btn { display: inline-flex; flex: none; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0 1.2rem; border: 0; border-radius: 999px; background: var(--zs-btn); color: var(--zs-btn-ink); font-weight: 700; text-decoration: none; cursor: pointer; transition: background-color 150ms var(--ease-std); }
@@ -33,6 +33,7 @@
 .empty { margin: 0.7rem 0 0; font-size: 0.9375rem; color: var(--zs-soft); }
 .sec { margin-top: 3rem; }
 .fail { margin: 1rem 0 0; font-size: 0.9375rem; font-weight: 600; color: var(--zs-pen); }
+.retry { margin-top: 1rem; }
 
 .hw { font-family: var(--latin); font-weight: 500; letter-spacing: -0.01em; }
 .hw[data-l="es"] { font-style: italic; }
@@ -208,11 +209,12 @@ a.card:hover { transform: translateY(-3px) rotate(-0.4deg); }
 .weeks .mo { grid-row: 1; font-size: 0.6875rem; font-weight: 700; color: var(--zs-soft); white-space: nowrap; min-width: 0; overflow: visible; }
 .weeks .wl { grid-column: 1; display: flex; align-items: center; font-size: 0.6875rem; font-weight: 600; color: var(--zs-soft); }
 .weeks i { display: block; aspect-ratio: 1; max-height: 1.6rem; border-radius: 4px; background: var(--tint-3); }
-.weeks i[data-on] { background: var(--sea-300); }
+.weeks i[data-on] { background: var(--sea-600); }
 :global(:root[data-theme="dark"]) .weeks i[data-on] { background: var(--sea-500); }
-.weeks i[data-now] { box-shadow: 0 0 0 2px var(--sea-600); }
+.weeks i[data-now] { box-shadow: 0 0 0 2px var(--sea-700); }
 :global(:root[data-theme="dark"]) .weeks i[data-now] { box-shadow: 0 0 0 2px var(--sea-200); }
-.weeks i[data-now][data-on] { background: var(--sea-600); }
+.weeks i[data-now][data-on] { background: var(--sea-700); }
+:global(:root[data-theme="dark"]) .weeks i[data-now][data-on] { background: var(--sea-300); }
 .weeks i[data-fut] { background: transparent; }
 .weeks[data-fill] i[data-on] { animation: cellFill 420ms var(--ease-spring) both; }
 @keyframes cellFill { from { opacity: 0; transform: scale(0.4); } }
@@ -221,7 +223,8 @@ a.card:hover { transform: translateY(-3px) rotate(-0.4deg); }
 .calkey { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.8rem 0 0; font-size: 0.75rem; color: var(--zs-soft); }
 .calkey i { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 3px; background: var(--tint-3); }
 .calkey i + i, .calkey span + i { margin-left: 0.6rem; }
-.calkey i[data-on] { background: var(--sea-300); }
+.calkey i[data-on] { background: var(--sea-600); }
+:global(:root[data-theme="dark"]) .calkey i[data-on] { background: var(--sea-500); }
 .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.8rem; }
 .fact { padding: 0.8rem 0.9rem; border-radius: 14px; background: var(--tint-2); }
 .fact b { display: block; font-size: var(--s4); line-height: 1; font-weight: 800; letter-spacing: -0.03em; color: var(--zs-ink); font-variant-numeric: tabular-nums; }
@@ -268,6 +271,7 @@ a.card:hover { transform: translateY(-3px) rotate(-0.4deg); }
 .lrow .nm { font-weight: 700; }
 .lrow .ct { font-size: 0.875rem; color: var(--zs-soft); }
 .lrow .due { justify-self: end; font-size: 0.875rem; font-weight: 700; color: var(--zs-pen); white-space: nowrap; }
+.lrow[data-open] .due { color: var(--zs-ink); }
 .meter { grid-column: 2 / 4; display: flex; height: 6px; border-radius: 9px; overflow: hidden; background: var(--zs-bg); }
 .meter i { display: block; height: 100%; transform-origin: left; }
 .meter .k { background: var(--c-l); }

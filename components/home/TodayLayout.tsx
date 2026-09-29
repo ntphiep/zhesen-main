@@ -24,13 +24,14 @@ export type DailyTrio = Record<LangCode, DictEntryPreview | null>
 /** "Ôn ngay": the session starts on the page. Beside the lookup box and today's word, the
  *  first due word is already on screen; below, the days studied, the streak and the words
  *  forgotten most often. */
-export function TodayLayout({ view, failed, picker, daily, supabase, onGraded }: {
+export function TodayLayout({ view, failed, onRetry, picker, daily, supabase, onGraded }: {
   view: HomeView | null
   failed: boolean
+  onRetry: () => void
   picker: PickerState
   daily: DailyTrio | null
   supabase: SupabaseClient | null
-  onGraded: (id: string, next: SrsState) => void
+  onGraded: (id: string, next: SrsState, back: boolean) => void
 }) {
   const lookup = useHomeLookup()
   const wodId = useId()
@@ -41,7 +42,7 @@ export function TodayLayout({ view, failed, picker, daily, supabase, onGraded }:
       <HomeBar now={view?.now ?? null} picker={picker} />
       <div className={`${h.wrap} ${h.log8}`}>
         <section aria-label="Tra từ">
-          <DueTitle due={view?.due ?? null} />
+          <DueTitle due={view?.due ?? null} failed={failed} onRetry={onRetry} />
           <LookupBox lookup={lookup} placeholder="giấc mơ" />
           {daily && (
             <div className={h.wod} role="group" aria-labelledby={wodId}>
@@ -74,7 +75,7 @@ export function TodayLayout({ view, failed, picker, daily, supabase, onGraded }:
             <div className={h.lblRow}><p className={h.lbl}>Phiên ôn hôm nay</p></div>
             <div className={h.slot}>
               <div className={`${h.rc} ${h.done}`}>
-                {failed ? <p className={h.fail}>Chưa tải được sổ tay. Tải lại trang.</p> : <p className={h.empty}>&nbsp;</p>}
+                <p className={h.empty}>&nbsp;</p>
               </div>
             </div>
           </section>

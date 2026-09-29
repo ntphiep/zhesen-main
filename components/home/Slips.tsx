@@ -52,7 +52,7 @@ export function Slips({ slips }: { slips: Record<SlipKind, Slip[]> }) {
               </div>
               <p>{x.why}</p>
               <div className={s.cardFoot}>
-                {kind === 'sound' ? <AudioButton text={x.right} lang="en" label={`Nghe ${x.right}`} tone="chip" /> : <span />}
+                {kind === 'sound' ? <AudioButton text={x.right} lang="en" label="Nghe" tone="chip" /> : <span />}
                 <Link href={x.href} prefetch={false}>{x.linkText}</Link>
               </div>
             </article>

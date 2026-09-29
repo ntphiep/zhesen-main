@@ -14,7 +14,7 @@ const DAY_WORDS = 7
 
 /** "Bàn học", the default: how many words the next session hands over, the lookup beside
  *  it, the session's cards, the reviews falling due this week and the newest saved words. */
-export function DeskLayout({ view, failed, picker }: { view: HomeView | null; failed: boolean; picker: PickerState }) {
+export function DeskLayout({ view, failed, onRetry, picker }: { view: HomeView | null; failed: boolean; onRetry: () => void; picker: PickerState }) {
   const lookup = useHomeLookup()
   const trayId = useId()
   const savedId = useId()
@@ -27,7 +27,7 @@ export function DeskLayout({ view, failed, picker }: { view: HomeView | null; fa
       <HomeBar now={view?.now ?? null} picker={picker} />
       <section className={`${h.wrap} ${h.top6}`} aria-label="Hôm nay">
         <div>
-          <DueTitle due={view?.due ?? null} />
+          <DueTitle due={view?.due ?? null} failed={failed} onRetry={onRetry} />
           <div className={h.sub}>
             <Link className={h.btn} href="/practice/review" prefetch={false}>Ôn ngay</Link>
             {split && <span>{split}</span>}
@@ -47,7 +47,6 @@ export function DeskLayout({ view, failed, picker }: { view: HomeView | null; fa
             <p className={h.lbl} id={trayId}>Các từ sẽ ra trong phiên ôn</p>
             <Link href="/wordlist" prefetch={false}>Mở sổ tay</Link>
           </div>
-          {failed && <p className={h.fail}>Chưa tải được sổ tay. Tải lại trang.</p>}
           {view && (view.pending.length ? (
             <ol className={h.cards} data-deal="">
               {view.pending.slice(0, CARDS).map((c, i) => {

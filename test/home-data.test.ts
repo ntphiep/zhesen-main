@@ -73,6 +73,43 @@ describe('summarize', () => {
     expect(d.progress.en).toEqual({ total: 2, learned: 0, learning: 1, unseen: 1 })
   })
 
+  it('keeps a word graded Lại in the session, last, with the schedule it earned', () => {
+    const soon = state('new-en', { reps: 1, scheduledDays: 0, dueAt: now + 10 * 60_000 })
+    const v = summarize(loaded(), new Map([['new-en', soon]]), ['new-en'])
+    expect(v.pending.map((c) => c.id)).toEqual(['ripe-zh', 'new-en'])
+    expect(v.pending[1].state).toBe(soon)
+    // Still due today, so the count the next session hands over does not drop.
+    expect(v.due).toBe(2)
+    expect(v.forecast[0].count).toBe(2)
+  })
+
+  it('puts the words graded Lại back in the order they were last graded', () => {
+    const d = loaded()
+    const later = (id: string) => state(id, { reps: 1, dueAt: now + 60_000 })
+    const v = summarize(d, new Map([['new-en', later('new-en')], ['ripe-zh', later('ripe-zh')]]), ['ripe-zh', 'new-en'])
+    expect(v.pending.map((c) => c.id)).toEqual(['ripe-zh', 'new-en'])
+  })
+
+  it('drops due only for grades that leave today', () => {
+    const v = summarize(loaded(), new Map([
+      ['new-en', state('new-en', { reps: 1, dueAt: now + 10 * 60_000 })],
+      ['ripe-zh', state('ripe-zh', { reps: 4, scheduledDays: 25, dueAt: now + 25 * DAY })],
+    ]))
+    expect(v.due).toBe(1)
+  })
+
+  it('counts a word reviewed earlier today once in today’s reviews', () => {
+    const d = loaded()
+    // Graded at 09:00 on another page, before the home page loaded.
+    d.queue[0] = card('new-en', 'en', { reps: 1, scheduledDays: 0, dueAt: now - 60_000, lastReviewedAt: now - 3600_000 })
+    d.stats.reviewedToday = 1
+    const v = summarize(d, new Map([
+      ['new-en', state('new-en', { reps: 2, scheduledDays: 1, dueAt: now + DAY })],
+      ['ripe-zh', state('ripe-zh', { reps: 4, scheduledDays: 25, dueAt: now + 25 * DAY })],
+    ]))
+    expect(v.reviewedToday).toBe(2)
+  })
+
   it('makes today a study day on the first grade, so the streak grows by one', () => {
     const v = summarize(loaded(), new Map([['new-en', state('new-en', { reps: 1, scheduledDays: 1, dueAt: now + DAY })]]))
     expect(v.streak).toBe(2)

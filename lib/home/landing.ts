@@ -39,6 +39,8 @@ export interface TakeMap {
   headword: string
   href: string
   senses: TakeSense[]
+  /** Every sense the word page lists, read with it, so the heading cannot drift. */
+  senseCount: number
   /** The minor senses, one label each. */
   tail: string[]
 }
@@ -70,7 +72,7 @@ export function takeMap(layer: LearnerLayer, detail: Pick<DictEntryDetail, 'head
   const tail = [...new Set(minorSenses(layer, detail.senses).other
     .filter((m) => !UNSHOWN_REGISTERS.has(m.register ?? '') && m.viTerms.length)
     .map((m) => m.viTerms.join(', ')))]
-  return { headword: detail.headword, href: entryPath(layer.entryId), senses, tail }
+  return { headword: detail.headword, href: entryPath(layer.entryId), senses, senseCount: detail.senses.length, tail }
 }
 
 /** Today's word and, for the other two languages, its first equivalent: the signed-in

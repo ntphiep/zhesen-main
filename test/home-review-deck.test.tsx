@@ -51,14 +51,16 @@ describe('HomeReviewDeck', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Dễ' }))
     expect(m.gradeWordById).toHaveBeenCalledWith(supabase, 'dog', 'easy')
     await waitFor(() => expect(onTop()).toBe('cat'))
-    expect(onGraded).toHaveBeenCalledWith('dog', expect.objectContaining({ reps: 1, dueAt: NOW + 8 * DAY }))
+    expect(onGraded).toHaveBeenCalledWith('dog', expect.objectContaining({ reps: 1, dueAt: NOW + 8 * DAY }), false)
   })
 
   it('sends a word graded Lại to the end of the session', async () => {
-    renderDeck([card('dog'), card('cat')])
+    const onGraded = renderDeck([card('dog'), card('cat')])
     await reveal()
     await userEvent.click(screen.getByRole('button', { name: 'Lại' }))
     expect(m.gradeWordById).toHaveBeenCalledWith(supabase, 'dog', 'again')
+    // Said to the page too, so the deck holds it again after a layout switch remounts it.
+    await waitFor(() => expect(onGraded).toHaveBeenCalledWith('dog', expect.objectContaining({ reps: 1 }), true))
     await waitFor(() => expect(onTop()).toBe('cat'))
     await reveal()
     await userEvent.click(screen.getByRole('button', { name: 'Tốt' }))

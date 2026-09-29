@@ -83,6 +83,12 @@ describe('AudioButton', () => {
     expect(getVoices).toHaveBeenCalledTimes(afterTwoProbes)
   })
 
+  it('names a labelled pill after its word, so three in a row are told apart', () => {
+    render(<><AudioButton text="dog" lang="en" label="Nghe" tone="pane" /><AudioButton text="perro" lang="es" label="Nghe" tone="pane" /></>)
+    expect(screen.getByRole('button', { name: 'Nghe dog' })).toHaveTextContent('Nghe')
+    expect(screen.getByRole('button', { name: 'Nghe perro' })).toBeInTheDocument()
+  })
+
   it('skips an undecodable .ogg file and uses speech synthesis', async () => {
     vi.stubGlobal('Audio', vi.fn(function () { return { play: vi.fn(() => Promise.resolve()), canPlayType: () => '' } }))
     render(<AudioButton text="dog" lang="en" audioUrl="https://x/En-dog.ogg" />)

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { HOME_BOOT_SCRIPT, hasSessionCookie, homeLayout, parseHomeLayout } from '@/lib/home/homeLayout'
+import { HOME_BOOT_SCRIPT, homeLayout, parseHomeLayout } from '@/lib/home/homeLayout'
 import { SUPABASE_AUTH_COOKIE } from '@/lib/supabase/env'
 
 const html = document.documentElement
@@ -10,6 +10,14 @@ const clearCookies = () => {
   }
 }
 const boot = () => new Function(HOME_BOOT_SCRIPT)()
+
+const HOUR = 3600
+const nowSec = () => Math.floor(Date.now() / 1000)
+/** What @supabase/ssr 0.12 writes: auth-js's session JSON as `base64-` plus base64url. */
+const session = (user: { email: string; is_anonymous: boolean }, expiresAt = nowSec() + HOUR) =>
+  `base64-${Buffer.from(JSON.stringify({ access_token: 'a', refresh_token: 'r', expires_at: expiresAt, user: { id: 'u', ...user } })).toString('base64url')}`
+const PERMANENT = session({ email: 'a@b.com', is_anonymous: false })
+const ANONYMOUS = session({ email: '', is_anonymous: true })
 
 beforeEach(() => {
   localStorage.clear()
@@ -37,20 +45,44 @@ describe('the home layout choice', () => {
 })
 
 describe('the session cookie', () => {
-  it('is found whole or as its first chunk, and not under a longer name', () => {
-    expect(hasSessionCookie(`a=1; ${SUPABASE_AUTH_COOKIE}=base64-x`)).toBe(true)
-    expect(hasSessionCookie(`${SUPABASE_AUTH_COOKIE}.0=base64-x; ${SUPABASE_AUTH_COOKIE}.1=y`)).toBe(true)
-    expect(hasSessionCookie(`x${SUPABASE_AUTH_COOKIE}=1`)).toBe(false)
-    expect(hasSessionCookie('zhesen_theme=dark')).toBe(false)
+  it('is read whole, and not under a longer name', () => {
+    document.cookie = `x${SUPABASE_AUTH_COOKIE}=${PERMANENT}; path=/`
+    boot()
+    expect(html).not.toHaveAttribute('data-session')
+    document.cookie = `${SUPABASE_AUTH_COOKIE}=${PERMANENT}; path=/`
+    boot()
+    expect(html).toHaveAttribute('data-session')
   })
 })
 
 describe('HOME_BOOT_SCRIPT', () => {
   it('marks a session from the chunked cookie, with the stored layout', () => {
-    document.cookie = `${SUPABASE_AUTH_COOKIE}.0=base64-abc; path=/`
+    const half = Math.ceil(PERMANENT.length / 2)
+    document.cookie = `${SUPABASE_AUTH_COOKIE}.0=${PERMANENT.slice(0, half)}; path=/`
+    document.cookie = `${SUPABASE_AUTH_COOKIE}.1=${PERMANENT.slice(half)}; path=/`
     localStorage.setItem('zhesen:home-layout', 'today')
     boot()
     expect(html).toHaveAttribute('data-session')
+    expect(html.dataset.homeLayout).toBe('today')
+  })
+
+  it('never marks an anonymous account, whose home is the landing page', () => {
+    document.cookie = `${SUPABASE_AUTH_COOKIE}=${ANONYMOUS}; path=/`
+    boot()
+    expect(html).not.toHaveAttribute('data-session')
+  })
+
+  it('never marks an expired session, which may not come back', () => {
+    document.cookie = `${SUPABASE_AUTH_COOKIE}=${session({ email: 'a@b.com', is_anonymous: false }, nowSec() - 1)}; path=/`
+    boot()
+    expect(html).not.toHaveAttribute('data-session')
+  })
+
+  it('reads a cookie it cannot decode as no session, and still sets the layout', () => {
+    document.cookie = `${SUPABASE_AUTH_COOKIE}.0=base64-abc; path=/`
+    localStorage.setItem('zhesen:home-layout', 'today')
+    boot()
+    expect(html).not.toHaveAttribute('data-session')
     expect(html.dataset.homeLayout).toBe('today')
   })
 
@@ -62,7 +94,7 @@ describe('HOME_BOOT_SCRIPT', () => {
   })
 
   it('leaves the default layout unmarked, so the CSS falls back to the desk', () => {
-    document.cookie = `${SUPABASE_AUTH_COOKIE}=base64-abc; path=/`
+    document.cookie = `${SUPABASE_AUTH_COOKIE}=${PERMANENT}; path=/`
     localStorage.setItem('zhesen:home-layout', 'desk')
     boot()
     expect(html).toHaveAttribute('data-session')

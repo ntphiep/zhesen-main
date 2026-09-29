@@ -44,7 +44,7 @@ export function Landing({ example, facts, take, slips }: {
       {take && (
         <section className={s.senses} aria-labelledby="senses-title">
           <div className={s.wrap}>
-            <h2 id="senses-title" className={s.h2} data-reveal="">Từ {take.headword} có hàng chục nghĩa. Zhesen đưa những nghĩa hay gặp lên trước.</h2>
+            <h2 id="senses-title" className={s.h2} data-reveal="">Từ {take.headword} có {take.senseCount} nghĩa. Zhesen đưa những nghĩa hay gặp lên trước.</h2>
             <p className={s.lede} data-reveal="" data-i="1">
               Mỗi nghĩa chính có cụm từ hay đi kèm, câu ví dụ và từ tương đương trong tiếng Trung, tiếng Tây Ban Nha. Những nghĩa ít gặp vẫn nằm ở trang từ, xếp riêng bên dưới.
             </p>
@@ -63,7 +63,7 @@ export function Landing({ example, facts, take, slips }: {
       <section className={s.slips} aria-labelledby="slips-title">
         <div className={s.wrap}>
           <h2 id="slips-title" className={s.h2} data-reveal="">Người Việt hay đọc think thành “tink”.</h2>
-          <p className={s.lede} data-reveal="" data-i="1">Mỗi âm, mỗi cụm từ và mỗi điểm ngữ pháp đều có ghi chú chỗ người Việt hay sai, kèm cách sửa.</p>
+          <p className={s.lede} data-reveal="" data-i="1">Phần lý thuyết ghi lại những chỗ người Việt hay sai, kèm cách sửa.</p>
           <Slips slips={slips} />
         </div>
       </section>

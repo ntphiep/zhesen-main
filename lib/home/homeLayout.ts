@@ -2,7 +2,7 @@ import { SUPABASE_AUTH_COOKIE } from '@/lib/supabase/env'
 
 /**
  * Which of the signed-in home's layouts the reader picked, remembered per browser, and
- * whether this browser carries a session at all. The same external-store shape as
+ * whether this browser holds a permanent account's session. The same external-store shape as
  * `lib/dictionary/wordLayout.ts`, for the same reasons: `/` is cached for everyone, so the
  * server draws every panel and `HOME_BOOT_SCRIPT` marks <html> before the first paint
  * (components/home/HomeSwitch.tsx).
@@ -24,14 +24,6 @@ const isHomeLayout = (raw: string | null): raw is HomeLayout => HOME_LAYOUTS.som
 /** A stored name the page no longer draws would show no panel at all, so it reads as the default. */
 export function parseHomeLayout(raw: string | null): HomeLayout {
   return isHomeLayout(raw) ? raw : DEFAULT_HOME_LAYOUT
-}
-
-/** `@supabase/ssr` writes the session whole, or in chunks from `.0` once it outgrows one
- *  cookie. It sets `httpOnly: false`, so a script can see either. */
-const SESSION_COOKIE = new RegExp(`(?:^|;\\s*)${SUPABASE_AUTH_COOKIE}(?:\\.0)?=`)
-
-export function hasSessionCookie(cookie: string): boolean {
-  return SESSION_COOKIE.test(cookie)
 }
 
 let current: HomeLayout | null = null
@@ -74,18 +66,30 @@ export const homeLayout = {
   },
 }
 
-/** Whether <html> says this browser holds a session: the boot script's guess from the
+/** Whether <html> says this browser holds a permanent session: the boot script's guess from the
  *  cookie, corrected by HomeSwitch once the account kind is known. */
 export function sessionMarked(): boolean {
   return document.documentElement.hasAttribute('data-session')
 }
 
-/** Runs in <head> before the first paint. Marks <html> with `data-session` when the auth
- *  cookie is present and with the stored layout when it is one the page still draws, which
- *  `app/globals.css` reads to show one panel of `/`. */
+/** Runs in <head> before the first paint. Marks <html> with `data-session` only for an
+ *  unexpired session of a permanent account, so an anonymous or expired one never paints a
+ *  frame of the home, and with the stored layout when it is one the page still draws, which
+ *  `app/globals.css` reads to show one panel of `/`.
+ *
+ *  `@supabase/ssr` 0.12 keeps auth-js's session JSON in the cookie whole, or in chunks `.0`,
+ *  `.1`... joined in order, as `base64-` plus base64url, and sets `httpOnly: false`
+ *  (node_modules/@supabase/ssr/dist/main/cookies.js, utils/chunker.js). Anything it cannot
+ *  read counts as no session. */
 export const HOME_BOOT_SCRIPT =
-  `(function(){try{var d=document.documentElement;` +
-  `if(${SESSION_COOKIE.toString()}.test(document.cookie))d.dataset.session='';` +
-  `var v=localStorage.getItem('${KEY}');` +
+  `(function(){var d=document.documentElement,n=${JSON.stringify(SUPABASE_AUTH_COOKIE)};` +
+  `try{var whole=null,parts=[];document.cookie.split(/;\\s*/).forEach(function(c){` +
+  `var i=c.indexOf('='),k=c.slice(0,i),v=c.slice(i+1),x=k.slice(n.length+1);` +
+  `if(k===n)whole=v;else if(k.indexOf(n+'.')===0&&/^\\d+$/.test(x))parts[+x]=v});` +
+  `var raw=decodeURIComponent(whole!==null?whole:parts.join(''));` +
+  `if(raw.indexOf('base64-')===0)raw=atob(raw.slice(7).replace(/-/g,'+').replace(/_/g,'/'));` +
+  `var s=JSON.parse(raw),u=s&&s.user;` +
+  `if(u&&u.email&&!u.is_anonymous&&s.expires_at*1000>Date.now())d.dataset.session=''}catch(e){}` +
+  `try{var v=localStorage.getItem('${KEY}');` +
   `if(${JSON.stringify(HOME_LAYOUTS.map((l) => l.key).filter((k) => k !== DEFAULT_HOME_LAYOUT))}.indexOf(v)>=0)` +
   `d.dataset.homeLayout=v}catch(e){}})()`

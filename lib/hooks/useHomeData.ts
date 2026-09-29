@@ -39,7 +39,8 @@ export interface HomeView {
   days: ReadonlySet<string>
   rows: StatRow[]
   progress: Record<LangCode, LangProgress>
-  /** The session queue as loaded, less what this visit graded. */
+  /** The session queue as loaded, less what this visit graded, then the words graded Lại
+   *  with their new schedule, in the order they went back. */
   pending: ReviewCard[]
   /** Cards graded on this visit. */
   gradedNow: number
@@ -50,11 +51,27 @@ export interface HomeView {
 
 const asForecast = (c: ReviewCard): ForecastWord => ({ id: c.id, lang: c.lang, headword: c.headword, dueAt: c.state.dueAt })
 
-/** One visit's grades on top of what was loaded. A graded card leaves today's count and
- *  lands on the day its new schedule names; the first grade makes today a study day. */
-export function summarize(d: Loaded, graded: ReadonlyMap<string, SrsState>): HomeView {
+/** One visit's grades on top of what was loaded. A graded card lands on the day its new
+ *  schedule names and leaves today's count only when that day is not today; a word graded
+ *  Lại (`again`, oldest first) stays in the session. Today's reviews count each word once,
+ *  and the first grade makes today a study day. */
+export function summarize(d: Loaded, graded: ReadonlyMap<string, SrsState>, again: readonly string[] = []): HomeView {
   const n = graded.size
-  const days = n ? [...d.days, localDay(d.now)] : d.days
+  const today = localDay(d.now)
+  const days = n ? [...d.days, today] : d.days
+  const cardOf = (id: string) => d.queue.find((c) => c.id === id)
+  let left = 0
+  let fresh = 0
+  for (const [id, next] of graded) {
+    if (localDay(next.dueAt) !== today) left++
+    const was = cardOf(id)?.state.lastReviewedAt
+    if (typeof was !== 'number' || localDay(was) !== today) fresh++
+  }
+  const back = again.flatMap((id) => {
+    const card = cardOf(id)
+    const next = graded.get(id)
+    return card && next ? [{ ...card, state: next }] : []
+  })
   const moved = [...graded.entries()].flatMap(([id, next]) => {
     const card = d.queue.find((c) => c.id === id)
     return card ? [{ ...asForecast(card), dueAt: next.dueAt }] : []
@@ -73,15 +90,15 @@ export function summarize(d: Loaded, graded: ReadonlyMap<string, SrsState>): Hom
   }
   return {
     now: d.now,
-    due: Math.max(0, d.stats.due - n),
+    due: Math.max(0, d.stats.due - left),
     total: d.stats.total,
     learned,
-    reviewedToday: d.stats.reviewedToday + n,
+    reviewedToday: d.stats.reviewedToday + fresh,
     streak: computeStreak(days, d.now),
     days: new Set(days),
     rows: d.rows,
     progress,
-    pending: d.queue.filter((c) => !graded.has(c.id)),
+    pending: [...d.queue.filter((c) => !graded.has(c.id)), ...back],
     gradedNow: n,
     recent: d.recent,
     leeches: d.leeches,
@@ -99,11 +116,16 @@ export function useHomeData(enabled: boolean): {
   view: HomeView | null
   status: 'idle' | 'loading' | 'ready' | 'none' | 'failed'
   supabase: SupabaseClient | null
-  graded: (id: string, next: SrsState) => void
+  /** `back` is true for a word graded Lại, which comes back at the end of the session. */
+  graded: (id: string, next: SrsState, back: boolean) => void
+  /** Reads everything again after a failure. */
+  retry: () => void
 } {
   const [loaded, setLoaded] = useState<{ data: Loaded; supabase: SupabaseClient } | null>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'none' | 'failed'>('idle')
   const [marks, setMarks] = useState<ReadonlyMap<string, SrsState>>(new Map())
+  const [again, setAgain] = useState<readonly string[]>([])
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     if (!enabled) return
@@ -121,6 +143,7 @@ export function useHomeData(enabled: boolean): {
           import('@/lib/wordlist/stats'),
           import('@/lib/wordlist/review'),
         ])
+        if (!live) return
         const now = Date.now()
         const [rows, days, queue, recent, leeches, upcoming] = await Promise.all([
           stats.fetchStatRows(supabase),
@@ -144,12 +167,20 @@ export function useHomeData(enabled: boolean): {
       }
     })()
     return () => { live = false }
-  }, [enabled])
+  }, [enabled, attempt])
 
-  const view = useMemo(() => (loaded ? summarize(loaded.data, marks) : null), [loaded, marks])
-  const graded = useCallback((id: string, next: SrsState) => {
+  const view = useMemo(() => (loaded ? summarize(loaded.data, marks, again) : null), [loaded, marks, again])
+  const graded = useCallback((id: string, next: SrsState, back: boolean) => {
     setMarks((m) => new Map(m).set(id, next))
+    setAgain((a) => {
+      const rest = a.filter((x) => x !== id)
+      return back ? [...rest, id] : rest
+    })
+  }, [])
+  const retry = useCallback(() => {
+    setStatus('loading')
+    setAttempt((n) => n + 1)
   }, [])
 
-  return { view, status, supabase: loaded?.supabase ?? null, graded }
+  return { view, status, supabase: loaded?.supabase ?? null, graded, retry }
 }
