@@ -2,6 +2,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { LinkPending } from '@/components/ui/LinkPending'
+import { PageHead } from '@/components/theory/BlockPage'
+import { Warn } from '@/components/theory/Glyphs'
+import s from '@/components/theory/Theory.module.css'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { theoryBlockPath, vocabularyLevelPath } from '@/lib/theory/path'
 import { signInHref, useAccount } from '@/lib/hooks/useAccount'
@@ -80,83 +83,85 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
     : `+ Thêm cả ${level} vào sổ tay (${total} từ)`
 
   return (
-    <main className="mx-auto max-w-page px-6 py-10">
-      <Link href={theoryBlockPath(language.code, 'vocabulary')} className="text-sm text-black/55 hover:underline">← Từ vựng {language.name}</Link>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <span className="text-xl font-medium text-black/70">{language.nativeName}</span>
-        <h1 className="text-3xl font-bold">{level}</h1>
-        <span className="text-sm text-black/55">{total} từ</span>
-        {pages > 1 && (
-          <label className="ml-auto flex items-center gap-2 text-sm text-black/55">
-            Trang
-            <select
-              value={Math.floor(start / pageSize) + 1}
-              // Not disabled while loading: disabling a focused control drops focus to the page.
-              onChange={(e) => { if (!loadingMore) fetchFrom((Number(e.target.value) - 1) * pageSize, true) }}
-              aria-busy={loadingMore}
-              aria-label="Chuyển tới trang"
-              className="rounded-lg border border-black/15 bg-white px-2 py-1.5 text-sm text-black"
+    <main className={`${s.page} font-ui`} data-l={language.code}>
+      <PageHead
+        language={language}
+        back={{ href: theoryBlockPath(language.code, 'vocabulary'), label: `Từ vựng ${language.name}` }}
+        title={<>{level}<small>{total} từ</small></>}
+      >
+        {levelIsEstimated && (
+          <p className={s.note} data-gap="">
+            Trình độ do Zhesen ước lượng, không theo phân loại CEFR chính thức.
+          </p>
+        )}
+
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          {kind === 'permanent' ? (
+            <button
+              type="button"
+              onClick={handleAddAll}
+              disabled={addAll.kind === 'busy' || addAll.kind === 'done'}
+              className={s.btn}
             >
-              {Array.from({ length: pages }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
-            </select>
-            / {pages}
-          </label>
+              {addAll.kind === 'error' && <Warn />}
+              {addAllLabel}
+            </button>
+          ) : (
+            kind !== null && (
+              <Link
+                href={`${signInHref(kind)}?next=${encodeURIComponent(here)}`}
+                prefetch={false}
+                className={s.ghost}
+              >
+                {`Đăng nhập để thêm cả ${level} vào sổ tay (${total} từ)`}
+                <LinkPending />
+              </Link>
+            )
+          )}
+
+          {pages > 1 && (
+            <label className={s.pager}>
+              Trang
+              <select
+                value={Math.floor(start / pageSize) + 1}
+                // Not disabled while loading: disabling a focused control drops focus to the page.
+                onChange={(e) => { if (!loadingMore) fetchFrom((Number(e.target.value) - 1) * pageSize, true) }}
+                aria-busy={loadingMore}
+                aria-label="Chuyển tới trang"
+                className={s.field}
+              >
+                {Array.from({ length: pages }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
+              </select>
+              / {pages}
+            </label>
+          )}
+        </div>
+      </PageHead>
+
+      <div className={`${s.body} mx-auto max-w-page px-6`}>
+        {/* Keyed by the first row, so a page jump fades the new rows in. */}
+        <div key={start} className={`${s.entries} ${s.rows}`} aria-busy={loadingMore}>
+          {items.map((e) => (
+            <Link key={e.id} href={entryPath(e.id)} className={s.entry}>
+              <span className={s.hw} lang={e.lang}>{e.headword}</span>
+              <Ipa value={e.ipa} lang={e.lang} className={s.pron} />
+              {e.glossVi && <span className={`${s.gloss} min-w-0 truncate`}>{e.glossVi}</span>}
+              <LinkPending />
+            </Link>
+          ))}
+        </div>
+
+        {end < total && (
+          <button
+            type="button"
+            onClick={() => fetchFrom(end, false)}
+            disabled={loadingMore}
+            className={`${s.ghost} mt-6 w-full`}
+          >
+            {loadingMore ? 'Đang tải…' : `Tải thêm (${end}/${total})`}
+          </button>
         )}
       </div>
-
-      {levelIsEstimated && (
-        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Trình độ do Zhesen ước lượng, không theo phân loại CEFR chính thức.
-        </p>
-      )}
-
-      {kind === 'permanent' ? (
-        <button
-          type="button"
-          onClick={handleAddAll}
-          disabled={addAll.kind === 'busy' || addAll.kind === 'done'}
-          className="mt-4 rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
-          {addAllLabel}
-        </button>
-      ) : (
-        kind !== null && (
-          <Link
-            href={`${signInHref(kind)}?next=${encodeURIComponent(here)}`}
-            prefetch={false}
-            className="mt-4 inline-block rounded-lg border border-black/15 px-4 py-2 text-sm font-medium text-black/70 hover:bg-black/5"
-          >
-            {`Đăng nhập để thêm cả ${level} vào sổ tay (${total} từ)`}
-            <LinkPending />
-          </Link>
-        )
-      )}
-
-      <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {items.map((e) => (
-          <Link
-            key={e.id}
-            href={entryPath(e.id)}
-            className="flex min-w-0 items-baseline gap-2 rounded-lg border border-black/10 px-4 py-2 hover:bg-black/5"
-          >
-            <span className="font-medium">{e.headword}</span>
-            <Ipa value={e.ipa} lang={e.lang} className="text-xs text-black/55" />
-            {e.glossVi && <span className="min-w-0 truncate text-sm text-black/55">{e.glossVi}</span>}
-            <LinkPending />
-          </Link>
-        ))}
-      </div>
-
-      {end < total && (
-        <button
-          type="button"
-          onClick={() => fetchFrom(end, false)}
-          disabled={loadingMore}
-          className="mt-6 w-full rounded-lg border border-black/15 px-4 py-2 text-sm text-black/70 hover:bg-black/5 disabled:opacity-50"
-        >
-          {loadingMore ? 'Đang tải…' : `Tải thêm (${end}/${total})`}
-        </button>
-      )}
     </main>
   )
 }

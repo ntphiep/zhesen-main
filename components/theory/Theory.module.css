@@ -210,6 +210,34 @@ a.card:hover .h3 { text-decoration: underline; text-decoration-thickness: 1.5px;
 .blocks .note { margin-top: 0.1rem; }
 .blocks .small { margin-top: 0.3rem; }
 
+/* ---------- Grammar ---------- */
+.level { width: fit-content; margin: 0; padding: 0.3rem 0.9rem; border-radius: 999px; background: var(--zs-btn); color: var(--zs-btn-ink); font-size: 1rem; font-weight: 800; letter-spacing: 0.01em; }
+.pattern { font-family: var(--mono); font-size: 0.875rem; color: var(--zs-soft); }
+.pattern[data-lg] { font-size: 1.1875rem; line-height: 1.5; color: var(--zs-ink); overflow-wrap: anywhere; }
+.callout > .prose { margin-top: 0.5rem; }
+.page .reading { white-space: normal; }
+/* The explanation beside its examples on a wide screen, so both are in view at once. */
+@media (min-width: 1024px) {
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 3.5rem; align-items: start; }
+}
+.split > .sec { margin-top: 0; }
+@media (max-width: 1023px) {
+  .split > .sec { margin-top: 3rem; }
+}
+
+/* ---------- Vocabulary ---------- */
+.chip[data-lg] { min-height: 2.75rem; padding: 0.3rem 1.1rem; font-size: 1rem; font-weight: 800; }
+.note[data-gap] { margin-top: 0.75rem; }
+.pager { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; font-size: 0.875rem; color: var(--zs-soft); }
+.entries { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: 0.5rem; }
+.entry { position: relative; display: flex; align-items: baseline; gap: 0.6rem; min-width: 0; padding: 0.6rem 1rem 0.6rem 1.15rem; border: 1px solid transparent; border-radius: 14px; background: var(--zs-bg); color: var(--zs-ink); text-decoration: none; box-shadow: 0 0 0 1.5px var(--edge); overflow: hidden; transition: box-shadow 150ms var(--ease-std), background-color 150ms var(--ease-std); }
+.entry::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c-l); }
+.entry:hover { background: var(--tint-1); box-shadow: 0 0 0 1.5px var(--sea-400); }
+.entry .hw { flex: none; font-size: 1.1875rem; line-height: 1.3; }
+.entry:hover .hw { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 0.18em; }
+.pron { font-size: 0.8125rem; color: var(--zs-soft); }
+.gloss { font-size: 0.875rem; color: var(--vi); }
+
 /* ---------- Pronunciation ---------- */
 .index { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .index a { display: inline-flex; align-items: center; justify-content: center; min-width: 2.75rem; min-height: 2.75rem; padding: 0 0.5rem; border-radius: 12px; border: 1.5px solid var(--edge); background: var(--zs-bg); color: var(--zs-ink); font-size: 1rem; text-decoration: none; transition: border-color 150ms var(--ease-std), background-color 150ms var(--ease-std), transform 160ms var(--ease-spring); }
@@ -290,7 +318,7 @@ a.card:hover .h3 { text-decoration: underline; text-decoration-thickness: 1.5px;
   .rows { animation: fade 220ms var(--ease-std) backwards; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .crumb svg, .chip, .card, a.card, .btn, .ghost, .field, .next, .next svg, .lang, .lang .open svg, .index a, .option, .bar i, .sheet tbody tr { transition: none; }
+  .crumb svg, .chip, .card, a.card, .btn, .ghost, .field, .next, .next svg, .lang, .lang .open svg, .index a, .option, .bar i, .sheet tbody tr, .entry, .related a { transition: none; }
   a.card:hover, .lang:hover, .index a:hover, .btn:active:not(:disabled), .ghost:active:not(:disabled), .option:active:not(:disabled) { transform: none; }
   .crumb:hover svg, .next:hover svg, .lang:hover .open svg { translate: none; }
 }

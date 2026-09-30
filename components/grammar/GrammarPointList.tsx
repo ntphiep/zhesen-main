@@ -2,49 +2,55 @@ import Link from 'next/link'
 import { grammarPointPath } from '@/lib/grammar/path'
 import { theoryLangPath } from '@/lib/theory/path'
 import { NextBlock } from '@/components/theory/NextBlock'
+import { PageHead } from '@/components/theory/BlockPage'
+import s from '@/components/theory/Theory.module.css'
 import type { GrammarLevelGroup } from '@/lib/grammar/group'
 import type { Language } from '@/lib/languages'
 
 /** `/theory/[lang]/grammar`: grammar points grouped by level, then by category_vi. */
 export function GrammarPointList({ language, levels }: { language: Language; levels: GrammarLevelGroup[] }) {
   return (
-    <main className="mx-auto max-w-page px-6 py-10">
-      <Link href={theoryLangPath(language.code)} className="text-sm text-black/55 hover:underline">← Lý thuyết {language.name}</Link>
-      <div className="mt-3 flex items-center gap-3">
-        <span className="text-xl font-medium text-black/70">{language.nativeName}</span>
-        <h1 className="text-3xl font-bold">Ngữ pháp {language.name}</h1>
-      </div>
+    <main className={`${s.page} font-ui`} data-l={language.code}>
+      <PageHead
+        language={language}
+        back={{ href: theoryLangPath(language.code), label: `Lý thuyết ${language.name}` }}
+        title={`Ngữ pháp ${language.name}`}
+      >
+        {levels.length > 1 && (
+          <nav aria-label="Trình độ" className="mt-5 flex flex-wrap gap-2">
+            {levels.map((lvl) => (
+              <a key={lvl.level} href={`#${encodeURIComponent(lvl.level)}`} className={s.chip}>{lvl.level}</a>
+            ))}
+          </nav>
+        )}
+      </PageHead>
 
-      {levels.length === 0 && <p className="mt-6 text-sm text-black/55">Chưa có điểm ngữ pháp nào.</p>}
+      <div className={`${s.body} mx-auto max-w-page px-6`}>
+        {levels.length === 0 && <p className={s.note}>Chưa có điểm ngữ pháp nào.</p>}
 
-      <div className="mt-8 flex flex-col gap-10">
-        {levels.map((lvl) => (
-          <section key={lvl.level}>
-            <h2 className="mb-4 inline-block rounded-lg bg-black px-3 py-1 text-sm font-semibold text-white">{lvl.level}</h2>
-            <div className="flex flex-col gap-6">
+        <div className={s.flow}>
+          {levels.map((lvl, i) => (
+            <section key={lvl.level} id={lvl.level} className={s.sec} data-loose="" data-reveal={i === 0 ? '' : undefined}>
+              <h2 className={s.level}>{lvl.level}</h2>
               {lvl.categories.map((cat) => (
-                <div key={cat.categoryVi}>
-                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-black/55">{cat.categoryVi}</h3>
-                  <div className="flex flex-col gap-2">
+                <div key={cat.categoryVi} className="flex flex-col gap-3">
+                  <h3 className={s.label}>{cat.categoryVi}</h3>
+                  <div className={s.grid}>
                     {cat.points.map((p) => (
-                      <Link
-                        key={p.id}
-                        href={grammarPointPath(p.id)}
-                        className="rounded-lg border border-black/10 px-4 py-3 hover:bg-black/5"
-                      >
-                        <div className="font-medium">{p.titleVi}</div>
-                        <div className="mt-0.5 truncate text-sm text-black/55">{p.pattern}</div>
+                      <Link key={p.id} href={grammarPointPath(p.id)} className={`${s.card} flex min-w-0 flex-col gap-1.5`} data-accent="">
+                        <span className={s.h3}>{p.titleVi}</span>
+                        <span className={`${s.pattern} truncate`}>{p.pattern}</span>
                       </Link>
                     ))}
                   </div>
                 </div>
               ))}
-            </div>
-          </section>
-        ))}
-      </div>
+            </section>
+          ))}
+        </div>
 
-      <NextBlock lang={language.code} block="grammar" />
+        <NextBlock lang={language.code} block="grammar" />
+      </div>
     </main>
   )
 }

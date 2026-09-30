@@ -1,7 +1,10 @@
-import Link from 'next/link'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { TappableText } from '@/components/reader/TappableText'
+import { PageHead } from '@/components/theory/BlockPage'
+import { Warn } from '@/components/theory/Glyphs'
+import s from '@/components/theory/Theory.module.css'
 import { grammarLangPath } from '@/lib/grammar/path'
+import { getLanguage } from '@/lib/languages'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
 import type { GrammarPointDetail } from '@/lib/grammar/types'
 
@@ -14,49 +17,61 @@ export function GrammarPointDetailView({ point, resolved = [] }: {
   resolved?: ResolvedText[]
 }) {
   const byText = new Map(resolved.map((r) => [r.text, r]))
+  const language = getLanguage(point.lang)
+  if (!language) return null
   return (
-    <main className="mx-auto flex max-w-page flex-col gap-6 px-6 py-10">
-      <Link href={grammarLangPath(point.lang)} className="text-sm text-black/55 hover:underline">← Ngữ pháp {point.level}</Link>
+    <main className={`${s.page} font-ui`} data-l={point.lang}>
+      <PageHead
+        language={language}
+        back={{ href: grammarLangPath(point.lang), label: `Ngữ pháp ${point.level ?? ''}`.trim() }}
+        title={point.titleVi}
+      >
+        {(point.level || point.categoryVi) && (
+          <p className="mt-4 flex flex-wrap gap-2">
+            {point.level && <span className={s.tag}>{point.level}</span>}
+            {point.categoryVi && <span className={s.tag}>{point.categoryVi}</span>}
+          </p>
+        )}
+      </PageHead>
 
-      <div>
-        {point.categoryVi && <p className="text-sm font-semibold uppercase tracking-wide text-black/55">{point.categoryVi}</p>}
-        <h1 className="mt-1 text-3xl font-bold">{point.titleVi}</h1>
+      <div className={`${s.body} ${s.split} mx-auto max-w-page px-6`}>
+        <div className={s.flow}>
+          <section className={`${s.card} flex flex-col gap-2`} data-accent="" data-reveal="">
+            <h2 className={s.label}>Công thức</h2>
+            <p className={s.pattern} data-lg="">{point.pattern}</p>
+          </section>
+
+          <section className={s.sec}>
+            <h2 className={s.h2}>Giải thích</h2>
+            <p className={s.prose} data-pre="">{point.explanationVi}</p>
+          </section>
+
+          {point.commonMistakeVi && (
+            <section className={s.callout}>
+              <h2 className={s.label}><Warn />Lỗi hay mắc</h2>
+              <p className={s.prose}>{point.commonMistakeVi}</p>
+            </section>
+          )}
+        </div>
+
+        {point.examples.length > 0 && (
+          <section className={s.sec} data-reveal="1">
+            <h2 className={s.h2}>Ví dụ</h2>
+            <ul className={s.examples}>
+              {point.examples.map((e, i) => (
+                <li key={i} className={s.example}>
+                  {e.reading && <p className={`ipa ${s.reading}`}>{e.reading}</p>}
+                  <div className="flex items-center gap-2">
+                    <span className={s.src} lang={point.lang}><TappableText text={e.text} lang={point.lang} resolved={byText.get(e.text)} /></span>
+                    <AudioButton text={e.text} lang={point.lang} />
+                  </div>
+                  <p className={s.vi}>{e.translationVi}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
-
-      <section className="rounded-xl bg-black/5 px-5 py-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-black/55">Công thức</p>
-        <p className="mt-1 font-mono text-base text-black/90">{point.pattern}</p>
-      </section>
-
-      <section className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold">Giải thích</h2>
-        <p className="whitespace-pre-line text-black/80">{point.explanationVi}</p>
-      </section>
-
-      {point.commonMistakeVi && (
-        <section className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Lỗi hay mắc</p>
-          <p className="mt-1 text-amber-900">{point.commonMistakeVi}</p>
-        </section>
-      )}
-
-      {point.examples.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold">Ví dụ</h2>
-          <ul className="flex flex-col gap-3">
-            {point.examples.map((e, i) => (
-              <li key={i} className="flex flex-col gap-0.5 border-l-2 border-black/10 pl-3">
-                {e.reading && <p className="ipa text-sm text-black/55">{e.reading}</p>}
-                <div className="flex items-center gap-2">
-                  <span className="text-black/80"><TappableText text={e.text} lang={point.lang} resolved={byText.get(e.text)} /></span>
-                  <AudioButton text={e.text} lang={point.lang} />
-                </div>
-                <p className="text-sm text-black/55">{e.translationVi}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </main>
   )
 }
