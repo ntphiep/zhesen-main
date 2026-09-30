@@ -52,9 +52,16 @@ export function NoticeBar({ notice, onDismiss }: { notice: Notice | null; onDism
         <div
           key={notice.id}
           className={`pointer-events-auto flex max-w-md items-start gap-3 rounded-lg px-4 py-3 text-sm shadow-lg ${
-            notice.tone === 'error' ? 'bg-red-600 text-white' : 'bg-black text-white'
+            notice.tone === 'error' ? 'bg-(--zs-ink) font-semibold text-(--zs-bg)' : 'bg-black text-white'
           }`}
         >
+          {/* The palette has no red: an error carries the warning glyph of components/search/ErrorLine.tsx. */}
+          {notice.tone === 'error' && (
+            <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 size-4 shrink-0">
+              <path d="M8 1.75 15 14H1z" />
+              <path d="M8 6.25v3.5M8 11.75v.25" />
+            </svg>
+          )}
           <span>{notice.text}</span>
           <button
             type="button"
