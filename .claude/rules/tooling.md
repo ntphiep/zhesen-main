@@ -66,7 +66,8 @@ Measure production on the instance: `aws ssm start-session` or `aws ssm send-com
 against the `instance_id` output of `infra/terraform`, then
 `docker exec supabase-db psql -U supabase_admin -d postgres`. The Studio tunnel in
 `infra/README.md` gives the same data with a UI. There is no `psql` and no `supabase` CLI on
-this machine.
+this machine. Pass `--region ap-northeast-2` to every `aws ssm` call: the CLI here defaults
+to us-east-1, where the instance does not exist.
 
 The Cloud project `cvltsyoweddhpkomuevz` is a frozen copy kept until 2026-10-23 for
 rollback. Composio's `SUPABASE_RUN_READ_ONLY_QUERY` with `ref: cvltsyoweddhpkomuevz` reads

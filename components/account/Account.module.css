@@ -79,7 +79,6 @@
 .board { display: grid; gap: 1rem; margin-top: 2rem; }
 .board > section { animation: rise 420ms var(--ease-enter) both; animation-delay: calc(var(--i, 0) * 60ms); }
 .board > [data-i="1"] { --i: 1; }
-.board > [data-i="2"] { --i: 2; }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .grid > [data-i="3"] { --i: 3; }
 .grid > [data-i="4"] { --i: 4; }
@@ -119,11 +118,11 @@
 @media (max-width: 767px) {
   .splits { grid-template-columns: minmax(0, 1fr); }
 }
-.meter { display: flex; height: 0.6rem; gap: 2px; border-radius: 999px; overflow: hidden; background: var(--zs-bg); animation: grow 520ms var(--ease-enter) 200ms both; }
+.meter { display: flex; height: 0.6rem; gap: 2px; border-radius: 999px; overflow: hidden; background: var(--zs-bg); outline: 1px solid var(--zs-pen); outline-offset: 1px; animation: grow 520ms var(--ease-enter) 200ms both; }
 .meter > i { display: block; min-width: 0; }
 .meter > [data-s="known"] { background: var(--sea-600); }
 .meter > [data-s="learning"] { background: var(--sea-400); }
-.meter > [data-s="new"] { background: var(--sea-100); }
+.meter > [data-s="new"] { background: var(--sea-200); }
 .meter > [data-l="en"] { background: var(--l-en); }
 .meter > [data-l="zh"] { background: var(--l-zh); }
 .meter > [data-l="es"] { background: var(--l-es); }

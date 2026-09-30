@@ -37,7 +37,7 @@ export function ThemeToggle() {
           onClick={() => setChoice(value)}
           aria-pressed={choice === value}
           className={`min-h-9 rounded-[9px] px-3.5 text-sm font-semibold transition-colors duration-150 ease-std motion-reduce:transition-none ${
-            choice === value ? 'bg-(--zs-btn) text-(--zs-btn-ink) shadow-sm' : 'text-(--zs-soft) hover:text-(--zs-ink)'
+            choice === value ? 'bg-(--zs-btn) text-(--zs-btn-ink) shadow-sm' : 'text-(--zs-soft) hover:bg-(--zs-bg)'
           }`}
         >
           {label}

@@ -13,6 +13,12 @@ paths:
 
 Every item here cost time on this project once. Re-check before contradicting one.
 
+Every page and every new feature uses the design system on the wiki page
+[UI style](https://github.com/ntphiep/zhesen-main/wiki/UI-style): the tokens in
+`app/globals.css`, the type scale, the motion rules and the state rules (no red, a filled
+selected state, no opacity suffix on token text). The owner chose it for the whole site on
+2026-09-30; build on it rather than proposing a new look.
+
 ## Rendering
 
 - Components are Server Components by default. `window`, `localStorage` and `document` are
@@ -24,6 +30,8 @@ Every item here cost time on this project once. Re-check before contradicting on
   the argument. Do not silence the rule with `eslint-disable`.
 - `showModal()` races React Strict Mode, whose effects run twice. Guard with
   `if (open && !el.open)`.
+- `app/global-error.tsx` replaces the root layout and renders in the browser, so an inline
+  script in its `<head>` never runs. It sets the theme in an effect instead.
 
 ## Tailwind 4
 
