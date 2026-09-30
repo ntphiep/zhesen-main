@@ -1,0 +1,208 @@
+/* /practice and its six modes on the tokens of app/globals.css, after the home review deck
+   (components/home/Home.module.css). Right and wrong are told apart by fill, outline, icon
+   and motion, never by red or green. Every motion runs once, under 520 ms, except the
+   microphone's pulse, which stops within five seconds; all of it is gone under
+   prefers-reduced-motion. */
+
+.pr {
+  --latin: var(--font-headword), Georgia, serif;
+  --latin-italic: var(--font-headword-italic), Georgia, serif;
+  --han: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", serif;
+  color: var(--zs-ink);
+  -webkit-font-smoothing: antialiased;
+}
+/* No border-radius here: the outline follows each control's own corners. */
+.pr :focus-visible { outline: 2.5px solid var(--sea-500); outline-offset: 2px; }
+.pr [data-hw] { font-family: var(--latin); font-weight: 500; letter-spacing: -0.02em; }
+.pr [data-hw][lang="es"] { font-family: var(--latin-italic); font-style: italic; }
+.pr [data-hw][lang="zh"] { font-family: var(--han); font-weight: 700; letter-spacing: 0; }
+
+/* A session sits on a pastel band, its card on white. The band reaches the footer: the root
+   layout's content box (app/layout.tsx) becomes a column so app/practice/layout.tsx can grow. */
+:global(body > .flex-1):has(> * > .stage) { display: flex; flex-direction: column; }
+.stage { flex: 1; background: var(--tint-1); }
+.col { max-width: 30rem; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+.col[data-wide] { max-width: 40rem; }
+
+/* Hub */
+.back { font-size: 0.875rem; font-weight: 700; color: var(--zs-pen); text-decoration: none; }
+.back:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+.title { margin: 0.6rem 0 0; font-size: 2.34375rem; line-height: 1.1; font-weight: 800; letter-spacing: -0.03em; color: var(--zs-ink); }
+.lede { margin: 0.4rem 0 0; font-size: 1.0625rem; color: var(--zs-soft); }
+.h2 { margin: 2.6rem 0 0; font-size: 1.3125rem; font-weight: 800; letter-spacing: -0.02em; color: var(--zs-ink); }
+.empty { margin-top: 1.6rem; padding: 1.4rem 1.6rem; border-radius: 20px; background: var(--tint-2); font-size: 1.0625rem; color: var(--zs-ink); }
+.empty a { font-weight: 700; color: var(--zs-pen); text-underline-offset: 0.2em; }
+
+/* The six modes */
+.modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+.mode { position: relative; display: grid; grid-template-columns: 2.6rem 1fr; column-gap: 0.85rem; align-items: center; padding: 1rem 1.1rem; border: 1px solid transparent; border-radius: 18px; background: var(--zs-field); box-shadow: 0 0 0 1.5px var(--edge); color: var(--zs-ink); text-decoration: none; transition: box-shadow 160ms var(--ease-std), translate 230ms var(--ease-spring), background-color 160ms var(--ease-std); animation: rise 320ms var(--ease-enter) both; }
+.mode:hover { box-shadow: 0 0 0 1.5px var(--sea-300), var(--lift); translate: 0 -2px; }
+.mode b { font-size: 1rem; font-weight: 800; }
+.mode small { grid-column: 2; font-size: 0.8125rem; line-height: 1.4; color: var(--zs-soft); }
+.ic { grid-row: 1 / 3; display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 13px; background: var(--sea-50); color: var(--sea-700); }
+.ic svg { width: 1.35rem; height: 1.35rem; }
+.mode[data-primary] { background: var(--zs-btn); box-shadow: 0 0 0 1.5px var(--zs-btn), var(--lift); color: var(--zs-btn-ink); }
+.mode[data-primary] small { color: var(--zs-btn-ink); }
+.mode[data-primary] .ic { background: var(--sea-400); color: #000; }
+.mode[data-primary]:hover { background: var(--zs-btn-hover); }
+:global(:root[data-theme="dark"]) .ic { background: var(--zs-chip); color: var(--sea-200); }
+:global(:root[data-theme="dark"]) .mode[data-primary] .ic { background: var(--sea-400); color: #000; }
+.modes [data-i="1"] { animation-delay: 40ms; }
+.modes [data-i="2"] { animation-delay: 80ms; }
+.modes [data-i="3"] { animation-delay: 120ms; }
+.modes [data-i="4"] { animation-delay: 160ms; }
+.modes [data-i="5"] { animation-delay: 200ms; }
+
+/* Session header: exit, count, and a progress line that eases to each new step */
+.bar { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; font-size: 0.875rem; font-weight: 700; color: var(--zs-soft); }
+.bar a { color: var(--zs-pen); text-decoration: none; }
+.bar a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+.bar span { font-variant-numeric: tabular-nums; }
+.track { height: 6px; margin: 0.6rem 0 1rem; border-radius: 9px; background: var(--sea-50); overflow: hidden; }
+.track i { display: block; height: 100%; border-radius: inherit; background: var(--sea-400); transform-origin: left; transition: transform 420ms var(--ease-std); }
+:global(:root[data-theme="dark"]) .track { background: var(--zs-chip); }
+
+/* The card of one question */
+.card { position: relative; padding: 1.8rem 1.6rem 1.6rem; border: 1px solid transparent; border-radius: 24px; background: var(--zs-bg); box-shadow: 0 0 0 1.5px var(--edge), var(--lift); text-align: center; animation: cardIn 360ms var(--ease-enter) both; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(10px) scale(0.985); } }
+.meta { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em; color: var(--zs-soft); }
+.head { display: flex; align-items: center; justify-content: center; gap: 0.6rem; margin-top: 0.8rem; min-width: 0; }
+.big { font-size: 3.125rem; line-height: 1.05; color: var(--zs-ink); overflow-wrap: anywhere; }
+.mid { font-size: 1.75rem; line-height: 1.2; font-weight: 800; letter-spacing: -0.02em; color: var(--zs-ink); overflow-wrap: anywhere; }
+.pron { display: block; margin-top: 0.35rem; font-size: 1rem; color: var(--zs-soft); }
+.ask { margin: 0.9rem 0 0; font-size: 0.875rem; font-weight: 600; color: var(--zs-soft); }
+.src a { color: var(--zs-pen); }
+
+/* The meaning turns down into view, like the back of a card. */
+.face { margin-top: 1.4rem; padding-top: 1.3rem; border-top: 1.5px solid var(--zs-line); transform-origin: top; animation: flip 380ms var(--ease-enter) both; }
+@keyframes flip { from { opacity: 0; transform: perspective(700px) rotateX(-14deg) translateY(-4px); } }
+.mean { font-size: 1.3125rem; font-weight: 800; color: var(--zs-ink); }
+/* The English gloss steps back to a lighter weight behind a rule; the example reads in its
+   own language's face, its translation in the interface face behind a rule. */
+.gloss { display: inline-block; margin-top: 0.4rem; padding-left: 0.6rem; border-left: 3px solid var(--sea-200); font-size: 0.9375rem; color: var(--zs-soft); text-align: left; }
+.ex { margin: 1rem auto 0; max-width: 26rem; padding: 0.75rem 0.9rem; border-radius: 14px; background: var(--tint-1); text-align: left; }
+.ex [lang] { display: block; font-size: 1.0625rem; color: var(--zs-ink); }
+.ex [lang]:not([lang="zh"]) { font-family: var(--latin); }
+.ex [lang="es"] { font-family: var(--latin-italic); font-style: italic; }
+.ex small { display: block; margin-top: 0.3rem; padding-left: 0.55rem; border-left: 3px solid var(--sea-300); font-size: 0.875rem; color: var(--zs-soft); }
+
+/* Buttons */
+.btn, .ghost { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1.3rem; border-radius: 999px; font-size: 0.9375rem; font-weight: 700; text-decoration: none; cursor: pointer; transition: background-color 150ms var(--ease-std), border-color 150ms var(--ease-std), transform 160ms var(--ease-spring); }
+.btn { border: 1px solid transparent; background: var(--zs-btn); color: var(--zs-btn-ink); }
+.btn:hover:not(:disabled) { background: var(--zs-btn-hover); }
+.ghost { border: 1.5px solid var(--edge); background: var(--zs-bg); color: var(--zs-ink); }
+.ghost:hover { border-color: var(--sea-400); background: var(--tint-1); }
+.btn:active:not(:disabled), .ghost:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.6; cursor: default; }
+.wide { width: 100%; margin-top: 1.2rem; }
+.row { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; margin-top: 1.6rem; }
+
+/* A key that does the same as the click. Pointer-only devices have no keys to press. */
+.kbd { display: inline-grid; place-items: center; min-width: 1.35em; height: 1.35em; padding: 0 0.3em; border-radius: 5px; border: 1.5px solid currentColor; font: 700 0.6875rem/1 var(--font-ui); }
+@media (pointer: coarse) { .kbd { display: none; } }
+
+/* The four self-grades: outline, pale fill, blue fill, cyan fill. Each keeps its shape in
+   both themes, so they never read as one colour at four strengths. */
+.grades { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; margin-top: 1.5rem; }
+.grades button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3rem; min-height: 3.6rem; border-radius: 14px; border: 1.5px solid transparent; font-size: 0.9375rem; font-weight: 800; cursor: pointer; transition: background-color 150ms var(--ease-std), border-color 150ms var(--ease-std), transform 160ms var(--ease-spring); }
+.grades button:active:not(:disabled) { transform: scale(0.95); }
+.grades button:disabled { opacity: 0.6; cursor: default; }
+.grades [data-g="again"] { border-color: var(--ink); background: transparent; color: var(--ink); }
+.grades [data-g="again"]:hover:not(:disabled) { background: var(--tint-1); }
+.grades [data-g="hard"] { border-color: var(--sea-300); background: var(--sea-50); color: var(--sea-700); }
+.grades [data-g="hard"]:hover:not(:disabled) { background: var(--sea-100); }
+.grades [data-g="good"] { background: var(--zs-btn); color: var(--zs-btn-ink); }
+.grades [data-g="good"]:hover:not(:disabled) { background: var(--zs-btn-hover); }
+.grades [data-g="easy"] { background: var(--sea-400); color: #000; }
+.grades [data-g="easy"]:hover:not(:disabled) { background: var(--sea-300); }
+:global(:root[data-theme="dark"]) .grades [data-g="hard"] { background: var(--zs-chip); color: #fff; }
+:global(:root[data-theme="dark"]) .grades [data-g="hard"]:hover:not(:disabled) { background: var(--tint-3); }
+
+/* Multiple choice. The right answer fills blue with a tick, a wrong pick is outlined in ink,
+   struck through and shaken, the rest step back. */
+.opts { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.4rem; }
+.opt { display: flex; align-items: center; gap: 0.7rem; min-height: 3.2rem; padding: 0.5rem 0.9rem; border-radius: 14px; border: 1.5px solid var(--edge); background: var(--zs-field); color: var(--zs-ink); font-size: 1rem; font-weight: 600; text-align: left; cursor: pointer; transition: background-color 150ms var(--ease-std), border-color 150ms var(--ease-std), transform 160ms var(--ease-spring); }
+.opt:hover:not(:disabled) { border-color: var(--sea-400); background: var(--tint-1); }
+.opt:disabled { cursor: default; }
+.opt .kbd { flex: none; color: var(--zs-soft); }
+.opt > span:not(.kbd, .mk) { flex: 1; }
+.opt[data-state="rest"] { border-color: var(--zs-line); background: var(--tint-1); color: var(--zs-soft); }
+.opt[data-state="ok"] { border-color: var(--zs-btn); background: var(--zs-btn); color: var(--zs-btn-ink); animation: pop 300ms var(--ease-spring); }
+.opt[data-state="ok"] .kbd { color: inherit; }
+.opt[data-state="no"] { border: 2px solid var(--ink); background: var(--zs-bg); color: var(--ink); animation: nudge 300ms var(--ease-std); }
+.opt[data-state="no"] > span:not(.kbd, .mk) { text-decoration: line-through; text-decoration-thickness: 2px; }
+.mk { display: grid; place-items: center; flex: none; width: 1.5rem; height: 1.5rem; }
+.mk svg { width: 1.25rem; height: 1.25rem; }
+@keyframes pop { 40% { transform: scale(1.03); } }
+@keyframes nudge { 25% { transform: translateX(-5px); } 50% { transform: translateX(4px); } 75% { transform: translateX(-2px); } }
+
+/* The verdict under an answer: an icon and a weight, never a colour alone. */
+.verdict { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin: 1.2rem 0 0; font-size: 1.0625rem; font-weight: 800; color: var(--zs-ink); animation: rise 260ms var(--ease-spring) both; }
+.verdict svg { flex: none; width: 1.5rem; height: 1.5rem; }
+.verdict[data-v="correct"] svg { color: var(--zs-pen); }
+.verdict b { font-weight: 800; text-decoration: underline; text-decoration-color: var(--sea-400); text-decoration-thickness: 3px; text-underline-offset: 0.2em; }
+.heard { margin: 0.4rem 0 0; font-size: 0.875rem; color: var(--zs-soft); }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+
+/* Typed answers */
+.form { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1.4rem; }
+.input { width: 100%; min-height: 3.2rem; padding: 0 1rem; border-radius: 14px; border: 1.5px solid var(--sea-200); background: var(--zs-field); color: var(--zs-ink); font: inherit; font-size: 1.3125rem; font-weight: 600; text-align: center; outline: none; transition: border-color 150ms var(--ease-std), box-shadow 150ms var(--ease-std); }
+.input::placeholder { color: var(--zs-soft); opacity: 0.7; font-weight: 400; }
+.input:focus-visible { border-color: var(--sea-500); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sea-400) 30%, transparent); outline: none; }
+.input:disabled { background: var(--tint-1); }
+.input[data-state="correct"] { border: 2px solid var(--zs-btn); }
+.input[data-state="close"] { border: 2px dashed var(--sea-500); }
+.input[data-state="wrong"] { border: 2px solid var(--ink); text-decoration: line-through; }
+.play { margin-top: 1rem; display: inline-flex; padding: 0.8rem; border-radius: 999px; background: var(--sea-50); color: var(--sea-700); }
+.play button { width: 2.5rem; height: 2.5rem; }
+.play svg { width: 1.4rem; height: 1.4rem; }
+:global(:root[data-theme="dark"]) .play { background: var(--zs-chip); color: #fff; }
+
+/* Match */
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+.tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; min-height: 4.5rem; padding: 0.6rem 0.7rem; border-radius: 14px; border: 1.5px solid var(--edge); background: var(--zs-bg); color: var(--zs-ink); font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: background-color 150ms var(--ease-std), border-color 150ms var(--ease-std), color 150ms var(--ease-std), transform 160ms var(--ease-spring); }
+.tile:hover:not(:disabled) { border-color: var(--sea-400); background: var(--tint-1); }
+.tile:active:not(:disabled) { transform: scale(0.97); }
+.tile [data-hw] { font-size: 1.3125rem; }
+.tile[data-state="sel"] { border-color: var(--zs-btn); background: var(--zs-btn); color: var(--zs-btn-ink); transform: translateY(-2px); }
+.tile[data-state="ok"] { flex-direction: row; gap: 0.4rem; border-style: dashed; border-color: var(--sea-300); background: var(--tint-3); color: var(--zs-soft); cursor: default; animation: pop 300ms var(--ease-spring); }
+.tile[data-state="ok"] svg { flex: none; width: 1.1rem; height: 1.1rem; color: var(--zs-pen); }
+.tile[data-state="no"] { border: 2px solid var(--ink); animation: nudge 300ms var(--ease-std); }
+
+/* Speaking */
+.mic { display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem; width: 100%; min-height: 3.2rem; margin-top: 1.4rem; border: 1px solid transparent; border-radius: 999px; background: var(--zs-btn); color: var(--zs-btn-ink); font-size: 1rem; font-weight: 800; cursor: pointer; transition: background-color 150ms var(--ease-std); }
+.mic:hover:not(:disabled) { background: var(--zs-btn-hover); }
+.mic svg { width: 1.2rem; height: 1.2rem; }
+.mic[data-on] { background: var(--sea-400); color: #000; cursor: default; animation: listen 1.2s var(--ease-std) 4; }
+@keyframes listen { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--sea-400) 55%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
+
+/* The end of a session */
+.end { padding: 2rem 1.6rem 1.8rem; text-align: center; }
+.end h1, .end h2 { margin: 0; font-size: 1.75rem; line-height: 1.2; font-weight: 800; letter-spacing: -0.02em; color: var(--zs-ink); }
+.end p { margin: 0.5rem 0 0; color: var(--zs-soft); }
+.meter { height: 8px; max-width: 16rem; margin: 1rem auto 0; border-radius: 9px; background: var(--sea-50); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--sea-400); transform-origin: left; animation: grow 520ms var(--ease-enter) 120ms both; }
+:global(:root[data-theme="dark"]) .meter { background: var(--zs-chip); }
+@keyframes grow { from { transform: scaleX(0); } }
+.wait { padding: 4rem 0; text-align: center; font-weight: 600; color: var(--zs-soft); }
+
+@media (max-width: 1023px) { .modes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 639px) {
+  .title { font-size: 1.75rem; }
+  .modes { gap: 0.5rem; }
+  .mode { grid-template-columns: 1fr; row-gap: 0.5rem; align-items: start; padding: 0.85rem 0.9rem; }
+  .ic { grid-row: auto; width: 2.2rem; height: 2.2rem; }
+  .mode small { grid-column: 1; }
+  .col { padding: 1.6rem 1rem 3rem; }
+  .card { padding: 1.4rem 1rem 1.2rem; }
+  .big { font-size: 2.34375rem; }
+  .grades { gap: 0.35rem; }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mode, .card, .face, .opt[data-state], .verdict, .tile[data-state], .mic[data-on], .meter i { animation: none; }
+  .mode, .track i, .btn, .ghost, .grades button, .opt, .tile { transition: color 150ms var(--ease-std), background-color 150ms var(--ease-std), border-color 150ms var(--ease-std); }
+  .mode:hover, .tile[data-state="sel"] { translate: none; transform: none; }
+  .grades button:active:not(:disabled), .btn:active:not(:disabled), .ghost:active, .tile:active:not(:disabled) { transform: none; }
+}

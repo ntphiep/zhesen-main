@@ -8,6 +8,8 @@ import { WordReviewCard } from '@/components/practice/WordReviewCard'
 import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { NoticeBar, useNotice } from '@/components/ui/Notice'
+import { Loading, SessionBar, Stage } from '@/components/practice/SessionParts'
+import p from './Practice.module.css'
 
 export function WordlistReview() {
   const supabase = useMemo(() => createClient(), [])
@@ -27,18 +29,18 @@ export function WordlistReview() {
     listDueCards(supabase, Date.now()).then(setQueue).catch(() => setQueue([]))
   }, [supabase])
 
-  if (queue === null) return <main className="p-12 text-center text-black/55">Đang tải…</main>
+  if (queue === null) return <Loading />
 
   if (queue.length === 0) {
     return (
-      <main className="mx-auto max-w-md px-6 py-16 text-center">
-        <div className="text-2xl font-semibold">Hết từ cần ôn.</div>
-        {reviewed > 0 && <p className="mt-2 text-black/55">Đã ôn {reviewed} từ trong phiên này.</p>}
-        <GradeSyncWarning failed={syncFailed} />
-        <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">
-          Về luyện tập
-        </Link>
-      </main>
+      <Stage>
+        <div className={`${p.card} ${p.end}`}>
+          <h1>Hết từ cần ôn.</h1>
+          {reviewed > 0 && <p>Đã ôn {reviewed} từ trong phiên này.</p>}
+          <GradeSyncWarning failed={syncFailed} />
+          <div className={p.row}><Link href="/practice" className={p.btn}>Về luyện tập</Link></div>
+        </div>
+      </Stage>
     )
   }
 
@@ -68,12 +70,10 @@ export function WordlistReview() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-6 py-12">
-      <div className="mb-4 flex items-center justify-between text-sm text-black/55">
-        <Link href="/practice" className="hover:underline">← Thoát</Link>
-        <span>Còn lại: {queue.length}</span>
-      </div>
+    <Stage>
+      <SessionBar label={`Còn lại: ${queue.length}`} done={reviewed} total={reviewed + queue.length} />
       <WordReviewCard
+        key={`${current.id}-${reviewed}`}
         card={current}
         revealed={revealed}
         onReveal={() => setRevealed(true)}
@@ -81,6 +81,6 @@ export function WordlistReview() {
         grading={grading}
       />
       <NoticeBar notice={notice} onDismiss={dismiss} />
-    </main>
+    </Stage>
   )
 }

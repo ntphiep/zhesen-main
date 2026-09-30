@@ -6,6 +6,7 @@ import { WordlistStats } from '@/components/wordlist/WordlistStats'
 import { WordlistDistribution } from '@/components/wordlist/WordlistDistribution'
 import { PracticeModes } from '@/components/practice/PracticeModes'
 import { pageMetadata } from '@/lib/site'
+import p from '@/components/practice/Practice.module.css'
 
 export const metadata = pageMetadata({
   title: 'Luyện tập',
@@ -20,21 +21,20 @@ export default async function PracticePage() {
   await requirePermanentAccount(supabase, '/practice')
   const stats = await getWordlistStats(supabase)
   return (
-    <main className="mx-auto max-w-page px-6 py-10">
-      <Link href="/" className="text-sm text-black/55 hover:underline">← Trang chủ</Link>
-      <h1 className="mt-3 text-3xl font-bold">Luyện tập</h1>
-      <p className="mt-1 text-sm text-black/60">Ôn từ đã lưu bằng nhiều cách.</p>
+    <main className={`${p.pr} mx-auto w-full max-w-page px-6 pt-8 pb-16 font-ui`}>
+      <Link href="/" className={p.back}>← Trang chủ</Link>
+      <h1 className={p.title}>Luyện tập</h1>
+      <p className={p.lede}>Ôn từ đã lưu bằng nhiều cách.</p>
       {stats.total === 0 ? (
-        <div className="mt-6 rounded-xl border border-black/10 p-6 text-black/60">
-          Chưa có từ.{' '}
-          <Link href="/dictionary" className="font-medium text-black underline">Tra một từ</Link>{' '}
-          để lưu.
+        <div className={p.empty}>
+          Chưa có từ. <Link href="/dictionary">Tra một từ</Link> để lưu.
         </div>
       ) : (
         <>
+          <PracticeModes due={stats.due} />
+          <h2 className={p.h2}>Tiến độ</h2>
           <WordlistStats stats={stats} />
           <WordlistDistribution stats={stats} />
-          <PracticeModes due={stats.due} />
         </>
       )}
     </main>

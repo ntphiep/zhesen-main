@@ -1,14 +1,13 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listPracticeWords } from '@/lib/wordlist/store'
 import { shuffle } from '@/lib/practice/shuffle'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
-import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { gradeForMode } from '@/lib/practice/grading'
 import { checkTypedAnswer, type TypedResult } from '@/lib/practice/typing'
 import { TypingCard, type TypingPrompt } from '@/components/practice/TypingCard'
+import { Empty, Loading, Result, SessionBar, Stage } from '@/components/practice/SessionParts'
 
 const SIZE = 10
 
@@ -38,31 +37,14 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
     return () => { active = false }
   }, [supabase, mode, round])
 
-  if (queue === null) return <main className="p-12 text-center text-black/55">Đang tải…</main>
+  if (queue === null) return <Loading />
 
   if (queue.length === 0) {
-    return (
-      <main className="mx-auto max-w-md px-6 py-16 text-center">
-        <div className="text-xl font-semibold">Chưa đủ từ để luyện</div>
-        <p className="mt-2 text-black/55">
-          {mode === 'write' ? 'Lưu thêm vài từ có nghĩa tiếng Việt.' : 'Lưu thêm vài từ vào sổ tay.'}
-        </p>
-        <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">Về luyện tập</Link>
-      </main>
-    )
+    return <Empty title="Chưa đủ từ để luyện" note={mode === 'write' ? 'Lưu thêm vài từ có nghĩa tiếng Việt.' : 'Lưu thêm vài từ vào sổ tay.'} />
   }
 
   if (index >= queue.length) {
-    return (
-      <main className="mx-auto max-w-md px-6 py-16 text-center">
-        <div className="text-2xl font-semibold">Kết quả: {score}/{queue.length}</div>
-        <GradeSyncWarning failed={syncFailed} />
-        <div className="mt-6 flex justify-center gap-3">
-          <button onClick={() => setRound((r) => r + 1)} className="rounded-lg bg-black px-5 py-2 text-white">Làm lại</button>
-          <Link href="/practice" className="rounded-lg border border-black/15 px-5 py-2 hover:bg-black/5">Về luyện tập</Link>
-        </div>
-      </main>
-    )
+    return <Result score={score} total={queue.length} failed={syncFailed} onAgain={() => setRound((r) => r + 1)} />
   }
 
   const current = queue[index]
@@ -83,12 +65,10 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
   }
 
   return (
-    <main className="mx-auto max-w-md px-6 py-12">
-      <div className="mb-4 flex items-center justify-between text-sm text-black/55">
-        <Link href="/practice" className="hover:underline">← Thoát</Link>
-        <span>{title} · {index + 1}/{queue.length} · Đúng {score}</span>
-      </div>
+    <Stage>
+      <SessionBar label={`${title} · ${index + 1}/${queue.length} · Đúng ${score}`} done={index + (result === null ? 0 : 1)} total={queue.length} />
       <TypingCard
+        key={index}
         mode={mode}
         word={current}
         value={value}
@@ -97,6 +77,6 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
         onSubmit={submit}
         onNext={next}
       />
-    </main>
+    </Stage>
   )
 }

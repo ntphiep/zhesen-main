@@ -1,16 +1,17 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listPracticeWords } from '@/lib/wordlist/store'
 import { AudioButton, SourceLink } from '@/components/ui/AudioButton'
 import { checkTypedAnswer, type TypedResult } from '@/lib/practice/typing'
 import { shuffle } from '@/lib/practice/shuffle'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
-import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { gradeForMode } from '@/lib/practice/grading'
 import { speechLang, type LangCode } from '@/lib/languages'
 import { getRecognitionCtor, type SpeechRecognitionLike } from '@/lib/practice/recognition'
+import { ErrorLine } from '@/components/search/ErrorLine'
+import { Empty, Hw, Loading, MIC, Result, SessionBar, Stage, Verdict } from '@/components/practice/SessionParts'
+import p from './Practice.module.css'
 
 const SIZE = 10
 
@@ -55,38 +56,14 @@ export function SpeakSession() {
     return () => { active = false; recognitionRef.current?.stop() }
   }, [supabase, round])
 
-  if (queue === null) return <main className="p-12 text-center text-black/55">Đang tải…</main>
+  if (queue === null) return <Loading />
 
-  if (!supported) {
-    return (
-      <main className="mx-auto max-w-md px-6 py-16 text-center">
-        <div className="text-xl font-semibold">Trình duyệt chưa hỗ trợ luyện nói</div>
-        <p className="mt-2 text-black/55">Mở trang này bằng Chrome hoặc Edge trên máy tính.</p>
-        <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">Về luyện tập</Link>
-      </main>
-    )
-  }
+  if (!supported) return <Empty title="Trình duyệt chưa hỗ trợ luyện nói" note="Mở trang này bằng Chrome hoặc Edge trên máy tính." />
 
-  if (queue.length === 0) {
-    return (
-      <main className="mx-auto max-w-md px-6 py-16 text-center">
-        <div className="text-xl font-semibold">Chưa đủ từ để luyện</div>
-        <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">Về luyện tập</Link>
-      </main>
-    )
-  }
+  if (queue.length === 0) return <Empty title="Chưa đủ từ để luyện" />
 
   if (index >= queue.length) {
-    return (
-      <main className="mx-auto max-w-md px-6 py-16 text-center">
-        <div className="text-2xl font-semibold">Kết quả: {score}/{queue.length}</div>
-        <GradeSyncWarning failed={syncFailed} />
-        <div className="mt-6 flex justify-center gap-3">
-          <button onClick={() => setRound((r) => r + 1)} className="rounded-lg bg-black px-5 py-2 text-white">Làm lại</button>
-          <Link href="/practice" className="rounded-lg border border-black/15 px-5 py-2 hover:bg-black/5">Về luyện tập</Link>
-        </div>
-      </main>
-    )
+    return <Result score={score} total={queue.length} failed={syncFailed} onAgain={() => setRound((r) => r + 1)} />
   }
 
   const current = queue[index]
@@ -110,7 +87,7 @@ export function SpeakSession() {
       recordGrade(current.id, gradeForMode('speak', { correct: verdict !== 'wrong', nearly: verdict === 'close' }))
       if (!logged.current) { logged.current = true; logDay() }
     }
-    // Without a message the button flips straight back to "🎤 Nói" and a blocked
+    // Without a message the button flips straight back to "Nói" and a blocked
     // microphone never says so.
     r.onerror = (e) => {
       setListening(false)
@@ -125,43 +102,37 @@ export function SpeakSession() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-6 py-12">
-      <div className="mb-4 flex items-center justify-between text-sm text-black/55">
-        <Link href="/practice" className="hover:underline">← Thoát</Link>
-        <span>Luyện nói · {index + 1}/{queue.length} · Đúng {score}</span>
-      </div>
+    <Stage>
+      <SessionBar label={`Luyện nói · ${index + 1}/${queue.length} · Đúng ${score}`} done={index + (result === null ? 0 : 1)} total={queue.length} />
 
-      <div className="rounded-2xl border border-black/10 p-8 text-center">
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-3xl font-semibold">{current.headword}</span>
+      <div key={index} className={p.card}>
+        <div className={p.head}>
+          <Hw text={current.headword} lang={current.lang} className={p.big} />
           <AudioButton text={current.headword} lang={current.lang} audioUrl={current.audioUrl} />
-          <SourceLink url={current.audioUrl} />
+          <span className={p.src}><SourceLink url={current.audioUrl} /></span>
         </div>
-        {current.meaningVi && <div className="mt-1 text-black/55">{current.meaningVi}</div>}
-        <p className="mt-2 text-sm text-black/55">Nghe mẫu rồi đọc lại</p>
+        {current.meaningVi && <div className={`${p.mean} mt-2`}>{current.meaningVi}</div>}
+        <p className={p.ask}>Nghe mẫu rồi đọc lại</p>
 
         {result === null && (
-          <button
-            onClick={listen}
-            disabled={listening}
-            className={`mt-6 w-full rounded-lg py-3 text-white ${listening ? 'bg-rose-500' : 'bg-black'}`}
-          >
-            {listening ? 'Đang nghe…' : '🎤 Nói'}
+          <button type="button" onClick={listen} disabled={listening} data-on={listening || undefined} className={p.mic}>
+            {MIC}
+            {listening ? 'Đang nghe…' : 'Nói'}
           </button>
         )}
         {result === null && micError && (
-          <p role="status" aria-live="polite" className="mt-3 text-sm text-rose-700">{micError}</p>
+          <div role="status" aria-live="polite" className="mt-3 flex justify-center"><ErrorLine>{micError}</ErrorLine></div>
         )}
         {result !== null && (
-          <div role="status" aria-live="polite" className="mt-6">
-            {result === 'correct' && <p className="font-medium text-emerald-700">Đúng</p>}
-            {result === 'close' && <p className="font-medium text-amber-700">Gần đúng</p>}
-            {result === 'wrong' && <p className="font-medium text-rose-700">Chưa khớp. Thử lại sau.</p>}
-            {heard && <p className="mt-1 text-sm text-black/55">Nghe được: “{heard}”</p>}
-            <button onClick={next} className="mt-4 w-full rounded-lg bg-black py-2 text-white">Tiếp</button>
+          <div role="status" aria-live="polite">
+            {result === 'correct' && <Verdict result="correct">Đúng</Verdict>}
+            {result === 'close' && <Verdict result="close">Gần đúng</Verdict>}
+            {result === 'wrong' && <Verdict result="wrong">Chưa khớp. Thử lại sau.</Verdict>}
+            {heard && <p className={p.heard}>Nghe được: “{heard}”</p>}
+            <button type="button" onClick={next} className={`${p.btn} ${p.wide}`}>Tiếp</button>
           </div>
         )}
       </div>
-    </main>
+    </Stage>
   )
 }

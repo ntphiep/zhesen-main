@@ -1,7 +1,10 @@
 'use client'
+import { useEffect, useRef } from 'react'
 import { AudioButton, SourceLink } from '@/components/ui/AudioButton'
 import type { TypedResult } from '@/lib/practice/typing'
 import type { LangCode } from '@/lib/languages'
+import { Verdict } from '@/components/practice/SessionParts'
+import p from './Practice.module.css'
 
 export interface TypingPrompt {
   /** The saved word's id, so an answer can be recorded against its schedule. */
@@ -14,7 +17,8 @@ export interface TypingPrompt {
 }
 
 /** One typed-answer question. `write` prompts with the meaning; `dictation` prompts
- * with audio. Once `result` is set the input locks and feedback + "Tiếp" appear. */
+ * with audio. Once `result` is set the input locks, the feedback appears and "Tiếp" takes
+ * the focus, so Enter answers and Enter again moves on. */
 export function TypingCard({
   mode, word, value, result, onChange, onSubmit, onNext,
 }: {
@@ -27,18 +31,24 @@ export function TypingCard({
   onNext: () => void
 }) {
   const answered = result !== null
+  const nextRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (answered) nextRef.current?.focus({ preventScroll: true })
+  }, [answered])
+
   return (
-    <div className="rounded-2xl border border-black/10 p-8">
+    <div className={p.card}>
       {mode === 'write' ? (
-        <div className="text-center">
-          <p className="text-sm text-black/55">Nghĩa</p>
-          <div className="mt-1 text-2xl font-semibold">{word.meaningVi}</div>
-          <p className="mt-2 text-sm text-black/55">Gõ từ mang nghĩa này</p>
-        </div>
+        <>
+          <p className={p.meta}>Nghĩa</p>
+          <div className={`${p.mid} mt-2`}>{word.meaningVi}</div>
+          <p className={p.ask}>Gõ từ mang nghĩa này</p>
+        </>
       ) : (
-        <div className="flex flex-col items-center">
-          <p className="text-sm text-black/55">Nghe rồi gõ từ</p>
-          <div className="mt-2 scale-125">
+        <>
+          <p className={p.meta}>Nghe rồi gõ từ</p>
+          <div className={p.play}>
             <AudioButton
               text={word.headword}
               lang={word.lang}
@@ -47,13 +57,13 @@ export function TypingCard({
             />
           </div>
           {/* The Commons file name spells the word, so the link waits for the answer. */}
-          {answered && <SourceLink url={word.audioUrl} />}
-        </div>
+          {answered && <div className={p.src}><SourceLink url={word.audioUrl} /></div>}
+        </>
       )}
 
       <form
         onSubmit={(e) => { e.preventDefault(); if (answered) onNext(); else onSubmit() }}
-        className="mt-6 flex flex-col gap-3"
+        className={p.form}
       >
         <input
           autoFocus
@@ -62,18 +72,22 @@ export function TypingCard({
           disabled={answered}
           aria-label="Câu trả lời"
           placeholder="Gõ từ…"
-          className="w-full rounded-lg border border-black/15 px-4 py-3 text-center text-lg focus:border-black/40 focus:outline-none disabled:bg-black/5"
+          autoComplete="off"
+          spellCheck={false}
+          lang={word.lang}
+          data-state={result ?? undefined}
+          className={p.input}
         />
-        {!answered && <button type="submit" className="rounded-lg bg-black py-2 text-white">Kiểm tra</button>}
+        {!answered && <button type="submit" className={p.btn}>Kiểm tra</button>}
       </form>
 
       {answered && (
-        <div role="status" aria-live="polite" className="mt-4 text-center">
-          {result === 'correct' && <p className="font-medium text-emerald-700">Đúng</p>}
-          {result === 'close' && <p className="font-medium text-amber-700">Gần đúng. Đáp án: <b>{word.headword}</b></p>}
-          {result === 'wrong' && <p className="font-medium text-rose-700">Sai. Đáp án: <b>{word.headword}</b></p>}
-          {mode === 'dictation' && word.meaningVi && <p className="mt-1 text-sm text-black/55">{word.meaningVi}</p>}
-          <button onClick={onNext} className="mt-4 w-full rounded-lg bg-black py-2 text-white">Tiếp</button>
+        <div role="status" aria-live="polite">
+          {result === 'correct' && <Verdict result="correct">Đúng</Verdict>}
+          {result === 'close' && <Verdict result="close">Gần đúng. Đáp án: <b data-hw="" lang={word.lang}>{word.headword}</b></Verdict>}
+          {result === 'wrong' && <Verdict result="wrong">Sai. Đáp án: <b data-hw="" lang={word.lang}>{word.headword}</b></Verdict>}
+          {mode === 'dictation' && word.meaningVi && <p className={p.heard}>{word.meaningVi}</p>}
+          <button ref={nextRef} type="button" onClick={onNext} className={`${p.btn} ${p.wide}`}>Tiếp</button>
         </div>
       )}
     </div>

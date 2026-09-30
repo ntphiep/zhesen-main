@@ -1,12 +1,15 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import type { LangCode } from '@/lib/languages'
 import { createClient } from '@/lib/supabase/client'
 import { listPracticeWords } from '@/lib/wordlist/store'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { gradeForMode } from '@/lib/practice/grading'
 import { buildMatchTiles, type MatchTile } from '@/lib/practice/match'
+import { CHECK, Empty, Hw, Loading, SessionBar, Stage } from '@/components/practice/SessionParts'
+import p from './Practice.module.css'
 
 const ROUND_SIZE = 6
 
@@ -23,12 +26,15 @@ export function MatchClient() {
   // Every pair matches eventually, so a match says nothing about difficulty. A wrong
   // pairing is the only signal, and grades `hard` instead of `good`, never `again`.
   const stumbled = useRef<Set<string>>(new Set())
+  // Each word tile is set in its language's face.
+  const [langs, setLangs] = useState<Map<string, LangCode>>(new Map())
 
   useEffect(() => {
     let active = true
     listPracticeWords(supabase, { needsMeaning: true })
       .then((words) => {
         if (!active) return
+        setLangs(new Map(words.map((w) => [w.id, w.lang])))
         setTiles(buildMatchTiles(words.map((w) => ({ id: w.id, headword: w.headword, meaningVi: w.meaningVi })), ROUND_SIZE))
         setSelected(null); setMatched(new Set()); setWrong([]); setSeconds(0)
         stumbled.current = new Set()
@@ -45,17 +51,9 @@ export function MatchClient() {
     return () => clearInterval(id)
   }, [tiles, done])
 
-  if (tiles === null) return <main className="p-12 text-center text-black/55">Đang tải…</main>
+  if (tiles === null) return <Loading />
 
-  if (tiles.length === 0) {
-    return (
-      <main className="mx-auto max-w-md px-6 py-16 text-center">
-        <div className="text-xl font-semibold">Chưa đủ từ để chơi</div>
-        <p className="mt-2 text-black/55">Lưu thêm vài từ có nghĩa tiếng Việt.</p>
-        <Link href="/practice" className="mt-6 inline-block rounded-lg bg-black px-5 py-2 text-white">Về luyện tập</Link>
-      </main>
-    )
-  }
+  if (tiles.length === 0) return <Empty title="Chưa đủ từ để chơi" note="Lưu thêm vài từ có nghĩa tiếng Việt." />
 
   function clickTile(tile: MatchTile) {
     if (wrong.length > 0 || matched.has(tile.key)) return
@@ -79,49 +77,45 @@ export function MatchClient() {
   }
 
   return (
-    <main className="mx-auto max-w-xl px-6 py-12">
-      <div className="mb-4 flex items-center justify-between text-sm text-black/55">
-        <Link href="/practice" className="hover:underline">← Thoát</Link>
-        <span>Ghép cặp · {seconds}s · {matched.size / 2}/{tiles.length / 2}</span>
-      </div>
+    <Stage wide>
+      <SessionBar label={`Ghép cặp · ${seconds}s · ${matched.size / 2}/${tiles.length / 2}`} done={matched.size} total={tiles.length} />
 
       {done ? (
-        <div role="status" aria-live="polite" className="rounded-2xl border border-black/10 p-8 text-center">
-          <div className="text-2xl font-semibold">Hoàn thành trong {seconds}s 🎉</div>
+        <div role="status" aria-live="polite" className={`${p.card} ${p.end}`}>
+          <h1>Hoàn thành trong {seconds}s</h1>
           <GradeSyncWarning failed={syncFailed} />
-          <div className="mt-6 flex justify-center gap-3">
-            <button onClick={() => setRound((r) => r + 1)} className="rounded-lg bg-black px-5 py-2 text-white">Chơi lại</button>
-            <Link href="/practice" className="rounded-lg border border-black/15 px-5 py-2 hover:bg-black/5">Về luyện tập</Link>
+          <div className={p.row}>
+            <button type="button" onClick={() => setRound((r) => r + 1)} className={p.btn}>Chơi lại</button>
+            <Link href="/practice" className={p.ghost}>Về luyện tập</Link>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {/* Matched/wrong feedback is otherwise color-only -- announce it for screen readers. */}
+        <div className={p.tiles}>
+          {/* The screen reader hears what the outline and the shake show. */}
           <p role="status" aria-live="polite" className="sr-only col-span-full">
             {wrong.length > 0 ? 'Chưa khớp. Thử lại.' : ''}
           </p>
           {tiles.map((t) => {
             const isMatched = matched.has(t.key)
-            const isSelected = selected === t.key
-            const isWrong = wrong.includes(t.key)
-            let cls = 'border-black/15 hover:bg-black/5'
-            if (isMatched) cls = 'border-emerald-200 bg-emerald-50 text-emerald-700/60'
-            else if (isWrong) cls = 'border-rose-300 bg-rose-50 text-rose-700'
-            else if (isSelected) cls = 'border-black ring-2 ring-black/20'
+            const state = isMatched ? 'ok' : wrong.includes(t.key) ? 'no' : selected === t.key ? 'sel' : undefined
+            const lang = t.kind === 'word' ? langs.get(t.wordId) : undefined
             return (
               <button
                 key={t.key}
                 type="button"
                 disabled={isMatched}
+                aria-pressed={t.key === selected}
                 onClick={() => clickTile(t)}
-                className={`min-h-16 rounded-xl border px-3 py-3 text-sm transition ${cls} ${t.kind === 'word' ? 'font-medium' : ''}`}
+                className={p.tile}
+                data-state={state}
               >
-                {t.text}
+                {isMatched && CHECK}
+                {lang ? <Hw text={t.text} lang={lang} /> : t.text}
               </button>
             )
           })}
         </div>
       )}
-    </main>
+    </Stage>
   )
 }

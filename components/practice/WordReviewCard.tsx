@@ -1,16 +1,21 @@
 'use client'
+import { useEffect, useRef } from 'react'
 import { AudioButton, SourceLink } from '@/components/ui/AudioButton'
 import type { ReviewCard } from '@/lib/wordlist/review'
 import type { Grade } from '@/lib/progress/types'
 import { Ipa } from '@/components/ui/Ipa'
+import { Hw } from '@/components/practice/SessionParts'
+import { onlyKey } from '@/components/practice/keys'
+import p from './Practice.module.css'
 
-const GRADES: { grade: Grade; label: string; cls: string }[] = [
-  { grade: 'again', label: 'Lại', cls: 'text-rose-700 border-rose-200 hover:bg-rose-50' },
-  { grade: 'hard', label: 'Khó', cls: 'text-amber-700 border-amber-200 hover:bg-amber-50' },
-  { grade: 'good', label: 'Tốt', cls: 'text-emerald-700 border-emerald-200 hover:bg-emerald-50' },
-  { grade: 'easy', label: 'Dễ', cls: 'text-sky-700 border-sky-200 hover:bg-sky-50' },
+const GRADES: { grade: Grade; label: string }[] = [
+  { grade: 'again', label: 'Lại' },
+  { grade: 'hard', label: 'Khó' },
+  { grade: 'good', label: 'Tốt' },
+  { grade: 'easy', label: 'Dễ' },
 ]
 
+/** Space shows the meaning and 1 to 4 grade it; the keys sit on the buttons they press. */
 export function WordReviewCard({
   card, revealed, onReveal, onGrade, grading = false,
 }: {
@@ -21,44 +26,67 @@ export function WordReviewCard({
   /** A grade is in flight; the buttons must not accept a second tap. */
   grading?: boolean
 }) {
+  const revealRef = useRef<HTMLButtonElement>(null)
+  const goodRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    ;(revealed ? goodRef : revealRef).current?.focus({ preventScroll: true })
+  }, [revealed, card.id])
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const key = onlyKey(e)
+      if (!key) return
+      if (!revealed && key === ' ') { e.preventDefault(); onReveal(); return }
+      const g = revealed && !grading ? GRADES[Number(key) - 1] : undefined
+      if (g) { e.preventDefault(); onGrade(g.grade) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [revealed, grading, onReveal, onGrade])
+
   return (
-    <div className="rounded-2xl border border-black/10 p-8 text-center">
-      <div className="flex items-center justify-center gap-2">
-        <span className="text-4xl font-semibold">{card.headword}</span>
+    <div className={p.card}>
+      <div className={p.head}>
+        <Hw text={card.headword} lang={card.lang} className={p.big} />
         <AudioButton text={card.headword} lang={card.lang} audioUrl={card.audioUrl} />
-        <SourceLink url={card.audioUrl} />
+        <span className={p.src}><SourceLink url={card.audioUrl} /></span>
       </div>
-      {card.reading && <div className="mt-1 text-black/55">{card.reading}</div>}
-      <Ipa value={card.ipa} lang={card.lang} className="mt-1 block text-black/55" />
+      {card.reading && <div className={p.pron}>{card.reading}</div>}
+      <Ipa value={card.ipa} lang={card.lang} className={p.pron} />
 
       {revealed ? (
         <>
-          <div role="status" aria-live="polite" className="mt-6 border-t border-black/10 pt-6">
-            {card.meaningVi && <div className="text-xl">{card.meaningVi}</div>}
-            {card.meaningEn && <div className="mt-1 text-sm text-black/55">{card.meaningEn}</div>}
+          <div role="status" aria-live="polite" className={p.face}>
+            {card.meaningVi && <div className={p.mean}>{card.meaningVi}</div>}
+            {card.meaningEn && <div className={p.gloss}>{card.meaningEn}</div>}
             {card.example && (
-              <div className="mt-4 text-sm">
-                <span className="text-black/70">{card.example}</span>
-                {card.exampleTranslation && <span className="block text-black/55">{card.exampleTranslation}</span>}
+              <div className={p.ex}>
+                <span lang={card.lang}>{card.example}</span>
+                {card.exampleTranslation && <small>{card.exampleTranslation}</small>}
               </div>
             )}
           </div>
-          <div className="mt-8 grid grid-cols-4 gap-2">
-            {GRADES.map((g) => (
+          <div className={p.grades}>
+            {GRADES.map((g, i) => (
               <button
                 key={g.grade}
+                ref={g.grade === 'good' ? goodRef : undefined}
+                type="button"
+                data-g={g.grade}
                 onClick={() => onGrade(g.grade)}
                 disabled={grading}
-                className={`rounded-lg border py-2 text-sm font-medium disabled:opacity-40 ${g.cls}`}
               >
                 {g.label}
+                <kbd className={p.kbd} aria-hidden="true">{i + 1}</kbd>
               </button>
             ))}
           </div>
         </>
       ) : (
-        <button onClick={onReveal} className="mt-8 rounded-lg bg-black px-6 py-2 text-white">
+        <button ref={revealRef} type="button" onClick={onReveal} className={`${p.btn} ${p.wide}`}>
           Hiện nghĩa
+          <kbd className={p.kbd} aria-hidden="true">Space</kbd>
         </button>
       )}
     </div>

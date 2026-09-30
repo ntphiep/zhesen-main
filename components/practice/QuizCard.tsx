@@ -1,10 +1,15 @@
 'use client'
+import { useEffect, useRef } from 'react'
 import { AudioButton } from '@/components/ui/AudioButton'
 import type { QuizQuestion } from '@/lib/practice/quiz'
 import { Ipa } from '@/components/ui/Ipa'
+import { CHECK, CROSS, Hw } from '@/components/practice/SessionParts'
+import { onlyKey } from '@/components/practice/keys'
+import p from './Practice.module.css'
 
-/** One multiple-choice question. Once `selected` is set, options are locked and
- * coloured: the correct answer green, a wrong pick red. */
+/** One multiple-choice question. Once `selected` is set, options lock: the answer fills
+ * blue with a tick, a wrong pick is outlined, struck through and marked with a cross.
+ * Keys 1 to 4 pick an option, and "Tiếp" takes the focus so Enter moves on. */
 export function QuizCard({
   question, selected, onSelect, onNext,
 }: {
@@ -14,47 +19,62 @@ export function QuizCard({
   onNext: () => void
 }) {
   const answered = selected !== null
+  const nextRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (answered) nextRef.current?.focus({ preventScroll: true })
+  }, [answered])
+
+  useEffect(() => {
+    if (answered) return
+    function onKey(e: KeyboardEvent) {
+      const key = onlyKey(e)
+      const opt = key ? question.options[Number(key) - 1] : undefined
+      if (opt !== undefined) { e.preventDefault(); onSelect(opt) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [answered, question, onSelect])
+
   return (
-    <div className="rounded-2xl border border-black/10 p-8">
-      <div className="flex items-center justify-center gap-2">
-        <span className="text-3xl font-semibold">{question.headword}</span>
+    <div className={p.card}>
+      <div className={p.head}>
+        <Hw text={question.headword} lang={question.lang} className={p.big} />
         <AudioButton text={question.headword} lang={question.lang} />
       </div>
-      <Ipa value={question.ipa} lang={question.lang} className="mt-1 block text-center text-black/55" />
-      <p className="mt-2 text-center text-sm text-black/55">Chọn nghĩa đúng</p>
+      <Ipa value={question.ipa} lang={question.lang} className={p.pron} />
+      <p className={p.ask}>Chọn nghĩa đúng</p>
 
-      {/* Feedback is otherwise colour-only, in the green and red option borders, which
-          a screen reader cannot perceive. */}
+      {/* The screen reader hears the verdict the fill and the icons show. */}
       {answered && (
         <p role="status" aria-live="polite" className="sr-only">
           {selected === question.answer ? 'Đúng' : `Sai. Đáp án: ${question.answer}`}
         </p>
       )}
 
-      <div className="mt-6 flex flex-col gap-2">
-        {question.options.map((opt) => {
-          let cls = 'border-black/10 hover:bg-black/5'
-          if (answered) {
-            if (opt === question.answer) cls = 'border-emerald-300 bg-emerald-50 text-emerald-800'
-            else if (opt === selected) cls = 'border-rose-300 bg-rose-50 text-rose-800'
-            else cls = 'border-black/10 opacity-60'
-          }
+      <div className={p.opts}>
+        {question.options.map((opt, i) => {
+          const state = !answered ? undefined : opt === question.answer ? 'ok' : opt === selected ? 'no' : 'rest'
           return (
             <button
               key={opt}
               type="button"
               disabled={answered}
               onClick={() => onSelect(opt)}
-              className={`rounded-lg border px-4 py-3 text-left transition ${cls}`}
+              className={p.opt}
+              data-opt=""
+              data-state={state}
             >
-              {opt}
+              <kbd className={p.kbd} aria-hidden="true">{i + 1}</kbd>
+              <span>{opt}</span>
+              <span className={p.mk}>{state === 'ok' ? CHECK : state === 'no' ? CROSS : null}</span>
             </button>
           )
         })}
       </div>
 
       {answered && (
-        <button onClick={onNext} className="mt-6 w-full rounded-lg bg-black py-2 text-white">
+        <button ref={nextRef} type="button" onClick={onNext} className={`${p.btn} ${p.wide}`}>
           Tiếp
         </button>
       )}
