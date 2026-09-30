@@ -205,7 +205,18 @@ a.card:hover .h3 { text-decoration: underline; text-decoration-thickness: 1.5px;
 .index a[data-k="diphthong"], .index a[data-k="weak"] { background: var(--tint-1); }
 .sym { font-size: var(--s3); line-height: 1.1; font-weight: 600; color: var(--zs-ink); }
 .keyword { font-size: var(--s0); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--zs-soft); }
-.words { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.words { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; }
+.words .tag { padding: 0.15rem 0.7rem; font-size: 1rem; font-weight: 500; white-space: normal; }
+.words .tag[lang="zh"] { font-weight: 700; }
+
+/* GrammarLinks (components/lookup) under a word class, drawn in this page's cards. */
+.related h2 { position: relative; padding-top: 0.9rem; font-size: var(--s3); line-height: 1.2; font-weight: 800; letter-spacing: -0.02em; }
+.related h2::before { content: ""; position: absolute; left: 0; top: 0; width: 2.25rem; height: 4px; border-radius: 4px; background: var(--c-l); }
+.related > section > div { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 0.6rem; margin-top: 0.6rem; }
+.related a { padding: 0.8rem 1rem; border: 1px solid transparent; border-radius: 14px; background: var(--zs-bg); color: var(--zs-ink); font-size: 0.9375rem; font-weight: 600; box-shadow: 0 0 0 1.5px var(--edge); transition: box-shadow 150ms var(--ease-std), background-color 150ms var(--ease-std); }
+.related a span:empty { display: none; }
+.related a:hover { background: var(--tint-1); box-shadow: 0 0 0 1.5px var(--sea-400); }
+.related a span { margin-right: 0.35rem; padding: 0.05rem 0.5rem; border-radius: 999px; background: var(--zs-chip); font-size: 0.75rem; font-weight: 700; color: var(--zs-ink); }
 .word { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.2rem 0.3rem 0.2rem 0.75rem; border-radius: 999px; background: var(--tint-1); }
 .word a { color: var(--zs-ink); text-decoration: none; font-size: 1.125rem; }
 .word a:hover { text-decoration: underline; text-underline-offset: 0.18em; }

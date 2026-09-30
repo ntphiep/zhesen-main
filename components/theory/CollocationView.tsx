@@ -1,6 +1,7 @@
 import { BlockPage } from './BlockPage'
 import { ExampleList } from './ExampleList'
 import { MistakeList } from './MistakeList'
+import s from './Theory.module.css'
 import type { CollocationPattern, CollocationSet } from '@/lib/theory/types'
 import type { Language } from '@/lib/languages'
 
@@ -18,35 +19,33 @@ export function CollocationView({ language, patterns, sets }: {
       titleVi="Collocation"
       leadVi="Collocation là những từ quen đi với nhau. Câu đúng ngữ pháp mà sai collocation thì người bản ngữ vẫn nghe ra ngay."
     >
-      <div className="mt-8 flex flex-col gap-10">
-        {patterns.map((p) => (
-          <section key={p.id} id={p.id} className="flex flex-col gap-4">
-            <div>
-              <div className="flex flex-wrap items-baseline gap-x-3">
-                <h2 className="text-xl font-semibold">{p.titleVi}</h2>
-                <span className="font-mono text-sm text-black/55">{p.formula}</span>
-              </div>
-              <p className="mt-1 text-black/75">{p.explainVi}</p>
-            </div>
+      {patterns.map((p, i) => (
+        <section key={p.id} id={p.id} className={s.sec} data-reveal={i === 0 ? '' : undefined}>
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+            <h2 className={s.h2}>{p.titleVi}</h2>
+            <span className={s.formula}>{p.formula}</span>
+          </div>
+          <p className={s.prose}>{p.explainVi}</p>
+          <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
             <ExampleList examples={p.examples} />
             <MistakeList mistakes={p.mistakes} />
-          </section>
-        ))}
-      </div>
+          </div>
+        </section>
+      ))}
 
       {sets.length > 0 && (
-        <section className="mt-14">
-          <h2 className="text-xl font-semibold">Những động từ hay nhầm lẫn</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {sets.map((s) => (
-              <article key={s.head} className="rounded-2xl border border-black/10 px-5 py-4">
-                <h3 className="font-semibold">{s.titleVi}</h3>
-                <p className="mt-1 text-sm text-black/60">{s.noteVi}</p>
-                <ul className="mt-3 flex flex-col gap-1 text-sm">
-                  {s.items.map((i) => (
-                    <li key={i.en}>
-                      <span className="font-medium text-black/85">{i.en}</span>
-                      <span className="text-black/55"> · {i.vi}</span>
+        <section className={s.sec}>
+          <h2 className={s.h2}>Những động từ hay nhầm lẫn</h2>
+          <div className={s.grid}>
+            {sets.map((set) => (
+              <article key={set.head} className={`${s.card} flex flex-col gap-2`} data-accent="">
+                <h3 className={s.h3}>{set.titleVi}</h3>
+                <p className={s.note}>{set.noteVi}</p>
+                <ul className={`${s.examples} mt-1`} data-dense="">
+                  {set.items.map((item) => (
+                    <li key={item.en} className={s.pair}>
+                      <span className={s.src} lang={language.code}>{item.en}</span>
+                      <span className={s.vi}>{item.vi}</span>
                     </li>
                   ))}
                 </ul>

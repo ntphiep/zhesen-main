@@ -1,7 +1,8 @@
-import Link from 'next/link'
 import { theoryBlockPath } from '@/lib/theory/path'
 import { GrammarLinks } from '@/components/lookup/GrammarLinks'
+import { PageHead } from './BlockPage'
 import { MistakeList } from './MistakeList'
+import s from './Theory.module.css'
 import type { WordClass } from '@/lib/theory/types'
 import type { GrammarPoint } from '@/lib/grammar/types'
 import type { Language } from '@/lib/languages'
@@ -14,55 +15,60 @@ export function WordClassView({ language, wordClass: c, grammar }: {
   grammar: GrammarPoint[]
 }) {
   return (
-    <main className="mx-auto flex max-w-page flex-col gap-8 px-6 py-10">
-      <div>
-        <Link
-          href={theoryBlockPath(language.code, 'word-class')}
-          className="text-sm text-black/55 hover:underline"
-        >
-          ← Từ loại
-        </Link>
-        <div className="mt-3 flex items-baseline gap-3">
-          <h1 className="text-3xl font-bold">{c.titleVi}</h1>
-          <span className="text-lg text-black/55">{c.abbr}</span>
-        </div>
-        <p className="mt-2 text-black/70">{c.oneLineVi}</p>
+    <main className={`${s.page} font-ui`} data-l={language.code}>
+      <PageHead
+        language={language}
+        back={{ href: theoryBlockPath(language.code, 'word-class'), label: 'Từ loại' }}
+        title={<>{c.titleVi}<small>{c.abbr}</small></>}
+        lede={c.oneLineVi}
+      />
+
+      <div className={`${s.body} ${s.flow} mx-auto max-w-page px-6`}>
+        <section className={`${s.card} flex flex-col gap-2`} data-accent="" data-reveal="">
+          <h2 className={s.label}>Vai trò trong câu</h2>
+          <p className={s.prose}>{c.roleVi}</p>
+        </section>
+
+        {c.forms.length > 0 && (
+          <section className={s.sec}>
+            <h2 className={s.h2}>Biến đổi hình thái</h2>
+            <div className={s.grid}>
+              {c.forms.map((f) => <Kind key={f.titleVi} titleVi={f.titleVi} explainVi={f.explainVi} examples={f.examples} lang={language.code} />)}
+            </div>
+          </section>
+        )}
+
+        {c.subtypes.length > 0 && (
+          <section className={s.sec}>
+            <h2 className={s.h2}>Các loại nhỏ</h2>
+            <div className={s.grid}>
+              {c.subtypes.map((st) => <Kind key={st.titleVi} titleVi={st.titleVi} explainVi={st.explainVi} examples={st.examples} lang={language.code} />)}
+            </div>
+          </section>
+        )}
+
+        <MistakeList mistakes={c.mistakes} />
+
+        {grammar.length > 0 && <div className={s.related}><GrammarLinks points={grammar} /></div>}
       </div>
-
-      <section className="rounded-2xl bg-black/5 px-5 py-4">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-black/55">Vai trò trong câu</h2>
-        <p className="mt-1 text-black/80">{c.roleVi}</p>
-      </section>
-
-      {c.forms.length > 0 && (
-        <section className="flex flex-col gap-4">
-          <h2 className="text-xl font-semibold">Biến đổi hình thái</h2>
-          {c.forms.map((f) => (
-            <div key={f.titleVi}>
-              <h3 className="font-medium">{f.titleVi}</h3>
-              <p className="mt-0.5 text-sm text-black/70">{f.explainVi}</p>
-              <p className="mt-1 text-sm text-black/55">{f.examples.join(' · ')}</p>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {c.subtypes.length > 0 && (
-        <section className="flex flex-col gap-4">
-          <h2 className="text-xl font-semibold">Các loại nhỏ</h2>
-          {c.subtypes.map((s) => (
-            <div key={s.titleVi} className="rounded-2xl border border-black/10 px-5 py-4">
-              <h3 className="font-medium">{s.titleVi}</h3>
-              <p className="mt-0.5 text-sm text-black/70">{s.explainVi}</p>
-              <p className="mt-1 text-sm text-black/55">{s.examples.join(' · ')}</p>
-            </div>
-          ))}
-        </section>
-      )}
-
-      <MistakeList mistakes={c.mistakes} />
-
-      <GrammarLinks points={grammar} />
     </main>
+  )
+}
+
+/** A form or a subtype: its name, one line on it, and the words that show it. */
+function Kind({ titleVi, explainVi, examples, lang }: {
+  titleVi: string
+  explainVi: string
+  examples: readonly string[]
+  lang: Language['code']
+}) {
+  return (
+    <article className={`${s.card} flex flex-col gap-2`}>
+      <h3 className={s.h3}>{titleVi}</h3>
+      <p className={s.small}>{explainVi}</p>
+      <p className={s.words}>
+        {examples.map((e) => <span key={e} className={`${s.tag} ${s.hw}`} lang={lang}>{e}</span>)}
+      </p>
+    </article>
   )
 }

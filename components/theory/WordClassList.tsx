@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { wordClassPath } from '@/lib/theory/path'
 import { BlockPage } from './BlockPage'
+import s from './Theory.module.css'
 import type { WordClass } from '@/lib/theory/types'
 import type { Language } from '@/lib/languages'
 
@@ -14,18 +15,14 @@ export function WordClassList({ language, classes }: { language: Language; class
       titleVi="Từ loại"
       leadVi="Mỗi từ thuộc một loại. Loại quyết định từ đứng ở đâu trong câu và đổi hình thế nào."
     >
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        {classes.map((c) => (
-          <Link
-            key={c.key}
-            href={wordClassPath(language.code, c.key)}
-            className="rounded-2xl border border-black/10 px-5 py-4 transition hover:border-black/30 hover:bg-black/5"
-          >
-            <div className="flex items-baseline gap-2">
-              <span className="font-semibold">{c.titleVi}</span>
-              <span className="text-sm text-black/55">{c.abbr}</span>
-            </div>
-            <p className="mt-1 text-sm text-black/60">{c.oneLineVi}</p>
+      <div className={s.grid}>
+        {classes.map((c, i) => (
+          <Link key={c.key} href={wordClassPath(language.code, c.key)} className={`${s.card} flex flex-col gap-1.5`} data-accent="" data-reveal={Math.min(i, 3)}>
+            <span className="flex items-baseline justify-between gap-3">
+              <span className={s.h3}>{c.titleVi}</span>
+              <span className={s.tag}>{c.abbr}</span>
+            </span>
+            <span className={s.small}>{c.oneLineVi}</span>
           </Link>
         ))}
       </div>
