@@ -13,10 +13,11 @@
 :global(:root[data-theme="dark"]) .pop { box-shadow: 0 0 0 1px var(--edge), 0 18px 40px -12px rgb(0 0 0 / 0.9); }
 
 /* The headword in its own language's face, as on the word page. The Newsreader variables
-   exist under /dictionary; elsewhere the fallback serif stands in. */
-.pop [data-hw] { font-family: var(--font-headword), Georgia, serif; font-weight: 600; letter-spacing: -0.015em; }
-.pop [data-hw][lang="es"] { font-family: var(--font-headword-italic), Georgia, serif; font-style: italic; }
-.pop [data-hw][lang="zh"] { font-family: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", serif; font-weight: 700; letter-spacing: 0; }
+   exist under /dictionary; elsewhere the fallback serif stands in. The doubled class outranks
+   the word page's `.word [data-hw]` rules, which match the same element. */
+.pop.pop [data-hw] { font-family: var(--font-headword), Georgia, serif; font-weight: 600; letter-spacing: -0.015em; }
+.pop.pop [data-hw][lang="es"] { font-family: var(--font-headword-italic), Georgia, serif; font-style: italic; }
+.pop.pop [data-hw][lang="zh"] { font-family: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", serif; font-weight: 700; letter-spacing: 0; }
 
 @keyframes pop-in { from { opacity: 0; transform: translateY(-4px) scale(0.97); } }
 @keyframes pop-up { from { opacity: 0; transform: translateY(4px) scale(0.97); } }

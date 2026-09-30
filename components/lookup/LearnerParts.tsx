@@ -12,7 +12,7 @@ import { entryPath } from '@/lib/dictionary/entryId'
 import { genderLabel } from '@/lib/dictionary/gender'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import {
-  LINK_KIND_VI, domainLabel, formDescriptionVi, markHeadword, registerLabel, sourceNumbers,
+  LINK_KIND_VI, domainLabel, formDescriptionVi, markHeadword, markedRanges, registerLabel, sourceNumbers,
   type LearnerExample, type LearnerLayer, type LearnerLink, type LearnerSense, type MinorSense,
 } from '@/lib/dictionary/learner'
 import { posGroups } from '@/lib/dictionary/pos'
@@ -77,8 +77,7 @@ export function Sentence({ text, view }: { text: string; view: WordView }) {
   const parts = markHeadword(text, view.head.headword, view.head.lang, headwordForms(view))
   const resolved = view.resolved.find((r) => r.text === text)
   if (resolved) {
-    const mark = [...new Set(parts.filter((p) => p.mark).map((p) => p.text.toLowerCase()))]
-    return <TappableText text={text} lang={view.head.lang} resolved={resolved} quiet mark={mark} />
+    return <TappableText text={text} lang={view.head.lang} resolved={resolved} quiet marks={markedRanges(parts)} />
   }
   return <>{parts.map((p, i) => (p.mark ? <b key={i} className="font-bold text-(--zs-pen)">{p.text}</b> : p.text))}</>
 }

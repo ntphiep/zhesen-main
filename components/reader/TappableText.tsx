@@ -15,6 +15,28 @@ import r from './Reader.module.css'
 const HIT_AREA = 'relative before:absolute before:inset-x-[-0.125em] before:top-1/2 before:h-full before:min-h-6 '
   + 'before:-translate-y-1/2'
 
+/** Punctuation that belongs to the word before it. */
+const TRAILING = /^[.,;:!?%)\]}”’»…。，、；：！？）」』]+/u
+
+const overlaps = (marks: [number, number][], from: number, to: number) => marks.some(([a, b]) => a < to && b > from)
+
+/** `text`, which starts at `from` in the whole, with the parts inside `marks` in bold. */
+function withMarks(text: string, from: number, marks: [number, number][]): React.ReactNode {
+  if (!overlaps(marks, from, from + text.length)) return text
+  const out: React.ReactNode[] = []
+  let at = 0
+  for (const [a, b] of marks) {
+    const start = Math.max(a - from, at)
+    const end = Math.min(b - from, text.length)
+    if (end <= start) continue
+    if (start > at) out.push(text.slice(at, start))
+    out.push(<b key={start} className="font-bold">{text.slice(start, end)}</b>)
+    at = end
+  }
+  if (at < text.length) out.push(text.slice(at))
+  return out
+}
+
 /** Room kept between the popover and the edge of the viewport. */
 const GUTTER = 12
 
@@ -39,7 +61,7 @@ function placePopover(anchor: HTMLElement, word: HTMLElement) {
  * public (anon) client, and a failure degrades to plain text.
  */
 export function TappableText({
-  text, lang, resolved, quiet = false, mark = [],
+  text, lang, resolved, quiet = false, mark = [], marks = [],
 }: {
   text: string
   lang: LangCode
@@ -51,6 +73,9 @@ export function TappableText({
   quiet?: boolean
   /** Lower-case words set in bold: the headword and its forms in its own examples. */
   mark?: string[]
+  /** Character ranges `[start, end)` of `text` set in bold, for a mark that is not one whole
+   *  token: 学 inside 学校, or "take off" across two. */
+  marks?: [number, number][]
 }) {
   // Tokenised up front, not left empty until the effect below answers: the words are on
   // screen from the first paint and only become tappable once the entries arrive. Starting
@@ -113,7 +138,7 @@ export function TappableText({
       if (!root.current?.contains(e.target as Node)) close()
     }
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== 'Escape') return
+      if (e.key !== 'Escape' || e.defaultPrevented) return
       // Back to the word, so the keyboard reader continues from where they opened it.
       if (root.current?.contains(document.activeElement)) words.current.get(opened)?.focus()
       close()
@@ -163,6 +188,13 @@ export function TappableText({
     return () => { cancelled = true }
   }, [text, lang, resolved])
 
+  const offsets = segments.reduce<number[]>((acc, seg) => [...acc, acc[acc.length - 1] + seg.text.length], [0])
+  // The punctuation opening the segment after each word, drawn with that word.
+  const glued = segments.map((seg, i) => {
+    const next = segments[i + 1]
+    return seg.word && next && !next.word ? next.text.match(TRAILING)?.[0] ?? '' : ''
+  })
+
   return (
     <span
       className="leading-relaxed"
@@ -171,15 +203,23 @@ export function TappableText({
       onBlur={(e) => { if (active !== null && e.relatedTarget && !root.current?.contains(e.relatedTarget)) close() }}
     >
       {segments.map((seg, i) => {
-        if (!seg.word) return <span key={i}>{seg.text}</span>
-        const bold = mark.includes(seg.text.toLowerCase())
+        const cut = glued[i - 1]?.length ?? 0
+        if (!seg.word) {
+          const rest = seg.text.slice(cut)
+          return rest && <span key={i}>{withMarks(rest, offsets[i] + cut, marks)}</span>
+        }
+        const bold = mark.includes(seg.text.toLowerCase()) || overlaps(marks, offsets[i], offsets[i + 1])
         const entry = entries.get(seg.text.toLowerCase())
         const charInfo = !entry && lang === 'zh' ? chars.get(seg.text) : undefined
-        if (!entry && !charInfo) return <span key={i} className={bold ? 'font-bold text-(--zs-pen)' : undefined}>{seg.text}</span>
+        const tail = glued[i] && <span>{withMarks(glued[i], offsets[i + 1], marks)}</span>
+        if (!entry && !charInfo) {
+          const word = <span className={bold ? 'font-bold text-(--zs-pen)' : undefined}>{withMarks(seg.text, offsets[i], marks)}</span>
+          return tail ? <span key={i} className="whitespace-nowrap">{word}{tail}</span> : <span key={i}>{word}</span>
+        }
         const on = active === i
         return (
-          // Inline, not inline-block: an inline-block word let the full stop after it wrap alone.
-          <span key={i} className="relative">
+          // Nowrap with the punctuation after it, which otherwise wrapped alone at some widths.
+          <span key={i} className={`relative ${tail ? 'whitespace-nowrap' : ''}`}>
             <button
               type="button"
               ref={(el) => { if (el) words.current.set(i, el); else words.current.delete(i) }}
@@ -187,18 +227,19 @@ export function TappableText({
               aria-controls={on ? `${id}-pop` : undefined}
               onClick={() => (on ? close() : open(i))}
               // Open and hovered words sit on the chip in ink, which holds 4.5:1 where the
-              // blue of a marked word does not.
+              // blue of a marked word does not. The sea-500 dots hold 3:1 on every surface.
               className={`rounded-[3px] underline decoration-dotted transition-colors duration-150 ease-std ${lang === 'zh' ? '' : HIT_AREA} ${
                 quiet ? 'underline-offset-4' : 'underline-offset-2'
               } ${bold ? 'font-bold' : ''} ${
                 on ? 'bg-(--zs-chip) text-(--zs-ink) decoration-transparent'
-                  : `decoration-sea-300 hover:bg-(--zs-chip) hover:text-(--zs-ink) ${bold || !quiet ? 'text-(--zs-pen)' : ''}`
+                  : `decoration-sea-500 hover:bg-(--zs-chip) hover:text-(--zs-ink) ${bold || !quiet ? 'text-(--zs-pen)' : ''}`
               }`}
             >
-              {seg.text}
+              {withMarks(seg.text, offsets[i], marks)}
             </button>
+            {tail}
             {on && (
-              <span ref={anchor} id={`${id}-pop`} className={r.anchor}>
+              <span ref={anchor} id={`${id}-pop`} className={`${r.anchor} whitespace-normal`}>
                 <WordPopover entry={entry} charInfo={charInfo} />
               </span>
             )}

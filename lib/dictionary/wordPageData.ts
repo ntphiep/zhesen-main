@@ -17,8 +17,24 @@ export async function loadWordPage(entryId: string): Promise<WordViewInput | nul
   // `detail`, so it does not have to wait for the queries below.
   const lemma = lemmaFromSenses(detail.senses, detail.headword)
   const sections = senseSections(detail.senses)
+  const candidateTexts = exampleCandidates(sections, detail.examples).map((e) => e.text)
 
-  const [characters, siblings, inflections, grammarPoints, containing, kin, resolvedExamples, learner, backlinks] = await Promise.all([
+  // The learner layouts' sentences, resolved as soon as the layer is in rather than after the
+  // whole wave. Cached like the dictionary's sentences, so a tap on any layout reads nothing
+  // more; a failure fails the render, as the dictionary's does, rather than cache plain text.
+  const layer = getCachedLearnerLayer(entryId)
+  const layerExamples = layer.then((learner) => {
+    const known = new Set(candidateTexts)
+    const texts = [...new Set((learner?.senses ?? []).flatMap((s) => [
+      ...s.examples.map((x) => x.text),
+      ...s.collocations.flatMap((c) => (c.example ? [c.example] : [])),
+    ]))].filter((t) => !known.has(t))
+    return texts.length > 0 ? getCachedTappableTexts(detail.lang, texts) : []
+  })
+
+  const [
+    characters, siblings, inflections, grammarPoints, containing, kin, resolvedExamples, learner, backlinks, layerResolved,
+  ] = await Promise.all([
     detail.lang === 'zh' ? getCachedCharacters(detail.headword) : Promise.resolve([]),
     getCachedCrossLanguage(entryId),
     getCachedInflections(entryId),
@@ -41,9 +57,10 @@ export async function loadWordPage(entryId: string): Promise<WordViewInput | nul
     // `zh:朋友` 716 ms, all of it after the wave above had already finished.
     //
     // Every sentence the page can show, so none resolves itself from the browser.
-    getCachedTappableTexts(detail.lang, exampleCandidates(sections, detail.examples).map((e) => e.text)),
-    getCachedLearnerLayer(entryId),
+    getCachedTappableTexts(detail.lang, candidateTexts),
+    layer,
     getCachedLearnerBacklinks(entryId),
+    layerExamples,
   ])
 
   // The related words are stored as bare text, so one more call gives the meaning and
@@ -59,22 +76,11 @@ export async function loadWordPage(entryId: string): Promise<WordViewInput | nul
     ...tabs.flatMap((t) => t.items.slice(0, PREVIEWED_ITEMS)).filter((i) => !i.entry || !i.pos).map((i) => i.text),
     ...(lemma ? [lemma] : []),
   ]
-  // The learner layouts' sentences, resolved beside the previews rather than in the first
-  // wave, which would have to wait for the layer. Cached like the dictionary's sentences, so
-  // a tap on any layout reads nothing more; a failure leaves them as plain text.
-  const known = new Set(resolvedExamples.map((r) => r.text))
-  const layerTexts = [...new Set((learner?.senses ?? []).flatMap((s) => [
-    ...s.examples.map((x) => x.text),
-    ...s.collocations.flatMap((c) => (c.example ? [c.example] : [])),
-  ]))].filter((t) => !known.has(t))
-  const [previewRows, layerExamples] = await Promise.all([
-    getCachedTermPreviews(detail.lang, terms),
-    layerTexts.length > 0 ? getCachedTappableTexts(detail.lang, layerTexts).catch(() => []) : Promise.resolve([]),
-  ])
+  const previewRows = await getCachedTermPreviews(detail.lang, terms)
   const previews = Object.fromEntries(previewRows.map((p) => [p.matchText.toLowerCase(), p]))
 
   return {
     detail, lemma, characters, siblings, inflections, grammarPoints, containing, kin, previews,
-    resolvedExamples: [...resolvedExamples, ...layerExamples], learner, backlinks,
+    resolvedExamples: [...resolvedExamples, ...layerResolved], learner, backlinks,
   }
 }

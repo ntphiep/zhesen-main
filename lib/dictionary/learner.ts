@@ -381,6 +381,17 @@ const EN_ENDINGS = '(?:s|es|ed|d|ing|y|ies|ied|er|ers|est)?'
  *  Chinese matches the characters. Elsewhere the headword and its listed forms match
  *  whole, and a stem of at least 4 letters also takes endings, so "warranties" and "took"
  *  (a listed form) are caught while dar leaves "de" and go leaves "good" alone. */
+/** Where the parts `markHeadword` sets in bold sit in the text, as `[start, end)` ranges. */
+export function markedRanges(parts: { text: string; mark: boolean }[]): [number, number][] {
+  const out: [number, number][] = []
+  let at = 0
+  for (const p of parts) {
+    if (p.mark) out.push([at, at + p.text.length])
+    at += p.text.length
+  }
+  return out
+}
+
 export function markHeadword(text: string, headword: string, lang: LangCode, forms: string[] = []): { text: string; mark: boolean }[] {
   const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const h = headword.toLowerCase()

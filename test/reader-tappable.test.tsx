@@ -4,6 +4,9 @@ import userEvent from '@testing-library/user-event'
 import { WordPopover } from '@/components/reader/WordPopover'
 import { TappableText } from '@/components/reader/TappableText'
 import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
+import { markHeadword, markedRanges } from '@/lib/dictionary/learner'
+import { tokenize } from '@/lib/reader/tokenize'
+import type { LangCode } from '@/lib/languages'
 
 // The add button reads the account, so the client stub carries a signed-in user.
 // The stub is imported inside the factory because the factory runs before the
@@ -101,5 +104,41 @@ describe('TappableText', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'dog' }))
     await userEvent.click(await screen.findByText('con chó'))
     expect(screen.getByText('con chó')).toBeInTheDocument()
+  })
+
+  const preview = (lang: LangCode, headword: string): DictEntryPreview => ({ ...dog, id: `${lang}:${headword}`, lang, headword })
+  const bolded = (container: HTMLElement) => [...container.querySelectorAll('b')].map((b) => b.textContent).join('')
+
+  // A whole-token mark missed a Chinese headword inside a longer word.
+  it('bolds a Chinese headword inside a longer word of a learner sentence', () => {
+    const text = '我在学校学习'
+    const segments = tokenize('zh', text, ['学校', '学习'])
+    const resolved = { text, segments, entries: [['学校', preview('zh', '学校')], ['学习', preview('zh', '学习')]] as [string, DictEntryPreview][], chars: [] }
+    const { container } = render(
+      <TappableText text={text} lang="zh" resolved={resolved} quiet marks={markedRanges(markHeadword(text, '学', 'zh'))} />,
+    )
+    expect(bolded(container)).toBe('学学')
+    expect(screen.getByRole('button', { name: '学校' })).toBeInTheDocument()
+  })
+
+  it('bolds a multi-word headword across its tokens', () => {
+    const text = 'Planes take off at dawn.'
+    const resolved = { text, segments: tokenize('en', text), entries: [['take', preview('en', 'take')], ['off', preview('en', 'off')]] as [string, DictEntryPreview][], chars: [] }
+    const { container } = render(
+      <TappableText text={text} lang="en" resolved={resolved} quiet marks={markedRanges(markHeadword(text, 'take off', 'en'))} />,
+    )
+    expect(bolded(container)).toBe('take off')
+    expect(screen.getByRole('button', { name: 'off' })).toBeInTheDocument()
+  })
+
+  // At some widths the full stop after a word's button wrapped onto a line of its own.
+  it('keeps the punctuation after a word on the same line as it', () => {
+    const text = 'the dog.'
+    const resolved = { text, segments: tokenize('en', text), entries: [['dog', dog]] as [string, DictEntryPreview][], chars: [] }
+    const { container } = render(<TappableText text={text} lang="en" resolved={resolved} />)
+    const word = screen.getByRole('button', { name: 'dog' }).parentElement
+    expect(word).toHaveClass('whitespace-nowrap')
+    expect(word).toHaveTextContent(/^dog\.$/)
+    expect(container).toHaveTextContent('the dog.')
   })
 })
