@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import s from './Theory.module.css'
 import type { ToeicQuestion } from '@/lib/theory/types'
 
 const LETTERS = ['A', 'B', 'C', 'D']
@@ -22,12 +23,12 @@ export function ToeicPractice({ questions }: { questions: readonly ToeicQuestion
 
   if (index >= questions.length) {
     return (
-      <div className="rounded-2xl border border-black/10 p-8 text-center">
-        <p ref={sentence} tabIndex={-1} className="text-2xl font-semibold outline-none">Kết quả: {score}/{questions.length}</p>
+      <div className={`${s.card} ${s.quiz} ${s.swap} text-center`}>
+        <p ref={sentence} tabIndex={-1} className={s.score}>Kết quả: {score}/{questions.length}</p>
         <button
           type="button"
           onClick={() => { setIndex(0); setSelected(null); setScore(0) }}
-          className="mt-6 rounded-lg bg-black px-5 py-2 text-white"
+          className={`${s.btn} mt-6`}
         >
           Làm lại
         </button>
@@ -41,47 +42,54 @@ export function ToeicPractice({ questions }: { questions: readonly ToeicQuestion
   function select(i: number) {
     if (answered) return
     setSelected(i)
-    if (i === q.answer) setScore((s) => s + 1)
+    if (i === q.answer) setScore((n) => n + 1)
   }
 
   return (
-    <div className="rounded-2xl border border-black/10 p-6">
-      <div className="flex items-baseline justify-between text-sm text-black/55">
+    <div className={`${s.card} ${s.quiz}`}>
+      <div className={s.meta}>
         <span>Câu {index + 1}/{questions.length}</span>
         <span>{q.skillVi}</span>
       </div>
-      <p ref={sentence} tabIndex={-1} className="mt-3 text-lg outline-none">{q.sentence}</p>
+      <div className={s.bar} aria-hidden="true">
+        <i style={{ transform: `scaleX(${(index + (answered ? 1 : 0)) / questions.length})` }} />
+      </div>
+      {/* Keyed by item, so each new sentence and its options rise in. */}
+      <div key={q.id} className={s.swap}>
+        <p ref={sentence} tabIndex={-1} className={s.stem} lang="en">{q.sentence}</p>
 
-      <div className="mt-5 flex flex-col gap-2">
-        {q.options.map((opt, i) => {
-          let cls = 'border-black/10 hover:bg-black/5'
-          if (answered) {
-            if (i === q.answer) cls = 'border-emerald-300 bg-emerald-50 text-emerald-800'
-            else if (i === selected) cls = 'border-rose-300 bg-rose-50 text-rose-800'
-            else cls = 'border-black/10 opacity-60'
-          }
-          return (
-            <button
-              key={opt}
-              type="button"
-              disabled={answered}
-              onClick={() => select(i)}
-              className={`rounded-lg border px-4 py-3 text-left transition ${cls}`}
-            >
-              <span className="mr-2 text-black/55">({LETTERS[i]})</span>{opt}
-            </button>
-          )
-        })}
+        <div className={s.options}>
+          {q.options.map((opt, i) => {
+            // Told apart by shape as well as fill: the right answer is filled with a check,
+            // a wrong pick is dashed and struck through with a cross.
+            const state = !answered ? undefined
+              : i === q.answer ? 'right'
+              : i === selected ? 'wrong'
+              : 'rest'
+            return (
+              <button
+                key={opt}
+                type="button"
+                disabled={answered}
+                onClick={() => select(i)}
+                data-state={state}
+                className={s.option}
+              >
+                <b>({LETTERS[i]})</b><span lang="en">{opt}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* In words as well as colour, for a screen reader and for a colour-blind reader. */}
       {answered && (
-        <div role="status" className="mt-5 rounded-xl bg-black/5 px-4 py-3 text-sm">
-          <p className="font-semibold">
+        <div role="status" className={s.verdict}>
+          <b>
             {selected === q.answer ? 'Đúng.' : `Sai. Đáp án (${LETTERS[q.answer]}) ${q.options[q.answer]}.`}
-          </p>
-          <p className="mt-1 text-black/80">{q.whyVi}</p>
-          <p className="mt-1 text-black/55">{q.vi}</p>
+          </b>
+          <p>{q.whyVi}</p>
+          <p className={s.vi}>{q.vi}</p>
         </div>
       )}
 
@@ -89,7 +97,7 @@ export function ToeicPractice({ questions }: { questions: readonly ToeicQuestion
         <button
           type="button"
           onClick={() => { setIndex(index + 1); setSelected(null) }}
-          className="mt-5 w-full rounded-lg bg-black py-2 text-white"
+          className={`${s.btn} mt-5 w-full`}
         >
           Tiếp
         </button>

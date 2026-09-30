@@ -41,7 +41,7 @@ export function CollocationView({ language, patterns, sets }: {
               <article key={set.head} className={`${s.card} flex flex-col gap-2`} data-accent="">
                 <h3 className={s.h3}>{set.titleVi}</h3>
                 <p className={s.note}>{set.noteVi}</p>
-                <ul className={`${s.examples} mt-1`} data-dense="">
+                <ul className={s.examples} data-dense="">
                   {set.items.map((item) => (
                     <li key={item.en} className={s.pair}>
                       <span className={s.src} lang={language.code}>{item.en}</span>

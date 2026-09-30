@@ -70,10 +70,13 @@
 
 /* ---------- Sections ---------- */
 .sec { display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+.sec[data-loose] { gap: 2.5rem; }
 .h2 { position: relative; margin: 0; padding-top: 0.9rem; font-size: var(--s3); line-height: 1.2; font-weight: 800; letter-spacing: -0.02em; color: var(--zs-ink); text-wrap: balance; }
 .h2::before { content: ""; position: absolute; left: 0; top: 0; width: 2.25rem; height: 4px; border-radius: 4px; background: var(--c-l); }
 .h2 small { margin-left: 0.5rem; font-size: 0.9375rem; font-weight: 600; letter-spacing: 0; color: var(--zs-soft); }
 .h3 { margin: 0; font-size: 1.125rem; line-height: 1.35; font-weight: 700; color: var(--zs-ink); }
+.h3[data-lg] { font-size: var(--s2); }
+.h3[data-sm] { font-size: 1rem; }
 .label { margin: 0; font-size: var(--s0); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--zs-soft); }
 .prose { margin: 0; max-width: var(--measure); font-size: 1.0625rem; line-height: 1.7; color: var(--zs-ink); text-wrap: pretty; }
 .prose[data-pre] { white-space: pre-line; }
@@ -90,7 +93,7 @@
 .card { position: relative; min-width: 0; padding: 1.1rem 1.25rem; border: 1px solid transparent; border-radius: 18px; background: var(--zs-bg); color: var(--zs-ink); box-shadow: 0 0 0 1.5px var(--edge), var(--lift); }
 .card[data-accent]::before { content: ""; position: absolute; left: 0; top: 1rem; bottom: 1rem; width: 4px; border-radius: 0 4px 4px 0; background: var(--c-l); }
 .card[data-accent] { padding-left: 1.5rem; }
-a.card { display: block; text-decoration: none; transition: box-shadow 200ms var(--ease-std), transform 260ms var(--ease-spring); }
+a.card { text-decoration: none; transition: box-shadow 200ms var(--ease-std), transform 260ms var(--ease-spring); }
 a.card:hover { box-shadow: 0 0 0 1.5px var(--sea-400), var(--lift); transform: translateY(-2px); }
 a.card:hover .h3 { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 0.2em; }
 .card:target { box-shadow: 0 0 0 2.5px var(--sea-500), var(--lift); }
@@ -114,6 +117,16 @@ a.card:hover .h3 { text-decoration: underline; text-decoration-thickness: 1.5px;
 .examples[data-dense] .src { font-size: 1.0625rem; }
 .pair { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.1rem 0.6rem; }
 .pair .src { font-size: 1.0625rem; }
+/* Paraphrase: what the audio says, then the answer's rewording behind an arrow. */
+.heard, .answer { font-size: 1.0625rem; }
+.answer { display: flex; gap: 0.45rem; font-weight: 700; }
+.answer::before { content: "→" / ""; flex: none; font-family: var(--font-ui); font-style: normal; color: var(--zs-pen); }
+/* A word list: the word in its face, its sense beside it, one ruled row each. */
+.lexicon { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); gap: 0 1.25rem; margin: 0.6rem 0 0; padding: 0; list-style: none; }
+.lexicon li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.5rem; padding: 0.35rem 0; border-bottom: 1.5px solid var(--zs-line); }
+.lexicon a { font-size: 1.0625rem; color: var(--zs-ink); text-decoration: none; }
+.lexicon a:hover { text-decoration: underline; text-underline-offset: 0.18em; }
+.lexicon .vi { font-size: 0.875rem; }
 
 /* ---------- Mistakes and traps: shape, not colour, since the palette has no red ---------- */
 .callout { min-width: 0; padding: 1rem 1.25rem 1.1rem; border: 1px solid transparent; border-radius: 18px; background: var(--tint-2); color: var(--zs-ink); }
@@ -123,8 +136,8 @@ a.card:hover .h3 { text-decoration: underline; text-decoration-thickness: 1.5px;
 .callout li + li { padding-top: 0.9rem; border-top: 1.5px solid var(--edge); }
 .wrong, .right { display: flex; align-items: baseline; gap: 0.5rem; margin: 0; }
 .wrong::before, .right::before { flex: none; width: 1rem; font-family: var(--font-ui); font-size: 0.875rem; font-weight: 800; font-style: normal; text-align: center; }
-.wrong::before { content: "✕"; color: var(--zs-soft); }
-.right::before { content: "✓"; color: var(--zs-ink); }
+.wrong::before { content: "✕" / ""; color: var(--zs-soft); }
+.right::before { content: "✓" / ""; color: var(--zs-ink); }
 .wrong .src { font-size: 1.0625rem; font-weight: 400; color: var(--zs-soft); text-decoration: line-through; text-decoration-thickness: 1.5px; }
 .right .src { font-size: 1.0625rem; font-weight: 700; }
 .why { margin: 0.3rem 0 0 1.5rem; font-size: 0.9375rem; line-height: 1.55; color: var(--zs-ink); }
@@ -232,7 +245,6 @@ a.card:hover .h3 { text-decoration: underline; text-decoration-thickness: 1.5px;
 .quiz .meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.3rem 1rem; font-size: 0.8125rem; font-weight: 700; color: var(--zs-soft); }
 .bar { height: 4px; margin-top: 0.6rem; border-radius: 4px; background: var(--zs-chip); overflow: hidden; }
 .bar i { display: block; height: 100%; border-radius: 4px; background: var(--sea-400); transform-origin: left; transition: transform 360ms var(--ease-enter); }
-.bar[data-n="0"] i { transform: scaleX(0); }
 .stem { margin: 1rem 0 0; font-family: var(--latin); font-size: var(--s2); line-height: 1.45; color: var(--zs-ink); outline: none; }
 .options { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.25rem; }
 .option { display: flex; align-items: baseline; gap: 0.6rem; width: 100%; min-height: 3rem; padding: 0.7rem 1rem; border: 1.5px solid var(--edge); border-radius: 14px; background: var(--zs-bg); color: var(--zs-ink); font-family: var(--latin); font-size: 1.0625rem; text-align: left; cursor: pointer; transition: border-color 150ms var(--ease-std), background-color 150ms var(--ease-std), transform 160ms var(--ease-spring); }
@@ -244,13 +256,16 @@ a.card:hover .h3 { text-decoration: underline; text-decoration-thickness: 1.5px;
 .option[data-state="right"] b { color: var(--zs-btn-ink); }
 .option[data-state="wrong"] { border-color: var(--ink); border-style: dashed; text-decoration: line-through; text-decoration-thickness: 1.5px; }
 .option[data-state="rest"] { color: var(--zs-soft); }
-.option[data-state]::after { margin-left: auto; font-family: var(--font-ui); font-size: 0.9375rem; font-weight: 800; text-decoration: none; }
-.option[data-state="right"]::after { content: "✓"; }
-.option[data-state="wrong"]::after { content: "✕"; }
+/* Inline-block, so the strike-through of a wrong pick does not run through its cross. */
+.option[data-state]::after { display: inline-block; margin-left: auto; font-family: var(--font-ui); font-size: 0.9375rem; font-weight: 800; text-decoration: none; }
+.option[data-state="right"]::after { content: "✓" / ""; }
+.option[data-state="wrong"]::after { content: "✕" / ""; }
 .verdict { margin-top: 1.25rem; padding: 0.9rem 1.1rem; border-radius: 14px; background: var(--tint-2); }
 .verdict b { display: block; font-size: 1rem; }
 .verdict p { margin: 0.25rem 0 0; font-size: 0.9375rem; line-height: 1.55; }
-.score { font-size: var(--s4); line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; outline: none; }
+.score { margin: 0; font-size: var(--s4); line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; }
+/* Focus lands here from script after "Tiếp", on text rather than a control. */
+.page :is(.stem, .score):focus-visible { outline: none; }
 
 /* ---------- Motion ---------- */
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
