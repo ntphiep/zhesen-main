@@ -478,16 +478,16 @@ export function PhrasesCard({ headword, lang, phrases }: { headword: string; lan
 export function FamilyRows({ family, related, shown = 6 }: { family: FamilyWord[]; related: ViewWord[]; shown?: number }) {
   const [expanded, setExpanded] = useState(false)
   const rows = expanded ? family : family.slice(0, shown)
-  // A card under 20rem, as in the side panels of the map and the reading page, stacks each
-  // word above its meaning.
+  // A card under 24rem, as the side panels and a phone are, stacks each word above its
+  // meaning; a wider one sets the words in one column so the meanings start on one line.
   return (
     <div className="@container flex flex-col gap-3">
       {family.length > 0 && (
         <ul className="flex flex-col">
           {rows.map((w, i) => (
             <li key={w.text} data-more={i >= shown || undefined} className="border-t border-(--zs-line) first:border-0">
-              <WordLink word={w} className="flex flex-col items-start gap-0.5 py-2 hover:bg-(--tint-1) @xs:flex-row @xs:items-center @xs:gap-3">
-                <span className="text-lg @xs:min-w-[7.25rem] @xs:shrink-0"><MorphText word={w} /></span>
+              <WordLink word={w} className="flex flex-col items-start gap-0.5 py-2 hover:bg-(--tint-1) @sm:grid @sm:grid-cols-[minmax(7.25rem,10rem)_minmax(0,1fr)_auto] @sm:items-center @sm:gap-3">
+                <span className="break-words text-lg"><MorphText word={w} /></span>
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className={`text-sm ${w.gloss ? '' : 'text-(--zs-soft)'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</span>
                   <PosTag full value={w.pos} className="text-xs text-(--zs-soft)" />

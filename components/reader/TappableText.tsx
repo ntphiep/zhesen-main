@@ -178,7 +178,8 @@ export function TappableText({
         if (!entry && !charInfo) return <span key={i} className={bold ? 'font-bold text-(--zs-pen)' : undefined}>{seg.text}</span>
         const on = active === i
         return (
-          <span key={i} className="relative inline-block">
+          // Inline, not inline-block: an inline-block word let the full stop after it wrap alone.
+          <span key={i} className="relative">
             <button
               type="button"
               ref={(el) => { if (el) words.current.set(i, el); else words.current.delete(i) }}
