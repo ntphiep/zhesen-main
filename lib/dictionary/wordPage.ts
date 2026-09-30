@@ -77,6 +77,9 @@ export function entryGlosses(detail: Pick<DictEntryDetail, 'glossVi' | 'senses'>
   return [detail.glossVi, ...detail.senses.map((s) => s.glossVi)]
 }
 
+/** An en dash bound to the term before it, so no line of the headline starts with it. */
+const SUMMARY_SEPARATOR = '\u00a0– '
+
 /** Up to five first Vietnamese terms of the senses each section shows, joined. */
 export function summaryLine(sections: SenseSection[]): string | null {
   const terms: string[] = []
@@ -85,10 +88,10 @@ export function summaryLine(sections: SenseSection[]): string | null {
       // A comma inside parentheses belongs to the term: "đi (xe, tàu)".
       const term = (s.glossVi ?? s.pivotVi)?.split(/[,;](?![^(]*\))/)[0].trim()
       if (term && !terms.some((t) => t.toLowerCase() === term.toLowerCase())) terms.push(term)
-      if (terms.length === 5) return terms.join(' · ')
+      if (terms.length === 5) return terms.join(SUMMARY_SEPARATOR)
     }
   }
-  return terms.length > 0 ? terms.join(' · ') : null
+  return terms.length > 0 ? terms.join(SUMMARY_SEPARATOR) : null
 }
 
 /** The examples the page can show: the first one linked to each sense a section shows

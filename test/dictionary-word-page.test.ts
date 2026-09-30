@@ -42,7 +42,7 @@ describe('summaryLine', () => {
       sense({ senseOrder: 2, glossVi: 'Đi (xe, tàu)' }),
       sense({ senseOrder: 3, glossVi: 'cầm' }),
     ])
-    expect(summaryLine(sections)).toBe('Cầm · Đi (xe, tàu)')
+    expect(summaryLine(sections)).toBe('Cầm\u00a0– Đi (xe, tàu)')
   })
 })
 
