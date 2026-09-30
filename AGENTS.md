@@ -152,7 +152,10 @@ header to it by string equality. The auth cookie name is pinned in `lib/supabase
   (`lib/practice/grading.ts`) then `gradeWordById` (`lib/wordlist/review.ts`). Speaking
   practice deliberately never reports a failure, because speech recognition misfires on
   noise and microphones and recording `again` would erase real progress over a hardware
-  fault.
+  fault. `review_log` holds one row per user per day, not one per grade, so prove a grade
+  landed by reading `user_words.fsrs_last_review_at` and `fsrs_reps`. A practice keyboard
+  shortcut goes through `useKeyGate` (`lib/hooks/useKeyGate.ts`): a held Enter once graded
+  every due card unseen.
 - An anonymous account lives in one browser's cookie, so clearing browsing data loses it:
   407 saved words once ended up in an account with no way back. `signInWithPassword`
   (`lib/auth/account.ts`) therefore refuses when the current session holds data, because
