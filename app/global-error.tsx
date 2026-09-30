@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { Be_Vietnam_Pro } from 'next/font/google'
-import { THEME_BOOT_SCRIPT } from '@/lib/theme'
+import { DARK_QUERY, THEME_KEY, parseTheme, resolveTheme } from '@/lib/theme'
 import s from '@/components/layout/Status.module.css'
 import './globals.css'
 
@@ -30,12 +30,15 @@ export default function GlobalError({
     console.error(error)
   }, [error])
 
+  // The stored scheme. Next draws this page in the browser, where an inline boot script never runs.
+  useEffect(() => {
+    let stored: string | null = null
+    try { stored = localStorage.getItem(THEME_KEY) } catch { /* storage blocked: follow the system */ }
+    document.documentElement.dataset.theme = resolveTheme(parseTheme(stored), window.matchMedia(DARK_QUERY).matches)
+  }, [])
+
   return (
     <html lang="vi" className={`${beVietnamPro.variable} h-full antialiased`} suppressHydrationWarning>
-      <head>
-        {/* The stored scheme, as app/layout.tsx applies it before the first paint. */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
-      </head>
       <body className="min-h-full">
         <main data-full="" className={`${s.page} font-ui`}>
           <div aria-hidden="true" className={s.mark}><i /><i /><i /></div>

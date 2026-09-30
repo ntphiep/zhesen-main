@@ -28,7 +28,7 @@
 .btn:active, .ghost:active { transform: scale(0.97); }
 
 /* The digest a visitor can quote back. */
-.digest { margin: 1.75rem 0 0; padding: 0.3rem 0.8rem; border-radius: 999px; background: var(--zs-chip); font-family: var(--font-mono); font-size: 0.75rem; color: var(--zs-ink); }
+.digest { margin: 1.75rem 0 0; padding: 0.3rem 0.8rem; border-radius: 999px; background: var(--zs-chip); font-size: 0.8125rem; font-variant-numeric: tabular-nums; color: var(--zs-ink); }
 
 @media (prefers-reduced-motion: reduce) {
   .mark i { animation: none; }

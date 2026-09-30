@@ -11,7 +11,7 @@
 /* Title row */
 .back { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; font-weight: 600; color: var(--zs-pen); text-decoration: none; }
 .back:hover { text-decoration: underline; text-underline-offset: 0.2em; }
-.back span { display: inline-block; transition: transform 200ms var(--ease-spring); }
+.back span { display: inline-block; font-size: 1rem; transition: transform 200ms var(--ease-spring); }
 .back:hover span { transform: translateX(-3px); }
 .title { margin: 0.6rem 0 0; font-size: 2.34375rem; line-height: 1.1; font-weight: 800; letter-spacing: -0.03em; color: var(--zs-ink); }
 .lede { margin: 0.4rem 0 0; font-size: 1.0625rem; color: var(--zs-soft); }
@@ -37,7 +37,7 @@
 .label > span { font-size: 0.8125rem; font-weight: 700; color: var(--zs-pen); }
 .hint { margin: 0.4rem 0 0; font-size: 0.8125rem; color: var(--zs-soft); }
 .row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
-.row .field { flex: 1 1 14rem; width: auto; }
+.row .field { flex: 1 1 10rem; width: auto; }
 
 /* What happened after a submit: ink behind a glyph, never red. */
 .said { display: flex; align-items: flex-start; gap: 0.45rem; margin: 0.8rem 0 0; font-size: 0.875rem; font-weight: 600; color: var(--zs-ink); animation: said 220ms var(--ease-enter) both; }

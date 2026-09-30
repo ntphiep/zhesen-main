@@ -145,7 +145,7 @@ export function AccountSettings({
                 ))}
               </div>
               <p className={s.split}>
-                {STATUS_OPTIONS.map(([key, label]) => `${label} ${stats.byStatus[key]}`).join(' · ')}
+                {STATUS_OPTIONS.map(([key, label]) => keep(`${label} ${stats.byStatus[key]}`)).join(' · ')}
               </p>
             </div>
             <div>
@@ -155,7 +155,7 @@ export function AccountSettings({
                 ))}
               </div>
               <p className={s.split}>
-                {langs.map((l) => `${l.name} ${stats.byLang[l.code]}`).join(' · ')}
+                {langs.map((l) => keep(`${l.name} ${stats.byLang[l.code]}`)).join(' · ')}
               </p>
             </div>
           </div>
@@ -245,6 +245,9 @@ export function AccountSettings({
     </div>
   )
 }
+
+/** One item of a split line never breaks inside, so "Tiếng Trung 1" stays on one line. */
+const keep = (item: string) => item.replaceAll(' ', '\u00a0')
 
 function DownloadGlyph() {
   return (
