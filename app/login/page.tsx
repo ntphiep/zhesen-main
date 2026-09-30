@@ -4,6 +4,7 @@ import { countWords } from '@/lib/wordlist/store'
 import { accountKind } from '@/lib/auth/account'
 import { safeNext } from '@/lib/auth/redirect'
 import { AuthForm } from '@/components/account/AuthForm'
+import s from '@/components/account/Account.module.css'
 
 export const metadata = { title: 'Đăng nhập' }
 
@@ -39,7 +40,7 @@ export default async function LoginPage({
     // Centred in what is left of the viewport under the header. Pinned to the
     // top it read as a form dropped on a blank page, with the whole lower half
     // empty.
-    <main className="flex min-h-[calc(100dvh-8rem)] items-center justify-center bg-black/[0.02] px-6 py-12">
+    <main className={`${s.auth} font-ui`}>
       <AuthForm
         mode="login"
         localWordCount={localWordCount}

@@ -2,6 +2,8 @@
 import { useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { LinkPending } from '@/components/ui/LinkPending'
+import { Said, WarnGlyph } from './Said'
+import s from './Account.module.css'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -94,12 +96,12 @@ export function AuthForm({
   }
 
   return (
-    <div className="w-full max-w-sm rounded-2xl border border-black/10 bg-white p-6 shadow-sm sm:p-7">
-      <h1 className="text-2xl font-bold">
+    <div className={`${s.acc} ${s.card}`}>
+      <h1 className={s.cardTitle}>
         {mode === 'register' ? (upgrading ? 'Hoàn tất tài khoản' : 'Tạo tài khoản') : 'Đăng nhập'}
       </h1>
 
-      <p className="mt-2 text-sm text-black/60">
+      <p className={s.cardLede} data-keep={upgrading || undefined}>
         {upgrading
           ? `Tài khoản mới giữ nguyên ${localWordCount} từ đã lưu trên trình duyệt này.`
           : mode === 'register'
@@ -108,14 +110,15 @@ export function AuthForm({
       </p>
 
       {notice && (
-        <p role="alert" className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p role="alert" className={s.alert}>
+          <WarnGlyph />
           {notice}
         </p>
       )}
 
-      <form onSubmit={submit} noValidate className="mt-5 flex flex-col gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium">Email</span>
+      <form onSubmit={submit} noValidate className={s.form}>
+        <label className={s.label}>
+          <span>Email</span>
           <input
             ref={emailRef}
             id="email"
@@ -127,15 +130,15 @@ export function AuthForm({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="ban@vidu.com"
-            className="rounded-lg border border-black/15 px-3 py-2"
+            className={s.field}
           />
         </label>
 
-        <div className="flex flex-col gap-1 text-sm">
+        <div>
           {/* The hint sits outside the label: inside it, the field's accessible name
               becomes "Mật khẩu" plus the hint. */}
-          <label className="flex flex-col gap-1">
-            <span className="font-medium">Mật khẩu</span>
+          <label className={s.label}>
+            <span>Mật khẩu</span>
             <input
               id={passwordField}
               name={passwordField}
@@ -146,37 +149,30 @@ export function AuthForm({
               aria-describedby={mode === 'register' ? 'password-hint' : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="rounded-lg border border-black/15 px-3 py-2"
+              className={s.field}
             />
           </label>
           {mode === 'register' && (
-            <p id="password-hint" className="text-xs text-black/55">Ít nhất {MIN_PASSWORD} ký tự.</p>
+            <p id="password-hint" className={s.hint}>Ít nhất {MIN_PASSWORD} ký tự.</p>
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={busy}
-          className="mt-1 rounded-lg bg-black px-4 py-2 font-medium text-white disabled:opacity-40"
-        >
+        <button type="submit" disabled={busy} className={`${s.btn} ${s.wide}`}>
+          {busy && <span aria-hidden="true" className={s.spin} />}
           {busy ? 'Đang xử lý…' : upgrading ? 'Hoàn tất tài khoản' : mode === 'register' ? 'Tạo tài khoản' : 'Đăng nhập'}
         </button>
       </form>
 
-      {feedback && (
-        <p className={`mt-3 text-sm ${feedback.tone === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
-          {feedback.text}
-        </p>
-      )}
+      {feedback && <Said tone={feedback.tone} text={feedback.text} />}
 
-      <p className="mt-6 text-sm text-black/60">
+      <p className={s.swap}>
         {mode === 'register' ? (
           <>
-            Đã có tài khoản? <Link href="/login" prefetch={false} className="font-medium text-black hover:underline">Đăng nhập<LinkPending /></Link>
+            Đã có tài khoản? <Link href="/login" prefetch={false}>Đăng nhập<span aria-hidden="true">→</span><LinkPending /></Link>
           </>
         ) : (
           <>
-            Chưa có tài khoản? <Link href="/register" prefetch={false} className="font-medium text-black hover:underline">Tạo tài khoản<LinkPending /></Link>
+            Chưa có tài khoản? <Link href="/register" prefetch={false}>Tạo tài khoản<span aria-hidden="true">→</span><LinkPending /></Link>
           </>
         )}
       </p>
