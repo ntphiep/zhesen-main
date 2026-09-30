@@ -4,6 +4,8 @@ import { AudioButton, SourceLink } from '@/components/ui/AudioButton'
 import type { TypedResult } from '@/lib/practice/typing'
 import type { LangCode } from '@/lib/languages'
 import { Verdict } from '@/components/practice/SessionParts'
+import { useKeyGate } from '@/lib/hooks/useKeyGate'
+import { holdBack } from '@/components/practice/keys'
 import p from './Practice.module.css'
 
 export interface TypingPrompt {
@@ -32,13 +34,18 @@ export function TypingCard({
 }) {
   const answered = result !== null
   const nextRef = useRef<HTMLButtonElement>(null)
+  // A new card or its answer is a new step: a held Enter cannot submit or skip it.
+  const settled = useKeyGate(answered)
 
   useEffect(() => {
     if (answered) nextRef.current?.focus({ preventScroll: true })
   }, [answered])
 
   return (
-    <div className={p.card}>
+    <div
+      className={p.card}
+      onKeyDownCapture={(e) => holdBack(e, settled)}
+    >
       {mode === 'write' ? (
         <>
           <p className={p.meta}>Nghĩa</p>
@@ -62,7 +69,8 @@ export function TypingCard({
       )}
 
       <form
-        onSubmit={(e) => { e.preventDefault(); if (answered) onNext(); else onSubmit() }}
+        // An empty answer is never graded: it would record a lapse for a word never tried.
+        onSubmit={(e) => { e.preventDefault(); if (answered) onNext(); else if (value.trim()) onSubmit() }}
         className={p.form}
       >
         <input
@@ -78,7 +86,7 @@ export function TypingCard({
           data-state={result ?? undefined}
           className={p.input}
         />
-        {!answered && <button type="submit" className={p.btn}>Kiểm tra</button>}
+        {!answered && <button type="submit" disabled={!value.trim()} className={p.btn}>Kiểm tra</button>}
       </form>
 
       {answered && (

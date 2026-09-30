@@ -4,7 +4,8 @@ import { AudioButton } from '@/components/ui/AudioButton'
 import type { QuizQuestion } from '@/lib/practice/quiz'
 import { Ipa } from '@/components/ui/Ipa'
 import { CHECK, CROSS, Hw } from '@/components/practice/SessionParts'
-import { onlyKey } from '@/components/practice/keys'
+import { holdBack, onlyKey } from '@/components/practice/keys'
+import { useKeyGate } from '@/lib/hooks/useKeyGate'
 import p from './Practice.module.css'
 
 /** One multiple-choice question. Once `selected` is set, options lock: the answer fills
@@ -20,6 +21,8 @@ export function QuizCard({
 }) {
   const answered = selected !== null
   const nextRef = useRef<HTMLButtonElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const settled = useKeyGate(answered)
 
   useEffect(() => {
     if (answered) nextRef.current?.focus({ preventScroll: true })
@@ -28,16 +31,20 @@ export function QuizCard({
   useEffect(() => {
     if (answered) return
     function onKey(e: KeyboardEvent) {
-      const key = onlyKey(e)
+      const key = onlyKey(e, cardRef.current)
       const opt = key ? question.options[Number(key) - 1] : undefined
-      if (opt !== undefined) { e.preventDefault(); onSelect(opt) }
+      if (opt !== undefined) { e.preventDefault(); if (settled(e)) onSelect(opt) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [answered, question, onSelect])
+  }, [answered, question, onSelect, settled])
 
   return (
-    <div className={p.card}>
+    <div
+      ref={cardRef}
+      className={p.card}
+      onKeyDownCapture={(e) => holdBack(e, settled)}
+    >
       <div className={p.head}>
         <Hw text={question.headword} lang={question.lang} className={p.big} />
         <AudioButton text={question.headword} lang={question.lang} />

@@ -51,7 +51,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
   const title = mode === 'write' ? 'Viết từ' : 'Nghe và chép'
 
   function submit() {
-    if (result !== null) return
+    if (result !== null || !value.trim()) return
     const r = checkTypedAnswer(value, current.headword)
     setResult(r)
     if (r !== 'wrong') setScore((s) => s + 1)

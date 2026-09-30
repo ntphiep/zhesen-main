@@ -5,7 +5,8 @@ import type { ReviewCard } from '@/lib/wordlist/review'
 import type { Grade } from '@/lib/progress/types'
 import { Ipa } from '@/components/ui/Ipa'
 import { Hw } from '@/components/practice/SessionParts'
-import { onlyKey } from '@/components/practice/keys'
+import { holdBack, onlyKey, spaceIsFree } from '@/components/practice/keys'
+import { useKeyGate } from '@/lib/hooks/useKeyGate'
 import p from './Practice.module.css'
 
 const GRADES: { grade: Grade; label: string }[] = [
@@ -26,7 +27,10 @@ export function WordReviewCard({
   /** A grade is in flight; the buttons must not accept a second tap. */
   grading?: boolean
 }) {
+  const cardRef = useRef<HTMLDivElement>(null)
   const revealRef = useRef<HTMLButtonElement>(null)
+  // Showing the meaning is a new step: the press that showed it cannot also grade it.
+  const settled = useKeyGate(revealed)
   const goodRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -35,18 +39,27 @@ export function WordReviewCard({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      const key = onlyKey(e)
-      if (!key) return
-      if (!revealed && key === ' ') { e.preventDefault(); onReveal(); return }
+      const key = onlyKey(e, cardRef.current)
+      if (!key || !cardRef.current) return
+      if (!revealed && key === ' ') {
+        if (!spaceIsFree(e, cardRef.current)) return
+        e.preventDefault()
+        if (settled(e)) onReveal()
+        return
+      }
       const g = revealed && !grading ? GRADES[Number(key) - 1] : undefined
-      if (g) { e.preventDefault(); onGrade(g.grade) }
+      if (g) { e.preventDefault(); if (settled(e)) onGrade(g.grade) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [revealed, grading, onReveal, onGrade])
+  }, [revealed, grading, onReveal, onGrade, settled])
 
   return (
-    <div className={p.card}>
+    <div
+      ref={cardRef}
+      className={p.card}
+      onKeyDownCapture={(e) => holdBack(e, settled)}
+    >
       <div className={p.head}>
         <Hw text={card.headword} lang={card.lang} className={p.big} />
         <AudioButton text={card.headword} lang={card.lang} audioUrl={card.audioUrl} />

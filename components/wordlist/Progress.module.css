@@ -23,7 +23,7 @@
 .row > span:first-child { font-weight: 600; color: var(--zs-ink); white-space: nowrap; }
 .row > span:last-child { text-align: right; font-weight: 700; color: var(--zs-ink); font-variant-numeric: tabular-nums; }
 .track { height: 8px; border-radius: 9px; background: var(--zs-bg); overflow: hidden; }
-.track i { display: block; height: 100%; border-radius: inherit; background: var(--c, var(--sea-600)); transform-origin: left; animation: grow 620ms var(--ease-enter) 120ms both; }
+.track i { display: block; height: 100%; border-radius: inherit; background: var(--c, var(--sea-600)); transform-origin: left; animation: grow 520ms var(--ease-enter) 120ms both; }
 /* The home page's meter: learned in full colour, learning at 45%, not yet reviewed hollow. */
 .track i[data-c="known"] { --c: var(--sea-600); }
 .track i[data-c="learning"] { --c: color-mix(in srgb, var(--sea-600) 45%, var(--zs-bg)); }
