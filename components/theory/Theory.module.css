@@ -281,9 +281,10 @@ a.card:hover .h3 { text-decoration: underline; text-decoration-thickness: 1.5px;
 .option:disabled { cursor: default; }
 .option[data-state="right"] { border-color: var(--zs-btn); background: var(--zs-btn); color: var(--zs-btn-ink); }
 .option[data-state="right"] b { color: var(--zs-btn-ink); }
-.option[data-state="wrong"] { border-color: var(--ink); border-style: dashed; text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.option[data-state="wrong"] { border-color: var(--ink); border-style: dashed; }
+.option[data-state="wrong"] span { text-decoration: line-through; text-decoration-thickness: 1.5px; }
 .option[data-state="rest"] { color: var(--zs-soft); }
-/* Inline-block, so the strike-through of a wrong pick does not run through its cross. */
+/* A mark after the option: a check on the answer, a cross on a wrong pick. */
 .option[data-state]::after { display: inline-block; margin-left: auto; font-family: var(--font-ui); font-size: 0.9375rem; font-weight: 800; text-decoration: none; }
 .option[data-state="right"]::after { content: "✓" / ""; }
 .option[data-state="wrong"]::after { content: "✕" / ""; }
