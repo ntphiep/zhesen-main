@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { BLOCKS_BY_LANG, type TheoryBlockKey } from '@/lib/theory/blocks'
 import { theoryBlockPath } from '@/lib/theory/path'
+import { ArrowRight } from './Glyphs'
+import s from './Theory.module.css'
 import type { LangCode } from '@/lib/languages'
 
 /** The blocks are in learning order, so the end of one is the start of the next. The
@@ -11,12 +13,12 @@ export function NextBlock({ lang, block }: { lang: LangCode; block: TheoryBlockK
   const next = here === -1 ? undefined : blocks[here + 1]
   if (!next) return null
   return (
-    <Link
-      href={theoryBlockPath(lang, next.key)}
-      className="mt-14 flex items-baseline justify-between rounded-2xl border border-black/10 px-5 py-4 transition hover:border-black/30 hover:bg-black/5"
-    >
-      <span className="text-sm text-black/55">Tiếp theo</span>
-      <span className="font-semibold">{next.titleVi} →</span>
+    <Link href={theoryBlockPath(lang, next.key)} className={s.next}>
+      <span>
+        <span className={s.label}>Tiếp theo</span>
+        <b>{next.titleVi}</b>
+      </span>
+      <ArrowRight />
     </Link>
   )
 }

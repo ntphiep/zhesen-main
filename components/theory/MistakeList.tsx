@@ -1,3 +1,5 @@
+import { Warn } from './Glyphs'
+import s from './Theory.module.css'
 import type { Mistake } from '@/lib/theory/types'
 
 /** The wrong sentence struck through, the right one under it, the rule in one line.
@@ -5,14 +7,14 @@ import type { Mistake } from '@/lib/theory/types'
 export function MistakeList({ mistakes }: { mistakes: readonly Mistake[] }) {
   if (mistakes.length === 0) return null
   return (
-    <section className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-amber-700">Lỗi hay mắc</h2>
-      <ul className="mt-2 flex flex-col gap-3">
+    <section className={s.callout}>
+      <h2 className={s.label}><Warn />Lỗi hay mắc</h2>
+      <ul>
         {mistakes.map((m) => (
           <li key={m.wrong}>
-            <p className="text-amber-900/70 line-through">{m.wrong}</p>
-            <p className="font-medium text-amber-900">{m.right}</p>
-            <p className="mt-0.5 text-sm text-amber-900/80">{m.whyVi}</p>
+            <p className={s.wrong}><span className="sr-only">Sai: </span><span className={s.src} lang="en">{m.wrong}</span></p>
+            <p className={s.right}><span className="sr-only">Đúng: </span><span className={s.src} lang="en">{m.right}</span></p>
+            <p className={s.why}>{m.whyVi}</p>
           </li>
         ))}
       </ul>
