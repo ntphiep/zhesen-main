@@ -29,9 +29,9 @@ export function AddToWordlistButton({ entry, size = 'sm', tone }: { entry: DictE
         prefetch={false}
         className={tone === 'pane'
           ? 'inline-flex h-10 items-center rounded-full border-[1.5px] border-current px-4 text-sm font-bold hover:bg-current/10'
-          : size === 'lg'
-          ? 'inline-flex h-11 items-center rounded-full border-[1.5px] border-(--zs-ink) bg-(--zs-bg) px-5 text-sm font-bold text-(--zs-ink) transition-colors duration-150 ease-std hover:bg-(--zs-ink) hover:text-(--zs-bg)'
-          : 'rounded-lg border border-black/15 px-3 py-1.5 text-sm font-medium text-black/70 hover:bg-black/5'}
+          : `inline-flex items-center whitespace-nowrap rounded-full border-[1.5px] border-(--zs-ink) bg-(--zs-bg) font-bold text-(--zs-ink) transition-colors duration-150 ease-std hover:bg-(--zs-ink) hover:text-(--zs-bg) ${
+            size === 'lg' ? 'h-11 px-5 text-sm' : 'h-9 px-4 text-[13px]'
+          }`}
       >
         Đăng nhập để lưu
         <LinkPending />

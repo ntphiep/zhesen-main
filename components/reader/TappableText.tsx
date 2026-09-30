@@ -1,11 +1,12 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { tokenize, type Segment } from '@/lib/reader/tokenize'
 import { WordPopover } from './WordPopover'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
 import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 import { loadSupabaseClient } from '@/lib/supabase/loadClient'
+import r from './Reader.module.css'
 
 /** A pseudo-element 24 px tall that reaches half a space to each side, so a tap between
  *  two words lands on the nearer one and never on the neighbour's letters. A word stays
@@ -13,6 +14,24 @@ import { loadSupabaseClient } from '@/lib/supabase/loadClient'
  *  where words touch. */
 const HIT_AREA = 'relative before:absolute before:inset-x-[-0.125em] before:top-1/2 before:h-full before:min-h-6 '
   + 'before:-translate-y-1/2'
+
+/** Room kept between the popover and the edge of the viewport. */
+const GUTTER = 12
+
+/** The popover's anchor, moved back inside the viewport and above the word when the space
+ *  below it is short. Written to the DOM: it is layout, measured after the popover mounts. */
+function placePopover(anchor: HTMLElement, word: HTMLElement) {
+  anchor.style.left = '0px'
+  delete anchor.dataset.side
+  const box = anchor.getBoundingClientRect()
+  const at = word.getBoundingClientRect()
+  const width = document.documentElement.clientWidth
+  const shift = Math.max(GUTTER - box.left, Math.min(0, width - GUTTER - box.right))
+  anchor.style.left = `${shift}px`
+  anchor.style.setProperty('--pop-x', `${Math.max(12, at.left + at.width / 2 - (box.left + shift))}px`)
+  const header = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 0
+  if (box.bottom > window.innerHeight - GUTTER && at.top - box.height - GUTTER > header) anchor.dataset.side = 'top'
+}
 
 /**
  * Text with dictionary-known words made tappable, each opening an inline popover;
@@ -58,13 +77,46 @@ export function TappableText({
   // Escape or a click outside dismisses, beside tapping the word again. The listeners
   // exist only while a popover is open.
   const root = useRef<HTMLSpanElement>(null)
+  const anchor = useRef<HTMLSpanElement>(null)
+  const words = useRef(new Map<number, HTMLButtonElement>())
+  const id = useId()
+  // Bumped by every open and close, so a fade-out that ends after the reader opened another
+  // word does not close that one.
+  const turn = useRef(0)
+
+  function open(i: number) {
+    turn.current++
+    setActive(i)
+  }
+
+  /** Fades the popover out where the browser animates and motion is welcome, else at once. */
+  function close() {
+    const mine = ++turn.current
+    const pop = anchor.current?.firstElementChild
+    const still = typeof window.matchMedia !== 'function' || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!pop || typeof pop.animate !== 'function' || still) { setActive(null); return }
+    pop.animate(
+      [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px) scale(0.97)' }],
+      { duration: 120, easing: 'cubic-bezier(0.2, 0, 0, 1)', fill: 'forwards' },
+    ).finished.then(() => { if (turn.current === mine) setActive(null) }, () => {})
+  }
+
+  useLayoutEffect(() => {
+    const word = active === null ? undefined : words.current.get(active)
+    if (anchor.current && word) placePopover(anchor.current, word)
+  }, [active])
+
   useEffect(() => {
     if (active === null) return
+    const opened = active
     function onPointerDown(e: MouseEvent | TouchEvent) {
-      if (!root.current?.contains(e.target as Node)) setActive(null)
+      if (!root.current?.contains(e.target as Node)) close()
     }
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setActive(null)
+      if (e.key !== 'Escape') return
+      // Back to the word, so the keyboard reader continues from where they opened it.
+      if (root.current?.contains(document.activeElement)) words.current.get(opened)?.focus()
+      close()
     }
     document.addEventListener('mousedown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
@@ -112,26 +164,35 @@ export function TappableText({
   }, [text, lang, resolved])
 
   return (
-    <span className="leading-relaxed" ref={root}>
+    <span
+      className="leading-relaxed"
+      ref={root}
+      // Tabbing past the popover closes it; a click on its text moves focus nowhere and keeps it.
+      onBlur={(e) => { if (active !== null && e.relatedTarget && !root.current?.contains(e.relatedTarget)) close() }}
+    >
       {segments.map((seg, i) => {
         if (!seg.word) return <span key={i}>{seg.text}</span>
-        const bold = mark.includes(seg.text.toLowerCase()) ? 'font-semibold' : ''
+        const bold = mark.includes(seg.text.toLowerCase()) ? 'font-bold text-(--zs-pen)' : ''
         const entry = entries.get(seg.text.toLowerCase())
         const charInfo = !entry && lang === 'zh' ? chars.get(seg.text) : undefined
         if (!entry && !charInfo) return <span key={i} className={bold || undefined}>{seg.text}</span>
+        const on = active === i
         return (
           <span key={i} className="relative inline-block">
             <button
               type="button"
-              onClick={() => setActive(active === i ? null : i)}
-              className={`rounded underline decoration-dotted hover:bg-blue-50 ${lang === 'zh' ? '' : HIT_AREA} ${bold} ${
-                quiet ? 'decoration-black/25 underline-offset-4 hover:text-blue-700' : 'text-blue-700 underline-offset-2'
-              }`}
+              ref={(el) => { if (el) words.current.set(i, el); else words.current.delete(i) }}
+              aria-expanded={on}
+              aria-controls={on ? `${id}-pop` : undefined}
+              onClick={() => (on ? close() : open(i))}
+              className={`rounded-[3px] underline decoration-dotted transition-colors duration-150 ease-std ${lang === 'zh' ? '' : HIT_AREA} ${bold} ${
+                quiet ? 'decoration-sea-300 underline-offset-4 hover:text-(--zs-pen)' : `underline-offset-2 ${bold ? '' : 'text-(--zs-pen)'} decoration-sea-300`
+              } ${on ? 'bg-(--zs-chip) decoration-transparent' : 'hover:bg-(--tint-3)'}`}
             >
               {seg.text}
             </button>
-            {active === i && (
-              <span className="absolute left-0 top-full z-20 mt-1 block">
+            {on && (
+              <span ref={anchor} id={`${id}-pop`} className={r.anchor}>
                 <WordPopover entry={entry} charInfo={charInfo} />
               </span>
             )}

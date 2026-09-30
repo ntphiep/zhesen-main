@@ -6,6 +6,16 @@ import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 
 type State = 'idle' | 'saving' | 'added' | 'exists' | 'error'
 
+const PILL = 'rounded-full font-bold whitespace-nowrap transition-colors duration-150 ease-std'
+/** A saved word reads as a settled chip rather than a faded button, which fell under 3:1. */
+const PILL_STATE: Record<State, string> = {
+  idle: 'bg-(--zs-btn) text-(--zs-btn-ink) hover:bg-(--zs-btn-hover)',
+  error: 'bg-(--zs-btn) text-(--zs-btn-ink) hover:bg-(--zs-btn-hover)',
+  saving: 'cursor-progress bg-(--zs-btn) text-(--zs-btn-ink)',
+  added: 'bg-(--zs-chip) text-(--zs-ink)',
+  exists: 'bg-(--zs-chip) text-(--zs-ink)',
+}
+
 /** The real save, mounted only once an account is in place. */
 export function SavedButton({ entry, size = 'sm', tone }: { entry: DictEntryPreview | DictEntryDetail; size?: 'sm' | 'lg'; tone?: 'pane' }) {
   const supabase = useMemo(() => createClient(), [])
@@ -45,9 +55,7 @@ export function SavedButton({ entry, size = 'sm', tone }: { entry: DictEntryPrev
       disabled={state === 'saving' || state === 'added' || state === 'exists'}
       className={tone === 'pane'
         ? 'h-10 rounded-full bg-(--pc) px-4 text-sm font-bold text-(--pb) disabled:opacity-60'
-        : size === 'lg'
-        ? 'h-11 rounded-full bg-(--zs-btn) px-5 text-sm font-bold text-(--zs-btn-ink) transition-colors duration-150 ease-std hover:bg-(--zs-btn-hover) disabled:opacity-50 disabled:hover:bg-(--zs-btn)'
-        : 'rounded-lg bg-black px-3 py-1.5 text-sm text-white disabled:opacity-50'}
+        : `${size === 'lg' ? 'h-11 px-5 text-sm' : 'h-9 px-4 text-[13px]'} ${PILL} ${PILL_STATE[state]}`}
     >
       {label}
     </button>

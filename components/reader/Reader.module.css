@@ -1,0 +1,27 @@
+/* The word popover of TappableText, on the tokens of app/globals.css. The anchor sits under
+   the word; TappableText moves it back inside the viewport and flips it above the word when
+   there is no room below. */
+
+.anchor { position: absolute; left: 0; top: 100%; z-index: 30; display: block; margin-top: 6px; }
+.anchor[data-side="top"] { top: auto; bottom: 100%; margin: 0 0 6px; }
+
+.pop {
+  box-shadow: var(--lift), 0 18px 40px -18px rgb(2 60 133 / 0.35);
+  transform-origin: var(--pop-x, 1.5rem) top;
+}
+.anchor[data-side="top"] .pop { transform-origin: var(--pop-x, 1.5rem) bottom; }
+:global(:root[data-theme="dark"]) .pop { box-shadow: 0 0 0 1px var(--edge), 0 18px 40px -12px rgb(0 0 0 / 0.9); }
+
+/* The headword in its own language's face, as on the word page. The Newsreader variables
+   exist under /dictionary; elsewhere the fallback serif stands in. */
+.pop [data-hw] { font-family: var(--font-headword), Georgia, serif; font-weight: 600; letter-spacing: -0.015em; }
+.pop [data-hw][lang="es"] { font-family: var(--font-headword-italic), Georgia, serif; font-style: italic; }
+.pop [data-hw][lang="zh"] { font-family: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", serif; font-weight: 700; letter-spacing: 0; }
+
+@keyframes pop-in { from { opacity: 0; transform: translateY(-4px) scale(0.97); } }
+@keyframes pop-up { from { opacity: 0; transform: translateY(4px) scale(0.97); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .pop { animation: pop-in 180ms var(--ease-enter) backwards; }
+  .anchor[data-side="top"] .pop { animation-name: pop-up; }
+}
