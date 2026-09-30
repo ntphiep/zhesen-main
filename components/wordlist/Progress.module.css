@@ -1,0 +1,56 @@
+/* The progress tiles and bars of /practice and /account, on the tokens of app/globals.css.
+   Each tile carries its own step of the ramp as a top rule. The bars grow once on arrival
+   and stand still under prefers-reduced-motion. */
+
+.stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+.stat { position: relative; overflow: hidden; padding: 1rem 1.1rem 0.9rem; border: 1px solid transparent; border-radius: 18px; background: var(--tint-1); box-shadow: 0 0 0 1.5px var(--edge); color: var(--zs-ink); animation: rise 320ms var(--ease-enter) both; }
+.stat::before { content: ""; position: absolute; inset: 0 0 auto; height: 4px; background: var(--c); }
+.stat b { display: flex; align-items: center; gap: 0.35rem; font-size: 1.75rem; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.stat b svg { width: 1.4rem; height: 1.4rem; color: var(--sea-500); }
+.stat span { display: block; margin-top: 0.2rem; font-size: 0.8125rem; font-weight: 600; color: var(--zs-soft); }
+.stat[data-k="streak"] { --c: var(--sea-300); }
+.stat[data-k="total"] { --c: var(--sea-400); animation-delay: 40ms; }
+.stat[data-k="due"] { --c: var(--sea-500); animation-delay: 80ms; background: var(--sea-50); }
+.stat[data-k="learned"] { --c: var(--sea-600); animation-delay: 120ms; }
+.stat[data-k="reviewedToday"] { --c: var(--sea-700); animation-delay: 160ms; }
+:global(:root[data-theme="dark"]) .stat[data-k="due"] { background: var(--zs-chip); }
+:global(:root[data-theme="dark"]) .stat[data-k="reviewedToday"] { --c: var(--sea-100); }
+
+.dist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin-top: 0.75rem; }
+.panel { display: flex; flex-direction: column; gap: 0.6rem; padding: 1.1rem 1.2rem 1.2rem; border-radius: 18px; background: var(--tint-2); }
+.panel h2 { margin: 0 0 0.2rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em; color: var(--zs-soft); }
+.row { display: grid; grid-template-columns: minmax(6.5rem, 9rem) minmax(0, 1fr) 2.5rem; align-items: center; gap: 0.75rem; font-size: 0.875rem; }
+.row > span:first-child { font-weight: 600; color: var(--zs-ink); white-space: nowrap; }
+.row > span:last-child { text-align: right; font-weight: 700; color: var(--zs-ink); font-variant-numeric: tabular-nums; }
+.track { height: 8px; border-radius: 9px; background: var(--zs-bg); overflow: hidden; }
+.track i { display: block; height: 100%; border-radius: inherit; background: var(--c, var(--sea-600)); transform-origin: left; animation: grow 620ms var(--ease-enter) 120ms both; }
+/* The home page's meter: learned in full colour, learning at 45%, not yet reviewed hollow. */
+.track i[data-c="known"] { --c: var(--sea-600); }
+.track i[data-c="learning"] { --c: color-mix(in srgb, var(--sea-600) 45%, var(--zs-bg)); }
+.track i[data-c="new"] { --c: var(--zs-bg); box-shadow: inset 0 0 0 1.5px var(--sea-300); }
+:global(:root[data-theme="dark"]) .track { background: var(--zs-chip); }
+:global(:root[data-theme="dark"]) .track i[data-c="learning"] { --c: var(--sea-600); }
+:global(:root[data-theme="dark"]) .track i[data-c="known"] { --c: var(--sea-300); }
+.track i[data-c="en"] { --c: var(--l-en); }
+.track i[data-c="zh"] { --c: var(--l-zh); }
+.track i[data-c="es"] { --c: var(--l-es); }
+@keyframes grow { from { transform: scaleX(0); } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+
+/* Five tiles never leave one alone on a row: three then two, or one then two pairs. */
+@media (max-width: 1023px) {
+  .stats { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .stat { grid-column: span 2; }
+  .stat:nth-child(n + 4) { grid-column: span 3; }
+}
+@media (max-width: 639px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+  .stat, .stat:nth-child(n + 4) { grid-column: span 1; }
+  .stat:first-child { grid-column: span 2; }
+  .stat b { font-size: 1.3125rem; }
+  .dist { grid-template-columns: 1fr; }
+  .row { grid-template-columns: 8.5rem minmax(0, 1fr) 2rem; gap: 0.6rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stat, .track i { animation: none; }
+}
