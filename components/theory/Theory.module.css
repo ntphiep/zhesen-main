@@ -82,7 +82,7 @@
 .prose[data-pre] { white-space: pre-line; }
 .small { margin: 0; max-width: var(--measure); font-size: 0.9375rem; line-height: 1.6; color: var(--zs-ink); }
 .note { margin: 0; font-size: 0.875rem; color: var(--zs-soft); }
-.bullets { margin: 0; padding-left: 1.2rem; max-width: var(--measure); display: flex; flex-direction: column; gap: 0.5rem; font-size: 1.0625rem; line-height: 1.65; }
+.bullets { margin: 0; padding-left: 1.2rem; list-style: disc; max-width: var(--measure); display: flex; flex-direction: column; gap: 0.5rem; font-size: 1.0625rem; line-height: 1.65; }
 .bullets li::marker { color: var(--c-l); }
 
 /* A formula: S + V + O, V + N. */
@@ -141,7 +141,6 @@ a.card:hover .h3 { text-decoration: underline; text-decoration-thickness: 1.5px;
 .wrong .src { font-size: 1.0625rem; font-weight: 400; color: var(--zs-soft); text-decoration: line-through; text-decoration-thickness: 1.5px; }
 .right .src { font-size: 1.0625rem; font-weight: 700; }
 .why { margin: 0.3rem 0 0 1.5rem; font-size: 0.9375rem; line-height: 1.55; color: var(--zs-ink); }
-.callout .vi { margin-left: 1.5rem; }
 
 /* ---------- Tables that fold into rows on a phone ---------- */
 .sheet { min-width: 0; border: 1px solid transparent; border-radius: 18px; background: var(--zs-bg); box-shadow: 0 0 0 1.5px var(--edge); overflow: hidden; }
@@ -157,12 +156,12 @@ a.card:hover .h3 { text-decoration: underline; text-decoration-thickness: 1.5px;
 .sheet .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
 .sheet a { font-weight: 700; color: var(--zs-ink); text-decoration: none; }
 .sheet a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
-.en { color: var(--zs-soft); }
+.en { font-family: var(--latin); font-style: italic; color: var(--zs-pen); }
 
 /* ---------- Links and buttons ---------- */
 .more { display: inline-flex; align-items: center; gap: 0.35rem; width: fit-content; font-size: 0.9375rem; font-weight: 700; color: var(--zs-pen); text-decoration: none; }
 .more:hover { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 0.2em; }
-.btn, .ghost { display: inline-flex; flex: none; align-items: center; justify-content: center; gap: 0.45rem; min-height: 2.75rem; padding: 0 1.2rem; border-radius: 999px; font-size: 0.9375rem; font-weight: 700; line-height: 1.2; text-align: center; text-decoration: none; cursor: pointer; transition: background-color 150ms var(--ease-std), border-color 150ms var(--ease-std), color 150ms var(--ease-std), transform 160ms var(--ease-spring); }
+.btn, .ghost { display: inline-flex; flex: 0 1 auto; max-width: 100%; align-items: center; justify-content: center; gap: 0.45rem; min-height: 2.75rem; padding: 0.55rem 1.2rem; border-radius: 999px; font-size: 0.9375rem; font-weight: 700; line-height: 1.2; text-align: center; text-decoration: none; cursor: pointer; transition: background-color 150ms var(--ease-std), border-color 150ms var(--ease-std), color 150ms var(--ease-std), transform 160ms var(--ease-spring); }
 .btn { border: 1.5px solid var(--zs-btn); background: var(--zs-btn); color: var(--zs-btn-ink); }
 .btn:hover:not(:disabled) { border-color: var(--zs-btn-hover); background: var(--zs-btn-hover); }
 .ghost { border: 1.5px solid var(--edge); background: var(--zs-bg); color: var(--zs-ink); }
@@ -205,7 +204,7 @@ a.card:hover .h3 { text-decoration: underline; text-decoration-thickness: 1.5px;
 
 .hubHw { display: block; margin-top: 1rem; font-size: var(--s5); line-height: 1; color: var(--zs-ink); }
 .blocks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); gap: 0.85rem; margin: 0; padding: 0; list-style: none; }
-.blocks a.card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.2rem 1rem; height: 100%; padding: 1.2rem 1.35rem; }
+.blocks a.card { display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; gap: 0.2rem 1rem; height: 100%; padding: 1.2rem 1.35rem; }
 .step { grid-row: span 3; min-width: 1.6em; font-size: var(--s3); line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--zs-pen); }
 .blocks .note { margin-top: 0.1rem; }
 .blocks .small { margin-top: 0.3rem; }
