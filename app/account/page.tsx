@@ -6,6 +6,7 @@ import { getProfile } from '@/lib/auth/profile'
 import { getWordlistStats } from '@/lib/wordlist/stats'
 import { AccountSettings } from '@/components/account/AccountSettings'
 import { AdminEntry } from '@/components/account/AdminEntry'
+import s from '@/components/account/Account.module.css'
 
 export const metadata = { title: 'Tài khoản' }
 
@@ -25,14 +26,14 @@ export default async function AccountPage() {
   ])
 
   return (
-    <main className="mx-auto max-w-page px-6 py-10">
-      <Link href="/" className="text-sm text-black/55 hover:underline">← Trang chủ</Link>
-      <h1 className="mt-3 text-3xl font-bold">Tài khoản</h1>
-      <p className="mt-1 text-sm text-black/60">
+    <main className={`${s.acc} mx-auto max-w-page px-6 pt-8 pb-16 font-ui`}>
+      <Link href="/" className={s.back}><span aria-hidden="true">←</span>Trang chủ</Link>
+      <h1 className={s.title}>Tài khoản</h1>
+      <p className={s.lede}>
         Xem tiến độ và chỉnh cài đặt tài khoản.
       </p>
       {profile?.role === 'admin' && <div className="mt-8"><AdminEntry /></div>}
-      <div className="mt-8">
+      <div>
         <AccountSettings
           email={user.email}
           profile={profile}

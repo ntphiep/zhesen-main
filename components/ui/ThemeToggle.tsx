@@ -28,14 +28,17 @@ export function ThemeToggle() {
   }, [choice])
 
   return (
-    <div className="inline-flex overflow-hidden rounded-lg border border-black/15" role="group" aria-label="Giao diện">
+    // The chosen scheme is filled like the primary button, as components/ui/LayoutPicker.tsx does.
+    <div className="inline-flex rounded-xl bg-(--zs-chip) p-[3px]" role="group" aria-label="Giao diện">
       {THEME_OPTIONS.map(([value, label]) => (
         <button
           key={value}
           type="button"
           onClick={() => setChoice(value)}
           aria-pressed={choice === value}
-          className={`px-3 py-2 text-sm ${choice === value ? 'bg-black text-white' : 'bg-white text-black/60 hover:bg-black/5'}`}
+          className={`min-h-9 rounded-[9px] px-3.5 text-sm font-semibold transition-colors duration-150 ease-std motion-reduce:transition-none ${
+            choice === value ? 'bg-(--zs-btn) text-(--zs-btn-ink) shadow-sm' : 'text-(--zs-soft) hover:text-(--zs-ink)'
+          }`}
         >
           {label}
         </button>

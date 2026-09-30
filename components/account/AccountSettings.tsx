@@ -13,6 +13,8 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { STATUS_OPTIONS } from '@/lib/wordlist/types'
 import { LANGUAGES } from '@/lib/languages'
 import type { WordlistStats as Stats } from '@/lib/wordlist/stats'
+import { Said } from './Said'
+import s from './Account.module.css'
 
 type Feedback = { tone: 'ok' | 'bad'; text: string } | null
 
@@ -97,154 +99,157 @@ export function AccountSettings({
     setBusy(false)
   }
 
+  const langs = LANGUAGES.filter((l) => stats.byLang[l.code] > 0)
+
   return (
-    <div className="flex flex-col gap-8">
-      <section className="rounded-xl border border-black/10 px-4 py-3 text-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-black/60">Đã đăng nhập bằng</span>
-          <span className="font-medium">{email}</span>
-          <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/60">
-            {ROLE_LABEL[profile?.role ?? 'learner']}
-          </span>
-          <button
-            className="ml-auto text-black/60 hover:text-black hover:underline"
-            onClick={async () => {
-              await signOut(supabase)
-              router.push('/')
-              router.refresh()
-            }}
-          >
-            Đăng xuất
-          </button>
+    <div className={s.board}>
+      <section className={s.who}>
+        <span aria-hidden="true" className={s.mono}>{email.charAt(0)}</span>
+        <div className={s.whoText}>
+          <p className={s.whoLabel}>Đã đăng nhập bằng</p>
+          <p className={s.email}>{email}</p>
+          <p className={s.whoMeta}>
+            <span className={s.role}>{ROLE_LABEL[profile?.role ?? 'learner']}</span>
+            {joinedAt && <span>Tham gia {formatWordDate(joinedAt)}</span>}
+          </p>
         </div>
-        {joinedAt && (
-          <p className="mt-1 text-xs text-black/55">Tham gia {formatWordDate(joinedAt)}</p>
-        )}
+        <button
+          type="button"
+          className={s.ghost}
+          onClick={async () => {
+            await signOut(supabase)
+            router.push('/')
+            router.refresh()
+          }}
+        >
+          Đăng xuất
+        </button>
       </section>
 
-      <section>
-        <h2 className="text-lg font-semibold">Tiến độ</h2>
+      <section className={s.panel} data-m="progress" data-i="1">
+        <h2>Tiến độ</h2>
         {stats.total === 0 ? (
-          <p className="mt-1 text-sm text-black/60">
+          <p className={s.empty}>
             Chưa có từ. Tra một từ để lưu.
           </p>
         ) : (
           <WordlistStats stats={stats} />
         )}
         {stats.total > 0 && (
-          <div className="mt-3 flex flex-wrap gap-4 text-sm text-black/60">
-            <span>
-              {STATUS_OPTIONS.map(([key, label]) => `${label} ${stats.byStatus[key]}`).join(' · ')}
-            </span>
-            <span>
-              {LANGUAGES.filter((l) => stats.byLang[l.code] > 0)
-                .map((l) => `${l.name} ${stats.byLang[l.code]}`).join(' · ')}
-            </span>
+          <div className={s.splits}>
+            {/* Each bar draws the line under it, in the same order. */}
+            <div>
+              <div aria-hidden="true" className={s.meter}>
+                {STATUS_OPTIONS.filter(([key]) => stats.byStatus[key] > 0).map(([key]) => (
+                  <i key={key} data-s={key} style={{ flexGrow: stats.byStatus[key] }} />
+                ))}
+              </div>
+              <p className={s.split}>
+                {STATUS_OPTIONS.map(([key, label]) => `${label} ${stats.byStatus[key]}`).join(' · ')}
+              </p>
+            </div>
+            <div>
+              <div aria-hidden="true" className={s.meter}>
+                {langs.map((l) => (
+                  <i key={l.code} data-l={l.code} style={{ flexGrow: stats.byLang[l.code] }} />
+                ))}
+              </div>
+              <p className={s.split}>
+                {langs.map((l) => `${l.name} ${stats.byLang[l.code]}`).join(' · ')}
+              </p>
+            </div>
           </div>
         )}
       </section>
 
-      <section>
-        <h2 className="text-lg font-semibold">Giao diện</h2>
-        <p className="mt-1 text-sm text-black/60">
-          Chọn giao diện cho trình duyệt này.
-        </p>
-        <div className="mt-2">
-          <ThemeToggle />
-        </div>
-      </section>
+      <div className={s.grid}>
+        <section className={s.panel} data-m="theme" data-i="3">
+          <h2>Giao diện</h2>
+          <p>Chọn giao diện cho trình duyệt này.</p>
+          <div className={s.row}>
+            <ThemeToggle />
+          </div>
+        </section>
 
-      <section>
-        <h2 className="text-lg font-semibold">Tên hiển thị</h2>
-        <form onSubmit={saveName} className="mt-2 flex flex-wrap items-center gap-2">
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={60}
-            placeholder="Không bắt buộc"
-            aria-label="Tên hiển thị"
-            className="min-w-56 flex-1 rounded-lg border border-black/15 px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            disabled={busy}
-            className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-40"
-          >
-            Lưu
-          </button>
-        </form>
-        {nameFeedback && (
-          <p className={`mt-2 text-sm ${nameFeedback.tone === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
-            {nameFeedback.text}
-          </p>
-        )}
-      </section>
+        <section className={s.panel} data-m="name" data-i="4">
+          <h2>Tên hiển thị</h2>
+          <form onSubmit={saveName} className={s.row}>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={60}
+              placeholder="Không bắt buộc"
+              aria-label="Tên hiển thị"
+              className={s.field}
+            />
+            <button type="submit" disabled={busy} className={s.ghost}>
+              Lưu
+            </button>
+          </form>
+          {nameFeedback && <Said tone={nameFeedback.tone} text={nameFeedback.text} />}
+        </section>
 
-      <section>
-        <h2 className="text-lg font-semibold">Mật khẩu</h2>
-        <p className="mt-1 text-sm text-black/60">
-          Đổi mật khẩu đăng nhập.
-        </p>
-        {/* noValidate: the browser's bubble is English; `setPassword` checks in Vietnamese. */}
-        <form onSubmit={savePassword} noValidate className="mt-2 flex flex-wrap items-center gap-2">
-          {/* Tells a password manager which saved account the new password belongs to. */}
-          <input type="email" name="email" autoComplete="username" value={email} readOnly hidden />
-          <input
-            id="new-password"
-            name="new-password"
-            type="password"
-            required
-            minLength={MIN_PASSWORD}
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPasswordValue(e.target.value)}
-            placeholder={`Ít nhất ${MIN_PASSWORD} ký tự`}
-            aria-label="Mật khẩu mới"
-            className="min-w-56 flex-1 rounded-lg border border-black/15 px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            disabled={busy}
-            className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-          >
-            Đặt mật khẩu
-          </button>
-        </form>
-        {passwordFeedback && (
-          <p className={`mt-2 text-sm ${passwordFeedback.tone === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
-            {passwordFeedback.text}
-          </p>
-        )}
-      </section>
+        <section className={s.panel} data-m="password" data-i="5">
+          <h2>Mật khẩu</h2>
+          <p>Đổi mật khẩu đăng nhập.</p>
+          {/* noValidate: the browser's bubble is English; `setPassword` checks in Vietnamese. */}
+          <form onSubmit={savePassword} noValidate className={s.row}>
+            {/* Tells a password manager which saved account the new password belongs to. */}
+            <input type="email" name="email" autoComplete="username" value={email} readOnly hidden />
+            <input
+              id="new-password"
+              name="new-password"
+              type="password"
+              required
+              minLength={MIN_PASSWORD}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPasswordValue(e.target.value)}
+              placeholder={`Ít nhất ${MIN_PASSWORD} ký tự`}
+              aria-label="Mật khẩu mới"
+              className={s.field}
+            />
+            <button type="submit" disabled={busy} className={s.btn}>
+              Đặt mật khẩu
+            </button>
+          </form>
+          {passwordFeedback && <Said tone={passwordFeedback.tone} text={passwordFeedback.text} />}
+        </section>
 
-      <section>
-        <h2 className="text-lg font-semibold">Dữ liệu</h2>
-        <p className="mt-1 text-sm text-black/60">
-          Tải cả sổ tay về máy.
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <button
-            onClick={() => void exportAll('csv')}
-            disabled={exporting || stats.total === 0}
-            className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-40"
-          >
-            Tải CSV
-          </button>
-          <button
-            onClick={() => void exportAll('anki')}
-            disabled={exporting || stats.total === 0}
-            className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-40"
-          >
-            Tải Anki (TSV)
-          </button>
-        </div>
-        {exportFeedback && (
-          <p className={`mt-2 text-sm ${exportFeedback.tone === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
-            {exportFeedback.text}
-          </p>
-        )}
-      </section>
+        <section className={s.panel} data-m="data" data-i="6">
+          <h2>Dữ liệu</h2>
+          <p>Tải cả sổ tay về máy.</p>
+          <div className={s.row}>
+            <button
+              type="button"
+              onClick={() => void exportAll('csv')}
+              disabled={exporting || stats.total === 0}
+              className={s.ghost}
+            >
+              <DownloadGlyph />
+              Tải CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => void exportAll('anki')}
+              disabled={exporting || stats.total === 0}
+              className={s.ghost}
+            >
+              <DownloadGlyph />
+              Tải Anki (TSV)
+            </button>
+          </div>
+          {exportFeedback && <Said tone={exportFeedback.tone} text={exportFeedback.text} />}
+        </section>
+      </div>
     </div>
   )
 }
 
+function DownloadGlyph() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 2.5v8M4.75 7.5 8 10.75l3.25-3.25M3 13.5h10" />
+    </svg>
+  )
+}

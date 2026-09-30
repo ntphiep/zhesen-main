@@ -1,19 +1,18 @@
 import Link from 'next/link'
 import { LinkPending } from '@/components/ui/LinkPending'
+import s from './Account.module.css'
 
 /** The only way into /admin from the site, drawn by /account for an admin profile. The
  *  console itself is gated on the server and in the database; this decides a link. */
 export function AdminEntry() {
   return (
-    <section className="rounded-xl border border-black/15 px-4 py-4">
-      <h2 className="text-lg font-semibold">Quản trị</h2>
-      <p className="mt-1 text-sm text-black/60">
-        Tài khoản này có quyền quản trị.
-      </p>
+    <section className={s.panel} data-m="admin">
+      <h2>Quản trị</h2>
+      <p>Tài khoản này có quyền quản trị.</p>
       <Link
         href="/admin"
         prefetch={false}
-        className="mt-3 inline-block rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/85"
+        className={`${s.btn} mt-4`}
       >
         Mở trang quản trị
         <LinkPending />
