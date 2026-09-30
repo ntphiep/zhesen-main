@@ -91,7 +91,7 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
                   <>
                     <Mention link={link} /> <span className="font-mono text-[11px] text-(--zs-soft)">{link.pattern}</span>
                     {link.reading && <span className="block text-xs text-(--zs-soft)">{link.reading}</span>}
-                    <CollocationGloss link={link} />
+                    <CollocationGloss link={link} view={view} />
                   </>
                 )))}
               </ul>

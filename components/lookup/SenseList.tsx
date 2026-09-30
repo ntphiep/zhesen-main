@@ -38,14 +38,12 @@ function Sense({ s, n, more, lang, examples, byText, glosses, synonyms, mark }: 
           : <span className="italic text-(--zs-soft)">(chưa có nghĩa)</span>}
         {s.glossEn && vi && <span className="text-xs text-(--zs-soft)">{s.glossEn}</span>}
         {example && (
-          <div className="mt-1 flex flex-col gap-0.5 border-l-2 border-sea-300 pl-3">
-            <span className="flex items-center gap-1 text-[15px]">
-              <span><TappableText text={example.text} lang={lang} resolved={byText.get(example.text)} quiet mark={mark} /></span>
+          <div className="mt-1.5 flex flex-col border-l-2 border-(--c-l) pl-3.5">
+            <span className="flex items-start gap-1">
+              <span data-ex="" lang={lang}><TappableText text={example.text} lang={lang} resolved={byText.get(example.text)} quiet mark={mark} /></span>
               <AudioButton text={example.text} lang={lang} />
             </span>
-            {isSentenceTranslation(example.translationVi, glosses) && (
-              <span className="text-[13px] text-(--zs-soft)">{example.translationVi}</span>
-            )}
+            {isSentenceTranslation(example.translationVi, glosses) && <span data-ex-vi="">{example.translationVi}</span>}
           </div>
         )}
         {words.length > 0 && (

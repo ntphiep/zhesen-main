@@ -372,7 +372,8 @@ export const hasSynonyms = (v: Pick<WordView, 'senseSynonyms' | 'synonyms' | 'an
   v.senseSynonyms.length + v.synonyms.length + v.antonyms.length > 0
 
 /** A word list as a table with a header: the word, its part of speech, its meaning and,
- *  for the family, its level. On a phone the part of speech moves under the word. */
+ *  for the family, its level. In a box under 28rem, a side panel or a phone, each row
+ *  stacks the word and its part of speech over the meaning. */
 export function WordTable({ words, head, family = false, level = false, shown = 8 }: {
   words: (ViewWord | FamilyWord)[]
   head: string
@@ -384,29 +385,36 @@ export function WordTable({ words, head, family = false, level = false, shown = 
   if (words.length === 0) return null
   const rows = expanded ? words : words.slice(0, shown)
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="@container flex flex-col gap-2.5">
       <div className="overflow-hidden rounded-[10px] border border-(--zs-line)">
-        <table className="w-full border-collapse text-sm">
-          <thead className="bg-(--tint-2) text-left text-xs font-semibold text-(--zs-soft)">
+        <table className="block w-full border-collapse text-sm @md:table">
+          <thead className="hidden bg-(--tint-2) text-left text-xs font-semibold text-(--zs-soft) @md:table-header-group">
             <tr>
               <th scope="col" className="px-3.5 py-2 font-semibold">{head}</th>
-              <th scope="col" className="hidden px-3.5 py-2 font-semibold sm:table-cell">Từ loại</th>
+              <th scope="col" className="px-3.5 py-2 font-semibold">Từ loại</th>
               <th scope="col" className="px-3.5 py-2 font-semibold">Nghĩa</th>
               {level && <th scope="col" className="w-px whitespace-nowrap px-3.5 py-2 font-semibold">Trình độ</th>}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block @md:table-row-group">
             {rows.map((w, i) => (
-              <tr key={w.text} data-more={i >= shown || undefined} className="border-t border-(--zs-line) align-baseline">
-                <td className="px-3.5 py-2.5">
+              <tr
+                key={w.text}
+                data-more={i >= shown || undefined}
+                className="block border-t border-(--zs-line) px-3.5 py-2.5 align-baseline first:border-0 @md:table-row @md:p-0 @md:first:border-t"
+              >
+                <td className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 @md:table-cell @md:px-3.5 @md:py-2.5">
                   <WordLink word={w} className={`font-semibold hover:underline ${family ? '' : 'text-(--zs-pen)'}`}>
                     {family && 'stem' in w ? <MorphText word={w} /> : w.text}
                   </WordLink>
-                  <PosTag full value={w.pos} className="block text-xs text-(--zs-soft) sm:hidden" />
+                  <PosTag full value={w.pos} className="text-xs text-(--zs-soft) @md:hidden" />
+                  {level && <span className="@md:hidden"><LevelChip level={w.level} /></span>}
                 </td>
-                <td className="hidden whitespace-nowrap px-3.5 py-2.5 text-(--zs-soft) sm:table-cell"><PosTag full value={w.pos} /></td>
-                <td className={`px-3.5 py-2.5 ${w.gloss ? 'text-(--zs-ink)' : 'text-(--zs-soft)'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</td>
-                {level && <td className="px-3.5 py-2.5 text-right"><LevelChip level={w.level} /></td>}
+                <td className="hidden whitespace-nowrap px-3.5 py-2.5 text-(--zs-soft) @md:table-cell"><PosTag full value={w.pos} /></td>
+                <td className={`mt-0.5 block @md:mt-0 @md:table-cell @md:px-3.5 @md:py-2.5 ${w.gloss ? 'text-(--zs-ink)' : 'text-(--zs-soft)'}`}>
+                  {w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}
+                </td>
+                {level && <td className="hidden px-3.5 py-2.5 text-right @md:table-cell"><LevelChip level={w.level} /></td>}
               </tr>
             ))}
           </tbody>
@@ -504,7 +512,7 @@ export function FamilyRows({ family, related, shown = 6 }: { family: FamilyWord[
 }
 
 /** Example sentences with the headword in bold and the translation under each. `rows`
- *  divides them with rules, `quote` sets each against a blue bar. */
+ *  divides them with rules, `quote` sets each against the language's bar. */
 export function ExampleRows({ examples, lang, resolved, glosses, mark, shown = 3, variant = 'rows' }: {
   /** Already filtered; see cleanExamples. */
   examples: DictExample[]
@@ -527,13 +535,13 @@ export function ExampleRows({ examples, lang, resolved, glosses, mark, shown = 3
             data-more={i >= shown || undefined}
             className={variant === 'rows'
               ? 'flex flex-col gap-0.5 border-t border-(--zs-line) py-3 first:border-0 first:pt-0 last:pb-0'
-              : 'flex flex-col gap-0.5 border-l-2 border-(--zs-line) pl-3'}
+              : 'flex flex-col border-l-2 border-(--c-l) pl-3.5'}
           >
-            <span className={`flex items-start gap-2 text-[15px] ${variant === 'rows' ? 'justify-between' : ''}`}>
-              <span><TappableText text={e.text} lang={lang} resolved={byText.get(e.text)} quiet mark={mark} /></span>
-              <span className="-my-1.5"><AudioButton text={e.text} lang={lang} /></span>
+            <span className={`flex items-start gap-2 ${variant === 'rows' ? 'justify-between' : ''}`}>
+              <span data-ex="" lang={lang}><TappableText text={e.text} lang={lang} resolved={byText.get(e.text)} quiet mark={mark} /></span>
+              <span className="-my-1"><AudioButton text={e.text} lang={lang} /></span>
             </span>
-            {isSentenceTranslation(e.translationVi, glosses) && <span className="text-[13px] text-(--zs-soft)">{e.translationVi}</span>}
+            {isSentenceTranslation(e.translationVi, glosses) && <span data-ex-vi="">{e.translationVi}</span>}
           </li>
         ))}
       </ul>

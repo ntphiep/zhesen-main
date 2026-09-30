@@ -16,7 +16,7 @@ const AddToWordlistButton = dynamic(() =>
 // Only inline-capable elements (span / a / button) so the popover is valid HTML
 // even when embedded inside a paragraph of example text.
 const CARD = `${r.pop} block w-72 max-w-[calc(100vw-2rem)] rounded-[14px] border border-(--edge) bg-(--zs-bg) p-4 text-left font-ui `
-  + 'text-(--zs-ink) leading-normal'
+  + 'text-sm font-normal not-italic tracking-normal text-(--zs-ink) leading-normal'
 
 export function WordPopover({ entry, charInfo }: { entry?: DictEntryPreview; charInfo?: CharInfo }) {
   if (entry) {

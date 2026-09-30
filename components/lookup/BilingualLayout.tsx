@@ -252,12 +252,12 @@ function RowList({ rows, shown = 0, more }: { rows: Row[]; shown?: number; more?
 function exampleCells(e: DictExample, lang: LangCode, byText: Map<string, ResolvedText>, glosses: (string | null)[], mark: string[]) {
   return {
     left: (
-      <span className="flex items-start gap-1.5 text-base">
-        <span><TappableText text={e.text} lang={lang} resolved={byText.get(e.text)} quiet mark={mark} /></span>
+      <span className="flex items-start gap-1.5">
+        <span data-ex="" lang={lang}><TappableText text={e.text} lang={lang} resolved={byText.get(e.text)} quiet mark={mark} /></span>
         <AudioButton text={e.text} lang={lang} />
       </span>
     ),
-    right: isSentenceTranslation(e.translationVi, glosses) ? <span className="text-[15px] text-(--zs-soft)">{e.translationVi}</span> : null,
+    right: isSentenceTranslation(e.translationVi, glosses) ? <span data-ex-vi="plain">{e.translationVi}</span> : null,
   }
 }
 
@@ -304,8 +304,8 @@ function MeaningSection({ section, lang, byText, glosses, mark, examples, synony
               </div>
               {cells && (
                 <>
-                  <div className="ml-7 min-w-0 border-l-2 border-sea-300 pl-3">{cells.left}</div>
-                  <div className={`${RIGHT} pl-7 text-sm`}>{cells.right}</div>
+                  <div className="ml-7 min-w-0 border-l-2 border-(--c-l) pl-3.5">{cells.left}</div>
+                  <div className={`${RIGHT} pl-7`}>{cells.right}</div>
                 </>
               )}
             </li>

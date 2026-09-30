@@ -24,6 +24,20 @@
 .word [data-hw][lang="es"] { font-family: var(--latin-italic); font-style: italic; }
 .word [data-hw][lang="zh"] { font-family: var(--han); font-weight: 700; letter-spacing: 0; }
 
+/* An example sentence in the face of its language and a step darker, its translation in
+   the interface face a step lighter, under a short rule. --ex-vi holds 4.5:1 on --tint-2. */
+.word { --ex-vi: var(--sea-600); --ex-rule: var(--sea-200); }
+:global(:root[data-theme="dark"]) .word { --ex-vi: var(--sea-100); --ex-rule: var(--sea-600); }
+.word [data-ex] { font-family: var(--latin); font-size: 1.0625rem; font-weight: 500; line-height: 1.55; color: var(--zs-ink); }
+.word [data-ex="sm"] { font-size: 0.9375rem; line-height: 1.5; }
+.word [data-ex][lang="es"] { font-family: var(--latin-italic); font-style: italic; }
+.word [data-ex][lang="zh"] { font-family: var(--han); font-weight: 500; }
+.word [data-ex-vi] { display: block; font-size: 0.875rem; line-height: 1.5; color: var(--ex-vi); }
+.word [data-ex-vi=""]::before {
+  content: ""; display: block; width: 1.25rem; height: 2px; margin: 0.4rem 0 0.35rem; border-radius: 1px; background: var(--ex-rule);
+}
+.word [data-ex-vi="plain"] { margin-top: 0.125rem; }
+
 /* One tone per core sense in the glance layout. A blue-only ramp gives two steps that hold
    3:1 as an edge on the page and 4.5:1 under the badge's digits, so each sense also gets
    its own edge pattern and keeps its number. */

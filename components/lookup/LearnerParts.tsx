@@ -7,6 +7,7 @@ import {
   hasSynonyms,
 } from './WordParts'
 import { AudioButton } from '@/components/ui/AudioButton'
+import { TappableText } from '@/components/reader/TappableText'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { genderLabel } from '@/lib/dictionary/gender'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
@@ -70,18 +71,25 @@ export function Mention({ link, className = '' }: { link: Pick<LearnerLink, 'tex
   )
 }
 
-function Marked({ text, view }: { text: string; view: WordView }) {
+/** A sentence with the headword and its forms in bold, every known word opening the word
+ *  popover when the page resolved the sentence, as it does for every sentence of the layer. */
+export function Sentence({ text, view }: { text: string; view: WordView }) {
   const parts = markHeadword(text, view.head.headword, view.head.lang, headwordForms(view))
+  const resolved = view.resolved.find((r) => r.text === text)
+  if (resolved) {
+    const mark = [...new Set(parts.filter((p) => p.mark).map((p) => p.text.toLowerCase()))]
+    return <TappableText text={text} lang={view.head.lang} resolved={resolved} quiet mark={mark} />
+  }
   return <>{parts.map((p, i) => (p.mark ? <b key={i} className="font-bold text-(--zs-pen)">{p.text}</b> : p.text))}</>
 }
 
 export function ExampleCard({ example, view }: { example: LearnerExample; view: WordView }) {
   return (
-    <li className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-2.5 gap-y-0.5 rounded-xl bg-(--tint-2) px-3.5 py-2.5">
-      <span className="text-[15px]"><Marked text={example.text} view={view} /></span>
-      <span className="-my-1.5"><AudioButton text={example.text} lang={view.head.lang} /></span>
+    <li className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-2.5 rounded-r-xl border-l-2 border-(--c-l) bg-(--tint-2) py-3 pr-3 pl-3.5">
+      <span data-ex="" lang={view.head.lang}><Sentence text={example.text} view={view} /></span>
+      <span className="-my-1"><AudioButton text={example.text} lang={view.head.lang} /></span>
       {example.reading && <span className="col-start-1 text-[13px] text-(--zs-soft)">{example.reading}</span>}
-      <span className="col-start-1 text-sm text-(--zs-soft)">{example.vi}</span>
+      <span data-ex-vi="" className="col-start-1">{example.vi}</span>
       {example.byModel && (
         <span className="col-start-1 text-[10.5px] font-medium uppercase tracking-wide text-(--zs-soft)">câu soạn mới</span>
       )}
@@ -95,19 +103,19 @@ export function Examples({ examples, view }: { examples: LearnerExample[]; view:
 }
 
 /** A collocation's meaning, then its example with the example's own pinyin and translation. */
-export function CollocationGloss({ link }: { link: LearnerLink }) {
+export function CollocationGloss({ link, view }: { link: LearnerLink; view: WordView }) {
   return (
     <>
-      {link.vi && <span className="block text-[13.5px] text-(--zs-ink) sm:text-sm">{link.vi}</span>}
-      {link.example && <span className="block text-[13px] text-(--zs-soft)">{link.example}</span>}
+      {link.vi && <span className="block text-[13.5px] font-semibold text-(--zs-ink) sm:text-sm">{link.vi}</span>}
+      {link.example && <span data-ex="sm" lang={view.head.lang} className="mt-1 block"><Sentence text={link.example} view={view} /></span>}
       {link.exampleReading && <span className="block text-xs text-(--zs-soft)">{link.exampleReading}</span>}
-      {link.exampleVi && <span className="block text-[13px] text-(--zs-soft)">{link.exampleVi}</span>}
+      {link.exampleVi && <span data-ex-vi="plain">{link.exampleVi}</span>}
     </>
   )
 }
 
 /** Fixed columns, so the tables of every sense on a page line up. */
-function CollocationTable({ links }: { links: LearnerLink[] }) {
+function CollocationTable({ links, view }: { links: LearnerLink[]; view: WordView }) {
   return (
     <table className="w-full border-collapse text-sm sm:table-fixed">
       <colgroup>
@@ -125,7 +133,7 @@ function CollocationTable({ links }: { links: LearnerLink[] }) {
             </td>
             <td className="hidden break-words py-2.5 pr-3 pt-3 font-mono text-[11px] text-(--zs-soft) sm:table-cell">{k.pattern}</td>
             <td className="py-2.5">
-              <CollocationGloss link={k} />
+              <CollocationGloss link={k} view={view} />
             </td>
           </tr>
         ))}
@@ -195,7 +203,7 @@ export function SenseBody({ sense, view, size = 'md' }: { sense: LearnerSense; v
         {sense.enDefinition && <p className="text-[13.5px] text-(--zs-soft)">{sense.enDefinition}</p>}
       </div>
       <Examples examples={sense.examples} view={view} />
-      {sense.collocations.length > 0 && <Block label="Kết hợp hay gặp"><CollocationTable links={sense.collocations} /></Block>}
+      {sense.collocations.length > 0 && <Block label="Kết hợp hay gặp"><CollocationTable links={sense.collocations} view={view} /></Block>}
       {sense.synonyms.length > 0 && <Block label="Đồng nghĩa"><NoteList links={sense.synonyms} columns /></Block>}
       {sense.antonyms.length > 0 && <Block label="Trái nghĩa"><NoteList links={sense.antonyms} columns /></Block>}
       {own.length > 0 && <Block label="Ở ngôn ngữ khác"><Equivalents links={own} /></Block>}

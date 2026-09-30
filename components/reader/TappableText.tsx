@@ -172,10 +172,10 @@ export function TappableText({
     >
       {segments.map((seg, i) => {
         if (!seg.word) return <span key={i}>{seg.text}</span>
-        const bold = mark.includes(seg.text.toLowerCase()) ? 'font-bold text-(--zs-pen)' : ''
+        const bold = mark.includes(seg.text.toLowerCase())
         const entry = entries.get(seg.text.toLowerCase())
         const charInfo = !entry && lang === 'zh' ? chars.get(seg.text) : undefined
-        if (!entry && !charInfo) return <span key={i} className={bold || undefined}>{seg.text}</span>
+        if (!entry && !charInfo) return <span key={i} className={bold ? 'font-bold text-(--zs-pen)' : undefined}>{seg.text}</span>
         const on = active === i
         return (
           <span key={i} className="relative inline-block">
@@ -185,9 +185,14 @@ export function TappableText({
               aria-expanded={on}
               aria-controls={on ? `${id}-pop` : undefined}
               onClick={() => (on ? close() : open(i))}
-              className={`rounded-[3px] underline decoration-dotted transition-colors duration-150 ease-std ${lang === 'zh' ? '' : HIT_AREA} ${bold} ${
-                quiet ? 'decoration-sea-300 underline-offset-4 hover:text-(--zs-pen)' : `underline-offset-2 ${bold ? '' : 'text-(--zs-pen)'} decoration-sea-300`
-              } ${on ? 'bg-(--zs-chip) decoration-transparent' : 'hover:bg-(--tint-3)'}`}
+              // Open and hovered words sit on the chip in ink, which holds 4.5:1 where the
+              // blue of a marked word does not.
+              className={`rounded-[3px] underline decoration-dotted transition-colors duration-150 ease-std ${lang === 'zh' ? '' : HIT_AREA} ${
+                quiet ? 'underline-offset-4' : 'underline-offset-2'
+              } ${bold ? 'font-bold' : ''} ${
+                on ? 'bg-(--zs-chip) text-(--zs-ink) decoration-transparent'
+                  : `decoration-sea-300 hover:bg-(--zs-chip) hover:text-(--zs-ink) ${bold || !quiet ? 'text-(--zs-pen)' : ''}`
+              }`}
             >
               {seg.text}
             </button>
