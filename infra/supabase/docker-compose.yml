@@ -413,7 +413,7 @@ services:
       resources:
         limits:
           # Page cache counts against the limit, and OmniRoute sheds requests at 92% of it.
-          memory: 1200m
+          memory: 1400m
     ports:
       - "20130:20128"
     volumes:
@@ -436,8 +436,10 @@ services:
       STORAGE_ENCRYPTION_KEY: ${OMNIROUTE_STORAGE_KEY}
       INITIAL_PASSWORD: ${OMNIROUTE_PASSWORD}
       REQUIRE_API_KEY: "true"
-      OMNIROUTE_MEMORY_MB: "512"
-      NODE_OPTIONS: --max-old-space-size=512
+      # It also sheds every request once the V8 heap passes 93% of this: at 512 the heap sat
+      # at 477 MB with 1,344 models loaded and every call answered 503.
+      OMNIROUTE_MEMORY_MB: "768"
+      NODE_OPTIONS: --max-old-space-size=768
       AUTH_COOKIE_SECURE: "true"
 
 volumes:
