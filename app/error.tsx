@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import s from '@/components/layout/Status.module.css'
 
 /**
  * The boundary for anything a page throws below the root layout: a Supabase read
@@ -31,28 +32,22 @@ export default function Error({
   }, [error])
 
   return (
-    <main className="mx-auto flex min-h-[calc(100dvh-8rem)] max-w-xl flex-col items-center justify-center px-6 py-12 text-center">
-      <h1 className="text-3xl font-bold">Có lỗi xảy ra</h1>
-      <p className="mt-3 text-black/60">
+    <main className={`${s.page} font-ui`}>
+      <div aria-hidden="true" className={s.mark}><i /><i /><i /></div>
+      <h1 className={s.title}>Có lỗi xảy ra</h1>
+      <p className={s.lede}>
         Chưa tải được trang. Thử lại sau vài giây.
       </p>
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <button
-          type="button"
-          onClick={retry}
-          className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/80"
-        >
+      <div className={s.acts}>
+        <button type="button" onClick={retry} className={s.btn}>
           Thử lại
         </button>
-        <Link
-          href="/"
-          className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5"
-        >
+        <Link href="/" className={s.ghost}>
           Về trang chủ
         </Link>
       </div>
       {error.digest && (
-        <p className="mt-6 text-xs text-black/55">Mã lỗi: {error.digest}</p>
+        <p className={s.digest}>Mã lỗi: {error.digest}</p>
       )}
     </main>
   )

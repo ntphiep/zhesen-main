@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import s from '@/components/layout/Status.module.css'
 
 export const metadata = { title: 'Không tìm thấy trang' }
 
@@ -10,23 +11,18 @@ export const metadata = { title: 'Không tìm thấy trang' }
  */
 export default function NotFound() {
   return (
-    <main className="mx-auto flex min-h-[calc(100dvh-8rem)] max-w-xl flex-col items-center justify-center px-6 py-12 text-center">
-      <p className="text-sm font-medium tracking-wide text-black/55">404</p>
-      <h1 className="mt-2 text-3xl font-bold">Không có trang này</h1>
-      <p className="mt-3 text-black/60">
+    <main className={`${s.page} font-ui`}>
+      <div aria-hidden="true" className={s.mark}><i /><i /><i /></div>
+      <p className={s.code}>404</p>
+      <h1 className={s.title}>Không có trang này</h1>
+      <p className={s.lede}>
         Địa chỉ sai hoặc trang không còn.
       </p>
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <Link
-          href="/dictionary"
-          className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-black/80"
-        >
+      <div className={s.acts}>
+        <Link href="/dictionary" className={s.btn}>
           Dịch từ khác
         </Link>
-        <Link
-          href="/"
-          className="rounded-lg border border-black/15 px-4 py-2 text-sm font-medium hover:bg-black/5"
-        >
+        <Link href="/" className={s.ghost}>
           Về trang chủ
         </Link>
       </div>
