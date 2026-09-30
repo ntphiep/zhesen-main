@@ -48,7 +48,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
         <p className={s.prose}>
           Đề Listening và Reading có 200 câu trắc nghiệm trong khoảng 2 tiếng. Phần nghe chỉ đọc một lần.
         </p>
-        <div className={s.sheet} data-fold="">
+        <div className={s.sheet}>
           <table>
             <thead>
               <tr>

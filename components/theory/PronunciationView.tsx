@@ -33,7 +33,7 @@ export function PronunciationView({ language, phonemes, notes }: {
       {/* Not sticky. 46 chips wrap to 182px at 390 and 114px at 1440, and pinning that
           much chrome either covered the card the reader had just clicked or, once capped,
           clipped 23 of the 46 chips into a box that needed its own scroll. Each kind has
-          its own ground, so the vowels read apart from the consonants. */}
+          its own edge style in Theory.module.css, so the four groups read apart. */}
       <nav id="index" aria-label="Danh sách âm" className={s.index} data-reveal="">
         {phonemes.map((p) => (
           <a key={p.symbol} href={`#${encodeURIComponent(p.symbol)}`} data-k={p.kind} className="ipa">
