@@ -1,7 +1,7 @@
 import { z } from '@/lib/zod'
 import type { LangCode } from '@/lib/languages'
 import { senseSections } from './wordPage'
-import type { ContainingWord, DictEntryPreview, DictSense, DictPron, SuggestionPreview } from './types'
+import type { ContainingWord, DictEntryChip, DictEntryPreview, DictSense, DictPron, SuggestionPreview } from './types'
 import { cleanMtGloss, cleanGlossVi } from './textQuality'
 import { audioMatchesHeadword } from './pronunciation'
 import { joinPos } from './pos'
@@ -56,6 +56,18 @@ export const entryPreviewRow = z.object({
   }).nullable().optional(),
 })
 export type EntryPreviewRow = z.infer<typeof entryPreviewRow>
+
+/** The row behind `CHIP_SELECT` (`./entrySelect`). */
+export const entryChipRow = z.object({
+  id: z.string(),
+  headword: z.string(),
+  senses: z.array(senseRow).nullable(),
+  learner_entries: z.object({
+    status: z.string(),
+    learner_senses: z.array(z.object({ sense_order: z.number(), vi_terms: z.array(z.string()) })),
+  }).nullable().optional(),
+})
+export type EntryChipRow = z.infer<typeof entryChipRow>
 
 export const exampleRow = z.object({
   text: z.string(),
@@ -189,12 +201,14 @@ export function pickPrimarySense(senses: DictSense[]): DictSense | null {
 
 /** The first sense of a published AI learner layer, which the word page shows first. Its
  *  English definition goes with it, so a saved word's two meanings name one sense. */
-function learnerLead(r: EntryPreviewRow): { glossVi: string | null; glossEn: string | null } | null {
+function learnerLead(r: {
+  learner_entries?: { status: string; learner_senses: { sense_order: number; vi_terms: string[]; en_definition?: string | null }[] } | null
+}): { glossVi: string | null; glossEn: string | null } | null {
   const layer = r.learner_entries
   if (layer?.status !== 'published') return null
   const first = layer.learner_senses.find((s) => s.sense_order === 1)
   if (!first || first.vi_terms.length === 0) return null
-  return { glossVi: cleanGlossVi(first.vi_terms.join(', ')), glossEn: first.en_definition }
+  return { glossVi: cleanGlossVi(first.vi_terms.join(', ')), glossEn: first.en_definition ?? null }
 }
 
 /** `lex.senses.sense_frequency` holds "1" to "5"; anything else is unranked. */
@@ -231,6 +245,11 @@ export function toPreview(r: EntryPreviewRow): DictEntryPreview {
     audioUrl: prons.find((p) => audioMatchesHeadword(p.audioUrl, r.headword))?.audioUrl ?? null,
     frequencyRank: r.frequency_rank ?? null,
   }
+}
+
+/** The gloss `toPreview` would pick, and nothing else a chip does not draw. */
+export function toChip(r: EntryChipRow): DictEntryChip {
+  return { id: r.id, headword: r.headword, glossVi: (learnerLead(r) ?? pickPrimarySense(toSenses(r.senses)))?.glossVi ?? null }
 }
 
 /** Same mapping as `toPreview`, for the flattened `lex.search` and `lex.search_vi` rows,

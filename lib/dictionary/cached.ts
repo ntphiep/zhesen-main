@@ -23,7 +23,7 @@ import { getEntriesContaining } from './containing'
 import { getWordKin } from './kin'
 import { getWordOfDay, dayNumber, type DailyWord } from './wordOfDay'
 import { getLevelsForLanguage, getEntriesByLevel, type LevelSummary, type LevelPage } from './levels'
-import type { ContainingWord, DictEntryDetail, DictEntryPreview, CrossLangSibling, TermPreview, CharInfo, WordForm } from './types'
+import type { ContainingWord, DictEntryChip, DictEntryDetail, DictEntryPreview, CrossLangSibling, TermPreview, CharInfo, WordForm } from './types'
 import type { LangCode } from '@/lib/languages'
 
 /** How long a search answer stays cached. One number for the cache and for the cold-query
@@ -107,9 +107,17 @@ export const getCachedWordOfDay = unstable_cache(
 )
 
 export const getCachedCommonWords = unstable_cache(
-  (lang: LangCode, options: CommonWordsOptions = {}): Promise<DictEntryPreview[]> =>
+  (lang: LangCode, options: Omit<CommonWordsOptions, 'leveled'> = {}): Promise<DictEntryPreview[]> =>
     getCommonWords(createContentClient(), lang, options),
   ['dict-common-words-v3'],
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
+)
+
+/** The levelled common words, as the chips on `/dictionary` draw them. */
+export const getCachedCommonWordChips = unstable_cache(
+  (lang: LangCode, options: Omit<CommonWordsOptions, 'leveled'>): Promise<DictEntryChip[]> =>
+    getCommonWords(createContentClient(), lang, { ...options, leveled: true }),
+  ['dict-common-word-chips-v1'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 

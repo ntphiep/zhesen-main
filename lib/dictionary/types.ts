@@ -54,6 +54,8 @@ export interface DictEntryPreview {
    *  results, so a caller can compare matches across languages. */
   matchScore?: number | null
 }
+/** A common-words chip on `/dictionary`. */
+export type DictEntryChip = Pick<DictEntryPreview, 'id' | 'headword' | 'glossVi'>
 export interface DictEntryDetail extends DictEntryPreview {
   senses: DictSense[]
   pronunciations: DictPron[]

@@ -8,6 +8,12 @@ const LEARNER_LEAD = 'learner_entries(status, learner_senses(sense_order, vi_ter
 export const PREVIEW_SELECT =
   `${ENTRY_COLUMNS}, senses(pos, gloss_vi, gloss_en, sense_order, sense_frequency), ${PRONUNCIATIONS}, ${LEARNER_LEAD}`
 
+/** What a common-words chip draws, its headword and lead Vietnamese gloss, plus every
+ *  column `toPreview` reads to pick that gloss. A third of `PREVIEW_SELECT`'s bytes for the
+ *  same sixty English rows. */
+export const CHIP_SELECT =
+  'id, headword, senses(pos, gloss_vi, gloss_en, sense_order, sense_frequency), learner_entries(status, learner_senses(sense_order, vi_terms))'
+
 /** The preview plus each sense's id and machine-translation flag, which only the
  *  entry page reads. */
 export const DETAIL_SELECT =

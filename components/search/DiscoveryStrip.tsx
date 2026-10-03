@@ -1,8 +1,8 @@
 import { CommonWords, type WordChip } from './CommonWords'
 import { PersonalStrip } from './PersonalStrip'
-import { getCachedCommonWords } from '@/lib/dictionary/cached'
+import { getCachedCommonWordChips } from '@/lib/dictionary/cached'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
-import type { DictEntryPreview } from '@/lib/dictionary/types'
+import type { DictEntryChip } from '@/lib/dictionary/types'
 
 /**
  * What the page offers when nothing has been typed: a rotating row of common words per
@@ -26,15 +26,10 @@ export async function DiscoveryStrip() {
   // empty strip rather than failing the page. Caught outside the cache, so it keeps nothing.
   const lists = await Promise.all(
     LANG_CODES.map((l) =>
-      getCachedCommonWords(l, { limit: POOL, offset: SKIP_FUNCTION_WORDS, leveled: true })
-        .catch((e: unknown): DictEntryPreview[] => { console.error('common words failed', l, e); return [] })),
+      getCachedCommonWordChips(l, { limit: POOL, offset: SKIP_FUNCTION_WORDS })
+        .catch((e: unknown): DictEntryChip[] => { console.error('common words failed', l, e); return [] })),
   )
-  const pools = Object.fromEntries(
-    LANG_CODES.map((l, i) => [
-      l,
-      lists[i].map((e): WordChip => ({ id: e.id, headword: e.headword, glossVi: e.glossVi ?? null })),
-    ]),
-  ) as Record<LangCode, WordChip[]>
+  const pools = Object.fromEntries(LANG_CODES.map((l, i) => [l, lists[i]])) as Record<LangCode, WordChip[]>
 
   return (
     <section className="mt-14 flex flex-col gap-8 rounded-[22px] bg-(--tint-2) px-4 py-5 sm:px-6 sm:py-6">

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
-import type { DictEntryPreview, SuggestionPreview } from './types'
-import { entryIdRow, entryPreviewRow, searchRpcRow, suggestRow, toPreview, toPreviewFromSearchRow, toSuggestion } from './rows'
+import type { DictEntryChip, DictEntryPreview, SuggestionPreview } from './types'
+import { entryChipRow, entryIdRow, entryPreviewRow, searchRpcRow, suggestRow, toChip, toPreview, toPreviewFromSearchRow, toSuggestion } from './rows'
 import { azureTranslatorConfig } from '@/lib/translate/config'
 import { translateCached } from '@/lib/translate/azure'
 import { isStructuralMatch, isWordMatch } from './detect'
@@ -12,7 +12,7 @@ import { isStructuralMatch, isWordMatch } from './detect'
  * the frequency-ordered "common words" list.
  */
 
-import { PREVIEW_SELECT } from './entrySelect'
+import { CHIP_SELECT, PREVIEW_SELECT } from './entrySelect'
 
 export async function searchEntries(
   supabase: SupabaseClient, lang: LangCode, query: string, limit = 20,
@@ -242,10 +242,17 @@ export interface CommonWordsOptions {
  *  too deep for tsc once the builder is reassigned (TS2589). */
 const ID_SELECT: string = 'id'
 
-/** Most frequent entries for a language (for the per-language "common words" list). */
+/** Most frequent entries for a language (for the per-language "common words" list).
+ *  `leveled` feeds the chips on `/dictionary`, so it reads only what a chip draws. */
+export async function getCommonWords(
+  supabase: SupabaseClient, lang: LangCode, options: CommonWordsOptions & { leveled: true },
+): Promise<DictEntryChip[]>
+export async function getCommonWords(
+  supabase: SupabaseClient, lang: LangCode, options?: CommonWordsOptions & { leveled?: false },
+): Promise<DictEntryPreview[]>
 export async function getCommonWords(
   supabase: SupabaseClient, lang: LangCode, { limit = 24, offset = 0, leveled = false }: CommonWordsOptions = {},
-): Promise<DictEntryPreview[]> {
+): Promise<DictEntryChip[] | DictEntryPreview[]> {
   if (leveled) {
     // Ids first, then the embeds for those rows only. In one request PostgREST built the
     // embeds for every row the offset then skipped: 983 ms mean and 58 of 69 statement
@@ -260,10 +267,10 @@ export async function getCommonWords(
     if (page.error) throw page.error
     const order = entryIdRow.array().parse(page.data ?? []).map((r) => r.id)
     if (order.length === 0) return []
-    const { data, error } = await supabase.schema('lex').from('entries').select(PREVIEW_SELECT).in('id', order)
+    const { data, error } = await supabase.schema('lex').from('entries').select(CHIP_SELECT).in('id', order)
     if (error) throw error
-    const byId = new Map(entryPreviewRow.array().parse(data ?? []).map((r) => [r.id, toPreview(r)]))
-    return order.map((id) => byId.get(id)).filter((p): p is DictEntryPreview => Boolean(p))
+    const byId = new Map(entryChipRow.array().parse(data ?? []).map((r) => [r.id, toChip(r)]))
+    return order.map((id) => byId.get(id)).filter((p): p is DictEntryChip => Boolean(p))
   }
   const { data, error } = await supabase
     .schema('lex')
