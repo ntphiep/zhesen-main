@@ -9,7 +9,7 @@ const DESCRIPTION_MAX = 155
 
 /** The pinyin the word page shows beside the headword: its pronunciation row, else the
  *  entry's own `pinyin` attribute. */
-function headwordPinyin(detail: DictEntryDetail): string | null {
+export function headwordPinyin(detail: DictEntryDetail): string | null {
   const row = formatPronunciation(pickAccentRows(detail.pronunciations, 'zh', detail.headword)[0]?.ipa ?? null, 'zh')
   if (row) return row
   const attr = detail.attributes.pinyin
@@ -28,7 +28,7 @@ function entryTitle(detail: DictEntryDetail): string {
 
 /** Up to three distinct Vietnamese meanings, lead meaning first. Never English: an English
  *  definition in a Vietnamese snippet reads as a broken page. */
-function vietnameseGlosses(detail: DictEntryDetail): string[] {
+export function vietnameseGlosses(detail: DictEntryDetail): string[] {
   const all = [detail.glossVi, ...detail.senses.map((s) => s.glossVi ?? s.pivotVi)]
     .map((g) => (g ?? '').replace(/\s*;\s*/g, ', ').replace(/[\s.,;:!?…]+$/, '').trim())
     .filter(Boolean)
@@ -36,10 +36,10 @@ function vietnameseGlosses(detail: DictEntryDetail): string[] {
 }
 
 /** Cut at the last space that leaves room for the ellipsis, so no word is broken. */
-function clip(text: string): string {
-  if (text.length <= DESCRIPTION_MAX) return text
-  const space = text.lastIndexOf(' ', DESCRIPTION_MAX - 1)
-  const head = text.slice(0, space > 0 ? space : DESCRIPTION_MAX - 1)
+export function clip(text: string, max = DESCRIPTION_MAX): string {
+  if (text.length <= max) return text
+  const space = text.lastIndexOf(' ', max - 1)
+  const head = text.slice(0, space > 0 ? space : max - 1)
   return `${head.replace(/[\s.,;:!?]+$/, '')}…`
 }
 
