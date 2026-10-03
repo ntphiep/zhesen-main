@@ -17,18 +17,38 @@ export const SITE_URL =
       : 'http://localhost:3000')
 
 /**
+ * The site-level Open Graph and Twitter fields. Next merges metadata shallowly, so a page that
+ * sets `openGraph` replaces the layout's whole object and loses these unless it spreads them in.
+ */
+export const SITE_SOCIAL = {
+  openGraph: { type: 'website', siteName: 'Zhesen', locale: 'vi_VN' },
+  // No image is declared on purpose: a card pointing at a missing file renders
+  // worse than a card with no image at all.
+  twitter: { card: 'summary' },
+} satisfies Pick<Metadata, 'openGraph' | 'twitter'>
+
+/**
  * Title and description, for the head and the Open Graph card. Every page must go through
  * here rather than returning a bare `title`: Next inherits the layout's `openGraph` object
  * untouched, so a page setting only `title` is shared as the site's generic card. The
  * suffix is spelled out because `title.template` never reaches the Open Graph object.
+ * `noindex` keeps the page out of search results while its links are still followed.
  */
 export function pageMetadata(
-  { title, description, canonical }: { title: string; description: string; canonical?: string },
+  { title, description, canonical, noindex }:
+    { title: string; description: string; canonical?: string; noindex?: boolean },
 ): Metadata {
   return {
     title,
     description,
-    openGraph: { title: `${title} · Zhesen`, description, ...(canonical ? { url: canonical } : {}) },
+    openGraph: {
+      ...SITE_SOCIAL.openGraph,
+      title: `${title} · Zhesen`,
+      description,
+      ...(canonical ? { url: canonical } : {}),
+    },
+    twitter: SITE_SOCIAL.twitter,
     ...(canonical ? { alternates: { canonical } } : {}),
+    ...(noindex ? { robots: { index: false, follow: true } } : {}),
   }
 }

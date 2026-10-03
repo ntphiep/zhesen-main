@@ -4,7 +4,7 @@ import './globals.css'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { AiChatPanel } from '@/components/ai/AiChatPanel'
-import { SITE_URL } from '@/lib/site'
+import { SITE_SOCIAL, SITE_URL } from '@/lib/site'
 import { THEME_BOOT_SCRIPT } from '@/lib/theme'
 import { WORD_LAYOUT_BOOT_SCRIPT } from '@/lib/dictionary/wordLayout'
 import { HOME_BOOT_SCRIPT } from '@/lib/home/homeLayout'
@@ -36,16 +36,12 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   applicationName: 'Zhesen',
   openGraph: {
-    type: 'website',
-    siteName: 'Zhesen',
-    locale: 'vi_VN',
+    ...SITE_SOCIAL.openGraph,
     url: '/',
     title: 'Zhesen · Từ điển Trung, Tây Ban Nha, Anh',
     description: DESCRIPTION,
   },
-  // No image is declared on purpose: a card pointing at a missing file renders
-  // worse than a card with no image at all.
-  twitter: { card: 'summary' },
+  twitter: SITE_SOCIAL.twitter,
 }
 
 export default function RootLayout({
