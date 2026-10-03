@@ -9,6 +9,18 @@ import type { WordViewInput } from './wordView'
 /** Everything the word page reads for one entry, from the caches in `./cached`. Null when
  *  the entry does not exist. */
 export async function loadWordPage(entryId: string): Promise<WordViewInput | null> {
+  // The reads keyed by the id alone start with the detail read rather than a wave after it.
+  // The no-op catch only keeps an unknown entry's early return from leaving a rejection
+  // unhandled; the await below still throws.
+  const layer = getCachedLearnerLayer(entryId)
+  const byId = Promise.all([
+    getCachedCrossLanguage(entryId),
+    getCachedInflections(entryId),
+    getCachedGrammarPointsForEntry(entryId),
+    getCachedLearnerBacklinks(entryId),
+    layer,
+  ])
+  byId.catch(() => {})
   const detail = await getCachedEntryDetail(entryId)
   if (!detail) return null
 
@@ -22,7 +34,6 @@ export async function loadWordPage(entryId: string): Promise<WordViewInput | nul
   // The learner layouts' sentences, resolved as soon as the layer is in rather than after the
   // whole wave. Cached like the dictionary's sentences, so a tap on any layout reads nothing
   // more; a failure fails the render, as the dictionary's does, rather than cache plain text.
-  const layer = getCachedLearnerLayer(entryId)
   const layerExamples = layer.then((learner) => {
     const known = new Set(candidateTexts)
     const texts = [...new Set((learner?.senses ?? []).flatMap((s) => [
@@ -33,12 +44,10 @@ export async function loadWordPage(entryId: string): Promise<WordViewInput | nul
   })
 
   const [
-    characters, siblings, inflections, grammarPoints, containing, kin, resolvedExamples, learner, backlinks, layerResolved,
+    characters, [siblings, inflections, grammarPoints, backlinks, learner], containing, kin, resolvedExamples, layerResolved,
   ] = await Promise.all([
     detail.lang === 'zh' ? getCachedCharacters(detail.headword) : Promise.resolve([]),
-    getCachedCrossLanguage(entryId),
-    getCachedInflections(entryId),
-    getCachedGrammarPointsForEntry(entryId),
+    byId,
     getCachedEntriesContaining(detail.lang, detail.headword),
     // The stem the derived words hang off: the lemma when this entry is a form of
     // something else, otherwise the headword itself. Chinese is left out because a
@@ -58,8 +67,6 @@ export async function loadWordPage(entryId: string): Promise<WordViewInput | nul
     //
     // Every sentence the page can show, so none resolves itself from the browser.
     getCachedTappableTexts(detail.lang, candidateTexts),
-    layer,
-    getCachedLearnerBacklinks(entryId),
     layerExamples,
   ])
 
