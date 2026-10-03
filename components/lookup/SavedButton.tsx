@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useEffectEvent, useMemo, useState } from 'react'
+import { useEffectEvent, useLayoutEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addWord, draftFromDictEntry, isWordSaved, WordAlreadyExistsError } from '@/lib/wordlist/store'
 import { takePendingSave } from '@/lib/wordlist/pendingSave'
@@ -25,8 +25,9 @@ export function SavedButton({ entry, size = 'sm', tone }: { entry: DictEntryPrev
   const savePending = useEffectEvent(() => { void save() })
 
   // A save pressed before registering is finished here, once. Otherwise ask whether the
-  // word is already saved instead of finding out by failing.
-  useEffect(() => {
+  // word is already saved instead of finding out by failing. A layout effect, so the
+  // pending key is settled before the button can be seen or pressed.
+  useLayoutEffect(() => {
     if (takePendingSave(entry.id)) {
       savePending()
       return
