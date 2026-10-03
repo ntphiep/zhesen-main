@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { theoryContent } from '@/lib/theory/content'
 import { posGroup } from '@/lib/dictionary/pos'
 import { splitIpa } from '@/lib/theory/ipa'
+import { DOCUMENTED_WORD_CLASSES, PHONEME_ANCHORS } from '@/lib/theory/anchors'
+import { LANG_CODES } from '@/lib/languages'
 
 /** The English blocks are written by hand, so these are the shape rules a page depends
  *  on: an anchor that is unique, a class key a word's own tag can reach, and an example
@@ -19,6 +21,17 @@ describe('phonemes', () => {
     const symbols = new Set(en.phonemes.map((p) => p.symbol))
     for (const p of en.phonemes) {
       if (p.gaSymbol) expect(symbols.has(p.gaSymbol)).toBe(false)
+    }
+  })
+
+  it('lists every symbol in the anchors the word page links through', () => {
+    for (const lang of LANG_CODES) {
+      const want: Record<string, string> = {}
+      for (const p of theoryContent(lang)?.phonemes ?? []) {
+        want[p.symbol] = p.symbol
+        if (p.gaSymbol) want[p.gaSymbol] = p.symbol
+      }
+      expect(PHONEME_ANCHORS[lang] ?? {}).toEqual(want)
     }
   })
 
@@ -67,6 +80,12 @@ describe('word classes', () => {
       expect(posGroup(c.key)?.key).toBe(c.key)
       expect(posGroup(c.key)?.labelVi).toBe(c.titleVi)
       expect(posGroup(c.key)?.abbr).toBe(c.abbr)
+    }
+  })
+
+  it('lists the same classes as the key set the word tags link through', () => {
+    for (const lang of LANG_CODES) {
+      expect(DOCUMENTED_WORD_CLASSES[lang] ?? []).toEqual((theoryContent(lang)?.wordClasses ?? []).map((c) => c.key))
     }
   })
 

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { formatPronunciation } from '@/lib/dictionary/pronunciation'
-import { theoryContent } from '@/lib/theory/content'
+import { PHONEME_ANCHORS } from '@/lib/theory/anchors'
 import { splitIpa } from '@/lib/theory/ipa'
 import { phonemePath } from '@/lib/theory/path'
 import type { LangCode } from '@/lib/languages'
@@ -19,12 +19,7 @@ export function IpaLinked({ value, lang, className = '' }: {
   const shown = formatPronunciation(value, lang)
   if (!shown) return null
 
-  const content = theoryContent(lang)
-  const anchors = new Map<string, string>()
-  for (const p of content?.phonemes ?? []) {
-    anchors.set(p.symbol, p.symbol)
-    if (p.gaSymbol) anchors.set(p.gaSymbol, p.symbol)
-  }
+  const anchors = new Map(Object.entries(PHONEME_ANCHORS[lang] ?? {}))
   if (anchors.size === 0) return <span className={`ipa ${className}`.trim()}>{shown}</span>
 
   return (

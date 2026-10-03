@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { pickSenses, parseClassifiers, isSentenceTranslation } from '@/lib/dictionary/textQuality'
 import { senseSections, SHOWN_SENSES, type SenseSection } from '@/lib/dictionary/wordPage'
-import { findWordClass } from '@/lib/theory/content'
+import { hasWordClass } from '@/lib/theory/anchors'
 import { wordClassPath } from '@/lib/theory/path'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { useAnchor } from '@/lib/hooks/useAnchor'
@@ -66,7 +66,7 @@ function PosSection({ section, ...shared }: Shared & { section: SenseSection }) 
   const [expanded, setExpanded] = useState(false)
   const { shown, hiddenCount } = pickSenses(section.senses, SHOWN_SENSES)
   const visible = expanded ? section.senses : shown
-  const documented = section.key && findWordClass(shared.lang, section.key)
+  const documented = section.key && hasWordClass(shared.lang, section.key)
   const anchor = useAnchor()
   return (
     <section id={anchor(section.anchor)} data-reveal="" className="flex flex-col gap-4">

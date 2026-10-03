@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { posGroups, splitPos } from '@/lib/dictionary/pos'
-import { findWordClass } from '@/lib/theory/content'
+import { hasWordClass } from '@/lib/theory/anchors'
 import { wordClassPath } from '@/lib/theory/path'
 import type { LangCode } from '@/lib/languages'
 
@@ -28,7 +28,7 @@ export function PosTag({ value, linkLang, full = false, className = '' }: {
   return (
     <span className={`inline-flex flex-wrap items-baseline gap-x-1 ${className}`.trim()}>
       {groups.map((g, i) => {
-        const documented = linkLang && findWordClass(linkLang, g.key)
+        const documented = linkLang && hasWordClass(linkLang, g.key)
         const tag = <abbr title={g.labelVi} className="no-underline">{g.abbr}</abbr>
         return (
           <span key={g.key}>
