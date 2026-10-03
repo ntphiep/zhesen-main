@@ -11,7 +11,7 @@ import { ReadLayout } from './ReadLayout'
 import { CONTAINER } from './WordParts'
 import { LayoutPicker } from '@/components/ui/LayoutPicker'
 import { WORD_LAYOUTS, availableLayouts, resolveLayout, wordLayout, type WordLayout } from '@/lib/dictionary/wordLayout'
-import { AnchorPrefix } from '@/lib/hooks/useAnchor'
+import { AnchorPrefix, useAnchor } from '@/lib/hooks/useAnchor'
 import type { WordView } from '@/lib/dictionary/wordView'
 import w from './Word.module.css'
 
@@ -36,14 +36,14 @@ const DORMANT = { __html: '' }
  * The word page in the layout the reader picked, with the picker above it. Each layout
  * sets its own width; the overview draws on a pastel page.
  *
- * The page is cached for everyone, so the server cannot know the stored layout. It draws
- * every layout the entry offers, each in a panel, and `app/globals.css` shows the one the
- * boot script marked on <html> before the first paint. Hidden panels prefix their ids.
- * Hydration works on the shown panel only. Over server HTML (main[data-boot] is in the
- * document) every other panel is an empty `dangerouslySetInnerHTML`, which React hydrates
- * without rendering or touching its children; the render after hydration drops it, and
- * the shown one keeps its DOM. A Suspense boundary per panel would do the same, but React
- * then streams each large panel out of line and reveals the shown one up to 300 ms late.
+ * The page is cached for everyone, so the server cannot know the stored layout. It writes
+ * a panel per layout the entry offers but draws only the overview in full: all six drawn
+ * made take 1,159,896 bytes of HTML with six h1. The others hold a `PanelShell`.
+ * `app/globals.css` shows the panel the boot script marked on <html> before the first
+ * paint. Over server HTML (main[data-boot] is in the document) every panel but a shown
+ * overview hydrates as an empty `dangerouslySetInnerHTML`, which React hydrates without
+ * touching its children; the render after hydration drops the rest and draws the stored
+ * layout into its own panel element, clearing the shell.
  */
 export function WordLayouts({ view }: { view: WordView }) {
   const stored = useSyncExternalStore(wordLayout.subscribe, wordLayout.snapshot, wordLayout.serverSnapshot)
@@ -89,16 +89,37 @@ export function WordLayouts({ view }: { view: WordView }) {
           <p key={l.key} data-note={l.key} className={NOTE}>Từ này chưa có bố cục {l.label}, đang hiện {label('classic')}.</p>
         ))}
       </div>
-      {panels.map((key) => (shown !== null && key !== shown
+      {panels.map((key) => (shown !== null && (key !== 'overview' || shown !== 'overview')
         ? <div key={key} data-panel={key} suppressHydrationWarning dangerouslySetInnerHTML={DORMANT} />
         : (
           <div key={key} data-panel={key} data-enter={picked || undefined}>
             <AnchorPrefix value={hydrated || key === 'overview' ? '' : `${key}-`}>
-              <LayoutBody layout={key} view={view} />
+              {hydrated || key === 'overview' ? <LayoutBody layout={key} view={view} /> : <PanelShell view={view} />}
             </AnchorPrefix>
           </div>
         )))}
     </main>
+  )
+}
+
+/** What a panel other than the overview holds in the server HTML: the core senses, shown
+ *  to a reader who stored that layout until the render after hydration draws it. */
+function PanelShell({ view }: { view: WordView }) {
+  const anchor = useAnchor()
+  const senses = view.learner?.senses ?? []
+  if (senses.length === 0) return null
+  return (
+    <nav aria-label="Các nghĩa chính" className={CONTAINER}>
+      <ol className="flex flex-col gap-1 text-[15px]">
+        {senses.map((s) => (
+          <li key={s.order}>
+            <a href={`#${anchor(`sense-${s.order}`)}`} className="text-(--zs-ink) hover:underline">
+              <span className="mr-2 font-mono text-sm text-(--zs-soft)">{s.order}</span>{s.viTerms[0] ?? ''}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
   )
 }
 

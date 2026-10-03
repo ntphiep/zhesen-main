@@ -4,8 +4,8 @@
  * An external store for the same reasons as `lookupLayout`: reading storage during render
  * is React #418 once the stored value differs from the server's pass, and the effect form
  * is forbidden by `react-hooks/set-state-in-effect`. The page is cached for everyone, so
- * the server renders every layout; `WORD_LAYOUT_BOOT_SCRIPT` picks the stored one before
- * the first paint (components/lookup/WordLayouts.tsx).
+ * the server writes a panel per layout; `WORD_LAYOUT_BOOT_SCRIPT` picks the stored one
+ * before the first paint (components/lookup/WordLayouts.tsx).
  */
 
 export type WordLayout = 'overview' | 'bilingual' | 'classic' | 'map' | 'read' | 'glance'

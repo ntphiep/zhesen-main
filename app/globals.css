@@ -406,12 +406,14 @@ header nav .link-pending {
   .chip-rotate { animation: none; }
 }
 
-/* The word page is cached for everyone, so the server draws every layout the entry offers,
-   each in a [data-panel] of components/lookup/WordLayouts.tsx, with no stored choice
-   known. Until hydration drops the rest (main[data-boot]), these rules show the panel,
-   the picker state and the note the boot script in app/layout.tsx chose on <html> before
-   the first paint: the stored layout when the entry lists it in data-layouts, the classic
-   page when it lacks a learner layer, the overview when nothing is stored. */
+/* The word page is cached for everyone, so the server writes a [data-panel] per layout
+   the entry offers in components/lookup/WordLayouts.tsx, the overview in full and the
+   rest as a short shell, with no stored choice known. Until hydration drops the rest
+   (main[data-boot]), these rules show the panel, the picker state and the note the boot
+   script in app/layout.tsx chose on <html> before the first paint: the stored layout when
+   the entry lists it in data-layouts, the classic page when it lacks a learner layer, the
+   overview when nothing is stored. A shell keeps the page a screen tall, so the footer
+   does not jump when the layout is drawn. */
 main[data-boot] > [data-panel],
 main[data-boot] [data-note],
 main[data-boot] [data-hint] {
@@ -428,6 +430,9 @@ html[data-word-layout="map"] main[data-boot][data-layouts~="map"] > [data-panel=
 html[data-word-layout="read"] main[data-boot][data-layouts~="read"] > [data-panel="read"],
 html[data-word-layout="glance"] main[data-boot][data-layouts~="glance"] > [data-panel="glance"] {
   display: block;
+}
+html[data-word-layout]:not([data-word-layout="overview"]) main[data-boot] {
+  min-height: 100vh;
 }
 html[data-word-layout="map"] main[data-boot]:not([data-layouts~="map"]) [data-note="map"],
 html[data-word-layout="read"] main[data-boot]:not([data-layouts~="read"]) [data-note="read"],
