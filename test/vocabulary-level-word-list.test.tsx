@@ -74,6 +74,19 @@ describe('LevelWordList', () => {
     expect(screen.queryByRole('button', { name: /Tải thêm/i })).not.toBeInTheDocument()
   })
 
+  it('links the previous and next pages as ?page=N for a reader without the script', () => {
+    render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[entry('m')]} initialStart={2} total={4} pageSize={1} />)
+    expect(screen.getByRole('link', { name: /Trang trước/ })).toHaveAttribute('href', '/theory/en/vocabulary/A1?page=2')
+    expect(screen.getByRole('link', { name: /Trang sau/ })).toHaveAttribute('href', '/theory/en/vocabulary/A1?page=4')
+    expect(screen.getByRole('combobox', { name: 'Chuyển tới trang' })).toHaveValue('3')
+  })
+
+  it('points page 2 back at the level itself, not ?page=1', () => {
+    render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[entry('b')]} initialStart={1} total={2} pageSize={1} />)
+    expect(screen.getByRole('link', { name: /Trang trước/ })).toHaveAttribute('href', '/theory/en/vocabulary/A1')
+    expect(screen.queryByRole('link', { name: /Trang sau/ })).not.toBeInTheDocument()
+  })
+
   it('shows no pager when the level fits on one page', () => {
     render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[entry('a')]} total={1} pageSize={40} />)
     expect(screen.queryByRole('combobox', { name: 'Chuyển tới trang' })).not.toBeInTheDocument()

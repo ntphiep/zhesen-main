@@ -3,10 +3,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { LinkPending } from '@/components/ui/LinkPending'
 import { PageHead } from '@/components/theory/BlockPage'
-import { Warn } from '@/components/theory/Glyphs'
+import { ArrowLeft, ArrowRight, Warn } from '@/components/theory/Glyphs'
 import s from '@/components/theory/Theory.module.css'
 import { entryPath } from '@/lib/dictionary/entryId'
-import { theoryBlockPath, vocabularyLevelPath } from '@/lib/theory/path'
+import { levelPageHref, theoryBlockPath, vocabularyLevelPath } from '@/lib/theory/path'
 import { signInHref, useAccount } from '@/lib/hooks/useAccount'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { Language } from '@/lib/languages'
@@ -18,18 +18,21 @@ type AddAllState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'done'; added: 
 
 /** `/theory/[lang]/vocabulary/[level]`: a paginated list of every word at one level, plus a
  * one-click bulk import into the wordlist. Browsing is public; the import needs an
- * account, so without one the button is a sign-in prompt carrying this page in `next`. */
-export function LevelWordList({ language, level, levelIsEstimated, initialItems, total, pageSize }: {
+ * account, so without one the button is a sign-in prompt carrying this page in `next`.
+ * The server renders page `?page=N` from row `initialStart`, and the previous and next
+ * links are plain `?page=N` URLs, so a crawler reaches every word without the script. */
+export function LevelWordList({ language, level, levelIsEstimated, initialItems, initialStart = 0, total, pageSize }: {
   language: Language
   level: string
   levelIsEstimated: boolean
   initialItems: DictEntryPreview[]
+  initialStart?: number
   total: number
   pageSize: number
 }) {
   const { kind } = useAccount()
   // `items` starts at row `start`: a page jump replaces the list, "load more" extends it.
-  const [start, setStart] = useState(0)
+  const [start, setStart] = useState(initialStart)
   const [items, setItems] = useState(initialItems)
   const [loadingMore, setLoadingMore] = useState(false)
   const [addAll, setAddAll] = useState<AddAllState>({ kind: 'idle' })
@@ -160,6 +163,25 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
           >
             {loadingMore ? 'Đang tải…' : `Tải thêm (${end}/${total})`}
           </button>
+        )}
+
+        {pages > 1 && (
+          <nav aria-label="Phân trang" className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            {start > 0 ? (
+              <Link href={levelPageHref(language.code, level, start / pageSize)} className={s.ghost}>
+                <ArrowLeft />
+                Trang trước
+                <LinkPending />
+              </Link>
+            ) : <span />}
+            {end < total && (
+              <Link href={levelPageHref(language.code, level, Math.floor(end / pageSize) + 1)} className={s.ghost}>
+                Trang sau
+                <ArrowRight />
+                <LinkPending />
+              </Link>
+            )}
+          </nav>
         )}
       </div>
     </main>

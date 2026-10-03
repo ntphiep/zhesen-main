@@ -17,6 +17,12 @@ export function vocabularyLevelPath(lang: LangCode, level: string): string {
   return `${theoryBlockPath(lang, 'vocabulary')}/${encodeURIComponent(level)}`
 }
 
+/** One page of a level's word list. Page 1 is the level itself, so it has one URL. */
+export function levelPageHref(lang: LangCode, level: string, page: number): string {
+  const path = vocabularyLevelPath(lang, level)
+  return page > 1 ? `${path}?page=${page}` : path
+}
+
 export function wordClassPath(lang: LangCode, key: string): string {
   return `${theoryBlockPath(lang, 'word-class')}/${encodeURIComponent(key)}`
 }

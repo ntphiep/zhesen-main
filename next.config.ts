@@ -94,6 +94,17 @@ const nextConfig: NextConfig = {
       { source: '/learn/:lang/:level', destination: '/theory/:lang/vocabulary/:level', permanent: true },
     ]
   },
+  // A level's word list pages as `?page=N`. The page segment it lands on stays in the route
+  // cache, which a page reading `searchParams` would leave for per-request rendering.
+  async rewrites() {
+    return [
+      {
+        source: '/theory/:lang/vocabulary/:level',
+        has: [{ type: 'query', key: 'page', value: '(?<page>[1-9][0-9]{0,3})' }],
+        destination: '/theory/:lang/vocabulary/:level/:page',
+      },
+    ]
+  },
 }
 
 export default nextConfig

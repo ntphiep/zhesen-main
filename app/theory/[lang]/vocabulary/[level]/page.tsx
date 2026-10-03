@@ -6,6 +6,7 @@ import { LevelWordList } from '@/components/vocabulary/LevelWordList'
 
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
+import { levelPageHref } from '@/lib/theory/path'
 
 /**
  * Empty on purpose. A dynamic segment is only eligible for the full route cache
@@ -37,31 +38,49 @@ export function generateStaticParams(): { lang: string; level: string }[] {
 export const revalidate = 604800
 
 
-export async function generateMetadata(
-  { params }: { params: Promise<{ lang: string; level: string }> },
-): Promise<Metadata> {
-  const { lang, level } = await params
+/** `page` is set only under `[page]`, where `next.config.ts` rewrites `?page=N`. */
+type Params = Promise<{ lang: string; level: string; page?: string }>
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const { lang, level, page } = await params
   const language = isLangCode(lang) ? getLanguage(lang) : undefined
   if (!language) return {}
+  const n = pageNumber(page)
   return pageMetadata({
-    title: `${level} · ${language.name}`,
-    description: `Xem danh sách từ vựng ${language.name} trình độ ${level}.`,
-    canonical: `/theory/${language.code}/vocabulary/${encodeURIComponent(level)}`,
+    title: `${level} · ${language.name}${n > 1 ? ` · Trang ${n}` : ''}`,
+    description: `Xem danh sách từ vựng ${language.name} trình độ ${level}${n > 1 ? `, trang ${n}` : ''}.`,
+    canonical: levelPageHref(language.code, level, n),
   })
 }
 
-const FIRST_PAGE = 40
+const PAGE_SIZE = 40
 
-export default async function LevelPage({ params }: { params: Promise<{ lang: string; level: string }> }) {
-  const { lang, level } = await params
+/** 0 for anything but a positive integer, which the page answers with 404. */
+function pageNumber(page: string | undefined): number {
+  if (page === undefined) return 1
+  return /^[1-9][0-9]*$/.test(page) ? Number(page) : 0
+}
+
+export default async function LevelPage({ params }: { params: Params }) {
+  const { lang, level, page: pageParam } = await params
   const language = isLangCode(lang) ? getLanguage(lang) : undefined
   // A 404 here is cached for the whole revalidate window, so it comes from the fixed
   // level set or an empty level, never from a level list that a cold start got wrong.
   if (!language || !isLevel(language.code, level)) notFound()
+  const n = pageNumber(pageParam)
+  if (n < 1) notFound()
+  const offset = (n - 1) * PAGE_SIZE
 
+  const levelsRead = getCachedLevelsForLanguage(language.code)
+  // PostgREST answers an offset past the last row with 416, so a page beyond the level
+  // is a 404 decided from the level's count before its rows are read.
+  if (n > 1) {
+    const known = (await levelsRead).find((l) => l.level === level)
+    if (known && offset >= known.count) notFound()
+  }
   const [levels, page] = await Promise.all([
-    getCachedLevelsForLanguage(language.code),
-    getCachedEntriesByLevel(language.code, level, 0, FIRST_PAGE),
+    levelsRead,
+    getCachedEntriesByLevel(language.code, level, offset, PAGE_SIZE),
   ])
   const summary = levels.find((l) => l.level === level)
   if (!summary) {
@@ -71,12 +90,14 @@ export default async function LevelPage({ params }: { params: Promise<{ lang: st
 
   return (
     <LevelWordList
+      key={n}
       language={language}
       level={level}
       levelIsEstimated={summary.levelIsEstimated}
       initialItems={page.items}
+      initialStart={offset}
       total={page.total}
-      pageSize={FIRST_PAGE}
+      pageSize={PAGE_SIZE}
     />
   )
 }
