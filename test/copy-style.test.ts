@@ -9,7 +9,7 @@ const CHECKED = [
   'app/account', 'app/login', 'app/register', 'components/account', 'lib/auth',
   'components/ai', 'lib/ai',
   'app/dictionary', 'components/search', 'components/lookup', 'lib/dictionary', 'lib/translate',
-  'app/page.tsx', 'app/layout.tsx', 'app/error.tsx', 'app/global-error.tsx', 'app/not-found.tsx',
+  'app/page.tsx', 'app/layout.tsx', 'app/error.tsx', 'app/global-error.tsx', 'app/not-found.tsx', 'app/manifest.ts',
   'app/api/ai', 'components/home', 'components/layout', 'components/ui', 'lib/languages.ts', 'lib/theme.ts', 'lib/home/worldFacts.ts', 'lib/home/homeLayout.ts',
   'app/theory', 'components/theory', 'components/grammar', 'components/reader', 'components/vocabulary', 'lib/grammar',
 ]
