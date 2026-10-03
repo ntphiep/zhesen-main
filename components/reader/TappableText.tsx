@@ -161,7 +161,7 @@ export function TappableText({
         const [{ createClient }, { resolveTokens, getZhSegmentCandidates }, { getCharacters }] = await Promise.all([
           loadSupabaseClient(),
           import('@/lib/dictionary/resolveTokens'),
-          import('@/lib/dictionary/entryDetail'),
+          import('@/lib/dictionary/characters'),
         ])
         const supabase = createClient()
         const headwords = lang === 'zh' ? await getZhSegmentCandidates(supabase, text) : []

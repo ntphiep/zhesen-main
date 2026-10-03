@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { DictEntryDetail, DictEntryPreview, DictSense, DictExample, DictRelation, CrossLangSibling, TermPreview, CharInfo, WordForm, SenseLink } from './types'
-import { entryDetailRow, exampleRow, crossLanguageSourceRow, crossLangSiblingRow, termPreviewRow, pivotViRow, inflectionRow, charRow, relationSenseRow, toPreview, toSenses, toProns } from './rows'
+import type { DictEntryDetail, DictEntryPreview, DictSense, DictExample, DictRelation, CrossLangSibling, TermPreview, WordForm, SenseLink } from './types'
+import { entryDetailRow, exampleRow, crossLanguageSourceRow, crossLangSiblingRow, termPreviewRow, pivotViRow, inflectionRow, relationSenseRow, toPreview, toSenses, toProns } from './rows'
 import { fillPivotVi, cleanMtGloss, cleanGlossVi } from './textQuality'
 import { entryPivots, cleanGlossTerm } from './crosslang'
 import { DETAIL_SELECT } from './entrySelect'
@@ -193,25 +193,4 @@ export async function getInflections(supabase: SupabaseClient, entryId: string):
   return inflectionRow.array().parse(data ?? []).map((r) => ({ formText: r.form_text, formLabel: r.form_label }))
 }
 
-export async function getCharacters(
-  supabase: SupabaseClient, headword: string,
-): Promise<CharInfo[]> {
-  const glyphs = [...headword].filter((c) => /\p{Script=Han}/u.test(c))
-  if (glyphs.length === 0) return []
-  const unique = [...new Set(glyphs)]
-  const { data, error } = await supabase.schema('lex').from('characters')
-    .select('char, radical, stroke_count, han_viet, pinyin, gloss').in('char', unique)
-  if (error) throw error
-  const byChar = new Map(charRow.array().parse(data ?? []).map((r) => [r.char, r]))
-  return glyphs.map((c) => {
-    const r = byChar.get(c)
-    return {
-      char: c,
-      radical: r?.radical ?? null,
-      strokeCount: r?.stroke_count ?? null,
-      hanViet: r?.han_viet ?? [],
-      pinyin: r?.pinyin ?? [],
-      gloss: r?.gloss ?? null,
-    }
-  })
-}
+export { getCharacters } from './characters'

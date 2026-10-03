@@ -2,7 +2,11 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'node:path'
 
-const alias = { '@': resolve(__dirname, '.') }
+// Next resolves 'server-only' itself; under Vitest it is the empty module Next ships.
+const alias = {
+  '@': resolve(__dirname, '.'),
+  'server-only': resolve(__dirname, 'node_modules/next/dist/compiled/server-only/empty.js'),
+}
 
 // Building a jsdom window is the most expensive thing this suite does: measured
 // at 117.73s of worker time for the 55 logic tests alone, against 11ms under the

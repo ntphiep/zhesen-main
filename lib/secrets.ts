@@ -1,3 +1,4 @@
+import 'server-only'
 import { GetParametersCommand } from '@aws-sdk/client-ssm'
 import { z } from '@/lib/zod'
 import { awsHealthConfig } from '@/lib/admin/aws'
