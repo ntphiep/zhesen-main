@@ -7,6 +7,8 @@ import { pageMetadata } from '@/lib/site'
 export const metadata = pageMetadata({
   title: 'Dịch',
   description: 'Dịch một từ hay cả đoạn giữa tiếng Việt và tiếng Anh, Trung, Tây Ban Nha.',
+  // Every `?q=` URL consolidates here: a search result is not a page of its own.
+  canonical: '/dictionary',
 })
 
 /**

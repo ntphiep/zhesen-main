@@ -12,7 +12,7 @@ vi.mock('@/components/search/LookupPair', () => ({
 }))
 
 import { render, screen } from '@testing-library/react'
-import Page from '@/app/dictionary/page'
+import Page, { metadata } from '@/app/dictionary/page'
 
 async function renderPage(searchParams: Record<string, string>) {
   render(await Page({ searchParams: Promise.resolve(searchParams) }))
@@ -37,5 +37,9 @@ describe('dictionary search page', () => {
   it('ignores a language that is not one of the three', async () => {
     const pair = await renderPage({ q: 'holy', lang: 'fr' })
     expect(pair.dataset.lang).toBe('')
+  })
+
+  it('points every search URL at /dictionary as canonical', () => {
+    expect(metadata.alternates).toEqual({ canonical: '/dictionary' })
   })
 })
