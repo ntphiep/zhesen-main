@@ -1,17 +1,19 @@
 'use client'
-import { useId } from 'react'
+import { useId, useMemo } from 'react'
 import Link from 'next/link'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { AddToWordlistButton } from '@/components/lookup/AddToWordlistButton'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { entryPath } from '@/lib/dictionary/entryId'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
+import { useDailyGoal } from '@/lib/hooks/useDailyGoal'
 import type { HomeView } from '@/lib/hooks/useHomeData'
 import { useNarrowViewport } from '@/lib/hooks/useNarrowViewport'
 import type { LangCode } from '@/lib/languages'
 import type { SrsState } from '@/lib/progress/types'
-import { localDay } from '@/lib/wordlist/activity'
+import { FREEZE_EVERY, localDay, MAX_FREEZES, streakState } from '@/lib/wordlist/activity'
 import { dayIndex, longDate, mondayIndex } from '@/lib/wordlist/forecast'
+import { GOAL_CHOICES, goalProgress } from '@/lib/wordlist/goal'
 import { CountUp, DueTitle, HomeBar, Hw, LookupAnswers, LookupBox, ModeGrid, NAME, ORDER, Pron, useHomeLookup, type PickerState } from './HomeParts'
 import { HomeReviewDeck } from './HomeReviewDeck'
 import h from './Home.module.css'
@@ -164,9 +166,63 @@ function Calendar({ view }: { view: HomeView | null }) {
       </div>
       <p className={h.calkey}><i />Không học<i data-on="" />Có ôn ít nhất một từ</p>
       <div className={h.facts}>
-        <div className={h.fact}><b><CountUp value={view?.streak ?? null} /></b><span>ngày học liền</span></div>
-        <div className={h.fact}><b><CountUp value={view?.reviewedToday ?? null} ms={300} /></b><span>từ đã ôn hôm nay</span></div>
+        <StreakFact view={view} />
+        <GoalFact done={view?.reviewedToday ?? null} />
       </div>
     </section>
+  )
+}
+
+/** The streak with the freezes it holds, both derived from the activity days. */
+function StreakFact({ view }: { view: HomeView | null }) {
+  const s = useMemo(() => (view ? streakState([...view.days], view.now) : null), [view])
+  return (
+    <div className={h.fact}>
+      <b><CountUp value={view?.streak ?? null} /></b>
+      <span>ngày học liền</span>
+      {s && (
+        <>
+          <p className={h.frz}>
+            {Array.from({ length: MAX_FREEZES }, (_, i) => (
+              <svg key={i} aria-hidden="true" viewBox="0 0 16 16" data-on={i < s.freezes || undefined}>
+                <path d="M8 1.5 2.5 3.6v4c0 3.3 2.3 5.8 5.5 6.9 3.2-1.1 5.5-3.6 5.5-6.9v-4z" />
+              </svg>
+            ))}
+            <span>{s.freezes}/{MAX_FREEZES} lượt giữ chuỗi</span>
+          </p>
+          {s.savedYesterday && <p className={h.frzNote} data-saved="">Hôm qua đã dùng một lượt giữ chuỗi.</p>}
+          <p className={h.frzNote}>Học {FREEZE_EVERY} ngày liền thì thêm một lượt, giữ tối đa {MAX_FREEZES} lượt. Nghỉ một ngày thì tự dùng một lượt.</p>
+        </>
+      )}
+    </div>
+  )
+}
+
+/** Today's words reviewed against the goal the reader picked, remembered per browser. */
+function GoalFact({ done }: { done: number | null }) {
+  const [goal, setGoal] = useDailyGoal()
+  const id = useId()
+  const p = done === null ? null : goalProgress(done, goal)
+  return (
+    <div className={h.fact} data-met={p?.met || undefined}>
+      <b><CountUp value={done} ms={300} /><small>/{goal}</small></b>
+      <span>{p?.met ? 'Đủ mục tiêu hôm nay' : 'từ đã ôn hôm nay'}</span>
+      <div
+        className={h.goal}
+        role="progressbar"
+        aria-labelledby={id}
+        aria-valuemin={0}
+        aria-valuemax={goal}
+        aria-valuenow={p ? Math.min(p.done, goal) : undefined}
+      >
+        <i style={{ transform: `scaleX(${p?.share ?? 0})` }} />
+      </div>
+      <p className={h.lbl} id={id}>Mục tiêu mỗi ngày</p>
+      <div className={h.goalPick} role="group" aria-labelledby={id}>
+        {GOAL_CHOICES.map((g) => (
+          <button key={g} type="button" aria-pressed={g === goal} onClick={() => setGoal(g)}>{g}</button>
+        ))}
+      </div>
+    </div>
   )
 }

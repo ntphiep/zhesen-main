@@ -219,10 +219,28 @@ a.card:hover { transform: translateY(-3px) rotate(-0.4deg); }
 .calkey i + i, .calkey span + i { margin-left: 0.6rem; }
 .calkey i[data-on] { background: var(--sea-600); }
 :global(:root[data-theme="dark"]) .calkey i[data-on] { background: var(--sea-500); }
-.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.8rem; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.5rem; margin-top: 0.8rem; }
 .fact { padding: 0.8rem 0.9rem; border-radius: 14px; background: var(--tint-2); }
 .fact b { display: block; font-size: var(--s4); line-height: 1; font-weight: 800; letter-spacing: -0.03em; color: var(--zs-ink); font-variant-numeric: tabular-nums; }
-.fact span { display: block; margin-top: 0.3rem; font-size: 0.8125rem; color: var(--zs-soft); }
+.fact > span { display: block; margin-top: 0.3rem; font-size: 0.8125rem; color: var(--zs-soft); }
+.fact b small { margin-left: 0.1rem; font-size: 0.5em; font-weight: 700; letter-spacing: 0; color: var(--zs-soft); }
+.frz { display: flex; align-items: center; gap: 0.25rem; margin: 0.7rem 0 0; font-size: 0.8125rem; font-weight: 600; color: var(--zs-ink); }
+.frz svg { width: 1rem; height: 1rem; fill: transparent; stroke: var(--sea-400); stroke-width: 1.5; stroke-linejoin: round; transition: fill 150ms var(--ease-std); }
+.frz svg[data-on] { fill: var(--sea-400); }
+.frz span { margin-left: 0.2rem; }
+.frzNote { margin: 0.35rem 0 0; font-size: 0.75rem; line-height: 1.45; color: var(--zs-soft); }
+.frzNote[data-saved] { font-weight: 600; color: var(--zs-ink); }
+.goal { height: 6px; margin-top: 0.7rem; border-radius: 9px; background: var(--tint-3); overflow: hidden; }
+.goal i { display: block; height: 100%; border-radius: inherit; background: var(--sea-500); transform-origin: left; transition: transform 520ms var(--ease-std), background-color 150ms var(--ease-std); }
+.fact[data-met] { background: var(--sea-50); transition: background-color 400ms var(--ease-std); }
+:global(:root[data-theme="dark"]) .fact[data-met] { background: var(--zs-chip); }
+.fact[data-met] .goal i { background: var(--sea-600); }
+:global(:root[data-theme="dark"]) .fact[data-met] .goal i { background: var(--sea-300); }
+.fact .lbl { margin-top: 0.8rem; }
+.goalPick { display: inline-flex; flex-wrap: wrap; gap: 2px; margin-top: 0.35rem; padding: 2px; border-radius: 10px; background: var(--zs-chip); }
+.goalPick button { min-width: 2.4rem; padding: 0.3rem 0.55rem; border-radius: 8px; font-size: 0.8125rem; font-weight: 700; color: var(--zs-soft); font-variant-numeric: tabular-nums; transition: background-color 150ms var(--ease-std), color 150ms var(--ease-std); }
+.goalPick button:hover { color: var(--zs-ink); }
+.goalPick button[aria-pressed="true"] { background: var(--zs-btn); color: var(--zs-btn-ink); }
 .leech { list-style: none; margin: 0.6rem 0 0; padding: 0; }
 .leech li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 0.8rem; padding: 0.55rem 0; border-bottom: 1.5px solid var(--zs-line); }
 .leech li:last-child { border-bottom: 0; }
@@ -334,6 +352,7 @@ a.card:hover { transform: translateY(-3px) rotate(-0.4deg); }
 @media (prefers-reduced-motion: reduce) {
   .num[data-wait], .pane, .cards[data-deal] .card, .saved[data-rise] li, .bars[data-grow] .col,
   .rc[data-anim], .weeks[data-fill] i[data-on], .weeks i[data-pop], .meter[data-grow] i { animation: none; }
-  .card, .mode, .chip, .day .col, .back, .grades button, .lrow, .body, .dpin { transition: none; }
+  .card, .mode, .chip, .day .col, .back, .grades button, .lrow, .body, .dpin,
+  .frz svg, .goal i, .fact[data-met], .goalPick button { transition: none; }
   a.card:hover, .mode:hover, .grades button:active:not(:disabled) { transform: none; }
 }

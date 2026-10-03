@@ -1,3 +1,7 @@
+'use client'
+import { useDailyGoal } from '@/lib/hooks/useDailyGoal'
+import { MAX_FREEZES } from '@/lib/wordlist/activity'
+import { goalProgress } from '@/lib/wordlist/goal'
 import type { WordlistStats as Stats } from '@/lib/wordlist/stats'
 import s from './Progress.module.css'
 
@@ -18,13 +22,22 @@ const FLAME = (
 )
 
 export function WordlistStats({ stats }: { stats: Stats }) {
+  const [goal] = useDailyGoal()
   if (stats.total === 0) return null
+  const today = goalProgress(stats.reviewedToday, goal)
+  const kept = stats.streakDetail
   return (
     <div className={`${s.stats} font-ui`}>
       {CARDS.map((c) => (
-        <div key={c.key} className={s.stat} data-k={c.key}>
-          <b>{stats[c.key]}{c.key === 'streak' && FLAME}</b>
-          <span>{c.label}</span>
+        <div key={c.key} className={s.stat} data-k={c.key} data-met={c.key === 'reviewedToday' && today.met ? '' : undefined}>
+          <b>
+            {stats[c.key]}
+            {c.key === 'streak' && FLAME}
+            {c.key === 'reviewedToday' && <small>/{goal}</small>}
+          </b>
+          <span>{c.key === 'reviewedToday' && today.met ? 'Đủ mục tiêu hôm nay' : c.label}</span>
+          {c.key === 'streak' && kept && <em>{kept.freezes}/{MAX_FREEZES} lượt giữ chuỗi</em>}
+          {c.key === 'streak' && kept?.savedYesterday && <em>Hôm qua đã dùng một lượt</em>}
         </div>
       ))}
     </div>

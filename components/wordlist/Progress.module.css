@@ -8,6 +8,10 @@
 .stat b { display: flex; align-items: center; gap: 0.35rem; font-size: 1.75rem; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .stat b svg { width: 1.4rem; height: 1.4rem; color: var(--sea-500); }
 .stat span { display: block; margin-top: 0.2rem; font-size: 0.8125rem; font-weight: 600; color: var(--zs-soft); }
+.stat b small { align-self: flex-end; margin-left: -0.25rem; font-size: 0.55em; font-weight: 700; color: var(--zs-soft); }
+.stat em { display: block; margin-top: 0.15rem; font-size: 0.75rem; font-style: normal; color: var(--zs-soft); }
+.stat[data-met] { background: var(--sea-50); }
+:global(:root[data-theme="dark"]) .stat[data-met] { background: var(--zs-chip); }
 .stat[data-k="streak"] { --c: var(--sea-300); }
 .stat[data-k="total"] { --c: var(--sea-400); animation-delay: 40ms; }
 .stat[data-k="due"] { --c: var(--sea-500); animation-delay: 80ms; background: var(--sea-50); }
