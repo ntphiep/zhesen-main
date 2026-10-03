@@ -112,7 +112,8 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
       setRefusal(null)
       id = setTimeout(async () => {
         try {
-          const outcome = await fetchSearch(trimmed, ctrl.signal, opts)
+          // Lowercased as the route keys its cache, so the CDN holds one entry for Take and take.
+          const outcome = await fetchSearch(trimmed.toLowerCase(), ctrl.signal, opts)
           // A refusal body is not a result set; caching it would replay the refusal on
           // every later keystroke.
           if (outcome.status === 'refused') {
