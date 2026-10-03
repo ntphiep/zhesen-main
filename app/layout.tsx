@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { Be_Vietnam_Pro, Geist } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { SiteFooter } from '@/components/layout/SiteFooter'
@@ -75,6 +77,10 @@ export default function RootLayout({
         {/* Asks GET /api/ai after hydration: the answer depends on the account and on
             SSM, and reading either here would make every page dynamic. */}
         <AiChatPanel />
+        {/* A production build loads both from /_vercel on this origin, so the CSP in
+            next.config.ts needs no new host. */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
