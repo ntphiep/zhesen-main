@@ -23,21 +23,58 @@ export function localDay(ts: number): string {
   return dayFormatter.format(new Date(ts))
 }
 
-/** Current study streak: consecutive days with activity, counting back from today. Today
- *  being absent does not break it until yesterday is also missed. */
+/** Consecutive studied days that earn one streak freeze. */
+export const FREEZE_EVERY = 7
+/** Most freezes held at once. */
+export const MAX_FREEZES = 2
+
+export interface Streak {
+  /** Studied days in the current run. A day a freeze covered keeps the run but adds nothing. */
+  days: number
+  /** Freezes held now, 0 to `MAX_FREEZES`. */
+  freezes: number
+  /** Yesterday was missed and a freeze kept the run. */
+  savedYesterday: boolean
+}
+
+/** The current streak, replayed from the first activity day. Derived, never stored: a single
+ *  missed day spends a held freeze, a second missed day in a row breaks the run and drops
+ *  the freezes with it, and today stays open until it is over. */
+export function streakState(days: string[], now: number): Streak {
+  const today = localDay(now)
+  // 'YYYY-MM-DD' sorts as dates, and stepping UTC midnights walks calendar days exactly.
+  const set = new Set(days.filter((day) => day <= today))
+  const out: Streak = { days: 0, freezes: 0, savedYesterday: false }
+  if (!set.size) return out
+  const last = Date.parse(`${today}T00:00:00Z`)
+  let row = 0
+  let frozen = false
+  for (let t = Date.parse(`${[...set].sort()[0]}T00:00:00Z`); t < last + DAY; t += DAY) {
+    if (set.has(new Date(t).toISOString().slice(0, 10))) {
+      out.days++
+      row++
+      frozen = false
+      if (row % FREEZE_EVERY === 0) out.freezes = Math.min(MAX_FREEZES, out.freezes + 1)
+    } else if (t === last) {
+      break
+    } else if (out.freezes > 0 && !frozen) {
+      out.freezes--
+      row = 0
+      frozen = true
+      out.savedYesterday = t === last - DAY
+    } else {
+      out.days = 0
+      out.freezes = 0
+      row = 0
+      frozen = false
+    }
+  }
+  return out
+}
+
+/** Current study streak in days, with freezes covering single missed days. */
 export function computeStreak(days: string[], now: number): number {
-  const set = new Set(days)
-  let cursor = now
-  if (!set.has(localDay(cursor))) {
-    cursor -= DAY
-    if (!set.has(localDay(cursor))) return 0
-  }
-  let count = 0
-  while (set.has(localDay(cursor))) {
-    count++
-    cursor -= DAY
-  }
-  return count
+  return streakState(days, now).days
 }
 
 /** Record that the user practised today (idempotent per day). RLS sets user_id. */

@@ -1,7 +1,7 @@
 import { z } from '@/lib/zod'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/languages'
-import { computeStreak, getActivityDays } from './activity'
+import { computeStreak, getActivityDays, streakState, type Streak } from './activity'
 import { SESSION_LIMITS } from './review'
 import type { WordStatus } from './types'
 import { localDay } from '@/lib/wordlist/activity'
@@ -28,6 +28,8 @@ export interface WordlistStats {
   reviewedToday: number
   /** Consecutive days of activity, counting back from today. */
   streak: number
+  /** Freezes held and whether one saved yesterday. Set by `getWordlistStats`, not by `computeWordlistStats`. */
+  streakDetail?: Streak
   /** Word count per learning status. */
   byStatus: Record<WordStatus, number>
   /** Word count per target language. */
@@ -103,7 +105,7 @@ export async function fetchStatRows(supabase: SupabaseClient): Promise<StatRow[]
 /** Wordlist progress stats for the current user. RLS scopes the reads. */
 export async function getWordlistStats(supabase: SupabaseClient, now: number = Date.now()): Promise<WordlistStats> {
   const [rows, activityDays] = await Promise.all([fetchStatRows(supabase), getActivityDays(supabase)])
-  return computeWordlistStats(rows, activityDays, now)
+  return { ...computeWordlistStats(rows, activityDays, now), streakDetail: streakState(activityDays, now) }
 }
 
 /** One language's share of the notebook. The three parts add up to `total`: learned is
