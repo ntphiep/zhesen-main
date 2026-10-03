@@ -2,6 +2,7 @@ import { CommonWords, type WordChip } from './CommonWords'
 import { PersonalStrip } from './PersonalStrip'
 import { getCachedCommonWords } from '@/lib/dictionary/cached'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
+import type { DictEntryPreview } from '@/lib/dictionary/types'
 
 /**
  * What the page offers when nothing has been typed: a rotating row of common words per
@@ -21,9 +22,12 @@ const POOL = 60
 const SKIP_FUNCTION_WORDS = 300
 
 export async function DiscoveryStrip() {
+  // A language whose read fails, such as a statement timeout on a cold cache, shows an
+  // empty strip rather than failing the page. Caught outside the cache, so it keeps nothing.
   const lists = await Promise.all(
     LANG_CODES.map((l) =>
-      getCachedCommonWords(l, { limit: POOL, offset: SKIP_FUNCTION_WORDS, leveled: true })),
+      getCachedCommonWords(l, { limit: POOL, offset: SKIP_FUNCTION_WORDS, leveled: true })
+        .catch((e: unknown): DictEntryPreview[] => { console.error('common words failed', l, e); return [] })),
   )
   const pools = Object.fromEntries(
     LANG_CODES.map((l, i) => [
