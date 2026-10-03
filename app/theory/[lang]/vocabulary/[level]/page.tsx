@@ -7,6 +7,7 @@ import { LevelWordList } from '@/components/vocabulary/LevelWordList'
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
 import { levelPageHref } from '@/lib/theory/path'
+import { TheoryBreadcrumb } from '@/components/seo/BreadcrumbJsonLd'
 
 /**
  * Empty on purpose. A dynamic segment is only eligible for the full route cache
@@ -89,15 +90,18 @@ export default async function LevelPage({ params }: { params: Params }) {
   }
 
   return (
-    <LevelWordList
-      key={n}
-      language={language}
-      level={level}
-      levelIsEstimated={summary.levelIsEstimated}
-      initialItems={page.items}
-      initialStart={offset}
-      total={page.total}
-      pageSize={PAGE_SIZE}
-    />
+    <>
+      <TheoryBreadcrumb language={language} block="vocabulary" leaf={level} />
+      <LevelWordList
+        key={n}
+        language={language}
+        level={level}
+        levelIsEstimated={summary.levelIsEstimated}
+        initialItems={page.items}
+        initialStart={offset}
+        total={page.total}
+        pageSize={PAGE_SIZE}
+      />
+    </>
   )
 }

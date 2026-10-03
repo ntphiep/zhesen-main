@@ -3,6 +3,7 @@ import { getCachedEntryDetail } from '@/lib/dictionary/cached'
 import { buildEntryId } from '@/lib/dictionary/entryId'
 import { entryMetadata } from '@/lib/dictionary/entryMetadata'
 import { LookupView } from '@/components/lookup/LookupView'
+import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 import { loadWordPage } from '@/lib/dictionary/wordPageData'
 import { isLangCode } from '@/lib/languages'
 import { percentDecode } from '@/lib/http/percentDecode'
@@ -58,5 +59,10 @@ export default async function Page({ params }: { params: Params }) {
   if (!isLangCode(lang)) notFound()
   const data = await loadWordPage(buildEntryId(lang, percentDecode(id)))
   if (!data) notFound()
-  return <LookupView {...data} />
+  return (
+    <>
+      <BreadcrumbJsonLd trail={[{ name: 'Từ điển', path: '/dictionary' }, { name: data.detail.headword }]} />
+      <LookupView {...data} />
+    </>
+  )
 }

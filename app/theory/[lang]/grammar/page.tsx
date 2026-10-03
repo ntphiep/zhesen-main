@@ -6,6 +6,7 @@ import { GrammarPointList } from '@/components/grammar/GrammarPointList'
 
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
+import { TheoryBreadcrumb } from '@/components/seo/BreadcrumbJsonLd'
 
 /** The three languages are a fixed list, so their hubs are prerendered at build. */
 export function generateStaticParams(): { lang: string }[] {
@@ -48,5 +49,10 @@ export default async function GrammarLangPage({ params }: { params: Promise<{ la
   if (!language) notFound()
   const points = await getCachedGrammarPointsByLang(language.code)
   const levels = groupByLevelAndCategory(points)
-  return <GrammarPointList language={language} levels={levels} />
+  return (
+    <>
+      <TheoryBreadcrumb language={language} block="grammar" />
+      <GrammarPointList language={language} levels={levels} />
+    </>
+  )
 }

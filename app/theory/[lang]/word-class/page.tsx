@@ -6,6 +6,7 @@ import { WordClassList } from '@/components/theory/WordClassList'
 
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
+import { TheoryBreadcrumb } from '@/components/seo/BreadcrumbJsonLd'
 
 /** Written content, not a query, so every page of this block is built once and nothing
  *  else is reachable. */
@@ -33,5 +34,10 @@ export default async function WordClassPage({ params }: { params: Promise<{ lang
   const language = isLangCode(lang) ? getLanguage(lang) : undefined
   const content = language && theoryContent(language.code)
   if (!language || !content) notFound()
-  return <WordClassList language={language} classes={content.wordClasses} />
+  return (
+    <>
+      <TheoryBreadcrumb language={language} block="word-class" />
+      <WordClassList language={language} classes={content.wordClasses} />
+    </>
+  )
 }

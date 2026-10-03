@@ -6,6 +6,7 @@ import { buildGrammarPointId, grammarKeyFromPath, grammarPointPath } from '@/lib
 import { GrammarPointDetailView } from '@/components/grammar/GrammarPointDetailView'
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
+import { TheoryBreadcrumb } from '@/components/seo/BreadcrumbJsonLd'
 
 /**
  * Empty on purpose. A dynamic segment is only eligible for the full route cache
@@ -68,5 +69,11 @@ export default async function GrammarPointPage({ params }: { params: Params }) {
   // requests from the browser and stays blank until the last one returns.
   const resolved = await getCachedTappableTexts(point.lang, point.examples.map((e) => e.text))
 
-  return <GrammarPointDetailView point={point} resolved={resolved} />
+  const language = getLanguage(point.lang)
+  return (
+    <>
+      {language && <TheoryBreadcrumb language={language} block="grammar" leaf={point.titleVi} />}
+      <GrammarPointDetailView point={point} resolved={resolved} />
+    </>
+  )
 }

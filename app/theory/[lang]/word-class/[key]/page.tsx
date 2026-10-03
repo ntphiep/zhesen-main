@@ -7,6 +7,7 @@ import { WordClassView } from '@/components/theory/WordClassView'
 
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
+import { TheoryBreadcrumb } from '@/components/seo/BreadcrumbJsonLd'
 
 /** Both segments from here, which is the only place that can generate them
  *  (node_modules/next/dist/docs/01-app/03-api-reference/04-functions/generate-static-params.md). */
@@ -50,5 +51,10 @@ export default async function WordClassDetailPage(
     ? []
     : (await getCachedGrammarPointsByLang(language.code)).filter((p) => wanted.has(p.id))
 
-  return <WordClassView language={language} wordClass={wordClass} grammar={points} />
+  return (
+    <>
+      <TheoryBreadcrumb language={language} block="word-class" leaf={wordClass.titleVi} />
+      <WordClassView language={language} wordClass={wordClass} grammar={points} />
+    </>
+  )
 }

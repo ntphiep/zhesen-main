@@ -5,6 +5,7 @@ import { VocabularyHub } from '@/components/vocabulary/VocabularyHub'
 
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
+import { TheoryBreadcrumb } from '@/components/seo/BreadcrumbJsonLd'
 
 /** Empty, so the build never reads the level counts: prerendering them failed the build
  *  when the anon role's 3 s statement timeout fired (#28). Each language renders on its
@@ -51,5 +52,10 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
     getCachedCommonWords(language.code),
     getCachedLevelsForLanguage(language.code),
   ])
-  return <VocabularyHub language={language} common={common} levels={levels} />
+  return (
+    <>
+      <TheoryBreadcrumb language={language} block="vocabulary" />
+      <VocabularyHub language={language} common={common} levels={levels} />
+    </>
+  )
 }

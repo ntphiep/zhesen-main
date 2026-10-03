@@ -6,6 +6,7 @@ import { PronunciationView } from '@/components/theory/PronunciationView'
 
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
+import { TheoryBreadcrumb } from '@/components/seo/BreadcrumbJsonLd'
 
 /** Written content, not a query, so every page of this block is built once and nothing
  *  else is reachable. */
@@ -34,10 +35,13 @@ export default async function PronunciationPage({ params }: { params: Promise<{ 
   const content = language && theoryContent(language.code)
   if (!language || !content) notFound()
   return (
-    <PronunciationView
-      language={language}
-      phonemes={content.phonemes}
-      notes={content.pronunciationNotes}
-    />
+    <>
+      <TheoryBreadcrumb language={language} block="pronunciation" />
+      <PronunciationView
+        language={language}
+        phonemes={content.phonemes}
+        notes={content.pronunciationNotes}
+      />
+    </>
   )
 }

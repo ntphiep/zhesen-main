@@ -6,6 +6,7 @@ import { SentenceView } from '@/components/theory/SentenceView'
 
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
+import { TheoryBreadcrumb } from '@/components/seo/BreadcrumbJsonLd'
 
 /** Written content, not a query, so every page of this block is built once and nothing
  *  else is reachable. */
@@ -33,5 +34,10 @@ export default async function SentencePage({ params }: { params: Promise<{ lang:
   const language = isLangCode(lang) ? getLanguage(lang) : undefined
   const content = language && theoryContent(language.code)
   if (!language || !content) notFound()
-  return <SentenceView language={language} topics={content.sentenceTopics} />
+  return (
+    <>
+      <TheoryBreadcrumb language={language} block="sentence" />
+      <SentenceView language={language} topics={content.sentenceTopics} />
+    </>
+  )
 }

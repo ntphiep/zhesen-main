@@ -6,6 +6,7 @@ import { CollocationView } from '@/components/theory/CollocationView'
 
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
+import { TheoryBreadcrumb } from '@/components/seo/BreadcrumbJsonLd'
 
 /** Written content, not a query, so every page of this block is built once and nothing
  *  else is reachable. */
@@ -34,10 +35,13 @@ export default async function CollocationPage({ params }: { params: Promise<{ la
   const content = language && theoryContent(language.code)
   if (!language || !content) notFound()
   return (
-    <CollocationView
-      language={language}
-      patterns={content.collocationPatterns}
-      sets={content.collocationSets}
-    />
+    <>
+      <TheoryBreadcrumb language={language} block="collocation" />
+      <CollocationView
+        language={language}
+        patterns={content.collocationPatterns}
+        sets={content.collocationSets}
+      />
+    </>
   )
 }
