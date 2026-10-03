@@ -30,7 +30,7 @@
 .retry { margin-top: 1rem; }
 
 .hw { font-family: var(--latin); font-weight: 500; letter-spacing: -0.01em; }
-.hw[data-l="es"] { font-style: italic; }
+.hw[data-l="es"] { font-family: var(--latin-italic); font-style: italic; }
 .hw[data-l="zh"] { font-family: var(--han); font-weight: 700; letter-spacing: 0; }
 .pron { font-family: var(--ipa); }
 .pron[data-l="zh"] { font-family: inherit; }
@@ -82,7 +82,7 @@
 .theory3 > [data-l="es"] { background: var(--l-es-t); }
 .endo { display: block; font-family: var(--latin); font-size: var(--s4); font-weight: 500; line-height: 1; letter-spacing: -0.02em; color: var(--zs-ink); text-decoration: none; }
 .endo[lang="zh"] { font-family: var(--han); font-weight: 700; }
-.endo[lang="es"] { font-style: italic; }
+.endo[lang="es"] { font-family: var(--latin-italic); font-style: italic; }
 .endo:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.12em; }
 .theory3 nav { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; margin-top: 0.8rem; }
 .theory3 nav a { font-size: 0.9375rem; font-weight: 600; color: var(--zs-soft); text-decoration: none; }

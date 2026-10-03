@@ -5,7 +5,8 @@
 .landing {
   /* 1.333 type scale: 12, 16, 21, 28, 37.5, 50, 66.6, 88.8 px */
   --s0: 0.75rem; --s1: 1rem; --s2: 1.3125rem; --s3: 1.75rem; --s4: 2.34375rem; --s5: 3.125rem; --s6: 4.16rem; --s7: 5.55rem;
-  --latin: var(--font-newsreader), Georgia, serif;
+  --latin: var(--font-headword), Georgia, serif;
+  --latin-italic: var(--font-headword-italic), Georgia, serif;
   --han: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", serif;
   --ipa: "Charis SIL", "Gentium Plus", "Doulos SIL", "DejaVu Serif", serif;
   --hand: var(--font-patrick-hand), "Comic Neue", cursive;
@@ -46,7 +47,7 @@
 .w { display: inline-block; font-weight: 500; letter-spacing: -0.01em; transition: opacity 260ms var(--ease-std); }
 .w[data-l="en"] { font-family: var(--latin); color: var(--sea-700); }
 .w[data-l="zh"] { font-family: var(--han); font-weight: 700; letter-spacing: 0; color: var(--sea-600); }
-.w[data-l="es"] { font-family: var(--latin); font-style: italic; color: var(--sea-500); }
+.w[data-l="es"] { font-family: var(--latin-italic); font-style: italic; color: var(--sea-500); }
 :global(:root[data-theme="dark"]) .w[data-l="en"] { color: var(--sea-200); }
 :global(:root[data-theme="dark"]) .w[data-l="zh"] { color: var(--sea-300); }
 :global(:root[data-theme="dark"]) .w[data-l="es"] { color: var(--sea-100); }
@@ -97,7 +98,7 @@
 .pin[data-off] { opacity: 0 !important; }
 .pin b { font-family: var(--latin); font-weight: 500; font-size: 1.55rem; line-height: 1; letter-spacing: -0.01em; color: var(--zs-ink); white-space: nowrap;
   text-shadow: 0 0 3px var(--g-halo), 0 0 3px var(--g-halo), 0 0 6px var(--g-halo), 0 0 10px var(--g-halo); }
-.pin[data-l="es"] b { font-style: italic; }
+.pin[data-l="es"] b { font-family: var(--latin-italic); font-style: italic; }
 .pin[data-l="zh"] b { font-family: var(--han); font-weight: 700; }
 .pin i { margin-top: 0.15rem; font-style: normal; font-size: 0.6875rem; font-weight: 700; color: var(--zs-soft); white-space: nowrap;
   text-shadow: 0 0 3px var(--g-halo), 0 0 3px var(--g-halo), 0 0 6px var(--g-halo); }
@@ -156,7 +157,7 @@
 .fact p { margin: 0.5rem 0 0; font-size: 0.9375rem; line-height: 1.5; color: var(--ps); text-wrap: pretty; }
 .fact .short { display: none; }
 .word { display: block; margin-top: auto; padding-top: 1rem; font-family: var(--latin); font-size: var(--s7); font-weight: 500; line-height: 1; letter-spacing: -0.035em; text-decoration: none; white-space: nowrap; color: var(--pc); }
-.pane[data-l="es"] .word { font-style: italic; }
+.pane[data-l="es"] .word { font-family: var(--latin-italic); font-style: italic; }
 .word:hover { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 0.12em; }
 .word[data-fit="1"] { font-size: var(--s6); }
 .word[data-fit="2"] { font-size: var(--s5); }
@@ -314,7 +315,7 @@
 .ex small { display: block; margin-top: 0.3rem; font-size: 0.9375rem; color: var(--zs-soft); }
 .other { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 0.3rem 0.8rem; margin-top: 1.2rem; font-size: 0.9375rem; color: var(--zs-soft); }
 .other b { font-family: var(--han); font-size: var(--s2); color: var(--zs-ink); font-weight: 700; }
-.other i { font-family: var(--latin); font-size: var(--s2); color: var(--zs-ink); }
+.other i { font-family: var(--latin-italic); font-size: var(--s2); color: var(--zs-ink); }
 .sense h4 { margin: 0 0 0.6rem; font-size: var(--s0); font-weight: 700; color: var(--zs-soft); }
 .sense ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
 .sense ul li { padding-bottom: 0.75rem; border-bottom: 1px solid var(--zs-line); }
@@ -372,7 +373,7 @@
 .theory :focus-visible { outline-color: currentColor; outline-offset: -6px; }
 .endo { align-self: flex-start; font-family: var(--latin); font-size: var(--s6); font-weight: 500; line-height: 1; letter-spacing: -0.035em; transition: translate 320ms var(--ease-spring); }
 .endo[lang="zh"] { font-family: var(--han); font-weight: 700; letter-spacing: 0; }
-.endo[lang="es"] { font-style: italic; }
+.endo[lang="es"] { font-family: var(--latin-italic); font-style: italic; }
 .tvi { margin-top: 0.5rem; font-weight: 700; }
 .theory p { margin: 1.2rem 0 0; max-width: 26rem; line-height: 1.6; }
 .open { display: inline-flex; align-items: center; gap: 0.45rem; margin-top: auto; padding-top: 1.6rem; font-weight: 700; }

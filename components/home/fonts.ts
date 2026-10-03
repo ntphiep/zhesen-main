@@ -1,12 +1,9 @@
-import { Newsreader, Patrick_Hand } from 'next/font/google'
+import { Patrick_Hand } from 'next/font/google'
+import { headwordItalic, headwordSerif } from '@/components/lookup/fonts'
 
-// Declared here, not in the root layout, so only `/` and `/wordlist` preload them.
-export const newsreader = Newsreader({
-  variable: '--font-newsreader',
-  subsets: ['latin'],
-  style: ['normal', 'italic'],
-  axes: ['opsz'],
-})
+// The word page's Newsreader faces. A second Newsreader declaration shared the family name,
+// so CSS chunk merging carried its opsz and italic files onto dictionary and theory pages too.
+export const newsreader = { variable: `${headwordSerif.variable} ${headwordItalic.variable}` }
 
 // Only the review demo's margin notes, far below the fold: not worth a preload.
 export const patrickHand = Patrick_Hand({

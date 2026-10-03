@@ -4,7 +4,8 @@
    gone under prefers-reduced-motion. */
 
 .nb {
-  --latin: var(--font-newsreader), Georgia, serif;
+  --latin: var(--font-headword), Georgia, serif;
+  --latin-italic: var(--font-headword-italic), Georgia, serif;
   --han: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", serif;
   color: var(--zs-ink);
   -webkit-font-smoothing: antialiased;
@@ -90,7 +91,7 @@ select.field { padding-right: 0.5rem; cursor: pointer; }
 
 /* Headwords in their own language's face, as on the home page */
 .hw { font-family: var(--latin); font-weight: 500; letter-spacing: -0.01em; color: var(--zs-ink); }
-.hw[data-l="es"] { font-style: italic; }
+.hw[data-l="es"] { font-family: var(--latin-italic); font-style: italic; }
 .hw[data-l="zh"] { font-family: var(--han); font-weight: 700; letter-spacing: 0; }
 .pron { color: var(--zs-soft); }
 
