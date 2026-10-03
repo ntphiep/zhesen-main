@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 
 /**
@@ -42,12 +43,15 @@ export const getCachedSearch = unstable_cache(
   { revalidate: SEARCH_CACHE_SECONDS, tags: ['lex'] },
 )
 
-export const getCachedEntryDetail = unstable_cache(
+/** Also memoised per request with React `cache`: `generateMetadata` and the word page both
+ *  read it, and on a miss `unstable_cache` ran `getEntryDetail` twice. Next dedupes GET
+ *  fetches only, so the POST `relation_senses` RPC went out twice per cold page. */
+export const getCachedEntryDetail = cache(unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),
   // v5: carries glossViIsMt and example sourceId, which a v4 value lacks.
   ['dict-entry-detail-v5'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
-)
+))
 
 export const getCachedCrossLanguage = unstable_cache(
   (entryId: string): Promise<CrossLangSibling[]> => getCrossLanguage(createContentClient(), entryId),

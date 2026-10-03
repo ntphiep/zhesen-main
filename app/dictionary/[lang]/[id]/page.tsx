@@ -43,8 +43,8 @@ type Params = Promise<{ lang: string; id: string }>
 /**
  * A dictionary entry is the page people arrive at from a search engine, so the
  * title has to be the word itself rather than the site name. Both this and the
- * page body read `getCachedEntryDetail`, which is an `unstable_cache` call, so
- * the second read costs nothing.
+ * page body read `getCachedEntryDetail`, which React `cache` memoises per request,
+ * so the second read costs nothing.
  */
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { lang, id } = await params
