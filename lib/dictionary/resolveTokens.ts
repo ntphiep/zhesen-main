@@ -3,6 +3,7 @@ import type { LangCode } from '@/lib/languages'
 import type { DictEntryPreview } from './types'
 import { entryPreviewRow, inflectionEntryLookupRow, headwordRow, toPreview } from './rows'
 import { PREVIEW_SELECT } from './entrySelect'
+import { fetchInChunks } from '@/lib/supabase/paginate'
 
 /** Resolve word tokens to dictionary entries for tap-to-lookup: lowercased token against
  *  `headword_normalized`, then the rest against `lex.inflections`. Keyed by lowercased
@@ -14,10 +15,9 @@ export async function resolveTokens(
   const out = new Map<string, DictEntryPreview>()
   if (lowered.length === 0) return out
 
-  const direct = await supabase.schema('lex').from('entries')
-    .select(PREVIEW_SELECT).eq('lang', lang).in('headword_normalized', lowered)
-  if (direct.error) throw direct.error
-  for (const row of entryPreviewRow.array().parse(direct.data ?? [])) {
+  const direct = await fetchInChunks<unknown>(lowered, (chunk) => supabase.schema('lex').from('entries')
+    .select(PREVIEW_SELECT).eq('lang', lang).in('headword_normalized', chunk))
+  for (const row of entryPreviewRow.array().parse(direct)) {
     out.set(row.headword.toLowerCase(), toPreview(row))
   }
 
@@ -36,11 +36,10 @@ export async function resolveTokens(
   if (inflRows.length === 0) return out
 
   const ids = [...new Set(inflRows.map((r) => r.entry_id))]
-  const ent = await supabase.schema('lex').from('entries')
-    .select(PREVIEW_SELECT).in('id', ids)
-  if (ent.error) throw ent.error
+  const ent = await fetchInChunks<unknown>(ids, (chunk) => supabase.schema('lex').from('entries')
+    .select(PREVIEW_SELECT).in('id', chunk))
   const byId = new Map<string, DictEntryPreview>()
-  for (const row of entryPreviewRow.array().parse(ent.data ?? [])) byId.set(row.id, toPreview(row))
+  for (const row of entryPreviewRow.array().parse(ent)) byId.set(row.id, toPreview(row))
   for (const r of inflRows) {
     const p = byId.get(r.entry_id)
     if (p && !out.has(r.form_text)) out.set(r.form_text, p)
@@ -84,8 +83,7 @@ export async function getZhSegmentCandidatesForTexts(
 ): Promise<string[]> {
   const candidates = [...new Set(texts.flatMap(hanSubstrings))]
   if (candidates.length === 0) return []
-  const { data, error } = await supabase.schema('lex').from('entries')
-    .select('headword').eq('lang', 'zh').in('headword_normalized', candidates)
-  if (error) throw error
-  return headwordRow.array().parse(data ?? []).map((r) => r.headword)
+  const rows = await fetchInChunks<unknown>(candidates, (chunk) => supabase.schema('lex').from('entries')
+    .select('headword').eq('lang', 'zh').in('headword_normalized', chunk))
+  return headwordRow.array().parse(rows).map((r) => r.headword)
 }
