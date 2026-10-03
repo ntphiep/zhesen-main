@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AddToWordlistButton } from '@/components/lookup/AddToWordlistButton'
+import { rememberPendingSave } from '@/lib/wordlist/pendingSave'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 
 // A signed-in account by default; the anonymous door has its own test. Built in
@@ -70,8 +71,55 @@ describe('AddToWordlistButton', () => {
     addWordMock.mockClear()
     client.auth.getSession.mockResolvedValueOnce({ data: { session: null } })
     render(<AddToWordlistButton entry={entry} />)
-    const link = await screen.findByRole('link', { name: /Đăng nhập để lưu/i })
-    expect(link).toHaveAttribute('href', '/login?next=%2Fdictionary%2Fen%2Fdog')
+    const link = await screen.findByRole('link', { name: /Thêm vào sổ tay/i })
+    expect(link).toHaveAttribute('href', '/register?next=%2Fdictionary%2Fen%2Fdog')
     expect(addWordMock).not.toHaveBeenCalled()
+  })
+
+  // Most guests have no account, so the save leads to /register and the entry waits in
+  // this tab until they come back.
+  it('remembers the entry a guest pressed save on', async () => {
+    client.auth.getSession.mockResolvedValueOnce({ data: { session: null } })
+    render(<AddToWordlistButton entry={entry} />)
+    fireEvent.click(await screen.findByRole('link', { name: /Thêm vào sổ tay/i }))
+    expect(JSON.parse(sessionStorage.getItem('zhesen:pending-save') ?? 'null')).toMatchObject({ id: 'en:dog' })
+  })
+})
+
+describe('AddToWordlistButton, back from registering', () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+    addWordMock.mockReset()
+    addWordMock.mockResolvedValue({})
+  })
+
+  it('saves the remembered entry once, then clears it', async () => {
+    rememberPendingSave('en:dog')
+    const first = render(<AddToWordlistButton entry={entry} />)
+    expect(await screen.findByText('Đã thêm')).toBeInTheDocument()
+    expect(addWordMock).toHaveBeenCalledTimes(1)
+    expect(sessionStorage.getItem('zhesen:pending-save')).toBeNull()
+
+    first.unmount()
+    render(<AddToWordlistButton entry={entry} />)
+    expect(await screen.findByRole('button', { name: /Thêm vào sổ tay/i })).toBeEnabled()
+    expect(addWordMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores an entry remembered more than 30 minutes ago', async () => {
+    rememberPendingSave('en:dog', Date.now() - 31 * 60 * 1000)
+    render(<AddToWordlistButton entry={entry} />)
+    expect(await screen.findByRole('button', { name: /Thêm vào sổ tay/i })).toBeEnabled()
+    expect(addWordMock).not.toHaveBeenCalled()
+    expect(sessionStorage.getItem('zhesen:pending-save')).toBeNull()
+  })
+
+  it('leaves another entry pending for its own page', async () => {
+    rememberPendingSave('en:cat')
+    render(<AddToWordlistButton entry={entry} />)
+    expect(await screen.findByRole('button', { name: /Thêm vào sổ tay/i })).toBeEnabled()
+    await waitFor(() => expect(isWordSavedMock).toHaveBeenCalled())
+    expect(addWordMock).not.toHaveBeenCalled()
+    expect(sessionStorage.getItem('zhesen:pending-save')).toContain('en:cat')
   })
 })

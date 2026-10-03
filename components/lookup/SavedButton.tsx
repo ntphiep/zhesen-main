@@ -1,7 +1,8 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addWord, draftFromDictEntry, isWordSaved, WordAlreadyExistsError } from '@/lib/wordlist/store'
+import { takePendingSave } from '@/lib/wordlist/pendingSave'
 import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 
 type State = 'idle' | 'saving' | 'added' | 'exists' | 'error'
@@ -21,8 +22,15 @@ export function SavedButton({ entry, size = 'sm', tone }: { entry: DictEntryPrev
   const supabase = useMemo(() => createClient(), [])
   const [state, setState] = useState<State>('idle')
 
-  // Ask whether the word is already saved instead of finding out by failing.
+  const savePending = useEffectEvent(() => { void save() })
+
+  // A save pressed before registering is finished here, once. Otherwise ask whether the
+  // word is already saved instead of finding out by failing.
   useEffect(() => {
+    if (takePendingSave(entry.id)) {
+      savePending()
+      return
+    }
     let live = true
     isWordSaved(supabase, entry.id).catch(() => false).then((saved) => {
       // Only an untouched button: a click may already be in flight, and its
@@ -32,7 +40,7 @@ export function SavedButton({ entry, size = 'sm', tone }: { entry: DictEntryPrev
     return () => { live = false }
   }, [supabase, entry.id])
 
-  async function onClick() {
+  async function save() {
     setState('saving')
     try {
       await addWord(supabase, draftFromDictEntry(entry))
@@ -51,7 +59,7 @@ export function SavedButton({ entry, size = 'sm', tone }: { entry: DictEntryPrev
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={save}
       disabled={state === 'saving' || state === 'added' || state === 'exists'}
       className={tone === 'pane'
         ? 'h-10 rounded-full bg-(--pc) px-4 text-sm font-bold text-(--pb) disabled:opacity-60'

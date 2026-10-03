@@ -20,6 +20,7 @@ const NEEDS_DOM = [
   'test/wordlist-paged-list.test.ts',
   'test/theme.test.ts',
   'test/home-layout.test.ts',
+  'test/wordlist-pending-save.test.ts',
 ]
 
 export default defineConfig({
