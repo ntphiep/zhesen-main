@@ -147,3 +147,28 @@ describe('AuthForm, read by a password manager', () => {
     expect(secret).toHaveAttribute('autocomplete', password)
   })
 })
+
+// A guest sent from a word page may switch between the two forms before finishing, and
+// must still land back on that page.
+describe('AuthForm, carrying next', () => {
+  it.each([
+    ['register', /^Đăng nhập/, '/login?next=%2Fdictionary%2Fen%2Ftake'],
+    ['login', /^Tạo tài khoản/, '/register?next=%2Fdictionary%2Fen%2Ftake'],
+  ] as const)('keeps next on the link out of %s', (mode, name, href) => {
+    render(<AuthForm mode={mode} next="/dictionary/en/take" />)
+    expect(screen.getByRole('link', { name })).toHaveAttribute('href', href)
+  })
+
+  it('links plainly when there is nowhere to return to', () => {
+    render(<AuthForm mode="register" />)
+    expect(screen.getByRole('link', { name: /^Đăng nhập/ })).toHaveAttribute('href', '/login')
+  })
+
+  it('returns to next after registering', async () => {
+    render(<AuthForm mode="register" next="/dictionary/en/take" />)
+    await type('Email', 'a@b.com')
+    await type('Mật khẩu', 'longenough1')
+    await userEvent.click(screen.getByRole('button', { name: /Tạo tài khoản/i }))
+    expect(push).toHaveBeenCalledWith('/dictionary/en/take')
+  })
+})

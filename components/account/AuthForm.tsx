@@ -6,6 +6,7 @@ import { Said, WarnGlyph } from './Said'
 import s from './Account.module.css'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { AUTH_FALLBACK } from '@/lib/auth/redirect'
 import {
   MIN_PASSWORD,
   attachEmail,
@@ -33,7 +34,7 @@ export function AuthForm({
   mode,
   localWordCount = 0,
   hasAnonymousSession = false,
-  next = '/wordlist',
+  next = AUTH_FALLBACK,
   notice,
 }: {
   mode: Mode
@@ -41,7 +42,8 @@ export function AuthForm({
   localWordCount?: number
   /** True when this browser already carries an anonymous account. */
   hasAnonymousSession?: boolean
-  /** Where the browser goes once the session is live. */
+  /** Where the browser goes once the session is live. Already confined to this site by
+   *  `safeNext` in the page, and carried across the link to the other mode. */
   next?: string
   /** Why the visitor was sent here. Rendered above the form, apart from `feedback`,
    *  which belongs to this form's own submissions. */
@@ -59,6 +61,7 @@ export function AuthForm({
   // account that holds them, not a new account.
   const upgrading = mode === 'register' && hasAnonymousSession && localWordCount > 0
   const passwordField = mode === 'register' ? 'new-password' : 'current-password'
+  const carry = next === AUTH_FALLBACK ? '' : `?next=${encodeURIComponent(next)}`
 
   async function run(action: () => Promise<AuthOutcome>) {
     if (busy) return
@@ -168,11 +171,11 @@ export function AuthForm({
       <p className={s.swap}>
         {mode === 'register' ? (
           <>
-            Đã có tài khoản? <Link href="/login" prefetch={false}>Đăng nhập<span aria-hidden="true">→</span><LinkPending /></Link>
+            Đã có tài khoản? <Link href={`/login${carry}`} prefetch={false}>Đăng nhập<span aria-hidden="true">→</span><LinkPending /></Link>
           </>
         ) : (
           <>
-            Chưa có tài khoản? <Link href="/register" prefetch={false}>Tạo tài khoản<span aria-hidden="true">→</span><LinkPending /></Link>
+            Chưa có tài khoản? <Link href={`/register${carry}`} prefetch={false}>Tạo tài khoản<span aria-hidden="true">→</span><LinkPending /></Link>
           </>
         )}
       </p>
