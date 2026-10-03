@@ -33,6 +33,9 @@ export const pronRow = z.object({
 })
 export type PronRow = z.infer<typeof pronRow>
 
+/** An entry id alone, for a query that ranks ids before fetching the rows. */
+export const entryIdRow = z.object({ id: z.string() })
+
 /** The row behind `entries(...senses(...), pronunciations(...))` embeds: everything
  *  `toPreview` needs before it picks a primary sense and pronunciation. */
 export const entryPreviewRow = z.object({

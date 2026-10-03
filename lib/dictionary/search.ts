@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
 import type { DictEntryPreview, SuggestionPreview } from './types'
-import { entryPreviewRow, searchRpcRow, suggestRow, toPreview, toPreviewFromSearchRow, toSuggestion } from './rows'
+import { entryIdRow, entryPreviewRow, searchRpcRow, suggestRow, toPreview, toPreviewFromSearchRow, toSuggestion } from './rows'
 import { azureTranslatorConfig } from '@/lib/translate/config'
 import { translateCached } from '@/lib/translate/azure'
 import { isStructuralMatch, isWordMatch } from './detect'
@@ -238,18 +238,38 @@ export interface CommonWordsOptions {
   leveled?: boolean
 }
 
+/** Typed as a plain string: the literal 'id' sends supabase-js's select parser into a type
+ *  too deep for tsc once the builder is reassigned (TS2589). */
+const ID_SELECT: string = 'id'
+
 /** Most frequent entries for a language (for the per-language "common words" list). */
 export async function getCommonWords(
   supabase: SupabaseClient, lang: LangCode, { limit = 24, offset = 0, leveled = false }: CommonWordsOptions = {},
 ): Promise<DictEntryPreview[]> {
-  let query = supabase
+  if (leveled) {
+    // Ids first, then the embeds for those rows only. In one request PostgREST built the
+    // embeds for every row the offset then skipped: 983 ms mean and 58 of 69 statement
+    // timeouts from 2026-09-28 to 2026-10-03, against 2,315 buffers for this pair.
+    let ids = supabase.schema('lex').from('entries').select(ID_SELECT).eq('lang', lang)
+      .not('level', 'is', null).is('form_of', null)
+    if (lang !== 'zh') ids = ids.not('headword', 'like', '_')
+    const page = await ids
+      .order('frequency_rank', { ascending: true, nullsFirst: false })
+      .order('id', { ascending: true })
+      .range(offset, offset + limit - 1)
+    if (page.error) throw page.error
+    const order = entryIdRow.array().parse(page.data ?? []).map((r) => r.id)
+    if (order.length === 0) return []
+    const { data, error } = await supabase.schema('lex').from('entries').select(PREVIEW_SELECT).in('id', order)
+    if (error) throw error
+    const byId = new Map(entryPreviewRow.array().parse(data ?? []).map((r) => [r.id, toPreview(r)]))
+    return order.map((id) => byId.get(id)).filter((p): p is DictEntryPreview => Boolean(p))
+  }
+  const { data, error } = await supabase
     .schema('lex')
     .from('entries')
     .select(PREVIEW_SELECT)
     .eq('lang', lang)
-  if (leveled) query = query.not('level', 'is', null).is('form_of', null)
-  if (leveled && lang !== 'zh') query = query.not('headword', 'like', '_')
-  const { data, error } = await query
     .order('frequency_rank', { ascending: true, nullsFirst: false })
     .range(offset, offset + limit - 1)
   if (error) throw error
