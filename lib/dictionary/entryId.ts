@@ -15,6 +15,12 @@ export function entryPath(id: string): string {
   return `/dictionary/${lang}/${encodeURIComponent(key)}`
 }
 
+/** The lookup for one word. It renders per request, so a Link to it sets `prefetch={false}`:
+ *  one viewport prefetch from a word page cost 3,481 ms of function time. */
 export function searchPath(lang: LangCode, q: string): string {
   return `/dictionary?q=${encodeURIComponent(q)}&lang=${lang}`
+}
+
+export function isSearchPath(href: string): boolean {
+  return href.startsWith('/dictionary?')
 }

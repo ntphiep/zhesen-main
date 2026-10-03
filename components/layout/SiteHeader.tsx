@@ -5,13 +5,14 @@ import { AccountLink } from '@/components/account/AccountLink'
 import { LinkPending } from '@/components/ui/LinkPending'
 
 /**
- * `prefetch` is off for the two routes that read the session. A Link prefetches as
- * soon as it enters the viewport and this header is on every page, so otherwise each
- * page load also fetches /practice and /wordlist, two renders that query Supabase.
- * The dictionary and theory routes stay on: the edge cache answers them.
+ * `prefetch` is off for every route rendered per request. A Link prefetches as soon as
+ * it enters the viewport and this header is on every page, so otherwise each page load
+ * also renders /dictionary, /practice and /wordlist, which query Supabase. /dictionary
+ * answers `private, no-store` because it reads its search parameters. Theory stays on:
+ * the edge cache answers it.
  */
 const NAV = [
-  { href: '/dictionary', label: 'Dịch', prefetch: true },
+  { href: '/dictionary', label: 'Dịch', prefetch: false },
   { href: '/theory', label: 'Lý thuyết', prefetch: true },
   { href: '/practice', label: 'Luyện tập', prefetch: false },
   { href: '/wordlist', label: 'Sổ tay', prefetch: false },
@@ -44,8 +45,8 @@ export function SiteHeader() {
                 className={`relative rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors duration-150 ease-std hover:bg-(--zs-chip) hover:text-(--zs-ink) sm:text-[0.9375rem] ${active ? 'bg-(--zs-chip) text-(--zs-ink)' : 'text-(--zs-soft)'}`}
               >
                 {n.label}
-                {/* Only the two that are not prefetched: the others arrive from the edge
-                    cache well inside the dot's own delay. */}
+                {/* Only the ones not prefetched: theory arrives from the edge cache well
+                    inside the dot's own delay. */}
                 {!n.prefetch && <LinkPending />}
               </Link>
             )

@@ -82,6 +82,7 @@ export function AiSuggest({ query }: { query: string }) {
           <li key={`${w.lang}:${w.headword}`}>
             <Link
               href={searchPath(w.lang, w.headword)}
+              prefetch={false}
               className="group flex flex-wrap items-baseline gap-2 rounded-xl px-2 py-1 transition-colors duration-150 ease-std hover:bg-(--zs-bg)"
             >
               <span data-hw="" lang={w.lang} className="text-[1.0625rem] group-hover:underline">{w.headword}</span>

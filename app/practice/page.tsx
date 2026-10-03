@@ -27,7 +27,7 @@ export default async function PracticePage() {
       <p className={p.lede}>Ôn từ đã lưu bằng nhiều cách.</p>
       {stats.total === 0 ? (
         <div className={p.empty}>
-          Chưa có từ. <Link href="/dictionary">Tra một từ</Link> để lưu.
+          Chưa có từ. <Link href="/dictionary" prefetch={false}>Tra một từ</Link> để lưu.
         </div>
       ) : (
         <>

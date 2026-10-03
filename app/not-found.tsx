@@ -19,7 +19,7 @@ export default function NotFound() {
         Địa chỉ sai hoặc trang không còn.
       </p>
       <div className={s.acts}>
-        <Link href="/dictionary" className={s.btn}>
+        <Link href="/dictionary" prefetch={false} className={s.btn}>
           Dịch từ khác
         </Link>
         <Link href="/" className={s.ghost}>

@@ -100,7 +100,7 @@ function PhonemeCard({ phoneme: p, lang }: { phoneme: Phoneme; lang: Language['c
           <span key={e.word} className={s.word}>
             {/* The lookup rather than the entry: an example is chosen for its sound, and
                 a word the dictionary happens not to hold would otherwise 404. */}
-            <Link href={searchPath(lang, e.word)} className={s.hw} lang={lang}>{e.word}</Link>
+            <Link href={searchPath(lang, e.word)} prefetch={false} className={s.hw} lang={lang}>{e.word}</Link>
             <span className="ipa">{e.ipa}</span>
             {/* The letters that make the sound in this word, which is what the reader is
                 matching the symbol against. */}

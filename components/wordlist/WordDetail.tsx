@@ -48,6 +48,7 @@ export function WordDetail({ word }: { word: UserWord }) {
     <AiCoach lang={word.lang} headword={word.headword} meaningVi={word.meaningVi}>
       <Link
         href={word.entryId ? entryPath(word.entryId) : searchPath(word.lang, word.headword)}
+        prefetch={word.entryId ? undefined : false}
         className={`${st.ghost} ${st.sm}`}
       >
         {word.entryId ? 'Chi tiết' : 'Tra từ này'}

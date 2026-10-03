@@ -7,7 +7,7 @@ import { AudioButton } from '@/components/ui/AudioButton'
 import { AiCoach } from '@/components/ai/AiCoach'
 import { TappableText } from '@/components/reader/TappableText'
 import { useAnchor } from '@/lib/hooks/useAnchor'
-import { searchPath } from '@/lib/dictionary/entryId'
+import { isSearchPath, searchPath } from '@/lib/dictionary/entryId'
 import { grammarPointPath } from '@/lib/grammar/path'
 import { posGroups, splitPos } from '@/lib/dictionary/pos'
 import { isSentenceTranslation, untranslatedCount } from '@/lib/dictionary/textQuality'
@@ -28,7 +28,13 @@ export function WordLink({ word, className = '', children }: {
   children?: React.ReactNode
 }) {
   return (
-    <Link href={word.href} className={className} title={children ? undefined : word.gloss ?? undefined}>
+    <Link
+      href={word.href}
+      // A word the dictionary does not hold links to the lookup, rendered per request.
+      prefetch={isSearchPath(word.href) ? false : undefined}
+      className={className}
+      title={children ? undefined : word.gloss ?? undefined}
+    >
       {children ?? word.text}
       <LinkPending />
     </Link>
@@ -285,7 +291,7 @@ export function FormTimeline({ headword, baseLabel, forms, lang }: {
           {f.base
             ? <span data-hw="" lang={lang} className="pr-3 text-2xl sm:text-[26px]">{f.text}</span>
             : (
-              <Link href={searchPath(lang, f.text)} data-hw="" lang={lang} className="pr-3 text-2xl hover:underline sm:text-[26px]">
+              <Link href={searchPath(lang, f.text)} prefetch={false} data-hw="" lang={lang} className="pr-3 text-2xl hover:underline sm:text-[26px]">
                 <FormText form={f} />
               </Link>
             )}
@@ -314,7 +320,7 @@ export function FormCells({ headword, baseLabel, forms, lang, variant }: {
       {items.map((f) => {
         const form = f.base
           ? <span className="font-bold">{f.text}</span>
-          : <Link href={searchPath(lang, f.text)} className="font-semibold hover:underline"><FormText form={f} /></Link>
+          : <Link href={searchPath(lang, f.text)} prefetch={false} className="font-semibold hover:underline"><FormText form={f} /></Link>
         return variant === 'wide' ? (
           <div key={f.text} className={`flex flex-col gap-1.5 px-4 py-3.5 ${!f.base && f.irregular ? 'bg-(--tint-2)' : ''}`}>
             <span className="text-2xl tracking-[-0.02em]">{form}</span>
