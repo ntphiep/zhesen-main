@@ -1,12 +1,12 @@
 import { notFound } from 'next/navigation'
 import { getCachedEntryDetail } from '@/lib/dictionary/cached'
-import { buildEntryId, entryPath } from '@/lib/dictionary/entryId'
+import { buildEntryId } from '@/lib/dictionary/entryId'
+import { entryMetadata } from '@/lib/dictionary/entryMetadata'
 import { LookupView } from '@/components/lookup/LookupView'
 import { loadWordPage } from '@/lib/dictionary/wordPageData'
-import { getLanguage, isLangCode } from '@/lib/languages'
+import { isLangCode } from '@/lib/languages'
 import { percentDecode } from '@/lib/http/percentDecode'
 import type { Metadata } from 'next'
-import { pageMetadata } from '@/lib/site'
 
 /**
  * Empty on purpose. A dynamic segment is only eligible for the full route cache
@@ -50,20 +50,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { lang, id } = await params
   if (!isLangCode(lang)) return {}
   const detail = await getCachedEntryDetail(buildEntryId(lang, percentDecode(id)))
-  if (!detail) return {}
-  const language = getLanguage(lang)
-  // The lead meaning first, the one lists and the word page show.
-  const glosses = [...new Set([detail.glossVi, ...detail.senses.map((s) => s.glossVi ?? s.pivotVi ?? s.glossEn)])]
-    .filter((g): g is string => Boolean(g))
-    .slice(0, 3)
-    .join('; ')
-  return pageMetadata({
-    title: `${detail.headword} · ${language?.name ?? lang}`,
-    description: glosses
-      ? `${detail.headword} nghĩa là ${glosses}.`
-      : `Xem nghĩa, phát âm và ví dụ của ${detail.headword}.`,
-    canonical: entryPath(detail.id),
-  })
+  return detail ? entryMetadata(detail) : {}
 }
 
 export default async function Page({ params }: { params: Params }) {
