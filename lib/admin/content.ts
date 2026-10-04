@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from '@/lib/zod'
 import type { LangCode } from '@/lib/languages'
+import { shared } from '@/lib/admin/shared'
 
 /** `admin.entry`, `admin.coverage` (supabase/migrations/0060_admin_entry_edit.sql). */
 const lang = z.enum(['zh', 'es', 'en'])
@@ -128,6 +129,10 @@ export async function getCoverage(supabase: SupabaseClient): Promise<Coverage> {
   if (error) throw error
   return parseCoverage(data)
 }
+
+/** admin.coverage() reads all of lex.senses, 1.36 million rows: 3.4 to 4.4 s on production
+ *  on 2026-10-04. A minute, and cleared by an edit on this instance (app/api/admin/content). */
+export const sharedCoverage = shared<Coverage>(60_000)
 
 /** Over this length `lex.gloss_terms_reload` reads a gloss as a definition and indexes
  *  none of it, so the Vietnamese lookup stops finding the entry by that sense (0048). */

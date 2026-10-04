@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/admin'
 import { awsHealthConfig } from '@/lib/admin/aws'
@@ -6,7 +7,7 @@ import { readValues } from '@/lib/admin/secrets'
 import { readCombos, ROUTERS, type Combo, type RouterName } from '@/lib/admin/router'
 import { aiEndpoints, type AiEndpoint } from '@/lib/ai/config'
 import { TASKS } from '@/lib/ai/tasks'
-import { PageHeader, Section } from '@/components/admin/Page'
+import { Loading, PageHeader, Section } from '@/components/admin/Page'
 
 export const metadata = { title: 'AI router · Admin' }
 
@@ -70,9 +71,9 @@ function RouterSection({ router, endpoint, role }: { router: RouterState; endpoi
   )
 }
 
-export default async function AdminRouterPage() {
-  const supabase = await createClient()
-  await requireAdmin(supabase)
+/** SSM, then a sign-in and a combo read on each router: 1.1 to 1.4 s on production, streamed
+ *  after the page shell. */
+async function RouterBody() {
   const [routers, ai] = await Promise.all([readRouters(), aiEndpoints()])
   const byName = (name: RouterName) => (typeof routers === 'string' ? undefined : routers.find((r) => r.name === name))
   const nine = byName('9router')
@@ -93,5 +94,15 @@ export default async function AdminRouterPage() {
       {nine && <RouterSection router={nine} endpoint={ai.nineRouter} role={ai.omniRoute ? 'First router.' : 'Only router.'} />}
       {omni && <RouterSection router={omni} endpoint={ai.omniRoute} role={ai.nineRouter ? 'Fallback router.' : 'Only router.'} />}
     </div>
+  )
+}
+
+export default async function AdminRouterPage() {
+  const supabase = await createClient()
+  await requireAdmin(supabase)
+  return (
+    <Suspense fallback={<div><PageHeader title="AI router" /><div className="mt-6"><Loading /></div></div>}>
+      <RouterBody />
+    </Suspense>
   )
 }

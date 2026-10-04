@@ -62,6 +62,20 @@ export function Status({ tone, children }: { tone: Tone; children: ReactNode }) 
   )
 }
 
+/** What a streamed section shows until its reads land. */
+export function Loading() {
+  return <p className="text-sm"><Status tone="idle">Loading</Status></p>
+}
+
+/** A read that failed, by its code (57014 is the statement timeout), never its message,
+ *  which can carry SQL or ARNs. */
+export function ReadFailed({ what, error }: { what: string; error: unknown }) {
+  const code = typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string' && error.code
+    ? error.code
+    : error instanceof Error ? error.name : 'Error'
+  return <p className="text-sm text-rose-700">Could not read {what} ({code}). Reload to try again.</p>
+}
+
 /** Title, an optional line of purpose, and when the numbers on the page were read. */
 export function PageHeader({ title, lead, readAt }: { title: string; lead?: string; readAt?: Date }) {
   return (

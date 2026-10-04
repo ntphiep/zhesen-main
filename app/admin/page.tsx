@@ -1,14 +1,16 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { unstable_cache } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/admin'
 import { getMetrics, type Metrics } from '@/lib/admin/metrics'
 import { listAudit } from '@/lib/admin/audit'
 import { integrations } from '@/lib/admin/cache'
+import { shared } from '@/lib/admin/shared'
 import { awsHealthConfig, getHealth } from '@/lib/admin/aws'
 import { getCosts } from '@/lib/admin/control'
 import { deployment, edgeHost, probeAuth } from '@/lib/admin/architecture'
-import { PageHeader, Section, ago } from '@/components/admin/Page'
+import { Loading, PageHeader, ReadFailed, Section, ago } from '@/components/admin/Page'
 import { Kpis, SystemStrip, VacuumNote, dumpTone, systemChecks, type AwsView } from '@/components/admin/Overview'
 import { ArchitectureMap, DataPlaces, VersionTable, versionRows, type Live, type MapState } from '@/components/admin/ArchitectureMap'
 import { OperationsPanel } from '@/components/admin/OperationsPanel'
@@ -19,6 +21,10 @@ const cachedCosts = unstable_cache(async () => {
   const cfg = awsHealthConfig()
   return cfg ? getCosts(cfg) : null
 }, ['admin-costs'], { revalidate: 21_600 })
+
+/** admin.metrics() counts every row of every table: 2.5 to 2.9 s on production on
+ *  2026-10-04, and past the 8 s statement timeout when three admin pages ran at once. */
+const sharedMetrics = shared<Metrics>(300_000)
 
 async function readAws(): Promise<AwsView> {
   const cfg = awsHealthConfig()
@@ -32,12 +38,12 @@ async function readAws(): Promise<AwsView> {
   }
 }
 
-/** admin.metrics() travels CloudFront, Envoy, PostgREST and Postgres, so its round trip is
- *  the database's live state. Timed here rather than inside the RPC to include the path. */
-async function timedMetrics(supabase: Awaited<ReturnType<typeof createClient>>) {
+/** The audit read travels CloudFront, Envoy, PostgREST and Postgres on every request, so its
+ *  round trip is the database's live state even when the metrics are a shared read. */
+async function timedAudit(supabase: Awaited<ReturnType<typeof createClient>>) {
   const started = performance.now()
-  const m: Metrics = await getMetrics(supabase)
-  return { m, ms: Math.round(performance.now() - started) }
+  const audit = await listAudit(supabase, 5)
+  return { audit, ms: Math.round(performance.now() - started) }
 }
 
 function awsLive(aws: AwsView): { backups: Live; alarms: Live } {
@@ -52,13 +58,32 @@ function awsLive(aws: AwsView): { backups: Live; alarms: Live } {
   }
 }
 
-export default async function AdminPage() {
+function CacheSection() {
+  return (
+    <Section title="Cache">
+      <OperationsPanel />
+    </Section>
+  )
+}
+
+/** Everything that waits on the database or AWS, streamed after the page shell. */
+async function OverviewBody() {
   const supabase = await createClient()
-  await requireAdmin(supabase)
-  const readAt = new Date()
-  const [{ m, ms }, audit, auth, aws, costs, links] = await Promise.all([
-    timedMetrics(supabase), listAudit(supabase, 5), probeAuth(), readAws(), cachedCosts().catch(() => null), integrations(),
+  const [db, [auth, aws, costs, links]] = await Promise.all([
+    Promise.all([sharedMetrics(() => getMetrics(supabase)), timedAudit(supabase)])
+      .catch((e: unknown): { failed: unknown } => ({ failed: e })),
+    Promise.all([probeAuth(), readAws(), cachedCosts().catch(() => null), integrations()]),
   ])
+  if ('failed' in db) {
+    return (
+      <>
+        <PageHeader title="Overview" />
+        <div className="mt-6"><ReadFailed what="the database" error={db.failed} /></div>
+        <CacheSection />
+      </>
+    )
+  }
+  const [{ value: m, at: readAt }, { audit, ms }] = db
   const disk = aws.state === 'ok' ? aws.alarms.find((a) => a.metric === 'disk_used_percent')?.latest ?? null : null
   const cfg = awsHealthConfig()
 
@@ -77,9 +102,9 @@ export default async function AdminPage() {
   }
 
   return (
-    <div>
+    <>
       <PageHeader title="Overview" readAt={readAt} />
-      <SystemStrip checks={systemChecks(m, auth, aws, readAt.getTime())} />
+      <SystemStrip checks={systemChecks(m, auth, aws)} />
       <Kpis m={m} diskPercent={disk} costMtd={costs?.usage ?? null} />
       <VacuumNote m={m} />
       <Section title="Architecture">
@@ -89,12 +114,22 @@ export default async function AdminPage() {
         <Section title="Stack"><VersionTable rows={versionRows(map)} /></Section>
         <Section title="Where the data lives"><DataPlaces bucket={map.bucket} /></Section>
       </div>
-      <Section title="Cache">
-        <OperationsPanel />
-      </Section>
+      <CacheSection />
       <Section title="Recent actions" aside={<Link href="/admin/audit" prefetch={false} className="hover:underline">Audit log</Link>}>
         <AuditLog entries={audit} />
       </Section>
+    </>
+  )
+}
+
+export default async function AdminPage() {
+  const supabase = await createClient()
+  await requireAdmin(supabase)
+  return (
+    <div>
+      <Suspense fallback={<><PageHeader title="Overview" /><div className="mt-6"><Loading /></div></>}>
+        <OverviewBody />
+      </Suspense>
     </div>
   )
 }
