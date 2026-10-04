@@ -13,6 +13,7 @@ import {
   DUMP_KEY, parseCsv, parseRestoreStatus, restoreName, restoreScript, restoreStatusScript, shellScript, sqlScript,
 } from '@/lib/admin/console'
 import { checkGuard, notify, record } from '@/lib/admin/guard'
+import { clearShared } from '@/lib/admin/shared'
 import { badRequest, notFoundJson, readJson } from '@/lib/admin/respond'
 
 /** A backup or a long shell command runs up to 240 s; the audit row and email come around it. */
@@ -193,5 +194,9 @@ export async function POST(request: Request): Promise<Response> {
       await notify(cfg, user, 'infra.resize failed', [`Changing ${INSTANCE_NAME} from ${from} to ${b.type} failed: ${e instanceof Error ? e.name : 'Error'}. Check its state.`])
     }
     return awsFailure(e)
+  } finally {
+    // A restart, a restore or a write can change what the overview and the table list show.
+    clearShared('metrics')
+    clearShared('dictionary')
   }
 }

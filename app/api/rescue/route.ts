@@ -6,6 +6,7 @@ import { instanceState, power } from '@/lib/admin/control'
 import { RESCUE_COOKIE, RESCUE_TTL_MS, secretMatches, signRescue, verifyRescue } from '@/lib/admin/rescue'
 import { clientKey, createRateLimiter } from '@/lib/http/rateLimit'
 import { badRequest, readJson } from '@/lib/admin/respond'
+import { clearShared } from '@/lib/admin/shared'
 
 const NO_STORE = { 'Cache-Control': 'no-store' }
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: NO_STORE })
@@ -55,6 +56,8 @@ export async function POST(request: Request): Promise<Response> {
     if (!verifyRescue(jar.get(RESCUE_COOKIE)?.value, secret)) return json({ error: 'Rescue session expired. Enter the secret again.', locked: true }, 401)
     if (b.op === 'start') {
       await power(ec2, 'start')
+      clearShared('metrics')
+      clearShared('dictionary')
       await alertOwner(sns, cfg.accountId, 'zhesen rescue: instance start', `EC2 start requested through /rescue from ${clientIp(request)} at ${new Date().toISOString()}.`)
     }
     return json(await instanceState(ec2))

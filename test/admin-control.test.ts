@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { parseCsv, parseRestoreStatus, restoreName, restoreScript, shellScript, sqlScript } from '@/lib/admin/console'
 import { secretMatches, signRescue, verifyRescue, RESCUE_TTL_MS } from '@/lib/admin/rescue'
 import { BACKUP_SCRIPT, restartScript } from '@/lib/admin/control'
+import { shared } from '@/lib/admin/shared'
 
 const { adminUser, rpc, getClaims, power, resize, runShell, alertOwner, sendAlert, readRescueSecret, instanceState, jar } = vi.hoisted(() => ({
   adminUser: vi.fn(),
@@ -222,6 +223,17 @@ describe('POST /api/admin/control', () => {
     const restore = await post(control, { action: 'restore', key: 'postgres/postgres-20260924T033003Z.dump' })
     expect(restore.status).toBe(401)
     expect(runShell).not.toHaveBeenCalled()
+  })
+
+  it('makes the overview and the table list read the database again after a restart', async () => {
+    const metrics = shared<number>('metrics', 60_000)
+    const dictionary = shared<number>('dictionary', 60_000)
+    const load = vi.fn(async () => 1)
+    await Promise.all([metrics(load), metrics(load), dictionary(load)])
+    expect(load).toHaveBeenCalledTimes(2)
+    expect((await post(control, { action: 'restart', service: 'db', confirm: 'supabase-db' })).status).toBe(200)
+    await Promise.all([metrics(load), dictionary(load)])
+    expect(load).toHaveBeenCalledTimes(4)
   })
 
   it('refuses psql backslash commands, which read mode cannot hold back', async () => {

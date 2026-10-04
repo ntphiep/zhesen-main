@@ -7,18 +7,31 @@
  * Admin pages only. The value is the same for every admin, and each caller has passed
  * `requireAdmin` before it asks.
  */
-export interface Shared<T> {
-  /** The value and when its read started, reading through `load` when none is fresh. */
-  (load: () => Promise<T>, now?: number): Promise<{ value: T; at: Date }>
-  /** Forget the value, after an action on this instance changed it. */
-  clear(): void
+export type Shared<T> = (load: () => Promise<T>, now?: number) => Promise<{ value: T; at: Date }>
+
+/** admin.metrics() for the overview and admin.dictionary() for /admin/database. */
+export type SharedName = 'metrics' | 'dictionary'
+
+/** Route handlers and pages load through separate module runtimes, each with its own module
+ *  cache, so a clear from a route reaches a page's read only through `globalThis`. */
+const store: typeof globalThis & { zhesenAdminShared?: Map<SharedName, number> } = globalThis
+
+function generation(name: SharedName): number {
+  return store.zhesenAdminShared?.get(name) ?? 0
 }
 
-export function shared<T>(ttlMs: number): Shared<T> {
-  let entry: { at: number; value: Promise<T> } | null = null
-  const read = (load: () => Promise<T>, now: number = Date.now()) => {
-    if (!entry || now - entry.at >= ttlMs) {
-      const mine = { at: now, value: load() }
+/** Make the next read of `name` start afresh, in every module copy on this instance. */
+export function clearShared(name: SharedName): void {
+  const generations = (store.zhesenAdminShared ??= new Map())
+  generations.set(name, generation(name) + 1)
+}
+
+export function shared<T>(name: SharedName, ttlMs: number): Shared<T> {
+  let entry: { at: number; generation: number; value: Promise<T> } | null = null
+  return (load, now = Date.now()) => {
+    const current = generation(name)
+    if (!entry || entry.generation !== current || now - entry.at >= ttlMs) {
+      const mine = { at: now, generation: current, value: load() }
       entry = mine
       mine.value.catch(() => {
         if (entry === mine) entry = null
@@ -27,5 +40,4 @@ export function shared<T>(ttlMs: number): Shared<T> {
     const { at, value } = entry
     return value.then((v) => ({ value: v, at: new Date(at) }))
   }
-  return Object.assign(read, { clear: () => { entry = null } })
 }

@@ -22,9 +22,10 @@ const cachedCosts = unstable_cache(async () => {
   return cfg ? getCosts(cfg) : null
 }, ['admin-costs'], { revalidate: 21_600 })
 
-/** admin.metrics() counts every row of every table: 2.5 to 2.9 s on production on
- *  2026-10-04, and past the 8 s statement timeout when three admin pages ran at once. */
-const sharedMetrics = shared<Metrics>(300_000)
+/** admin.metrics() counted every row of every table: 2.5 to 2.9 s on production on
+ *  2026-10-04, and past the 8 s statement timeout when three admin pages ran at once.
+ *  A minute collapses such bursts; an infrastructure action clears it (api/admin/control). */
+const sharedMetrics = shared<Metrics>('metrics', 60_000)
 
 async function readAws(): Promise<AwsView> {
   const cfg = awsHealthConfig()

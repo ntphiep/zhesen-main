@@ -13,9 +13,10 @@ export const metadata = { title: 'Database · Admin' }
 
 type Dumps = Awaited<ReturnType<typeof listDumps>>
 
-/** admin.dictionary() counts every row of every table: 2.4 s on production on 2026-10-04.
- *  One read serves the index and every table's page for five minutes. */
-const sharedDictionary = shared<Dictionary>(300_000)
+/** admin.dictionary() counted every row of every table: 2.4 s on production on 2026-10-04.
+ *  One read serves the index and every table's page for a minute; an infrastructure action
+ *  clears it (api/admin/control). */
+const sharedDictionary = shared<Dictionary>('dictionary', 60_000)
 
 async function readDumps(): Promise<Dumps | null | 'error'> {
   const cfg = awsHealthConfig()

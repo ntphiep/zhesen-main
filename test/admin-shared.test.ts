@@ -3,12 +3,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const { exchange } = vi.hoisted(() => ({ exchange: vi.fn() }))
 vi.mock('@vercel/oidc-aws-credentials-provider', () => ({ awsCredentialsProvider: () => exchange }))
 
-import { shared } from '@/lib/admin/shared'
+import { clearShared, shared } from '@/lib/admin/shared'
 import { roleCredentials } from '@/lib/admin/aws'
 
 describe('shared', () => {
   it('runs one read for every request inside the window, and says when it started', async () => {
-    const read = shared<number>(60_000)
+    const read = shared<number>('metrics', 60_000)
     const load = vi.fn(async () => 7)
     const [a, b] = await Promise.all([read(load, 1_000), read(load, 1_500)])
     expect(load).toHaveBeenCalledTimes(1)
@@ -19,16 +19,21 @@ describe('shared', () => {
   })
 
   it('drops a failed read so the next request tries again', async () => {
-    const read = shared<number>(60_000)
+    const read = shared<number>('metrics', 60_000)
     await expect(read(async () => { throw new Error('57014') }, 0)).rejects.toThrow('57014')
     await expect(read(async () => 3, 10)).resolves.toMatchObject({ value: 3 })
   })
 
-  it('reads again after clear', async () => {
-    const read = shared<number>(60_000)
-    await read(async () => 1, 0)
-    read.clear()
-    await expect(read(async () => 2, 10)).resolves.toMatchObject({ value: 2 })
+  it('reads again after clearShared, in every module copy of the same read', async () => {
+    // Pages and route handlers each load their own copy of this module.
+    const page = shared<number>('dictionary', 60_000)
+    const otherPage = shared<number>('dictionary', 60_000)
+    await page(async () => 1, 0)
+    await otherPage(async () => 1, 0)
+    clearShared('dictionary')
+    await expect(page(async () => 2, 10)).resolves.toMatchObject({ value: 2 })
+    await expect(otherPage(async () => 2, 10)).resolves.toMatchObject({ value: 2 })
+    await expect(page(async () => 3, 20)).resolves.toMatchObject({ value: 2 })
   })
 })
 
