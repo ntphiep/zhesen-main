@@ -25,6 +25,7 @@ const entryPreview = z.object({
 export const textLookupResponse = z.object({
   lang: langCode,
   words: z.object({ text: z.string(), entry: entryPreview.nullable() }).array(),
+  phrases: z.object({ text: z.string(), entry: entryPreview }).array().default([]),
 })
 
 export type TextLookupOutcome =

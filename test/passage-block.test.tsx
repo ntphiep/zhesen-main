@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { PassageBlock, looksLikeAPassage } from '@/components/search/PassageBlock'
+import { PassageBlock, looksLikeAPassage, looksLikeAPhrase } from '@/components/search/PassageBlock'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 
 // The translated output renders through TappableText, which resolves its words against
@@ -41,6 +41,27 @@ describe('looksLikeAPassage', () => {
     expect(looksLikeAPassage('con cá', 'vi')).toBe(true)
     // Four Han characters would pass the fw rule; the vi direction only counts words.
     expect(looksLikeAPassage('我爱你们', 'vi')).toBe(false)
+  })
+})
+
+describe('looksLikeAPhrase', () => {
+  it('is a foreign passage of two to six words with no sentence punctuation', () => {
+    expect(looksLikeAPhrase('give up', 'fw')).toBe(true)
+    expect(looksLikeAPhrase('at the end of the day', 'fw')).toBe(true)
+    expect(looksLikeAPhrase('give', 'fw')).toBe(false)
+    expect(looksLikeAPhrase('I gave up smoking last year, sadly', 'fw')).toBe(false)
+    expect(looksLikeAPhrase('She gave up.', 'fw')).toBe(false)
+    expect(looksLikeAPhrase('one two three four five six seven', 'fw')).toBe(false)
+  })
+
+  it('is a two-syllable Vietnamese word, and nothing longer', () => {
+    expect(looksLikeAPhrase('bỏ cuộc', 'vi')).toBe(true)
+    expect(looksLikeAPhrase('cho con mèo', 'vi')).toBe(false)
+    expect(looksLikeAPhrase('cá', 'vi')).toBe(false)
+  })
+
+  it('is never Han text, which segmentation already handles', () => {
+    expect(looksLikeAPhrase('我爱你们', 'fw')).toBe(false)
   })
 })
 
@@ -203,5 +224,68 @@ describe('PassageBlock dictionary hits for a short translation (vi direction)', 
     render(<PassageBlock text="tôi muốn mua một cái bàn" direction="vi" targets={['en']} />)
     await screen.findByText('Tiếng Anh', {}, { timeout: 2000 })
     expect(fetchMock.mock.calls.some((c) => String(c[0]).startsWith('/dictionary/search'))).toBe(false)
+  })
+})
+
+describe('PassageBlock phrases (fw direction)', () => {
+  it('lists a phrasal verb found in the passage above the word list', async () => {
+    stubRoutes(
+      { enabled: true, from: 'en', translations: { vi: 'Tôi đã bỏ thuốc.' } },
+      {
+        lang: 'en',
+        words: [{ text: 'gave', entry: null }, { text: 'up', entry: null }],
+        phrases: [{ text: 'gave up', entry: wordEntry({ id: 'en:give up', headword: 'give up', glossVi: 'Từ bỏ' }) }],
+      },
+    )
+    render(<PassageBlock text="I gave up smoking" direction="fw" targets={['en']} />)
+    expect(await screen.findByText('Cụm từ trong đoạn', {}, { timeout: 2000 })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /give up/ })).toHaveAttribute('href', '/dictionary/en/give%20up')
+    // The form as written, beside the headword it belongs to.
+    expect(screen.getByText('gave up')).toBeInTheDocument()
+  })
+
+  it('leaves out a phrase the panel already lists as a hit', async () => {
+    stubRoutes(
+      { enabled: true, from: 'en', translations: { vi: 'Từ bỏ' } },
+      {
+        lang: 'en',
+        words: [{ text: 'give', entry: null }, { text: 'up', entry: null }],
+        phrases: [{ text: 'give up', entry: wordEntry({ id: 'en:give up', headword: 'give up', glossVi: 'Từ bỏ' }) }],
+      },
+    )
+    render(<PassageBlock text="give up" direction="fw" targets={['en']} known={new Set(['en:give up'])} />)
+    expect(await screen.findByText('Từng từ trong đoạn', {}, { timeout: 2000 })).toBeInTheDocument()
+    expect(screen.queryByText('Cụm từ trong đoạn')).toBeNull()
+  })
+
+  it('reads a word list without phrases from an older answer', async () => {
+    stubRoutes({ enabled: true, from: 'en', translations: { vi: 'x' } }, { lang: 'en', words: [{ text: 'dog', entry: null }] })
+    render(<PassageBlock text="The dog barks" direction="fw" targets={['en']} />)
+    expect(await screen.findByText('Từng từ trong đoạn', {}, { timeout: 2000 })).toBeInTheDocument()
+    expect(screen.queryByText('Cụm từ trong đoạn')).toBeNull()
+  })
+})
+
+describe('PassageBlock beside a panel that already lists entries (vi direction)', () => {
+  it('leaves out a translation hit the panel already shows', async () => {
+    const fetchMock = vi.fn<typeof fetch>(async (url) => {
+      const body = String(url).startsWith('/dictionary/search')
+        ? {
+          entries: {
+            en: [
+              wordEntry({ id: 'en:give up', headword: 'give up', matchScore: 4 }),
+              wordEntry({ id: 'en:give-up', headword: 'give-up', matchScore: 3.5 }),
+            ],
+            es: [], zh: [],
+          },
+          suggestions: [],
+        }
+        : { enabled: true, from: 'vi', translations: { en: 'Give up' } }
+      return { ok: true, json: async () => body } as Response
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<PassageBlock text="bỏ cuộc" direction="vi" targets={['en']} known={new Set(['en:give up'])} />)
+    expect(await screen.findByRole('link', { name: /give-up/ }, { timeout: 2000 })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /give up/ })).toBeNull()
   })
 })

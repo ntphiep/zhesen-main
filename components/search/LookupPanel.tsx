@@ -6,7 +6,7 @@ import { entryPath } from '@/lib/dictionary/entryId'
 import { LinkPending } from '@/components/ui/LinkPending'
 import { Ipa } from '@/components/ui/Ipa'
 import { PosTag } from '@/components/ui/PosTag'
-import { detectOrder, orderByBestMatch } from '@/lib/dictionary/detect'
+import { detectOrder, isStructuralMatch, orderByBestMatch } from '@/lib/dictionary/detect'
 import { recentEntries, recentQueries } from '@/lib/dictionary/recent'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import { posGroups, splitPos, type PosGroup } from '@/lib/dictionary/pos'
@@ -16,7 +16,7 @@ import { EMPTY_SEARCH_RESPONSE, type SearchResponse } from '@/lib/dictionary/res
 import { fetchSearch, searchQueryString } from '@/lib/dictionary/searchClient'
 import type { Direction } from '@/lib/dictionary/search'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
-import { PassageBlock, looksLikeAPassage } from './PassageBlock'
+import { PassageBlock, looksLikeAPassage, looksLikeAPhrase } from './PassageBlock'
 import { ErrorLine } from './ErrorLine'
 import { AiSuggest } from './AiSuggest'
 import s from './Lookup.module.css'
@@ -82,22 +82,27 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     setLevelFilter(null)
     setPosFilter(null)
     // A passage is answered by PassageBlock, so the word search is cleared rather than
-    // left holding the hits for the last prefix that was still one word.
+    // left holding the hits for the last prefix that was still one word. A phrase keeps
+    // its search: it may be an entry itself.
     const next = query.trim()
-    if (!next || looksLikeAPassage(next, direction)) {
+    if (!next || (looksLikeAPassage(next, direction) && !looksLikeAPhrase(next, direction))) {
       setData(EMPTY_SEARCH_RESPONSE); setDataKey(''); setLoading(false); setRefusal(null)
     }
   }
 
   const trimmed = query.trim()
   const isPassage = trimmed.length > 0 && looksLikeAPassage(trimmed, direction)
+  // Searched as well as translated: "give up" is an entry, and as a passage alone it only
+  // reached give and up one word at a time.
+  const isPhrase = isPassage && looksLikeAPhrase(trimmed, direction)
+  const searches = trimmed.length > 0 && (!isPassage || isPhrase)
 
   // A whole sentence has no headword to look up: `lex.search_vi` scores every gloss term
   // in it and answers unrelated words after seconds, and on production the route answered
   // 503 for one. PassageBlock translates it, and in the foreign direction resolves each
   // word through `POST /dictionary/text/lookup`.
   useEffect(() => {
-    if (!trimmed || isPassage) return
+    if (!searches) return
     const opts = { langs: targets, dir: direction } as const
     const key = searchQueryString(trimmed.toLowerCase(), opts)
     const ctrl = new AbortController()
@@ -143,10 +148,17 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     }
     void run()
     return () => { if (id) clearTimeout(id); ctrl.abort() }
-  }, [trimmed, isPassage, targets, direction, attempt])
+  }, [trimmed, searches, targets, direction, attempt])
 
-  const entries = data.entries
-  const translated = data.translated
+  // A phrase shows only what matched it as a whole: the exact headword, a form of it, or a
+  // longer headword it begins. The spelling guesses ("gas up" for "gave up") and the words
+  // inside it are noise beside the translation, and PassageBlock translates it already.
+  const entries = useMemo((): SearchResponse['entries'] => {
+    const all = data.entries
+    if (!isPhrase || direction !== 'fw') return all
+    return { en: all.en.filter(isStructuralMatch), es: all.es.filter(isStructuralMatch), zh: all.zh.filter(isStructuralMatch) }
+  }, [isPhrase, direction, data.entries])
+  const translated = isPhrase ? undefined : data.translated
   // The Vietnamese direction keeps the fixed language order: its columns are read side by
   // side, and one that moves between two queries is harder to read than a weak one. The
   // foreign direction leads with whichever language actually matched.
@@ -178,6 +190,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
       && (!posFilter || posGroups(splitPos(e.pos)).some((g) => g.key === posFilter))
     return order.map((l) => [l, entries[l].filter(keep), (translated?.[l]?.entries ?? []).filter(keep)] as const)
   }, [order, entries, translated, levelFilter, posFilter])
+  const shownIds = useMemo(() => new Set(allShown.map((e) => e.id)), [allShown])
   const total = shown.reduce((n, [, list, more]) => n + list.length + more.length, 0)
   const first = shown.flatMap(([, list, more]) => [...list, ...more])[0]
 
@@ -201,10 +214,10 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     router.prefetch(href)
   }
   // Enter opens the top hit, as it did when the box was an `<input>`. Shift+Enter and a
-  // passage both fall through to the textarea's own behaviour, because a paragraph needs
-  // its line breaks and has no single word to open.
+  // passage longer than a phrase both fall through to the textarea's own behaviour,
+  // because a paragraph needs its line breaks and has no single word to open.
   function onKeyDown(ev: React.KeyboardEvent) {
-    if (ev.key !== 'Enter' || ev.shiftKey || isPassage || !first) return
+    if (ev.key !== 'Enter' || ev.shiftKey || (isPassage && !isPhrase) || !first) return
     ev.preventDefault()
     remember(first)
     router.push(entryPath(first.id))
@@ -353,9 +366,8 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
         </div>
       )}
 
-      {isPassage && <PassageBlock text={trimmed} direction={direction} targets={targets} />}
-
-      {loading && <p className="text-sm text-(--zs-soft)">Đang dịch…</p>}
+      {/* PassageBlock says "Đang dịch…" for the translation of a phrase. */}
+      {loading && !isPassage && <p className="text-sm text-(--zs-soft)">Đang dịch…</p>}
       {refusal && (
         <div className="flex items-center gap-3">
           <ErrorLine>{refusal}</ErrorLine>
@@ -373,6 +385,9 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
         <div className="flex flex-col gap-3">{shown.map(([l, list, more]) => renderCard(l, list, more))}</div>
       )}
       {showFilteredEmpty && <p className="text-sm text-(--zs-soft)">Không có từ nào khớp bộ lọc. Đổi bộ lọc.</p>}
+
+      {/* Under a phrase's entries, which answer it more exactly than a translation. */}
+      {isPassage && <PassageBlock text={trimmed} direction={direction} targets={targets} known={shownIds} />}
 
       {showEmpty && (
         data.suggestions.length > 0

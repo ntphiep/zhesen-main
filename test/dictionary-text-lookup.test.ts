@@ -53,6 +53,28 @@ describe('lookUpText', () => {
     expect(out.lang).toBe('es')
   })
 
+  it('finds a phrasal verb written in an inflected form, alongside its words', async () => {
+    resolveTokens.mockResolvedValueOnce(new Map([['gave', preview('gave')], ['gave up', preview('give up')]]))
+    const out = await lookUpText(client, 'I gave up smoking.')
+    expect(out.phrases).toEqual([{ text: 'gave up', entry: preview('give up') }])
+    expect(out.words.find((w) => w.text === 'gave')?.entry?.id).toBe('en:gave')
+    // One round trip carries the words and the phrase candidates together.
+    expect(resolveTokens).toHaveBeenCalledTimes(1)
+    expect(resolveTokens).toHaveBeenCalledWith(client, 'en', expect.arrayContaining(['I', 'gave', 'gave up', 'gave up smoking']))
+  })
+
+  it('finds a separable phrasal verb with its object in between', async () => {
+    resolveTokens.mockResolvedValueOnce(new Map([['turned down', preview('turn down')]]))
+    const out = await lookUpText(client, 'They turned it down')
+    expect(out.phrases).toEqual([{ text: 'turned it down', entry: preview('turn down') }])
+  })
+
+  it('looks for no phrase in Chinese, which segmentation already joins', async () => {
+    getZhSegmentCandidatesForTexts.mockResolvedValueOnce(['吃饭'])
+    const out = await lookUpText(client, '我吃饭')
+    expect(out.phrases).toEqual([])
+  })
+
   it('answers empty for a passage with nothing in it', async () => {
     const out = await lookUpText(client, '   ')
     expect(out.words).toEqual([])

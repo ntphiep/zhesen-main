@@ -38,6 +38,23 @@ export function looksLikeAPassage(q: string, direction: Direction): boolean {
   return q.trim().split(/\s+/).length >= 2
 }
 
+/** Words a foreign phrase headword runs to: "at the end of the day" is six. */
+const MAX_PHRASE_WORDS = 6
+/** The search route cuts a query at 64 characters. */
+const MAX_PHRASE_CHARS = 64
+
+/** A passage short enough to be a headword itself, so the dictionary is searched as well as
+ *  the text translated: "give up" and "look forward to" are entries, and as passages they
+ *  only ever reached "give" and "up" one word at a time. Sentence punctuation means a
+ *  sentence. A Vietnamese word is mostly two syllables ("bỏ cuộc", "mong đợi"), and three
+ *  words is where the Vietnamese lookup starts scoring a sentence term by term. */
+export function looksLikeAPhrase(q: string, direction: Direction): boolean {
+  const t = q.trim()
+  if (!looksLikeAPassage(t, direction) || /\p{Script=Han}/u.test(t) || /[.,!?;:…"“”()]/u.test(t)) return false
+  const words = t.split(/\s+/).length
+  return direction === 'vi' ? words === 2 : words <= MAX_PHRASE_WORDS && t.length <= MAX_PHRASE_CHARS
+}
+
 /** A translation is a whole extra request, so it waits for the typing to stop rather than
  *  following each keystroke: a 200-character passage typed out would otherwise spend the
  *  monthly quota on forty prefixes of itself. */
@@ -66,10 +83,13 @@ type State =
  * The Vietnamese direction gets no word list: the dictionary indexes no Vietnamese
  * headwords, so there is nothing to link each word to.
  */
-export function PassageBlock({ text, direction, targets }: {
+export function PassageBlock({ text, direction, targets, known }: {
   text: string
   direction: Direction
   targets: readonly LangCode[]
+  /** Entries the panel already lists for the same text, which the translation's own hits
+   *  leave out rather than repeat. */
+  known?: ReadonlySet<string>
 }) {
   const [state, setState] = useState<State>({ kind: 'idle' })
   const [words, setWords] = useState<TextLookup | null>(null)
@@ -148,6 +168,9 @@ export function PassageBlock({ text, direction, targets }: {
   }, [direction, state, targets])
 
   if (!trimmed) return null
+  const unseen = (list: DictEntryPreview[]) => (known ? list.filter((e) => !known.has(e.id)) : list)
+  // "give up" typed alone is already the panel's own top hit.
+  const phrases = (words?.phrases ?? []).filter((p) => !known?.has(p.entry.id))
 
   return (
     <section className={`${s.rise} flex flex-col gap-3 rounded-[18px] bg-(--tint-2) p-4 sm:p-5`}>
@@ -187,11 +210,11 @@ export function PassageBlock({ text, direction, targets }: {
                     ? value
                     : <TappableText text={value} lang={l} />}
                 </dd>
-                {l !== 'vi' && found[l]?.text === value && found[l].entries.length > 0 && (
+                {l !== 'vi' && found[l]?.text === value && unseen(found[l].entries).length > 0 && (
                   <dd className="m-0 mt-1 flex flex-col gap-0.5">
                     <span className="text-xs text-(--zs-soft)">Dịch máy: {value}</span>
                     <ul className="flex flex-col gap-0.5">
-                      {found[l].entries.map((e) => (
+                      {unseen(found[l].entries).map((e) => (
                         <li key={e.id}>
                           <Link
                             href={entryPath(e.id)}
@@ -213,6 +236,29 @@ export function PassageBlock({ text, direction, targets }: {
             )
           })}
         </dl>
+      )}
+
+      {/* A phrasal verb or a fixed phrase is one meaning, which the word list below splits
+          into words that each mean something else: "gave up" is not give plus up. */}
+      {phrases.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Cụm từ trong đoạn</span>
+          <ul className="flex flex-col gap-0.5">
+            {phrases.map((p) => (
+              <li key={p.entry.id}>
+                <Link href={entryPath(p.entry.id)} prefetch={false} className={ROW}>
+                  <span data-hw="" lang={p.entry.lang} className="text-[1.0625rem]">{p.entry.headword}</span>
+                  {p.text.toLowerCase() !== p.entry.headword.toLowerCase() && (
+                    <span lang={p.entry.lang} className="text-xs text-(--zs-soft)">{p.text}</span>
+                  )}
+                  <PosTag value={p.entry.pos} className="text-xs text-(--zs-soft)" />
+                  {p.entry.glossVi && <span className="text-sm font-semibold">{p.entry.glossVi}</span>}
+                  <LinkPending />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {words && words.words.length > 0 && (

@@ -200,6 +200,79 @@ describe('LookupPanel', () => {
     expect(push).toHaveBeenCalledWith(entryPath('en:dog'))
   })
 
+  // A phrase is both a passage and a possible headword, so three routes answer it.
+  function stubRoutes(search: unknown) {
+    const fetchMock = vi.fn<typeof fetch>(async (url) => {
+      const u = String(url)
+      const body = u.startsWith('/dictionary/search') ? search
+        : u.includes('/dictionary/text/lookup') ? { lang: 'en', words: [] }
+          : { enabled: true, from: 'en', translations: { vi: 'từ bỏ' } }
+      return { ok: true, json: async () => body } as Response
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    return fetchMock
+  }
+
+  it('searches a phrase as a headword as well as translating it', async () => {
+    const fetchMock = stubRoutes({
+      entries: {
+        ...EMPTY,
+        en: [
+          entry({ id: 'en:give up', headword: 'give up', glossVi: 'Từ bỏ', matchScore: 4.0 }),
+          entry({ id: 'en:give up hope', headword: 'give up hope', glossVi: 'Hết hy vọng', matchScore: 3.0 }),
+        ],
+      },
+      suggestions: [],
+    })
+    render(<LookupPanel direction="fw" label="FW" />)
+    await userEvent.type(screen.getByLabelText('FW'), 'give up')
+    expect(await screen.findByRole('link', { name: /Từ bỏ/ })).toHaveAttribute('href', entryPath('en:give up'))
+    expect(screen.getByRole('link', { name: /give up hope/ })).toBeInTheDocument()
+    expect(await screen.findByText('từ bỏ', {}, { timeout: 2000 })).toBeInTheDocument()
+    const searches = fetchMock.mock.calls.filter((c) => String(c[0]).startsWith('/dictionary/search'))
+    expect(String(searches.at(-1)?.[0])).toContain('q=give+up')
+    expect(screen.queryByText('Không tìm thấy từ nào.')).toBeNull()
+  })
+
+  it('shows a phrase only the entries that match it whole, not spelling guesses', async () => {
+    stubRoutes({
+      entries: {
+        ...EMPTY,
+        en: [
+          entry({ id: 'en:give up', headword: 'give up', glossVi: 'Từ bỏ', matchScore: 3.5 }),
+          entry({ id: 'en:gas up', headword: 'gas up', glossVi: 'Đổ xăng', matchScore: 1.16 }),
+        ],
+      },
+      suggestions: [],
+    })
+    render(<LookupPanel direction="fw" label="FW" />)
+    await userEvent.type(screen.getByLabelText('FW'), 'gave up')
+    expect(await screen.findByRole('link', { name: /Từ bỏ/ })).toHaveAttribute('href', entryPath('en:give up'))
+    expect(screen.queryByText('Đổ xăng')).toBeNull()
+  })
+
+  it('opens the phrase entry on Enter', async () => {
+    stubRoutes({ entries: { ...EMPTY, en: [entry({ id: 'en:give up', headword: 'give up', glossVi: 'Từ bỏ', matchScore: 4.0 })] }, suggestions: [] })
+    render(<LookupPanel direction="fw" label="FW" />)
+    const input = screen.getByLabelText('FW')
+    await userEvent.type(input, 'give up')
+    await screen.findByRole('link', { name: /Từ bỏ/ })
+    await userEvent.type(input, '{Enter}')
+    expect(push).toHaveBeenCalledWith(entryPath('en:give up'))
+  })
+
+  it('searches a two-syllable Vietnamese word in the dictionary', async () => {
+    const fetchMock = stubRoutes({
+      entries: { ...EMPTY, en: [entry({ id: 'en:look forward to', headword: 'look forward to', glossVi: 'Mong đợi', matchScore: 3.85 })] },
+      suggestions: [],
+    })
+    render(<LookupPanel direction="vi" label="VN" lang="en" />)
+    await userEvent.type(screen.getByLabelText('VN'), 'mong đợi')
+    expect(await screen.findByRole('link', { name: /Mong đợi/ })).toHaveAttribute('href', entryPath('en:look forward to'))
+    const searches = fetchMock.mock.calls.filter((c) => String(c[0]).startsWith('/dictionary/search'))
+    expect(String(searches.at(-1)?.[0])).toContain('dir=vi')
+  })
+
   it('does nothing on Enter while there is no result yet', async () => {
     stubFetch({ entries: EMPTY, suggestions: [] })
     render(<LookupPanel direction="fw" label="FW" />)

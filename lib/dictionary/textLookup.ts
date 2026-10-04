@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { detectOrder } from './detect'
 import { resolveTappableTexts } from './tappable'
+import { resolveTokens } from './resolveTokens'
+import { phraseCandidates, pickPhrases, type FoundPhrase } from './phrases'
+import { tokenize } from '@/lib/reader/tokenize'
 import type { DictEntryPreview } from './types'
 import type { LangCode } from '@/lib/languages'
 
@@ -23,6 +26,8 @@ export interface TextLookup {
   /** The language the passage was read as, which decides tokenization. */
   lang: LangCode
   words: LookedUpWord[]
+  /** English multi-word entries in the passage, in reading order; see ./phrases. */
+  phrases: FoundPhrase[]
 }
 
 export async function lookUpText(supabase: SupabaseClient, text: string): Promise<TextLookup> {
@@ -30,14 +35,28 @@ export async function lookUpText(supabase: SupabaseClient, text: string): Promis
   // Chinese, a Spanish-only letter means Spanish, otherwise English. Tokenization is all
   // it decides, and `tokenizeLatin` treats English and Spanish alike.
   const lang = detectOrder(text)[0]
-  const [resolved] = await resolveTappableTexts(supabase, lang, [text])
-  if (!resolved) return { lang, words: [] }
+  if (lang === 'zh') {
+    const [resolved] = await resolveTappableTexts(supabase, lang, [text])
+    if (!resolved) return { lang, words: [], phrases: [] }
+    const byToken = new Map(resolved.entries)
+    return {
+      lang,
+      words: resolved.segments
+        .filter((s) => s.word)
+        .map((s) => ({ text: s.text, entry: byToken.get(s.text.toLowerCase()) ?? null })),
+      phrases: [],
+    }
+  }
 
-  const byToken = new Map(resolved.entries)
+  // The words and the phrase candidates go to the dictionary in one call.
+  const segments = tokenize(lang, text)
+  const words = segments.filter((s) => s.word)
+  if (words.length === 0) return { lang, words: [], phrases: [] }
+  const candidates = lang === 'en' ? phraseCandidates(segments) : []
+  const found = await resolveTokens(supabase, lang, [...words.map((w) => w.text), ...candidates.map((c) => c.key)])
   return {
     lang,
-    words: resolved.segments
-      .filter((s) => s.word)
-      .map((s) => ({ text: s.text, entry: byToken.get(s.text.toLowerCase()) ?? null })),
+    words: words.map((s) => ({ text: s.text, entry: found.get(s.text.toLowerCase()) ?? null })),
+    phrases: pickPhrases(candidates, found),
   }
 }
