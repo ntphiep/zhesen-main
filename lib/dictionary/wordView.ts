@@ -147,6 +147,9 @@ function commonPrefix(a: string, b: string): number {
  *  headword. An English form is irregular unless it adds a regular ending, allowing for a
  *  dropped final e (taking), y to i (tried) and a doubled consonant (stopped). */
 export function splitForm(headword: string, form: string, lang: string): { kept: string; changed: string; irregular: boolean } {
+  // more fair, most fair: a word set before the headword, which itself does not change.
+  const compared = /^(?:more|most) (.+)$/i.exec(form)
+  if (lang === 'en' && compared?.[1].toLowerCase() === headword.toLowerCase()) return { kept: form, changed: '', irregular: false }
   // take part to takes part: only the first word inflects, so only it is judged.
   const space = headword.indexOf(' ')
   if (space > 0 && form.toLowerCase().endsWith(headword.slice(space).toLowerCase())) {

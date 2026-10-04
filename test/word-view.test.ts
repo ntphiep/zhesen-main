@@ -51,6 +51,12 @@ describe('splitForm', () => {
     expect(splitForm('take part', 'takes part', 'en')).toEqual({ kept: 'take', changed: 's part', irregular: false })
     expect(splitForm('take part', 'took part', 'en')).toEqual({ kept: 't', changed: 'ook part', irregular: true })
   })
+  // fair listed "more fair" and "most fair" on the highlighter as irregular forms.
+  it('never calls a comparison with more or most irregular', () => {
+    expect(splitForm('fair', 'more fair', 'en').irregular).toBe(false)
+    expect(splitForm('fair', 'most fair', 'en').irregular).toBe(false)
+    expect(splitForm('give up', 'more give up', 'en').irregular).toBe(false)
+  })
   it('never calls a form of another language irregular', () => {
     expect(splitForm('casa', 'casas', 'es')).toEqual({ kept: 'casa', changed: 's', irregular: false })
     expect(splitForm('tener', 'tuve', 'es').irregular).toBe(false)
