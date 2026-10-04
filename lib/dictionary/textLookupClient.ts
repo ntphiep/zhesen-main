@@ -42,8 +42,8 @@ export async function fetchTextLookup(text: string, signal?: AbortSignal): Promi
   })
   const body: unknown = await res.json().catch(() => null)
   if (!res.ok) {
-    const message = (body as { error?: string } | null)?.error
-    return { status: 'refused', message: message ?? 'Chưa tra được đoạn này. Thử lại.' }
+    const message = (body as { error?: unknown } | null)?.error
+    return { status: 'refused', message: typeof message === 'string' ? message : 'Chưa tra được đoạn này. Thử lại.' }
   }
   return { status: 'ok', data: textLookupResponse.parse(body) }
 }
