@@ -36,10 +36,12 @@ export const SEARCH_CACHE_SECONDS = 3600
  *  language list and the direction are part of the key, not a filter applied to a cached
  *  answer: each combination asks the database something different. Shared, so the page and
  *  the route read one cache entry for the same arguments. */
+// `unstable_cache` keys on the wrapper's text, not the parsers it calls: a change to one its rows
+// pass through (`cleanGlossVi`, `senseSections`) needs a new version on every key below it feeds.
 export const getCachedSearch = unstable_cache(
   (q: string, langs: LangCode[], direction: Direction) =>
     searchOneDirection(createContentClient(), q, direction, 8, langs),
-  ['dict-search-one-v3'],
+  ['dict-search-one-v4'],
   { revalidate: SEARCH_CACHE_SECONDS, tags: ['lex'] },
 )
 
@@ -48,7 +50,6 @@ export const getCachedSearch = unstable_cache(
  *  fetches only, so the POST `relation_senses` RPC went out twice per cold page. */
 export const getCachedEntryDetail = cache(unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),
-  // v7: carries each sense's register, which a v6 value lacks.
   ['dict-entry-detail-v8'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 ))
@@ -68,7 +69,7 @@ export const getCachedCharacters = unstable_cache(
 export const getCachedEntriesContaining = unstable_cache(
   (lang: LangCode, headword: string): Promise<ContainingWord[]> =>
     getEntriesContaining(createContentClient(), lang, headword),
-  ['dict-entries-containing'],
+  ['dict-entries-containing-v2'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
@@ -82,7 +83,7 @@ export const getCachedWordKin = unstable_cache(
 const cachedTermPreviews = unstable_cache(
   (lang: LangCode, texts: string[]): Promise<TermPreview[]> =>
     getTermPreviews(createContentClient(), lang, texts),
-  ['dict-term-previews'],
+  ['dict-term-previews-v2'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
@@ -106,14 +107,14 @@ export const getCachedInflections = unstable_cache(
  *  keeps the hour rather than `LEX_REVALIDATE`. */
 export const getCachedWordOfDay = unstable_cache(
   (): Promise<DailyWord | null> => getWordOfDay(createContentClient(), dayNumber(Date.now())),
-  ['dict-word-of-day'],
+  ['dict-word-of-day-v2'],
   { revalidate: 3600, tags: ['lex'] },
 )
 
 export const getCachedCommonWords = unstable_cache(
   (lang: LangCode, options: Omit<CommonWordsOptions, 'leveled'> = {}): Promise<DictEntryPreview[]> =>
     getCommonWords(createContentClient(), lang, options),
-  ['dict-common-words-v3'],
+  ['dict-common-words-v4'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
@@ -121,7 +122,7 @@ export const getCachedCommonWords = unstable_cache(
 export const getCachedCommonWordChips = unstable_cache(
   (lang: LangCode, options: Omit<CommonWordsOptions, 'leveled'>): Promise<DictEntryChip[]> =>
     getCommonWords(createContentClient(), lang, { ...options, leveled: true }),
-  ['dict-common-word-chips-v1'],
+  ['dict-common-word-chips-v2'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
@@ -136,7 +137,7 @@ export const getCachedLevelsForLanguage = unstable_cache(
 export const getCachedEntriesByLevel = unstable_cache(
   (lang: LangCode, level: string, offset: number, limit: number): Promise<LevelPage> =>
     getEntriesByLevel(createContentClient(), lang, level, offset, limit),
-  ['dict-entries-by-level-v2'],
+  ['dict-entries-by-level-v3'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
@@ -145,6 +146,6 @@ export const getCachedEntriesByLevel = unstable_cache(
 export const getCachedTappableTexts = unstable_cache(
   (lang: LangCode, texts: string[]): Promise<ResolvedText[]> =>
     resolveTappableTexts(createContentClient(), lang, texts),
-  ['dict-tappable-v2'],
+  ['dict-tappable-v3'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
