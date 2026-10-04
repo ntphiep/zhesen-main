@@ -307,9 +307,10 @@ services:
         "postgres",
         "-c",
         "config_file=/etc/postgresql/postgresql.conf",
-        # Sized for t4g.medium, 4 GB of RAM.
+        # Sized for t4g.medium, 4 GB of RAM shared with the model routers: at 1GB
+        # the instance ran with 860 MB available and 1 GB of swap in use.
         "-c",
-        "shared_buffers=1GB",
+        "shared_buffers=768MB",
         "-c",
         "effective_cache_size=2560MB",
         "-c",

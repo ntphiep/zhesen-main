@@ -119,8 +119,9 @@ on this machine.
   `canceling statement due to statement timeout` and passed on a rerun. The Free plan runs
   compute Nano with `shared_buffers` at 224 MB against 455 MB of data measured 2026-09-23, so
   the long tail is disk reads rather than query shape. The EC2 target sets `shared_buffers`
-  to 1 GB and `effective_cache_size` to 2560 MB (`infra/supabase/docker-compose.yml:315`),
-  which is the gain the cutover buys.
+  to 768 MB and `effective_cache_size` to 2560 MB (`infra/supabase/docker-compose.yml:313`),
+  which is the gain the cutover buys. It was 1 GB until 2026-10-04, when the instance ran
+  with 860 MB available beside the model routers and 1 GB of swap in use.
 - `supabase_admin` has no statement timeout, and the instance's 3.8 GB of RAM is shared with
   the model routers. On 2026-10-04 an ad hoc query that split every Vietnamese gloss inside a
   correlated subquery reached 2.3 GB, the kernel killed it, and Postgres restarted every
