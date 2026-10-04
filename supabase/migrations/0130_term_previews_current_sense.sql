@@ -2,10 +2,11 @@
 -- The preview gloss on family, phrase and lemma chips leads with a current sense. 0027 took the
 -- first gloss by `sense_order`, so going previewed as "đến thường xuyên". A published learner
 -- layer now gives the preview its first sense, as on the word page; otherwise the order matches
--- `rankSenses` (lib/dictionary/textQuality.ts): old register last, then `sense_frequency`, then
--- `sense_order`. Ranked by frequency alone, take would preview as "chiếm đoạt, lấy" (frequency 1)
--- where its layer says "cầm, lấy, mang, di chuyển". Run read-only on production on 2026-10-04,
--- this changes 7,467 of 869,401 previews, 4,722 of them in the top 20k and 4,040 through a layer.
+-- `rankSenses` (lib/dictionary/textQuality.ts): an old or dialectal register last, then
+-- `sense_frequency`, then `sense_order`. Ranked by frequency alone, take would preview as
+-- "chiếm đoạt, lấy" (frequency 1) where its layer says "cầm, lấy, mang, di chuyển". Run
+-- read-only on production on 2026-10-04, this changes 7,876 of 890,560 previews, 4,745 of them
+-- in the top 20k and 4,048 through a layer.
 --
 -- `create or replace` keeps the owner and grants but resets every attribute the text omits. On
 -- 2026-10-04 production held: security invoker, stable, parallel unsafe, cost 100, rows 1000,
@@ -44,7 +45,7 @@ as $$
     select s.entry_id, s.gloss_vi, s.gloss_en,
            row_number() over (
              partition by s.entry_id
-             order by coalesce(s.register, '') ~ '\m(obsolete|archaic|dated|rare|vulgar|offensive)\M',
+             order by coalesce(s.register, '') ~ '\m(obsolete|archaic|dated|rare|vulgar|offensive|dialectal)\M',
                       case when s.sense_frequency ~ '^[1-5]$' then s.sense_frequency::int end nulls last,
                       s.sense_order) as k
     from lex.senses s
