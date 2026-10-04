@@ -214,6 +214,44 @@ describe('groupWordForms', () => {
   })
 })
 
+describe('groupWordForms, whatever the row order', () => {
+  // walk called walked "Ngôi thứ hai số ít" because that row came back first.
+  const walked = [
+    { formText: 'walked', formLabel: 'past second-person singular' },
+    { formText: 'walked', formLabel: 'past' },
+    { formText: 'walked', formLabel: 'past participle' },
+  ]
+  it('names a spelling by all of its rows', () => {
+    expect(groupWordForms(walked)[0].label).toBe('Quá khứ và phân từ II')
+    expect(groupWordForms([...walked].reverse())[0].label).toBe('Quá khứ và phân từ II')
+    const past = [{ formText: 'walked', formLabel: 'past second-person singular' }, { formText: 'walked', formLabel: 'past' }]
+    expect(groupWordForms(past)[0].label).toBe('Quá khứ')
+  })
+
+  // children listed childern as its plural; get listed git.
+  it('treats a pronunciation spelling as a variant', () => {
+    const forms = groupWordForms([
+      { formText: 'childern', formLabel: 'plural plural-only pronunciation-spelling' },
+      { formText: 'git', formLabel: 'Appalachia Southern-US pronunciation-spelling' },
+    ])
+    expect(forms.every((f) => !f.standard)).toBe(true)
+  })
+
+  // better, record and casa printed Pronunciation-spelling, Agent and Augmentative.
+  it('never shows an English label', () => {
+    const forms = groupWordForms([
+      { formText: 'casita', formLabel: 'diminutive' },
+      { formText: 'casona', formLabel: 'augmentative' },
+      { formText: 'recorder', formLabel: 'agent' },
+      { formText: 'fairing', formLabel: 'present rare participle' },
+      { formText: 'records', formLabel: 'countable uncountable' },
+    ])
+    for (const f of forms) expect(f.label).not.toMatch(/^[A-Z][a-z-]+(?: [a-z-]+)*$/)
+    expect(forms.find((f) => f.text === 'fairing')?.label).toBe('Phân từ I (-ing)')
+    expect(forms.find((f) => f.text === 'records')).toMatchObject({ standard: false })
+  })
+})
+
 describe('isSentenceTranslation', () => {
   it('rejects the entry gloss copied into the translation field', () => {
     expect(isSentenceTranslation('con chó', ['con chó', 'chó'])).toBe(false)
