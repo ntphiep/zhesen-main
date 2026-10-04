@@ -61,7 +61,7 @@ export default async function Page({ params }: { params: Params }) {
   if (!data) notFound()
   return (
     <>
-      <BreadcrumbJsonLd trail={[{ name: 'Từ điển', path: '/dictionary' }, { name: data.detail.headword }]} />
+      <BreadcrumbJsonLd trail={[{ name: 'Từ điển', path: '/dictionary' }, { name: data.formOf?.headword ?? data.detail.headword }]} />
       <LookupView {...data} />
     </>
   )

@@ -55,9 +55,18 @@ export interface SenseSynonyms {
   words: ViewWord[]
 }
 
+/** The inflected form a page was asked for when it shows the form's lemma instead. */
+export interface FormOf {
+  id: string
+  headword: string
+  /** What the form is, ending in "của": "quá khứ của". */
+  note: string
+}
+
 export interface WordView {
   /** The entry without senses, relations or the examples the save button does not read. */
   head: DictEntryDetail
+  formOf: FormOf | null
   hanViet: string | null
   lemma: string | null
   lemmaPreview: TermPreview | null
@@ -104,6 +113,7 @@ export interface WordViewInput {
   resolvedExamples?: ResolvedText[]
   learner?: LearnerLayer | null
   backlinks?: LearnerBacklink[]
+  formOf?: FormOf | null
 }
 
 const toWord = ({ text, href, id, gloss, glossIsEnglish, pos, level }: RelatedItem): ViewWord =>
@@ -183,14 +193,14 @@ export function splitAroundStem(word: string, stem: string): { before: string; s
 
 export function buildWordView({
   detail, lemma = null, characters, siblings, inflections = [], grammarPoints = [], containing = [], kin = [],
-  previews = {}, resolvedExamples = [], learner = null, backlinks = [],
+  previews = {}, resolvedExamples = [], learner = null, backlinks = [], formOf = null,
 }: WordViewInput): WordView {
   // Spanish verbs get the conjugation table instead of a line of forms, which for them
-  // would run to hundreds.
-  const conjugation = detail.lang === 'es' ? buildConjugation(inflections) : null
+  // would run to hundreds. A form's own forms (wents, breakings) are noise.
+  const conjugation = detail.lang === 'es' && !lemma ? buildConjugation(inflections) : null
   const sections = senseSections(detail.senses)
   const allForms = groupWordForms(leadingForms(inflections, sections[0]?.key))
-  const forms = conjugation ? [] : allForms
+  const forms = conjugation || lemma ? [] : allForms
     .filter((f) => f.standard && f.text.toLowerCase() !== detail.headword.toLowerCase())
     .sort((a, b) => formRank(a.label) - formRank(b.label))
     .map((f) => ({ text: f.text, label: f.label, ...splitForm(detail.headword, f.text, detail.lang) }))
@@ -237,7 +247,12 @@ export function buildWordView({
   const glossedFirst = [...phrases.filter((w) => w.gloss), ...phrases.filter((w) => !w.gloss)]
 
   return {
-    head: { ...detail, senses: [], relations: [], senseLinks: [], examples: detail.examples.filter((e) => e.translationVi) },
+    // A form carries no level of its own: CEFR-J levels words, and emitted read C1.
+    head: {
+      ...detail, level: lemma ? null : detail.level,
+      senses: [], relations: [], senseLinks: [], examples: detail.examples.filter((e) => e.translationVi),
+    },
+    formOf,
     // A single character shows every reading it has; a multi-character headword shows one
     // per character, so the string stays one syllable per glyph. T恤 has one Han character
     // but is not a single-character headword.

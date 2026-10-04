@@ -2,13 +2,15 @@ import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getC
 import { getCachedLearnerBacklinks, getCachedLearnerLayer } from './learnerCached'
 import { getCachedGrammarPointsForEntry } from '@/lib/grammar/cached'
 import { groupWordForms } from './family'
-import { lemmaFromSenses } from './lemma'
+import { formNoteVi, lemmaFromSenses } from './lemma'
 import { exampleCandidates, PREVIEWED_ITEMS, relatedTabs, senseSections } from './wordPage'
 import type { WordViewInput } from './wordView'
 
 /** Everything the word page reads for one entry, from the caches in `./cached`. Null when
- *  the entry does not exist. */
-export async function loadWordPage(entryId: string): Promise<WordViewInput | null> {
+ *  the entry does not exist. An inflected form whose lemma is an entry reads the lemma's
+ *  page instead, with `formOf` naming the form, as WordReference and SpanishDict answer
+ *  "emitted" with emit's entry under one line. */
+export async function loadWordPage(entryId: string, followForm = true): Promise<WordViewInput | null> {
   // The reads keyed by the id alone start with the detail read rather than a wave after it.
   // The no-op catch only keeps an unknown entry's early return from leaving a rejection
   // unhandled; the await below still throws.
@@ -28,6 +30,12 @@ export async function loadWordPage(entryId: string): Promise<WordViewInput | nul
   // the related words so an inflected page is not a dead end. It only reads
   // `detail`, so it does not have to wait for the queries below.
   const lemma = lemmaFromSenses(detail.senses, detail.headword)
+  if (lemma && followForm) {
+    const lemmaId = (await getCachedTermPreviews(detail.lang, [lemma]))
+      .find((p) => p.headword.toLowerCase() === lemma.toLowerCase() && p.id !== detail.id)?.id
+    const base = lemmaId ? await loadWordPage(lemmaId, false) : null
+    if (base) return { ...base, formOf: { id: detail.id, headword: detail.headword, note: formNoteVi(detail.senses, lemma) } }
+  }
   const sections = senseSections(detail.senses)
   const candidateTexts = exampleCandidates(sections, detail.examples).map((e) => e.text)
 

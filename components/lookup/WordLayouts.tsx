@@ -12,6 +12,7 @@ import { CONTAINER } from './WordParts'
 import { LayoutPicker } from '@/components/ui/LayoutPicker'
 import { WORD_LAYOUTS, availableLayouts, resolveLayout, wordLayout, type WordLayout } from '@/lib/dictionary/wordLayout'
 import { AnchorPrefix, useAnchor } from '@/lib/hooks/useAnchor'
+import { entryPath } from '@/lib/dictionary/entryId'
 import type { WordView } from '@/lib/dictionary/wordView'
 import w from './Word.module.css'
 
@@ -89,6 +90,14 @@ export function WordLayouts({ view }: { view: WordView }) {
           <p key={l.key} data-note={l.key} className={NOTE}>Từ này chưa có bố cục {l.label}, đang hiện {label('classic')}.</p>
         ))}
       </div>
+      {view.formOf && (
+        <div className={CONTAINER}>
+          <p className="rounded-[14px] bg-(--tint-2) px-4 py-3 text-[15px] leading-snug">
+            <b data-hw="" lang={view.head.lang} className="font-semibold">{view.formOf.headword}</b> là {view.formOf.note}{' '}
+            <Link href={entryPath(view.head.id)} prefetch={false} className="font-semibold text-(--zs-pen) hover:underline">{view.head.headword}</Link>
+          </p>
+        </div>
+      )}
       {panels.map((key) => (shown !== null && (key !== 'overview' || shown !== 'overview')
         ? <div key={key} data-panel={key} suppressHydrationWarning dangerouslySetInnerHTML={DORMANT} />
         : (

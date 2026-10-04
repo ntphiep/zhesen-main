@@ -62,6 +62,18 @@ export function formLineLemma(senses: DictSense[], index: number): string | null
   return null
 }
 
+/** What the form is, in the words of its pointer sense's Vietnamese gloss up to the lemma:
+ *  emitted's "quá khứ và phân từ quá khứ của emit" gives "quá khứ và phân từ quá khứ của". */
+export function formNoteVi(senses: DictSense[], lemma: string): string {
+  const tail = new RegExp(String.raw`\s+${lemma.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\s*$`, 'iu')
+  for (const [i, s] of senses.entries()) {
+    if (pointerLemma(s.glossEn, i)?.toLowerCase() !== lemma.toLowerCase()) continue
+    const note = (s.glossVi ?? '').trim().replace(tail, '')
+    if (note && /\scủa$/u.test(note)) return note.charAt(0).toLocaleLowerCase('vi') + note.slice(1)
+  }
+  return 'một dạng của'
+}
+
 /** The headword this entry is a form of, or null when it is a word in its own right. A
  *  pointer counts only in the part of speech of the first sense that is not obsolete or
  *  vulgar: casa is a noun whose verb senses are forms of casar, and went's first sense is
