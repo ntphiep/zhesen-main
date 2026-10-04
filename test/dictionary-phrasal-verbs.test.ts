@@ -50,6 +50,15 @@ describe('getPhrasalVerbs', () => {
     expect(limit).toHaveBeenCalledWith(24)
   })
 
+  it('puts the PHaVE List\'s phrasal verbs first, in its order, and keeps the RPC\'s order for the rest', async () => {
+    const { c } = client(
+      [containing('get at'), containing('get by'), containing('get in'), containing('get back'), containing('get out')],
+      ['get at', 'get by', 'get in', 'get back', 'get out'].map((h) => previewRow(h, h)),
+    )
+    const out = await getPhrasalVerbs(c, 'get')
+    expect(out.map((p) => p.headword)).toEqual(['get out', 'get back', 'get in', 'get at', 'get by'])
+  })
+
   it('asks nothing for a phrase or an empty word', async () => {
     const { c, rpc } = client([], [])
     expect(await getPhrasalVerbs(c, 'give up')).toEqual([])

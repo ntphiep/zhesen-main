@@ -3,6 +3,7 @@ import type { LangCode } from '@/lib/languages'
 import { containingRow, entryPreviewRow, toContaining, toPreview } from './rows'
 import { PREVIEW_SELECT } from './entrySelect'
 import { PHRASAL_PARTICLES } from './phrases'
+import { phaveRank } from './phave'
 import type { ContainingWord, DictEntryPreview } from './types'
 
 /** Longer entries containing this word: 学 leads to 学生 and 大学, "give" to "give up".
@@ -29,9 +30,10 @@ const CONTAINING_POOL = 2000
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /** The phrasal and prepositional verbs of an English verb (give up, look forward to, put
- *  up with), in the order `lex.entries_containing` ranks them, with the lead meaning the
- *  word page shows for each. That RPC's own gloss is sense 1's, which for give up is
- *  "đầu hàng" and for get over is empty. */
+ *  up with), the PHaVE List's first in its order and the rest as `lex.entries_containing`
+ *  ranks them, with the lead meaning the word page shows for each. That RPC's own gloss is
+ *  sense 1's, which for give up is "đầu hàng" and for get over is empty. Its order put get
+ *  at and get by ahead of get out and get back. */
 export async function getPhrasalVerbs(
   supabase: SupabaseClient, verb: string, limit = 24,
 ): Promise<DictEntryPreview[]> {
@@ -44,7 +46,10 @@ export async function getPhrasalVerbs(
     .filter('headword', 'imatch', pattern)
     .limit(limit)
   if (error) throw error
-  const order = containingRow.array().parse(data ?? []).map((r) => r.id)
+  const order = containingRow.array().parse(data ?? [])
+    .map((r, i) => ({ id: r.id, rank: phaveRank(r.headword), i }))
+    .sort((a, b) => (a.rank - b.rank) || (a.i - b.i))
+    .map((r) => r.id)
   if (order.length === 0) return []
   const rows = await supabase.schema('lex').from('entries').select(PREVIEW_SELECT).in('id', order)
   if (rows.error) throw rows.error
