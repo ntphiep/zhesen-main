@@ -88,7 +88,6 @@ function canPlay(url: string): boolean {
 const TONES = {
   icon: 'h-8 w-8 text-black/60 hover:bg-black/10 hover:text-black',
   pane: 'h-10 gap-1.5 border-[1.5px] border-current px-4 text-sm font-bold hover:bg-current/10',
-  chip: 'h-9 gap-1.5 bg-(--sea-50) px-3.5 text-sm font-bold text-(--sea-700) hover:bg-(--sea-100)',
 }
 
 const NO_VOICE: Record<LangCode, string> = {
@@ -102,14 +101,14 @@ const NO_VOICE: Record<LangCode, string> = {
  * otherwise and on any playback failure. It says so when the browser has no voice
  * for the language; the Chinese entries carry no recordings at all.
  *
- * A `tone` draws the landing page's labelled pill instead of the bare icon: `pane` on a
- * coloured lane, `chip` on a card. The pill shows `label` and its accessible name adds
- * `text`, so a row of them says which word each plays. Without a tone, `label` replaces the
- * name whole, which lets the typing drill keep the word unsaid.
+ * `tone="pane"` draws the landing page's labelled pill on a coloured lane instead of the
+ * bare icon. The pill shows `label` and its accessible name adds `text`, so a row of them
+ * says which word each plays. Without a tone, `label` replaces the name whole, which lets
+ * the typing drill keep the word unsaid.
  */
 export function AudioButton({
   text, lang, audioUrl, accent, label, tone,
-}: { text: string; lang: LangCode; audioUrl?: string | null; accent?: string; label?: string; tone?: 'pane' | 'chip' }) {
+}: { text: string; lang: LangCode; audioUrl?: string | null; accent?: string; label?: string; tone?: 'pane' }) {
   const [busy, setBusy] = useState(false)
   const [noVoice, setNoVoice] = useState(false)
   const bcp47 = accent || speechLang(lang)
