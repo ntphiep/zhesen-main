@@ -94,6 +94,15 @@ describe('mainSenses', () => {
     const many = Array.from({ length: 9 }, (_, i) => sense({ senseOrder: i + 1, glossVi: `n${i}` }))
     expect(mainSenses(senseSections(many), 4)[0].senses).toHaveLength(4)
   })
+  // give up's US dialectal adjective "đắm chìm" was its fourth main meaning.
+  it('leaves out a dialectal part of speech while the entry has a current one', () => {
+    const giveUp = [
+      sense({ senseOrder: 1, glossVi: 'đầu hàng' }),
+      sense({ senseOrder: 2, glossVi: 'từ bỏ' }),
+      sense({ senseOrder: 3, pos: 'adjective', glossVi: 'đắm chìm', register: 'US,dialectal' }),
+    ]
+    expect(mainSenses(senseSections(giveUp)).flatMap((g) => g.senses.map((s) => s.glossVi))).toEqual(['đầu hàng', 'từ bỏ'])
+  })
 })
 
 describe('balanceColumns', () => {
@@ -123,6 +132,22 @@ describe('groupSenses', () => {
 
 describe('buildWordView', () => {
   const view = buildWordView({ detail: take, characters: [], siblings: [] })
+
+  // music printed "more music, most music" for its rare adjective "musical".
+  it('drops degree forms unless a current adjective, adverb or determiner takes them', () => {
+    const forms = (senses: DictSense[]) => buildWordView({
+      detail: { ...take, id: 'en:music', headword: 'music', senses },
+      inflections: [
+        { formText: 'musics', formLabel: 'plural' },
+        { formText: 'more music', formLabel: 'comparative' },
+        { formText: 'most music', formLabel: 'superlative' },
+      ],
+      characters: [], siblings: [],
+    }).forms.map((f) => f.text)
+    const noun = sense({ senseOrder: 1, pos: 'noun', glossVi: 'âm nhạc' })
+    expect(forms([noun, sense({ senseOrder: 2, pos: 'adjective', glossVi: 'thuộc âm nhạc', register: 'rare' })])).toEqual(['musics'])
+    expect(forms([noun, sense({ senseOrder: 2, pos: 'det', glossVi: 'ít' })])).toEqual(['musics', 'more music', 'most music'])
+  })
 
   // bumble showed sense sentences that never use bumble.
   it('shows no example that uses neither the headword nor a form of it', () => {

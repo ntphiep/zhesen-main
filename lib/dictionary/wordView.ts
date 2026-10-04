@@ -4,7 +4,8 @@ import { entryPath } from './entryId'
 import { phrasalTail } from './phrases'
 import { groupWordForms } from './family'
 import { isFormOnly } from './lemma'
-import { entryMeaningVi, isCleanExample } from './textQuality'
+import { posGroup } from './pos'
+import { entryMeaningVi, isCleanExample, isOldSense } from './textQuality'
 import {
   entryGlosses, exampleCandidates, knownWordExamples, layerRanked, layerSummary, planExamples, relatedTabs, senseLabel, senseSections, summaryLine,
   type RelatedItem,
@@ -135,6 +136,14 @@ const formRank = (label: string) => {
   return i < 0 ? FORM_ORDER.length : i
 }
 
+/** Degree forms belong to a current adjective, adverb or determiner sense (few, fewer).
+ *  Wiktionary gives music "more music" for its rare adjective "musical" and give up "more give up"
+ *  for a US dialectal one; 6,849 English entries carried such a pair. */
+const DEGREE = new Set(['So sánh hơn', 'So sánh nhất'])
+const GRADED = new Set(['adjective', 'adverb', 'determiner'])
+const takesDegrees = (senses: DictSense[]): boolean =>
+  senses.some((s) => GRADED.has(posGroup(s.pos)?.key ?? '') && !isOldSense(s))
+
 /** Inflection labels of each part of speech. A spelling two parts share keeps the label
  *  it is read with first, so the entry's leading part goes first: takes under take is the
  *  -s form of the verb, not the plural of the noun. */
@@ -217,8 +226,9 @@ export function buildWordView({
   const senses = layerRanked(detail.senses, learner)
   const sections = senseSections(senses)
   const allForms = groupWordForms(leadingForms(inflections, sections[0]?.key))
+  const graded = takesDegrees(senses)
   const forms = conjugation || formOnly ? [] : allForms
-    .filter((f) => f.standard && f.text.toLowerCase() !== detail.headword.toLowerCase())
+    .filter((f) => f.standard && f.text.toLowerCase() !== detail.headword.toLowerCase() && (graded || !DEGREE.has(f.label)))
     .sort((a, b) => formRank(a.label) - formRank(b.label))
     .map((f) => ({ text: f.text, label: f.label, ...splitForm(detail.headword, f.text, detail.lang) }))
 
