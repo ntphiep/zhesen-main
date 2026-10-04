@@ -5,9 +5,8 @@ import {
 } from '@aws-sdk/client-ec2'
 import { CostExplorerClient, GetCostAndUsageCommand, GetCostForecastCommand } from '@aws-sdk/client-cost-explorer'
 import { GetProductsCommand, PricingClient } from '@aws-sdk/client-pricing'
-import { awsCredentialsProvider } from '@vercel/oidc-aws-credentials-provider'
 import { z } from '@/lib/zod'
-import type { AwsHealthConfig } from '@/lib/admin/aws'
+import { roleCredentials, type AwsHealthConfig } from '@/lib/admin/aws'
 import { INSTANCE_ID } from '@/lib/admin/ssm'
 import { LOG_SERVICES } from '@/lib/admin/monitor'
 
@@ -122,7 +121,7 @@ const PRICE_FILTERS = {
 /** On-demand USD per hour for each type. The Pricing API answers from us-east-1 only.
  *  Throws when it cannot answer, so a cache around it keeps no empty result. */
 export async function typePrices(cfg: AwsHealthConfig): Promise<Record<string, number>> {
-  const credentials = awsCredentialsProvider({ roleArn: cfg.roleArn, clientConfig: { region: 'us-east-1' } })
+  const credentials = roleCredentials(cfg.roleArn, 'us-east-1')
   const pricing = new PricingClient({ region: 'us-east-1', credentials })
   const lists = await Promise.all(INSTANCE_TYPES.map((type) => pricing.send(new GetProductsCommand({
     ServiceCode: 'AmazonEC2',
@@ -225,7 +224,7 @@ const USAGE_ONLY = { Dimensions: { Key: 'RECORD_TYPE' as const, Values: ['Usage'
 /** Cost Explorer answers from us-east-1 only and charges USD 0.01 per request, so the
  *  page caches this (app/admin/infra/page.tsx). */
 export async function getCosts(cfg: AwsHealthConfig, now: number = Date.now()): Promise<Costs> {
-  const credentials = awsCredentialsProvider({ roleArn: cfg.roleArn, clientConfig: { region: 'us-east-1' } })
+  const credentials = roleCredentials(cfg.roleArn, 'us-east-1')
   const ce = new CostExplorerClient({ region: 'us-east-1', credentials })
   const today = new Date(now)
   const from = day(new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)))

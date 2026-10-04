@@ -1,8 +1,7 @@
 import { SSMClient, SendCommandCommand, GetCommandInvocationCommand, GetParameterCommand } from '@aws-sdk/client-ssm'
 import { EC2Client } from '@aws-sdk/client-ec2'
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns'
-import { awsCredentialsProvider } from '@vercel/oidc-aws-credentials-provider'
-import type { AwsHealthConfig } from '@/lib/admin/aws'
+import { roleCredentials, type AwsHealthConfig } from '@/lib/admin/aws'
 
 /**
  * Commands on the instance through SSM Run Command, with the role in
@@ -19,7 +18,7 @@ export const RESCUE_PARAMETER = '/zhesen/prod/admin_rescue_secret'
 export const OUTPUT_LIMIT = 24_000
 
 export function clients(cfg: AwsHealthConfig) {
-  const credentials = awsCredentialsProvider({ roleArn: cfg.roleArn, clientConfig: { region: REGION } })
+  const credentials = roleCredentials(cfg.roleArn, REGION)
   return {
     ssm: new SSMClient({ region: REGION, credentials }),
     ec2: new EC2Client({ region: REGION, credentials }),

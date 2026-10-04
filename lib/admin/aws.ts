@@ -29,6 +29,35 @@ export function awsHealthConfig(): AwsHealthConfig | null {
   return roleArn && accountId ? { roleArn, accountId } : null
 }
 
+type CredentialsProvider = ReturnType<typeof awsCredentialsProvider>
+type Credentials = Awaited<ReturnType<CredentialsProvider>>
+
+/** Exchanged again this long before AWS says the credentials expire. */
+const REFRESH_MS = 5 * 60_000
+const providers = new Map<string, CredentialsProvider>()
+
+/**
+ * The role's credentials, shared by every client on this instance until they near expiry.
+ * The SDK keeps credentials per client and every read here builds new clients, so each page
+ * and each poll paid one STS AssumeRoleWithWebIdentity per client, five on /admin/infra.
+ * A failed exchange is not kept.
+ */
+export function roleCredentials(roleArn: string, region: string = REGION, now: () => number = Date.now): CredentialsProvider {
+  const key = `${roleArn} ${region}`
+  const known = providers.get(key)
+  if (known) return known
+  const exchange = awsCredentialsProvider({ roleArn, clientConfig: { region } })
+  let held: Promise<Credentials> | null = null
+  const provider: CredentialsProvider = async () => {
+    const current = held && await held.catch(() => null)
+    if (current && (!current.expiration || current.expiration.getTime() - now() > REFRESH_MS)) return current
+    held = exchange()
+    return held
+  }
+  providers.set(key, provider)
+  return provider
+}
+
 const alarmSchema = z.object({
   AlarmName: z.string(),
   StateValue: z.enum(['OK', 'ALARM', 'INSUFFICIENT_DATA']),
@@ -111,7 +140,7 @@ export function summarizeHealth(raw: RawHealth, now: number = Date.now()): Healt
 
 /** Three reads, each the one the role allows. The alarm metrics come back in one call. */
 export async function getHealth(cfg: AwsHealthConfig, now: number = Date.now()): Promise<Health> {
-  const credentials = awsCredentialsProvider({ roleArn: cfg.roleArn, clientConfig: { region: REGION } })
+  const credentials = roleCredentials(cfg.roleArn)
   const cloudwatch = new CloudWatchClient({ region: REGION, credentials })
   const s3 = new S3Client({ region: REGION, credentials })
 
@@ -179,7 +208,7 @@ const HISTORY = [
 
 /** Five-minute points over a day, 30-minute points over a week: 288 and 336 per series. */
 export async function getHistory(cfg: AwsHealthConfig, range: Range, now: number = Date.now()): Promise<Series[]> {
-  const credentials = awsCredentialsProvider({ roleArn: cfg.roleArn, clientConfig: { region: REGION } })
+  const credentials = roleCredentials(cfg.roleArn)
   const cloudwatch = new CloudWatchClient({ region: REGION, credentials })
   const hours = range === '24h' ? 24 : 168
   const period = range === '24h' ? 300 : 1800
@@ -204,7 +233,7 @@ export async function getHistory(cfg: AwsHealthConfig, range: Range, now: number
 
 /** Dumps in the backup bucket, newest first, for the restore picker on /admin/database. */
 export async function listDumps(cfg: AwsHealthConfig): Promise<{ key: string; at: string; bytes: number }[]> {
-  const credentials = awsCredentialsProvider({ roleArn: cfg.roleArn, clientConfig: { region: REGION } })
+  const credentials = roleCredentials(cfg.roleArn)
   const s3 = new S3Client({ region: REGION, credentials })
   const out = await s3.send(new ListObjectsV2Command({ Bucket: `${NAME_PREFIX}-db-backups-${cfg.accountId}`, Prefix: DUMP_PREFIX }))
   return z.array(objectSchema).parse(out.Contents ?? [])

@@ -2,9 +2,8 @@ import { CloudWatchClient, DescribeAlarmsCommand } from '@aws-sdk/client-cloudwa
 import { GetBucketLifecycleConfigurationCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3'
 import { ListSubscriptionsByTopicCommand, SNSClient } from '@aws-sdk/client-sns'
 import { DescribeParametersCommand, SSMClient } from '@aws-sdk/client-ssm'
-import { awsCredentialsProvider } from '@vercel/oidc-aws-credentials-provider'
 import { z } from '@/lib/zod'
-import type { AwsHealthConfig } from '@/lib/admin/aws'
+import { roleCredentials, type AwsHealthConfig } from '@/lib/admin/aws'
 import { ALERTS_TOPIC, REGION } from '@/lib/admin/ssm'
 
 /** What each AWS service in the account does for zhesen, and the Cost Explorer names
@@ -40,7 +39,7 @@ export interface ServiceFacts {
 /** One read per service, each allowed to fail alone: a missing permission blanks its row,
  *  not the page. */
 export async function serviceFacts(cfg: AwsHealthConfig): Promise<ServiceFacts> {
-  const credentials = awsCredentialsProvider({ roleArn: cfg.roleArn, clientConfig: { region: REGION } })
+  const credentials = roleCredentials(cfg.roleArn, REGION)
   const s3 = new S3Client({ region: REGION, credentials })
   const bucket = `zhesen-db-backups-${cfg.accountId}`
   const topic = ALERTS_TOPIC(cfg.accountId)
