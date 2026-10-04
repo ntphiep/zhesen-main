@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { exampleCandidates, isPlausibleDerived, knownWordExamples, MAX_OTHER_EXAMPLES, planExamples, relatedTabs, senseSections, summaryLine } from '@/lib/dictionary/wordPage'
+import { exampleCandidates, isPlausibleDerived, knownWordExamples, mainSenses, MAX_OTHER_EXAMPLES, planExamples, relatedTabs, senseSections, summaryLine } from '@/lib/dictionary/wordPage'
 import { capExamples, MAX_UNLINKED_EXAMPLES } from '@/lib/dictionary/entryDetail'
 import { parseSenseFrequency } from '@/lib/dictionary/rows'
 import { tokenize } from '@/lib/reader/tokenize'
@@ -171,5 +171,33 @@ describe('relatedTabs', () => {
       ['take up', 'bắt đầu', false],
       ['take over', 'To assume control', true],
     ])
+  })
+})
+
+describe('old and vulgar senses', () => {
+  // went led with the obsolete noun "Con đường"; stacked's main card held "Nở nang".
+  const went = [
+    sense({ senseOrder: 1, pos: 'noun', glossVi: 'Con đường', register: 'obsolete' }),
+    sense({ senseOrder: 2, glossVi: 'Quá khứ của go', senseFrequency: 1 }),
+    sense({ senseOrder: 3, glossVi: 'Quá khứ của wend', register: 'archaic' }),
+  ]
+
+  it('never lead a section or the page', () => {
+    const sections = senseSections(went)
+    expect(sections.map((s) => s.key)).toEqual(['verb', 'noun'])
+    expect(sections[0].senses.map((s) => s.senseOrder)).toEqual([2, 3])
+    const rare = senseSections([
+      sense({ senseOrder: 1, glossVi: 'Thô tục', register: 'slang,vulgar', senseFrequency: 1 }),
+      sense({ senseOrder: 2, glossVi: 'Xếp chồng' }),
+    ])
+    expect(rare[0].senses[0].senseOrder).toBe(2)
+  })
+
+  it('stay out of the main card and the summary while the entry has other senses', () => {
+    const sections = senseSections(went)
+    expect(mainSenses(sections).flatMap((g) => g.senses).map((s) => s.senseOrder)).toEqual([2])
+    expect(summaryLine(sections)).toBe('Quá khứ của go')
+    const onlyOld = senseSections([sense({ senseOrder: 1, glossVi: 'Cổ', register: 'archaic' })])
+    expect(mainSenses(onlyOld).flatMap((g) => g.senses)).toHaveLength(1)
   })
 })

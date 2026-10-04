@@ -1,7 +1,7 @@
 import { posGroup } from './pos'
 import { classifyRelations } from './relations'
 import { entryPath, searchPath } from './entryId'
-import { hasUnknownLongWord, isClassifierGloss, isCleanExample, isSentenceTranslation, rankSenses } from './textQuality'
+import { hasUnknownLongWord, isClassifierGloss, isCleanExample, isOldSense, isSentenceTranslation, rankSenses } from './textQuality'
 import type { ResolvedText } from './tappable'
 import type { DictEntryDetail, DictExample, DictRelation, DictSense, TermPreview } from './types'
 import type { LangCode } from '@/lib/languages'
@@ -33,7 +33,8 @@ export interface SenseSection {
   senses: DictSense[]
 }
 
-/** Sections in dictionary order of their first sense. Classifier notes are not meanings. */
+/** Sections in dictionary order of their first sense, counting an old or vulgar sense (see
+ *  isOldSense) only in a section that has nothing else. Classifier notes are not meanings. */
 export function senseSections(senses: DictSense[]): SenseSection[] {
   const sections = new Map<string, SenseSection>()
   const first = new Map<string, number>()
@@ -46,7 +47,8 @@ export function senseSections(senses: DictSense[]): SenseSection[] {
     }
     sec.senses.push(s)
     sections.set(key, sec)
-    first.set(key, Math.min(first.get(key) ?? Infinity, s.senseOrder))
+    const order = isOldSense(s) ? OLD_OFFSET + s.senseOrder : s.senseOrder
+    first.set(key, Math.min(first.get(key) ?? Infinity, order))
   }
   return [...sections.values()]
     .sort((a, b) => (first.get(a.key) ?? 0) - (first.get(b.key) ?? 0))
@@ -59,9 +61,20 @@ export function senseLabel(s: DictSense): string {
   return vi || s.glossEn?.split(/[,;(]/)[0].trim() || ''
 }
 
+/** Puts a section of old senses after every section with a current one. */
+const OLD_OFFSET = 1e6
+
+/** The sections without their old or vulgar senses, unless the entry has nothing else. */
+function currentSenses(sections: SenseSection[]): SenseSection[] {
+  const current = sections.map((sec) => ({ ...sec, senses: sec.senses.filter((s) => !isOldSense(s)) }))
+  return current.some((sec) => sec.senses.length > 0) ? current.filter((sec) => sec.senses.length > 0) : sections
+}
+
 /** The senses the overview leads with: the first of every part of speech, then the rest
- *  of the budget from the first part of speech, which is the one the word is used as most. */
-export function mainSenses(sections: SenseSection[], max = 4): { section: SenseSection; senses: DictSense[] }[] {
+ *  of the budget from the first part of speech, which is the one the word is used as most.
+ *  An old or vulgar sense is left out while the entry has another. */
+export function mainSenses(all: SenseSection[], max = 4): { section: SenseSection; senses: DictSense[] }[] {
+  const sections = currentSenses(all)
   const quota = sections.map((s, i) => (i < max ? Math.min(1, s.senses.length) : 0))
   let left = max - quota.reduce((a, b) => a + b, 0)
   for (let i = 0; i < sections.length && left > 0; i++) {
@@ -81,9 +94,9 @@ export function entryGlosses(detail: Pick<DictEntryDetail, 'glossVi' | 'senses'>
 const SUMMARY_SEPARATOR = '\u00a0– '
 
 /** Up to five first Vietnamese terms of the senses each section shows, joined. */
-export function summaryLine(sections: SenseSection[]): string | null {
+export function summaryLine(all: SenseSection[]): string | null {
   const terms: string[] = []
-  for (const sec of sections) {
+  for (const sec of currentSenses(all)) {
     for (const s of sec.senses.slice(0, SHOWN_SENSES)) {
       // A comma inside parentheses belongs to the term: "đi (xe, tàu)".
       const term = (s.glossVi ?? s.pivotVi)?.split(/[,;](?![^(]*\))/)[0].trim()

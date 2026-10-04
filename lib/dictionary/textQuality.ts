@@ -70,12 +70,20 @@ export function untranslatedCount(senses: DictSense[]): number {
   return senses.filter((s) => !hasVi(s) && s.glossEn && !isClassifierGloss(s.glossEn)).length
 }
 
-/** Most relevant first: a ranked sense by its `senseFrequency`, then a sense with a
- *  Vietnamese gloss (direct or pivot-derived) ahead of an English-only one, then sense_order. */
+/** A sense a learner should meet last: went's obsolete noun "a path" led the page, and
+ *  stacked's slang "having large breasts" filled its main card. */
+const OLD_REGISTER = /\b(?:obsolete|archaic|dated|rare|vulgar|offensive)\b/
+
+export const isOldSense = (s: Pick<DictSense, 'register'>): boolean => OLD_REGISTER.test(s.register ?? '')
+
+/** Most relevant first: an obsolete, archaic, dated, rare, vulgar or offensive sense last,
+ *  then a ranked sense by its `senseFrequency`, then a sense with a Vietnamese gloss (direct
+ *  or pivot-derived) ahead of an English-only one, then sense_order. */
 export function rankSenses(senses: DictSense[]): DictSense[] {
   const rank = (s: DictSense) => s.senseFrequency ?? Infinity
   return [...senses].sort(
-    (a, b) => (rank(a) - rank(b)) || (Number(hasVi(b)) - Number(hasVi(a))) || a.senseOrder - b.senseOrder,
+    (a, b) => (Number(isOldSense(a)) - Number(isOldSense(b))) || (rank(a) - rank(b))
+      || (Number(hasVi(b)) - Number(hasVi(a))) || a.senseOrder - b.senseOrder,
   )
 }
 

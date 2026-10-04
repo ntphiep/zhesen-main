@@ -16,6 +16,8 @@ export interface DictSense {
   glossViIsMt?: boolean
   /** `lex.senses.provenance->>'gloss_vi_source'`, as `mt:google`. Read on the entry page only. */
   glossViSource?: string | null
+  /** `lex.senses.register`, Wiktionary's comma-joined tags such as `obsolete,rare`. Read on the entry page only. */
+  register?: string | null
 }
 export interface DictPron {
   accent: string

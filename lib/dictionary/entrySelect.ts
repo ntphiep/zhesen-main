@@ -14,7 +14,7 @@ export const PREVIEW_SELECT =
 export const CHIP_SELECT =
   'id, headword, senses(pos, gloss_vi, gloss_en, sense_order, sense_frequency), learner_entries(status, learner_senses(sense_order, vi_terms))'
 
-/** The preview plus each sense's id, machine-translation flag and gloss source, which only
- *  the entry page reads. */
+/** The preview plus each sense's id, machine-translation flag, gloss source and register, which
+ *  only the entry page reads. */
 export const DETAIL_SELECT =
-  `${ENTRY_COLUMNS}, senses(id, pos, gloss_vi, gloss_en, sense_order, sense_frequency, gloss_vi_is_mt, gloss_vi_source:provenance->>gloss_vi_source), ${PRONUNCIATIONS}, ${LEARNER_LEAD}`
+  `${ENTRY_COLUMNS}, senses(id, pos, gloss_vi, gloss_en, sense_order, sense_frequency, gloss_vi_is_mt, gloss_vi_source:provenance->>gloss_vi_source, register), ${PRONUNCIATIONS}, ${LEARNER_LEAD}`
