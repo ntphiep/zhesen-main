@@ -5,6 +5,7 @@ export interface ErdBox {
   id: string
   label: string
   rows: number | null
+  estimated: boolean
   rank: number
   x: number
   y: number
@@ -85,6 +86,7 @@ export function layoutErd(tables: DictTable[], schema: string): Erd {
       id,
       label: t ? t.name : id,
       rows: t ? t.rows : null,
+      estimated: t ? t.estimated : false,
       rank: r,
       x: r * (BOX_W + GAP_X),
       y: y.get(id)!,

@@ -26,6 +26,8 @@ const tableRow = z.object({
   name: z.string(),
   comment: z.string().nullable(),
   rows: z.number(),
+  /** Planner statistics rather than a count, for a table of 100,000 rows or more (0110). */
+  estimated: z.boolean().default(false),
   bytes: z.number(),
   rls: z.boolean(),
   columns: z.array(columnRow),
@@ -66,6 +68,8 @@ export interface DictTable {
   name: string
   comment: string | null
   rows: number
+  /** True when `rows` is the planner's estimate, not a count. */
+  estimated: boolean
   bytes: number
   rls: boolean
   columns: DictColumn[]
@@ -96,6 +100,7 @@ export function parseDictionary(raw: unknown): Dictionary {
       name: t.name,
       comment: t.comment,
       rows: t.rows,
+      estimated: t.estimated,
       bytes: t.bytes,
       rls: t.rls,
       columns: t.columns.map((c) => {

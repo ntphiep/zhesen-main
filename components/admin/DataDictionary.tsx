@@ -105,7 +105,7 @@ function SchemaTable({ tables }: { tables: DictTable[] }) {
                       <span className="min-w-0 font-mono text-[13px] font-medium break-all">{t.name}</span>
                     </button>
                   </td>
-                  <td className="px-4 py-1.5 text-right tabular-nums">{num(t.rows)}</td>
+                  <td className="px-4 py-1.5 text-right tabular-nums">{t.estimated && <abbr title="Estimated from planner statistics" className="no-underline">≈ </abbr>}{num(t.rows)}</td>
                   <td className="px-4 py-1.5">
                     <div className="flex items-center gap-2">
                       <span className="w-14 shrink-0 text-right tabular-nums text-(--zs-soft)">{formatBytes(t.bytes)}</span>
@@ -214,7 +214,7 @@ function Links({ title, links }: { title: string; links: DictLink[] }) {
 /** One table: purpose, size, every column with its meaning, the tables around it and its indexes. */
 export function TableDetail({ t }: { t: DictTable }) {
   const facts = [
-    `${num(t.rows)} rows`,
+    `${t.estimated ? 'About ' : ''}${num(t.rows)} rows`,
     formatBytes(t.bytes),
     `${t.columns.length} columns`,
     `${t.indexes.length} indexes`,

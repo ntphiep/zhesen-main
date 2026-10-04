@@ -49,7 +49,7 @@ export function Erd({ tables, schema, href }: { tables: DictTable[]; schema: str
                   {b.label}
                 </text>
                 <text x={12} y={34} className="text-[11px] tabular-nums fill-(--zs-soft)">
-                  {b.rows === null ? 'outside schema' : `${num(b.rows)} rows`}
+                  {b.rows === null ? 'outside schema' : `${b.estimated ? '≈ ' : ''}${num(b.rows)} rows`}
                 </text>
               </g>
             )
