@@ -44,10 +44,9 @@ const MAX_PHRASE_WORDS = 6
 const MAX_PHRASE_CHARS = 64
 
 /** A passage short enough to be a headword itself, so the dictionary is searched as well as
- *  the text translated: "give up" and "look forward to" are entries, and as passages they
- *  only ever reached "give" and "up" one word at a time. Sentence punctuation means a
- *  sentence. A Vietnamese word is mostly two syllables ("bỏ cuộc", "mong đợi"), and three
- *  words is where the Vietnamese lookup starts scoring a sentence term by term. */
+ *  the text translated: "give up" and "look forward to" are entries. Sentence punctuation
+ *  means a sentence. A Vietnamese word is mostly two syllables ("bỏ cuộc", "mong đợi"), and
+ *  three words is where the Vietnamese lookup starts scoring a sentence term by term. */
 export function looksLikeAPhrase(q: string, direction: Direction): boolean {
   const t = q.trim()
   if (!looksLikeAPassage(t, direction) || /\p{Script=Han}/u.test(t) || /[.,!?;:…"“”()]/u.test(t)) return false

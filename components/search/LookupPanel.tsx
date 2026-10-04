@@ -92,8 +92,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
 
   const trimmed = query.trim()
   const isPassage = trimmed.length > 0 && looksLikeAPassage(trimmed, direction)
-  // Searched as well as translated: "give up" is an entry, and as a passage alone it only
-  // reached give and up one word at a time.
+  // Searched as well as translated: "give up" is an entry, not give and up.
   const isPhrase = isPassage && looksLikeAPhrase(trimmed, direction)
   const searches = trimmed.length > 0 && (!isPassage || isPhrase)
 
