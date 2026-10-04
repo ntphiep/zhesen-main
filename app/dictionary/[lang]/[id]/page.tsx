@@ -4,7 +4,7 @@ import { buildEntryId } from '@/lib/dictionary/entryId'
 import { entryMetadata } from '@/lib/dictionary/entryMetadata'
 import { LookupView } from '@/components/lookup/LookupView'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
-import { loadWordPage } from '@/lib/dictionary/wordPageData'
+import { formLemma, loadWordPage } from '@/lib/dictionary/wordPageData'
 import { isLangCode } from '@/lib/languages'
 import { percentDecode } from '@/lib/http/percentDecode'
 import type { Metadata } from 'next'
@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { lang, id } = await params
   if (!isLangCode(lang)) return {}
   const detail = await getCachedEntryDetail(buildEntryId(lang, percentDecode(id)))
-  return detail ? entryMetadata(detail) : {}
+  return detail ? entryMetadata(detail, await formLemma(detail)) : {}
 }
 
 export default async function Page({ params }: { params: Params }) {

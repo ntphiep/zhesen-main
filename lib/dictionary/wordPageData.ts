@@ -4,7 +4,18 @@ import { getCachedGrammarPointsForEntry } from '@/lib/grammar/cached'
 import { groupWordForms } from './family'
 import { formNoteVi, isFormOnly, lemmaFromSenses } from './lemma'
 import { exampleCandidates, PREVIEWED_ITEMS, relatedTabs, senseSections } from './wordPage'
+import type { DictEntryDetail } from './types'
 import type { WordViewInput } from './wordView'
+
+/** The entry a form's page shows in its place, when the form is nothing else and its lemma is
+ *  an entry: emit for emitted. The page's metadata reads it too, for its canonical. */
+export async function formLemma(detail: DictEntryDetail): Promise<{ id: string; headword: string } | null> {
+  const lemma = lemmaFromSenses(detail.senses, detail.headword)
+  if (!lemma || !isFormOnly(detail.senses, lemma)) return null
+  const id = (await getCachedTermPreviews(detail.lang, [lemma]))
+    .find((p) => p.headword.toLowerCase() === lemma.toLowerCase() && p.id !== detail.id)?.id
+  return id ? { id, headword: lemma } : null
+}
 
 /** Everything the word page reads for one entry, from the caches in `./cached`. Null when
  *  the entry does not exist. An inflected form whose lemma is an entry reads the lemma's
@@ -30,12 +41,9 @@ export async function loadWordPage(entryId: string, followForm = true): Promise<
   // the related words so an inflected page is not a dead end. It only reads
   // `detail`, so it does not have to wait for the queries below.
   const lemma = lemmaFromSenses(detail.senses, detail.headword)
-  if (lemma && followForm && isFormOnly(detail.senses, lemma)) {
-    const lemmaId = (await getCachedTermPreviews(detail.lang, [lemma]))
-      .find((p) => p.headword.toLowerCase() === lemma.toLowerCase() && p.id !== detail.id)?.id
-    const base = lemmaId ? await loadWordPage(lemmaId, false) : null
-    if (base) return { ...base, formOf: { id: detail.id, headword: detail.headword, note: formNoteVi(detail.senses, lemma) } }
-  }
+  const shown = followForm ? await formLemma(detail) : null
+  const base = shown ? await loadWordPage(shown.id, false) : null
+  if (base && shown) return { ...base, formOf: { id: detail.id, headword: detail.headword, note: formNoteVi(detail.senses, shown.headword) } }
   const sections = senseSections(detail.senses)
   const candidateTexts = exampleCandidates(sections, detail.examples).map((e) => e.text)
 

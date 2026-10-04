@@ -19,14 +19,16 @@ export function headwordPinyin(detail: DictEntryDetail): string | null {
   return typeof attr === 'string' && attr.trim() ? attr.trim() : null
 }
 
-/** Shaped on what Vietnamese searchers type: "take là gì", "casa tiếng tây ban nha là gì". */
-function entryTitle(detail: DictEntryDetail): string {
-  if (detail.lang === 'es') return `${detail.headword} tiếng Tây Ban Nha là gì? Nghĩa tiếng Việt`
+/** Shaped on what Vietnamese searchers type: "take là gì", "casa tiếng tây ban nha là gì". A
+ *  form whose page shows its lemma says so: "emitted là gì? Dạng của emit". */
+function entryTitle(detail: DictEntryDetail, lemma: string | null): string {
+  const answer = lemma ? `Dạng của ${lemma}` : 'Nghĩa tiếng Việt'
+  if (detail.lang === 'es') return `${detail.headword} tiếng Tây Ban Nha là gì? ${answer}`
   if (detail.lang === 'zh') {
     const pinyin = headwordPinyin(detail)
-    return `${pinyin ? `${detail.headword} (${pinyin})` : detail.headword} là gì? Nghĩa tiếng Việt`
+    return `${pinyin ? `${detail.headword} (${pinyin})` : detail.headword} là gì? ${answer}`
   }
-  return `${detail.headword} là gì? Nghĩa tiếng Việt`
+  return `${detail.headword} là gì? ${answer}`
 }
 
 /** Up to three distinct Vietnamese meanings, lead meaning first. Never English: an English
@@ -66,17 +68,18 @@ function indexableMeaning(sense: DictSense, detail: DictEntryDetail): boolean {
 }
 
 /** The word page's head. An entry with no indexable Vietnamese meaning is left out of the
- *  index; its links are still followed. The large card shows the 1200×630 opengraph-image
- *  uncropped. */
-export function entryMetadata(detail: DictEntryDetail): Metadata {
+ *  index; its links are still followed. A form whose page shows `lemma` names the lemma's
+ *  page as canonical, since the two pages are one. The large card shows the 1200×630
+ *  opengraph-image uncropped. */
+export function entryMetadata(detail: DictEntryDetail, lemma: { id: string; headword: string } | null = null): Metadata {
   const glosses = vietnameseGlosses(detail)
   return {
     ...pageMetadata({
-      title: entryTitle(detail),
+      title: entryTitle(detail, lemma?.headword ?? null),
       description: glosses.length
         ? clip(`Tra nghĩa tiếng Việt của ${detail.headword}: ${joinedCase(glosses, detail).join(', ')}.`)
         : `Tra nghĩa của ${detail.headword}.`,
-      canonical: entryPath(detail.id),
+      canonical: entryPath(lemma?.id ?? detail.id),
       noindex: !detail.senses.some((s) => indexableMeaning(s, detail)),
     }),
     twitter: { card: 'summary_large_image' },

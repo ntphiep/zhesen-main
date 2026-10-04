@@ -19,8 +19,8 @@ vi.mock('@/components/lookup/LookupView', () => ({
   LookupView: ({ detail }: { detail: { headword: string } }) => <div>view:{detail.headword}</div>,
 }))
 
-import Page from '@/app/dictionary/[lang]/[id]/page'
-import { getCachedEntryDetail } from '@/lib/dictionary/cached'
+import Page, { generateMetadata } from '@/app/dictionary/[lang]/[id]/page'
+import { getCachedEntryDetail, getCachedTermPreviews } from '@/lib/dictionary/cached'
 
 describe('dictionary detail page', () => {
   it('calls notFound for an unknown lang', async () => {
@@ -41,6 +41,26 @@ describe('dictionary detail page', () => {
     })
     await Page({ params: Promise.resolve({ lang: 'zh', id: '%E7%8B%97' }) })
     expect(getCachedEntryDetail).toHaveBeenCalledWith('zh:狗')
+  })
+  // emitted kept its own canonical and title while its page showed emit.
+  it('points the canonical of a form that opens its lemma at the lemma, and says so in the title', async () => {
+    const entry = (id: string, headword: string, glossEn: string, glossVi: string) => ({
+      id, lang: 'en' as const, headword, traditional: null, level: null, ipa: null, pos: 'verb',
+      glossVi: null, glossEn: null, audioUrl: null, senses: [{ pos: 'verb', glossEn, glossVi, senseOrder: 1 }],
+      pronunciations: [], examples: [], relations: [], attributes: {},
+    })
+    const emitted = entry('en:emitted', 'emitted', 'simple past and past participle of emit', 'quá khứ của emit')
+    const emit = entry('en:emit', 'emit', 'To send out.', 'phát ra')
+    vi.mocked(getCachedEntryDetail).mockImplementation(async (id: string) => ({ 'en:emitted': emitted, 'en:emit': emit })[id] ?? null)
+    vi.mocked(getCachedTermPreviews).mockResolvedValue([
+      { matchText: 'emit', id: 'en:emit', headword: 'emit', pos: 'verb', ipa: null, reading: null, gender: null, glossVi: 'phát ra', glossEn: null },
+    ])
+    const meta = await generateMetadata({ params: Promise.resolve({ lang: 'en', id: 'emitted' }) })
+    expect(String(meta.alternates?.canonical)).toMatch(/\/dictionary\/en\/emit$/)
+    expect(meta.title).toBe('emitted là gì? Dạng của emit')
+    const own = await generateMetadata({ params: Promise.resolve({ lang: 'en', id: 'emit' }) })
+    expect(String(own.alternates?.canonical)).toMatch(/\/dictionary\/en\/emit$/)
+    expect(own.title).toBe('emit là gì? Nghĩa tiếng Việt')
   })
   it('does not throw on a param that is not valid percent-encoding', async () => {
     vi.mocked(getCachedEntryDetail).mockResolvedValueOnce(null)
