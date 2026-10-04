@@ -12,8 +12,6 @@ import type { LangCode } from '@/lib/languages'
 
 /** How many days the desk's forecast covers, today included. */
 export const FORECAST_DAYS = 7
-/** Enough newest words for four per language on the globe layout. */
-const RECENT = 24
 /** How long the reads may go on after a request first fails. Its own retries take 7 s to
  *  give up (`onRequestFailure`); the first of them goes out 1 s after the failure. */
 const FAILURE_GRACE_MS = 2500
@@ -24,7 +22,6 @@ interface Loaded {
   rows: StatRow[]
   progress: Record<LangCode, LangProgress>
   queue: ReviewCard[]
-  recent: UserWord[]
   leeches: UserWord[]
   upcoming: ForecastWord[]
   days: string[]
@@ -47,7 +44,6 @@ export interface HomeView {
   pending: ReviewCard[]
   /** Cards graded on this visit. */
   gradedNow: number
-  recent: UserWord[]
   leeches: UserWord[]
   forecast: ForecastDay[]
 }
@@ -103,7 +99,6 @@ export function summarize(d: Loaded, graded: ReadonlyMap<string, SrsState>, agai
     progress,
     pending: [...d.queue.filter((c) => !graded.has(c.id)), ...back],
     gradedNow: n,
-    recent: d.recent,
     leeches: d.leeches,
     forecast: bucketForecast(queue, [...d.upcoming.filter((w) => !graded.has(w.id)), ...moved], d.now, FORECAST_DAYS),
   }
@@ -156,17 +151,16 @@ export function useHomeData(enabled: boolean): {
           })
           stop = () => { off(); clearTimeout(timer) }
         })
-        const [rows, days, queue, recent, leeches, upcoming] = await Promise.race([Promise.all([
+        const [rows, days, queue, leeches, upcoming] = await Promise.race([Promise.all([
           stats.fetchStatRows(supabase),
           getActivityDays(supabase),
           review.listDueCards(supabase, now, review.SESSION_LIMITS),
-          store.listRecentWords(supabase, RECENT),
           store.listLeeches(supabase, store.LEECH_LAPSES, 6),
           listUpcoming(supabase, now, FORECAST_DAYS),
         ]), failing]).finally(() => stop())
         if (!live) return
         const data: Loaded = {
-          now, rows, days, queue, recent, leeches, upcoming,
+          now, rows, days, queue, leeches, upcoming,
           stats: stats.computeWordlistStats(rows, days, now),
           progress: stats.computeLangProgress(rows),
         }

@@ -34,7 +34,6 @@ function loaded(): Loaded {
       card('new-en', 'en', { reps: 0, scheduledDays: 0, dueAt: now - DAY }),
       card('ripe-zh', 'zh', { reps: 3, scheduledDays: 20, dueAt: now - 3600_000 }),
     ],
-    recent: [],
     leeches: [],
     upcoming: [{ id: 'later', lang: 'es', headword: 'later', dueAt: now + 2 * DAY }],
     days: ['2026-09-28'],

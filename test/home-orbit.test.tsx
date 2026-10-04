@@ -48,7 +48,7 @@ describe('the globe of the notebook', () => {
   })
 
   it('keeps a pin out of the tab order until the globe shows it', () => {
-    const view = { now: NOW, due: 20, total: 407, learned: 0, reviewedToday: 0, streak: 0, days: new Set<string>(), rows, pending, gradedNow: 0, recent: [], leeches: [], forecast: [],
+    const view = { now: NOW, due: 20, total: 407, learned: 0, reviewedToday: 0, streak: 0, days: new Set<string>(), rows, pending, gradedNow: 0, leeches: [], forecast: [],
       progress: { en: { total: 136, learned: 0, learning: 0, unseen: 136 }, zh: { total: 136, learned: 0, learning: 0, unseen: 136 }, es: { total: 135, learned: 0, learning: 0, unseen: 135 } } } satisfies HomeView
     const { container } = render(<OrbitLayout view={view} failed={false} onRetry={() => {}} picker={{ value: 'orbit', stored: 'orbit' }} />)
     const pins = container.querySelectorAll('[data-off]')
