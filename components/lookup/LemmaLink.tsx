@@ -17,7 +17,7 @@ export function LemmaLink({ lemma, preview, lang }: {
   const gloss = preview?.glossVi || preview?.glossEn || null
   return (
     <p className="flex flex-wrap items-baseline gap-2 text-sm">
-      <span className="text-(--zs-soft)">Dạng gốc của</span>
+      <span className="text-(--zs-soft)">Dạng gốc:</span>
       {preview ? (
         <Link href={searchPath(lang, lemma)} prefetch={false} className="font-semibold text-(--zs-ink) underline decoration-sea-300 decoration-2 underline-offset-[0.2em] hover:decoration-(--zs-ink)">
           {lemma}
