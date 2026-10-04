@@ -49,13 +49,13 @@ export const getCachedSearch = unstable_cache(
 export const getCachedEntryDetail = cache(unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),
   // v7: carries each sense's register, which a v6 value lacks.
-  ['dict-entry-detail-v7'],
+  ['dict-entry-detail-v8'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 ))
 
 export const getCachedCrossLanguage = unstable_cache(
   (entryId: string): Promise<CrossLangSibling[]> => getCrossLanguage(createContentClient(), entryId),
-  ['dict-cross-language'],
+  ['dict-cross-language-v2'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
