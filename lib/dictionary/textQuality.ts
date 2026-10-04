@@ -79,9 +79,10 @@ export function untranslatedCount(senses: DictSense[]): number {
   return senses.filter((s) => !hasVi(s) && s.glossEn && !isClassifierGloss(s.glossEn)).length
 }
 
-/** A sense a learner should meet last: went's obsolete noun "a path" led the page, and
- *  stacked's slang "having large breasts" filled its main card. */
-const OLD_REGISTER = /\b(?:obsolete|archaic|dated|rare|vulgar|offensive)\b/
+/** A sense a learner should meet last: went's obsolete noun "a path" led the page,
+ *  stacked's slang "having large breasts" filled its main card, and give up's US dialectal
+ *  adjective "become fully taken over" was its fourth main meaning. */
+const OLD_REGISTER = /\b(?:obsolete|archaic|dated|rare|vulgar|offensive|dialectal)\b/
 
 export const isOldSense = (s: Pick<DictSense, 'register'>): boolean => OLD_REGISTER.test(s.register ?? '')
 
