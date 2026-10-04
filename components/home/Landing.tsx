@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import Link from 'next/link'
 import { getLanguage, type LangCode } from '@/lib/languages'
 import { theoryLangPath } from '@/lib/theory/path'
@@ -64,7 +65,9 @@ export function Landing({ example, facts, take, phrases }: {
         <section className={s.phrases} aria-labelledby="phrases-title">
           <div className={s.wrap}>
             <h2 id="phrases-title" className={s.h2} data-reveal="">
-              {phrases.phrases.slice(0, 2).map((p) => `${p.headword} là ${p.vi}`).join(', ')}.
+              {phrases.phrases.slice(0, 2).map((p, i) => (
+                <Fragment key={p.href}>{i > 0 && ', '}<span lang="en">{p.headword}</span> là {p.vi}</Fragment>
+              ))}.
             </h2>
             <p className={s.lede} data-reveal="" data-i="1">
               Mỗi cụm động từ có nghĩa riêng, nối sang từ cùng nghĩa trong tiếng Trung và <span className={s.nw}>tiếng Tây Ban Nha</span>.

@@ -1,11 +1,10 @@
-import { getCachedCrossLanguage, getCachedEntryDetail, getCachedSearch, getCachedWordOfDay } from '@/lib/dictionary/cached'
+import { getCachedCrossLanguage, getCachedEntryDetail, getCachedSearch, getCachedTermPreviews, getCachedWordOfDay } from '@/lib/dictionary/cached'
 import { getCachedLearnerLayer } from '@/lib/dictionary/learnerCached'
 import { markHeadword, minorSenses, type LearnerLayer, type LearnerLink } from '@/lib/dictionary/learner'
-import { entryPath } from '@/lib/dictionary/entryId'
-import type { DictEntryDetail, DictEntryPreview, DictSense } from '@/lib/dictionary/types'
+import { entryPath, splitEntryId } from '@/lib/dictionary/entryId'
+import type { DictEntryDetail, DictEntryPreview, DictSense, TermPreview } from '@/lib/dictionary/types'
 import { byLang, LANG_CODES, type LangCode } from '@/lib/languages'
-import { z } from '@/lib/zod'
-import { EXAMPLE_QUERY, PHRASE_ENTRIES, PHRASE_VERB, TAKE_ENTRY } from './content'
+import { EXAMPLE_QUERY, PHRASES, PHRASE_VERB, TAKE_ENTRY } from './content'
 
 /** What the landing page reads on the server. Every read is cached, so the page stays static. */
 
@@ -104,10 +103,10 @@ export async function loadTake(): Promise<TakeMap | null> {
   return layer && detail && layer.senses.length ? takeMap(layer, detail) : null
 }
 
-/** A word in another language with the same meaning, linked when the dictionary has its page. */
+/** A word in another language with the same meaning, and its page. */
 export interface Equivalent {
   text: string
-  href: string | null
+  href: string
 }
 export interface PhraseItem {
   headword: string
@@ -144,48 +143,56 @@ export function firstTerm(gloss: string): string {
   return t.charAt(0).toLocaleLowerCase('vi') + t.slice(1)
 }
 
-const translations = z.object({ translations: z.object({ es: z.array(z.string()) }).partial() }).partial()
-
-/** One phrasal verb: its lead meaning, and the Chinese and Spanish words the Vietnamese
- *  lookup of that meaning answers first. Spanish keeps to the entry's own translations:
- *  the lookup's first answer among them, linked, or else the first translation. */
+/** One phrasal verb: its lead meaning, and the Chinese and Spanish entries picked for it,
+ *  when the dictionary still holds them. */
 export function phraseItem(
-  detail: Pick<DictEntryDetail, 'id' | 'headword' | 'attributes'>, verb: string, vi: string, answers: Answers | null,
+  detail: Pick<DictEntryDetail, 'id' | 'headword'>, verb: string, vi: string,
+  zh: TermPreview | undefined, es: TermPreview | undefined,
 ): PhraseItem {
-  const link = (e: DictEntryPreview): Equivalent => ({ text: e.headword, href: entryPath(e.id) })
-  const es = translations.safeParse(detail.attributes).data?.translations?.es ?? []
-  const own = new Set(es.map((t) => t.toLowerCase()))
-  const esHit = answers?.es.find((e) => own.has(e.headword.toLowerCase()))
-  const zh = answers?.zh[0]
+  const link = (e: TermPreview | undefined): Equivalent | null => (e ? { text: e.headword, href: entryPath(e.id) } : null)
   return {
     headword: detail.headword,
     particle: detail.headword.slice(verb.length).trim(),
     href: entryPath(detail.id),
     vi,
-    zh: zh ? link(zh) : null,
-    es: esHit ? link(esHit) : es[0] ? { text: es[0], href: null } : null,
+    zh: link(zh),
+    es: link(es),
+  }
+}
+
+/** The headwords of these entries in one language, by id. A failed read answers none. */
+async function previews(lang: LangCode, ids: string[]): Promise<Map<string, TermPreview>> {
+  try {
+    const rows = await getCachedTermPreviews(lang, ids.map((id) => splitEntryId(id).key))
+    return new Map(rows.filter((r) => ids.includes(r.id)).map((r) => [r.id, r]))
+  } catch (e) {
+    console.error('landing phrase equivalents failed', lang, e)
+    return new Map()
   }
 }
 
 /** One verb and its phrasal verbs, each with its Vietnamese meaning and the same meaning in
- *  Chinese and Spanish. Null when fewer than three can be shown. */
+ *  Chinese and Spanish. A phrase whose read fails is left out; null when fewer than three
+ *  remain. The verb keeps the meaning its word page leads with. */
 export async function loadPhrases(): Promise<PhraseFamily | null> {
-  try {
-    const [verb, ...details] = await Promise.all([PHRASE_VERB, ...PHRASE_ENTRIES].map((id) => getCachedEntryDetail(id)))
-    if (!verb) return null
-    const picked = details.flatMap((d) => {
-      const sense = d && leadSense(d.senses)
-      return d && sense?.glossVi ? [{ d, vi: firstTerm(sense.glossVi) }] : []
-    })
-    const answers = await Promise.all(picked.map(({ vi }) =>
-      getCachedSearch(vi, [...LANG_CODES], 'vi').then((r) => r.entries, () => null)))
-    const phrases = picked.map(({ d, vi }, i) => phraseItem(d, verb.headword, vi, answers[i]))
-    const verbSense = leadSense(verb.senses)
-    return phrases.length >= 3
-      ? { verb: verb.headword, verbVi: verbSense?.glossVi ? firstTerm(verbSense.glossVi) : null, href: entryPath(verb.id), phrases }
-      : null
-  } catch (e) {
-    console.error('landing phrases failed', e)
+  const read = (id: string) => getCachedEntryDetail(id).catch((e: unknown) => {
+    console.error('landing phrase failed', id, e)
     return null
-  }
+  })
+  const [verb, zh, es, ...details] = await Promise.all([
+    read(PHRASE_VERB),
+    previews('zh', PHRASES.map((p) => p.zh)),
+    previews('es', PHRASES.map((p) => p.es)),
+    ...PHRASES.map((p) => read(p.id)),
+  ])
+  if (!verb) return null
+  const phrases = details.flatMap((d, i) => {
+    const sense = d && leadSense(d.senses)
+    return d && sense?.glossVi
+      ? [phraseItem(d, verb.headword, firstTerm(sense.glossVi), zh.get(PHRASES[i].zh), es.get(PHRASES[i].es))]
+      : []
+  })
+  return phrases.length >= 3
+    ? { verb: verb.headword, verbVi: verb.glossVi, href: entryPath(verb.id), phrases }
+    : null
 }

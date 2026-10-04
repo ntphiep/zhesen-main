@@ -1,13 +1,17 @@
-import { describe, it, expect } from 'vitest'
-import type { DictEntryPreview, DictSense } from '@/lib/dictionary/types'
-import { firstTerm, leadSense, phraseItem, type Answers } from '@/lib/home/landing'
+import { describe, it, expect, vi } from 'vitest'
+import type { DictEntryDetail, DictSense, TermPreview } from '@/lib/dictionary/types'
+
+vi.mock('@/lib/dictionary/cached', () => ({ getCachedEntryDetail: vi.fn(), getCachedTermPreviews: vi.fn() }))
+vi.mock('@/lib/dictionary/learnerCached', () => ({ getCachedLearnerLayer: vi.fn() }))
+
+import { getCachedEntryDetail, getCachedTermPreviews } from '@/lib/dictionary/cached'
+import { firstTerm, leadSense, loadPhrases, phraseItem } from '@/lib/home/landing'
 
 const sense = (order: number, more: Partial<DictSense>): DictSense => ({
   pos: 'verb', glossVi: null, glossEn: null, senseOrder: order, ...more,
 })
-const hit = (id: string, headword: string): DictEntryPreview => ({
-  id, lang: id.startsWith('zh') ? 'zh' : 'es', headword, traditional: null, level: null, ipa: null, pos: null,
-  glossVi: null, glossEn: null, audioUrl: null,
+const hit = (id: string, headword: string): TermPreview => ({
+  matchText: headword, id, headword, pos: null, ipa: null, reading: null, gender: null, glossVi: null, glossEn: null,
 })
 
 describe('the sense a learner meets first', () => {
@@ -40,24 +44,36 @@ describe('the sense a learner meets first', () => {
 })
 
 describe('a phrasal verb across languages', () => {
-  const detail = { id: 'en:turn off', headword: 'turn off', attributes: { translations: { es: ['apagar', 'cerrar'] } } }
-  const answers: Answers = { en: [], zh: [hit('zh:关', '关')], es: [hit('es:apagado', 'apagado'), hit('es:cerrar', 'cerrar'), hit('es:apagar', 'apagar')] }
+  const detail = { id: 'en:turn off', headword: 'turn off' }
 
-  it('links the first Chinese answer and the first Spanish answer that is also a translation', () => {
-    expect(phraseItem(detail, 'turn', 'tắt', answers)).toEqual({
+  it('links the Chinese and Spanish entries picked for it', () => {
+    expect(phraseItem(detail, 'turn', 'tắt', hit('zh:关', '关'), hit('es:apagar', 'apagar'))).toEqual({
       headword: 'turn off', particle: 'off', href: '/dictionary/en/turn%20off', vi: 'tắt',
       zh: { text: '关', href: '/dictionary/zh/%E5%85%B3' },
-      es: { text: 'cerrar', href: '/dictionary/es/cerrar' },
+      es: { text: 'apagar', href: '/dictionary/es/apagar' },
     })
   })
 
-  it('keeps the first Spanish translation unlinked when the lookup returned none of them', () => {
-    const item = phraseItem(detail, 'turn', 'tắt', { en: [], zh: [], es: [hit('es:ir', 'ir')] })
-    expect(item.es).toEqual({ text: 'apagar', href: null })
+  it('leaves out an equivalent the dictionary no longer holds', () => {
+    const item = phraseItem(detail, 'turn', 'tắt', undefined, hit('es:apagar', 'apagar'))
     expect(item.zh).toBeNull()
+    expect(item.es?.text).toBe('apagar')
   })
+})
 
-  it('has no Spanish when the entry carries no translations', () => {
-    expect(phraseItem({ ...detail, attributes: {} }, 'turn', 'tắt', null).es).toBeNull()
+describe('the phrases section', () => {
+  it('leaves out a phrase whose read fails and keeps the rest', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.mocked(getCachedEntryDetail).mockImplementation(async (id: string) => {
+      if (id === 'en:turn up') throw new Error('timeout')
+      const headword = id.slice(3)
+      return { id, headword, glossVi: 'xoay, quay, rẽ', senses: [sense(1, { glossVi: `nghĩa ${headword}` })] } as unknown as DictEntryDetail
+    })
+    vi.mocked(getCachedTermPreviews).mockImplementation(async (lang, texts) =>
+      texts.map((t) => hit(`${lang}:${t}`, t)))
+    const family = await loadPhrases()
+    expect(family?.verbVi).toBe('xoay, quay, rẽ')
+    expect(family?.phrases.map((p) => p.particle)).toEqual(['on', 'off', 'down', 'out', 'into'])
+    expect(family?.phrases[1].es).toEqual({ text: 'apagar', href: '/dictionary/es/apagar' })
   })
 })

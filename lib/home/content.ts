@@ -12,10 +12,19 @@ export const TRY_WORDS = ['con mèo', 'trường học', 'âm nhạc', 'cảm ơ
 
 export const TAKE_ENTRY = 'en:take'
 
-/** The verb the phrases section splits, and its phrasal verbs by entry id. Their meanings
- *  and equivalents are read from the dictionary (lib/home/landing.ts). */
+/** The verb the phrases section splits, its phrasal verbs, and for each the Chinese and
+ *  Spanish entry with the same meaning, picked by hand: a reverse lookup of the Vietnamese
+ *  answered 竟然 (an adverb) for turn out. Meanings and headwords are read from the
+ *  dictionary (lib/home/landing.ts); an id it no longer holds drops that cell. */
 export const PHRASE_VERB = 'en:turn'
-export const PHRASE_ENTRIES = ['en:turn on', 'en:turn off', 'en:turn up', 'en:turn down', 'en:turn out', 'en:turn into']
+export const PHRASES: { id: string; zh: string; es: string }[] = [
+  { id: 'en:turn on', zh: 'zh:打开', es: 'es:encender' },
+  { id: 'en:turn off', zh: 'zh:关', es: 'es:apagar' },
+  { id: 'en:turn up', zh: 'zh:出现', es: 'es:aparecer' },
+  { id: 'en:turn down', zh: 'zh:拒绝', es: 'es:rechazar' },
+  { id: 'en:turn out', zh: 'zh:原来', es: 'es:resultar' },
+  { id: 'en:turn into', zh: 'zh:变成', es: 'es:convertirse' },
+]
 
 /** Wrong answers for the multiple-choice mode, and pairs that fill the matching mode when
  *  fewer than four words have been looked up. */

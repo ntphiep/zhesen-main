@@ -7,7 +7,7 @@ function Eq({ e, lang, label }: { e: Equivalent | null; lang: 'zh' | 'es'; label
   return (
     <span className={s.eq} data-l={lang} data-label={label}>
       <span className="sr-only">{label}: </span>
-      {e.href ? <Link href={e.href} prefetch={false} lang={lang}>{e.text}</Link> : <span lang={lang}>{e.text}</span>}
+      <Link href={e.href} prefetch={false} lang={lang}>{e.text}</Link>
     </span>
   )
 }
