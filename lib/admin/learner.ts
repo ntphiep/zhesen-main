@@ -125,7 +125,9 @@ export async function listLearnerLayers(supabase: SupabaseClient, page = 1): Pro
     .in('entry_id', ids)
   if (counts.error) throw counts.error
   const byId = new Map(z.array(countsRow).parse(counts.data ?? []).map((c) => [c.entry_id, c]))
-  return { layers: parseLayerList(rows.map((r) => ({ ...r, ...byId.get(String(r.entry_id)) }))), total: count ?? ids.length }
+  // lex.learner_revert can delete a layer between the two reads; it lists with no counts.
+  const none = { learner_senses: [], learner_links: [], sense_labels: [] }
+  return { layers: parseLayerList(rows.map((r) => ({ ...r, ...none, ...byId.get(String(r.entry_id)) }))), total: count ?? ids.length }
 }
 
 const auditRow = z.object({

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { CASA_AUDIT_ROW, CASA_SENSE_ROWS, LAYER_LIST_ROWS } from './helpers/learner'
 
 const { revalidateTag, adminUser, rpc, refresh } = vi.hoisted(() => ({
@@ -16,7 +17,7 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ schema: (
 
 import { POST } from '@/app/api/admin/learner/route'
 import { LearnerStatusButton } from '@/components/admin/LearnerStatusButton'
-import { auditHref, parseAudit, parseLayerList } from '@/lib/admin/learner'
+import { auditHref, listLearnerLayers, parseAudit, parseLayerList } from '@/lib/admin/learner'
 
 const post = (body: unknown) => POST(new Request('http://localhost/api/admin/learner', {
   method: 'POST',
@@ -34,6 +35,25 @@ describe('parseLayerList', () => {
 
   it('links a layer to its audit page', () => {
     expect(auditHref('zh:学习')).toBe('/admin/learner/zh/%E5%AD%A6%E4%B9%A0')
+  })
+})
+
+describe('listLearnerLayers', () => {
+  // The page reads its rows, then their counts; lex.learner_revert can delete a layer between.
+  it('lists a layer whose counts vanished between the two reads with no counts', async () => {
+    const [casa, xuexi] = LAYER_LIST_ROWS
+    const COUNTS = ['learner_senses', 'learner_links', 'sense_labels']
+    const strip = (row: object) => Object.fromEntries(Object.entries(row).filter(([k]) => !COUNTS.includes(k)))
+    const range = vi.fn(async () => ({ data: [strip(casa), strip(xuexi)], error: null, count: 2 }))
+    const counts = vi.fn(async () => ({ data: [{ entry_id: casa.entry_id, learner_senses: casa.learner_senses, learner_links: casa.learner_links, sense_labels: casa.sense_labels }], error: null }))
+    const from = () => ({ select: () => ({ order: () => ({ range }), in: counts }) })
+    const client = { schema: () => ({ from }) } as unknown as SupabaseClient
+    const { layers, total } = await listLearnerLayers(client)
+    expect(total).toBe(2)
+    expect(layers).toEqual([
+      expect.objectContaining({ entryId: 'es:casa', senses: 1, links: 15, labels: 4 }),
+      expect.objectContaining({ entryId: 'zh:学习', senses: 0, links: 0, labels: 0 }),
+    ])
   })
 })
 
