@@ -23,6 +23,7 @@ export const senseRow = z.object({
   // Selected only by DETAIL_SELECT.
   id: z.string().optional(),
   gloss_vi_is_mt: z.boolean().optional(),
+  gloss_vi_source: z.string().nullable().optional(),
 })
 export type SenseRow = z.infer<typeof senseRow>
 
@@ -225,6 +226,7 @@ export function toSenses(rows: SenseRow[] | null): DictSense[] {
     ...(r.id === undefined ? {} : { id: r.id }),
     ...(r.sense_frequency === undefined ? {} : { senseFrequency: parseSenseFrequency(r.sense_frequency) }),
     ...(r.gloss_vi_is_mt === undefined ? {} : { glossViIsMt: r.gloss_vi_is_mt }),
+    ...(r.gloss_vi_source === undefined ? {} : { glossViSource: r.gloss_vi_source }),
   }))
 }
 export function toProns(rows: PronRow[] | null): DictPron[] {

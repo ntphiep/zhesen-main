@@ -48,8 +48,8 @@ export const getCachedSearch = unstable_cache(
  *  fetches only, so the POST `relation_senses` RPC went out twice per cold page. */
 export const getCachedEntryDetail = cache(unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),
-  // v5: carries glossViIsMt and example sourceId, which a v4 value lacks.
-  ['dict-entry-detail-v5'],
+  // v6: carries glossViSource, which a v5 value lacks.
+  ['dict-entry-detail-v6'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 ))
 

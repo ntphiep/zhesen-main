@@ -14,6 +14,8 @@ export interface DictSense {
   senseFrequency?: number | null
   /** `lex.senses.gloss_vi_is_mt`: `glossVi` is a machine translation. Read on the entry page only. */
   glossViIsMt?: boolean
+  /** `lex.senses.provenance->>'gloss_vi_source'`, as `mt:google`. Read on the entry page only. */
+  glossViSource?: string | null
 }
 export interface DictPron {
   accent: string

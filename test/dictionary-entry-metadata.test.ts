@@ -68,3 +68,23 @@ describe('entryMetadata without Vietnamese', () => {
     expect(m.openGraph).toMatchObject({ siteName: 'Zhesen', locale: 'vi_VN', type: 'website' })
   })
 })
+
+describe('entryMetadata for a machine translation', () => {
+  const mt = sense('Người thầy về đạo đức', { glossViSource: 'mt:google' })
+  const rare = { id: 'en:moralist', headword: 'moralist', level: null, frequencyRank: 77003 }
+
+  it('is noindex when every meaning is Google\'s translation of a rare word', () => {
+    expect(entryMetadata(entry({ ...rare, glossVi: mt.glossVi, senses: [mt, sense(null)] })).robots)
+      .toEqual({ index: false, follow: true })
+    expect(entryMetadata(entry({ ...rare, frequencyRank: null, senses: [mt] })).robots)
+      .toEqual({ index: false, follow: true })
+  })
+  it('stays indexed for a levelled or frequent word, or beside another meaning', () => {
+    expect(entryMetadata(entry({ ...rare, level: 'B2', senses: [mt] })).robots).toBeUndefined()
+    expect(entryMetadata(entry({ ...rare, frequencyRank: 50000, senses: [mt] })).robots).toBeUndefined()
+    expect(entryMetadata(entry({ ...rare, senses: [mt, sense('nhà đạo đức', { glossViSource: null })] })).robots)
+      .toBeUndefined()
+    expect(entryMetadata(entry({ ...rare, senses: [mt, sense(null, { pivotVi: 'nhà đạo đức' })] })).robots)
+      .toBeUndefined()
+  })
+})
