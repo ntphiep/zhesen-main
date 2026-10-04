@@ -13,7 +13,7 @@ import {
 import { parseClassifiers } from '@/lib/dictionary/textQuality'
 import { senseSections, type SenseSection } from '@/lib/dictionary/wordPage'
 import {
-  balanceColumns, cleanExamples, groupSenses, headwordForms, mainSenses, splitPhrasalVerbs, type WordView,
+  balanceColumns, cleanExamples, groupSenses, headwordForms, mainSenses, splitPhrasalVerbs, translatedFirst, type WordView,
 } from '@/lib/dictionary/wordView'
 
 /** A tile, its estimated height in text rows, and whether it needs the wider column. */
@@ -37,7 +37,8 @@ export function OverviewLayout({ view }: { view: WordView }) {
   const classifiers = [...new Set(view.senses.flatMap((s) => parseClassifiers(s.glossEn)))]
   // With every sense already in the top card, the explorer below would repeat it.
   const explorer = total > mainCount
-  const examples = cleanExamples([...Object.values(view.examplesBySense), ...view.examples], view.resolved, head.lang)
+  // The sense-linked sentences lead, but an untranslated one never goes ahead of a translated one.
+  const examples = translatedFirst(cleanExamples([...Object.values(view.examplesBySense), ...view.examples], view.resolved, head.lang), view.glosses)
   const siblings = view.siblings.length > 0
   const heroSpan = main.length === 0 ? (siblings ? 9 : 12) : 5
   const mainSpan = siblings ? 4 : 7

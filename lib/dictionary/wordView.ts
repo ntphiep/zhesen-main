@@ -16,7 +16,7 @@ import type {
 import type { GrammarPoint } from '@/lib/grammar/types'
 import type { LearnerBacklink, LearnerLayer } from './learner'
 
-export { mainSenses, senseLabel } from './wordPage'
+export { mainSenses, senseLabel, translatedFirst } from './wordPage'
 
 /** Everything the three word-page layouts draw, as plain data, built once on the server. */
 

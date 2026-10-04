@@ -135,8 +135,13 @@ export function planExamples(sections: SenseSection[], examples: DictExample[], 
     const pick = linked.find(translated) ?? linked[0]
     if (pick) { bySense[s.id] = pick; used.add(pick) }
   }
-  const rest = clean.filter((e) => !used.has(e))
-  return { bySense, others: [...rest.filter(translated), ...rest.filter((e) => !translated(e))] }
+  return { bySense, others: translatedFirst(clean.filter((e) => !used.has(e)), glosses) }
+}
+
+/** Sentences with a real translation first, each group in its own order. */
+export function translatedFirst(examples: DictExample[], glosses: (string | null)[]): DictExample[] {
+  const translated = (e: DictExample) => isSentenceTranslation(e.translationVi, glosses)
+  return [...examples.filter(translated), ...examples.filter((e) => !translated(e))]
 }
 
 /** A derived single word that shares nothing with the stem is a data error: take lists
