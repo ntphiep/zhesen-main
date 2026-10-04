@@ -11,7 +11,7 @@ import type { HomeView } from '@/lib/hooks/useHomeData'
 import { useNarrowViewport } from '@/lib/hooks/useNarrowViewport'
 import type { LangCode } from '@/lib/languages'
 import type { SrsState } from '@/lib/progress/types'
-import { FREEZE_EVERY, localDay, MAX_FREEZES, streakState } from '@/lib/wordlist/activity'
+import { localDay, MAX_FREEZES, streakState } from '@/lib/wordlist/activity'
 import { dayIndex, longDate, mondayIndex } from '@/lib/wordlist/forecast'
 import { GOAL_CHOICES, goalProgress } from '@/lib/wordlist/goal'
 import { CountUp, DueTitle, HomeBar, Hw, LookupAnswers, LookupBox, ModeGrid, NAME, ORDER, Pron, useHomeLookup, type PickerState } from './HomeParts'
@@ -191,7 +191,6 @@ function StreakFact({ view }: { view: HomeView | null }) {
             <span>{s.freezes}/{MAX_FREEZES} lượt giữ chuỗi</span>
           </p>
           {s.savedYesterday && <p className={h.frzNote} data-saved="">Hôm qua đã dùng một lượt giữ chuỗi.</p>}
-          <p className={h.frzNote}>Học {FREEZE_EVERY} ngày liền thì thêm một lượt, giữ tối đa {MAX_FREEZES} lượt. Nghỉ một ngày thì tự dùng một lượt.</p>
         </>
       )}
     </div>
