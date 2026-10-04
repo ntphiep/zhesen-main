@@ -103,11 +103,30 @@ function scoreIpa(ipa: string, headword: string): number {
   return s
 }
 
-function bestIpa(prons: DictPron[], headword: string): string | null {
+/** [ɫɐɪt] is phonetic, /laɪt/ phonemic; a bare English row is phonemic. A learner reads
+ *  the phonemic one, so it wins wherever both exist. */
+const isPhonetic = (ipa: string) => ipa.trim().startsWith('[')
+
+/** The sounds of a transcription without delimiters, stress, syllable dots or diacritics. */
+const sounds = (ipa: string) => ipa.normalize('NFD').replace(/[̀-ͯ/[\]ˈˌ.\s]/g, '')
+
+function distance(a: string, b: string): number {
+  let row = Array.from({ length: b.length + 1 }, (_, j) => j)
+  for (let i = 1; i <= a.length; i++) {
+    const next = [i]
+    for (let j = 1; j <= b.length; j++) next[j] = Math.min(row[j] + 1, next[j - 1] + 1, row[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+    row = next
+  }
+  return row[b.length]
+}
+
+/** The best transcription in `prons`: phonemic first, then the one nearest `near` (the other
+ *  accent's, when choosing among unlabeled rows that mix dialects), then by scoreIpa. */
+function bestIpa(prons: DictPron[], headword: string, near: string | null = null): string | null {
   const ranked = prons
     .filter((p): p is DictPron & { ipa: string } => Boolean(p.ipa) && scoreIpa(p.ipa!, headword) >= 0)
-    .map((p, i) => ({ ipa: p.ipa, score: scoreIpa(p.ipa, headword), i }))
-    .sort((a, b) => b.score - a.score || a.i - b.i)
+    .map((p, i) => ({ ipa: p.ipa, score: scoreIpa(p.ipa, headword), i, d: near ? distance(sounds(p.ipa), sounds(near)) : 0 }))
+    .sort((a, b) => Number(isPhonetic(a.ipa)) - Number(isPhonetic(b.ipa)) || a.d - b.d || b.score - a.score || a.i - b.i)
   return ranked[0]?.ipa ?? null
 }
 
@@ -128,9 +147,19 @@ function pickBucket(prons: DictPron[], accent: Accent, label: string, headword: 
   const audioMatch = candidates.find(
     (p) => recordingAccent(p) === accent && audioMatchesHeadword(p.audioUrl, headword),
   )
-  const ipa =
-    audioMatch?.ipa && scoreIpa(audioMatch.ipa, headword) >= 0 ? audioMatch.ipa : bestIpa(candidates, headword)
+  const ipa = audioMatch?.ipa && scoreIpa(audioMatch.ipa, headword) >= 0 && !isPhonetic(audioMatch.ipa)
+    ? audioMatch.ipa
+    : bestIpa(candidates, headword)
   return { label, ipa, audioUrl: audioMatch?.audioUrl ?? null, ttsLang }
+}
+
+/** A UK or US row with no phonemic transcription of its own takes one from the rows that
+ *  name no accent: take's UK row is only a recording, bumble's US row too. */
+function fillIpa(row: AccentRow, prons: DictPron[], headword: string, other: AccentRow | null): AccentRow {
+  if (row.ipa && !isPhonetic(row.ipa)) return row
+  const unlabeled = prons.filter((p) => !/^[a-z]{2,3}-[a-z]{2}$/i.test(p.accent.trim()))
+  const alt = bestIpa(unlabeled, headword, other?.ipa ?? null)
+  return alt && (!row.ipa || !isPhonetic(alt)) ? { ...row, ipa: alt } : row
 }
 
 function firstMatchingAudio(prons: DictPron[], headword: string): string | null {
@@ -141,9 +170,11 @@ function firstMatchingAudio(prons: DictPron[], headword: string): string | null 
  *  languages one unlabeled row. Always at least one row, so the TTS button is shown. */
 export function pickAccentRows(prons: DictPron[], lang: LangCode, headword: string): AccentRow[] {
   if (lang === 'en') {
+    const uk = pickBucket(prons, 'uk', 'UK', headword, 'en-GB')
+    const us = pickBucket(prons, 'us', 'US', headword, 'en-US')
     const rows = [
-      pickBucket(prons, 'uk', 'UK', headword, 'en-GB'),
-      pickBucket(prons, 'us', 'US', headword, 'en-US'),
+      uk && fillIpa(uk, prons, headword, us),
+      us && fillIpa(us, prons, headword, uk),
     ].filter((r): r is AccentRow => r !== null)
     // No UK or US recording of the word: offer one of another or an unnamed accent,
     // labelled with that accent rather than passed off as UK or US.

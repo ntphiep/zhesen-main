@@ -260,3 +260,31 @@ describe('commonsFilePage', () => {
     expect(commonsFilePage('https://example.com/cat.ogg')).toBeNull()
   })
 })
+
+describe('pickAccentRows never leaves a pill without its IPA', () => {
+  // take's UK row is only a recording of "to take"; its unlabeled rows carry dialect spellings.
+  const take = [
+    p('en-US', '/teɪk/'), p('en', '[ˈtʰeɪ̯k]'), p('en', '/ˈtæk/'), p('en', '/ˈtɛk/'),
+    p('en-UK', null, `${COMMONS}En-uk-to_take.ogg`), p('en', '/ˈteɪ̯k/'),
+  ]
+
+  it('fills an accent with no IPA from the unlabeled rows, nearest the other accent', () => {
+    expect(pickAccentRows(take, 'en', 'take').find((r) => r.label === 'UK')!.ipa).toBe('/ˈteɪ̯k/')
+  })
+
+  it('takes an unlabeled IPA when no accent has one', () => {
+    const bumble = [p('en', '/ˈbʌmbəl/'), p('en-US', null, `${COMMONS}En-us-bumble.ogg`)]
+    expect(pickAccentRows(bumble, 'en', 'bumble').find((r) => r.label === 'US')!.ipa).toBe('/ˈbʌmbəl/')
+  })
+
+  // light's US recording carries the phonetic [ɫɐɪt].
+  it('prefers a phonemic transcription to a phonetic one', () => {
+    const light = [
+      p('en-US', '/laɪt/'), p('en-US', '[ɫɐɪt]', `${COMMONS}En-us-light.ogg`),
+      p('en-UK', '[laɪt]', `${COMMONS}En-uk-light.ogg`), p('en', '/laɪt/'),
+    ]
+    const rows = pickAccentRows(light, 'en', 'light')
+    expect(rows.find((r) => r.label === 'US')).toMatchObject({ ipa: '/laɪt/', audioUrl: `${COMMONS}En-us-light.ogg` })
+    expect(rows.find((r) => r.label === 'UK')!.ipa).toBe('/laɪt/')
+  })
+})
