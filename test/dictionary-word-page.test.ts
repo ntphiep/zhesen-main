@@ -148,6 +148,26 @@ describe('relatedTabs', () => {
     ])
   })
 
+  it('lists a phrasal verb with its lead meaning even when a collocation names it', () => {
+    const tabs = relatedTabs({
+      ...base,
+      headword: 'give',
+      previews: { 'give up': {
+        matchText: 'give up', id: 'en:give up', headword: 'give up', pos: null,
+        ipa: null, reading: null, gender: null, glossVi: 'đầu hàng', glossEn: null,
+      } },
+      relations: [
+        { relationType: 'collocation', relatedText: 'give up', relatedEntryId: null },
+        { relationType: 'collocation', relatedText: 'give advice', relatedEntryId: null },
+      ],
+      phrasalVerbs: [{ id: 'en:give up', headword: 'give up', glossVi: 'từ bỏ, bỏ cuộc', glossEn: null, pos: 'verb' }],
+    })
+    expect(tabs.map((t) => [t.label, t.items.map((i) => [i.text, i.gloss])])).toEqual([
+      ['Kết hợp từ', [['give advice', null]]],
+      ['Cụm từ', [['give up', 'từ bỏ, bỏ cuộc']]],
+    ])
+  })
+
   it('lists an item once, in the first tab it fits, and never an inflected form', () => {
     const tabs = relatedTabs({
       ...base,

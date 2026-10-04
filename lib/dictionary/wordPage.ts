@@ -273,8 +273,10 @@ export function relatedTabs({ lang, headword, lemma, relations, containing, kin,
     id: w.id, pos: w.pos ?? previews[w.headword.toLowerCase()]?.pos ?? null, level: w.level ?? null,
   })
   const kinItems = kin.map(fromEntry)
+  // give lists give up as a collocation too, and that preview's gloss is sense 1, "đầu hàng".
+  const phrasal = new Set(phrasalVerbs.map((w) => w.headword.toLowerCase()))
   const candidates: RelatedTab[] = [
-    { key: 'collocations', label: 'Kết hợp từ', items: fromText(c.collocations) },
+    { key: 'collocations', label: 'Kết hợp từ', items: fromText(c.collocations.filter((t) => !phrasal.has(t.toLowerCase()))) },
     { key: 'compounds', label: 'Cụm từ', items: [...phrasalVerbs.map(fromEntry), ...containing.map(fromEntry), ...kinItems.filter((i) => isPhrase(i.text)), ...fromText(c.compounds)] },
     { key: 'derived', label: 'Phái sinh', items: [...kinItems.filter((i) => !isPhrase(i.text)), ...fromText(c.derived.filter((t) => isPlausibleDerived(t, lemma ?? headword)))] },
     { key: 'synonyms', label: 'Cận nghĩa', items: fromText(c.synonyms) },
