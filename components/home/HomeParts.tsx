@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import Link from 'next/link'
 import { AddToWordlistButton } from '@/components/lookup/AddToWordlistButton'
 import { practiceModes } from '@/components/practice/PracticeModes'
@@ -11,11 +11,13 @@ import { recentEntries } from '@/lib/dictionary/recent'
 import { fetchSearch, REFUSED_MESSAGE } from '@/lib/dictionary/searchClient'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import { HOME_LAYOUTS, homeLayout, type HomeLayout } from '@/lib/home/homeLayout'
+import { useDailyGoal } from '@/lib/hooks/useDailyGoal'
+import type { HomeView } from '@/lib/hooks/useHomeData'
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion'
-import { byLang, getLanguage, type LangCode } from '@/lib/languages'
-import { BLOCKS_BY_LANG } from '@/lib/theory/blocks'
-import { theoryBlockPath, theoryLangPath } from '@/lib/theory/path'
+import { byLang, type LangCode } from '@/lib/languages'
+import { MAX_FREEZES, streakState } from '@/lib/wordlist/activity'
 import { longDate } from '@/lib/wordlist/forecast'
+import { GOAL_CHOICES, goalProgress } from '@/lib/wordlist/goal'
 import l from './Landing.module.css'
 import h from './Home.module.css'
 
@@ -232,43 +234,80 @@ export function RecentChips({ max }: { max: number }) {
   )
 }
 
-/** The practice modes; `from` drops the leading ones a layout already offers. */
-export function ModeGrid({ due, from = 0, label }: { due: number | null; from?: number; label: string }) {
+/** The practice modes other than review, as one quiet line under the main action. */
+export function ModeLinks() {
   const id = useId()
-  const modes = practiceModes(due).slice(from)
   return (
-    <section className={`${h.wrap} ${h.sec}`} aria-labelledby={id}>
-      <p className={h.lbl} id={id}>{label}</p>
-      <div className={h.modes} data-n={modes.length}>
-        {modes.map((m) => (
-          <Link key={m.href} className={h.mode} data-main={m.primary || undefined} href={m.href} prefetch={false}>
-            <b>{m.label}</b><span>{m.sub}</span>
-          </Link>
-        ))}
-      </div>
-    </section>
+    <nav className={h.others} aria-labelledby={id}>
+      <span id={id}>Luyện cách khác</span>
+      {practiceModes(null).slice(1).map((m) => (
+        <Link key={m.href} href={m.href} prefetch={false}>{m.label}</Link>
+      ))}
+    </nav>
   )
 }
 
-/** Each language's theory, by its own name; `extra` goes between the name and the blocks. */
-export function TheoryGrid({ label, extra }: { label: string; extra?: (lang: LangCode) => ReactNode }) {
-  const id = useId()
+/** The streak with the freezes it holds, and today's reviews against the daily goal: the
+ *  one place each layout shows them. */
+export function DayStats({ view }: { view: HomeView | null }) {
   return (
-    <section className={`${h.wrap} ${h.sec}`} aria-labelledby={id}>
-      <p className={h.lbl} id={id}>{label}</p>
-      <div className={h.theory3}>
-        {ORDER.map((lang) => (
-          <div key={lang} data-l={lang}>
-            <Link className={h.endo} lang={lang} href={theoryLangPath(lang)} prefetch={false}>{getLanguage(lang)?.nativeName}</Link>
-            {extra?.(lang)}
-            <nav aria-label={`Lý thuyết ${NAME_MID[lang]}`}>
-              {BLOCKS_BY_LANG[lang].map((b) => (
-                <Link key={b.key} href={theoryBlockPath(lang, b.key)} prefetch={false}>{b.titleVi}</Link>
-              ))}
-            </nav>
-          </div>
-        ))}
+    <div className={h.facts}>
+      <StreakFact view={view} />
+      <GoalFact done={view?.reviewedToday ?? null} />
+    </div>
+  )
+}
+
+function StreakFact({ view }: { view: HomeView | null }) {
+  const s = useMemo(() => (view ? streakState([...view.days], view.now) : null), [view])
+  return (
+    <div className={h.fact}>
+      <b><CountUp value={view?.streak ?? null} /></b>
+      <span>ngày học liền</span>
+      {s && (
+        <>
+          <p className={h.frz}>
+            {Array.from({ length: MAX_FREEZES }, (_, i) => (
+              <svg key={i} aria-hidden="true" viewBox="0 0 16 16" data-on={i < s.freezes || undefined}>
+                <path d="M8 1.5 2.5 3.6v4c0 3.3 2.3 5.8 5.5 6.9 3.2-1.1 5.5-3.6 5.5-6.9v-4z" />
+              </svg>
+            ))}
+            <span>{s.freezes}/{MAX_FREEZES} lượt giữ chuỗi</span>
+          </p>
+          {s.savedYesterday && <p className={h.frzNote}>Hôm qua đã dùng một lượt giữ chuỗi.</p>}
+        </>
+      )}
+    </div>
+  )
+}
+
+/** Today's words reviewed against the goal the reader picked, remembered per browser. */
+function GoalFact({ done }: { done: number | null }) {
+  const [goal, setGoal] = useDailyGoal()
+  const id = useId()
+  const p = done === null ? null : goalProgress(done, goal)
+  return (
+    <div className={h.fact} data-met={p?.met || undefined}>
+      <b><CountUp value={done} ms={300} /><small>/{goal}</small></b>
+      <span>{p?.met ? 'Đủ mục tiêu hôm nay' : 'từ đã ôn hôm nay'}</span>
+      <div
+        className={h.goal}
+        role="progressbar"
+        aria-labelledby={id}
+        aria-valuemin={0}
+        aria-valuemax={goal}
+        aria-valuenow={p ? Math.min(p.done, goal) : undefined}
+      >
+        <i style={{ transform: `scaleX(${p?.share ?? 0})` }} />
       </div>
-    </section>
+      <div className={h.goalRow}>
+        <span id={id}>Mục tiêu mỗi ngày</span>
+        <div className={h.goalPick} role="group" aria-labelledby={id}>
+          {GOAL_CHOICES.map((g) => (
+            <button key={g} type="button" aria-pressed={g === goal} onClick={() => setGoal(g)}>{g}</button>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }

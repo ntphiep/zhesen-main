@@ -3,8 +3,8 @@ import { useId, useState } from 'react'
 import Link from 'next/link'
 import { entryPath } from '@/lib/dictionary/entryId'
 import type { HomeView } from '@/lib/hooks/useHomeData'
-import { dayIndex, dueNote, shortDate, weekday, whenLabel, type ForecastDay } from '@/lib/wordlist/forecast'
-import { DueTitle, HomeBar, Hw, LookupAnswers, LookupBox, ModeGrid, NAME, Pron, RecentChips, TheoryGrid, useHomeLookup, type PickerState } from './HomeParts'
+import { dayIndex, dueNote, shortDate, weekday, type ForecastDay } from '@/lib/wordlist/forecast'
+import { DayStats, DueTitle, HomeBar, Hw, LookupAnswers, LookupBox, ModeLinks, NAME, Pron, RecentChips, useHomeLookup, type PickerState } from './HomeParts'
 import h from './Home.module.css'
 
 /** Cards on the desk before the rest are summed up in one. */
@@ -12,15 +12,12 @@ const CARDS = 12
 /** Headwords a forecast day names before "và N từ nữa". */
 const DAY_WORDS = 7
 
-/** "Bàn học", the default: how many words the next session hands over, the lookup beside
- *  it, the session's cards, the reviews falling due this week and the newest saved words. */
+/** "Bàn học", the default: how many words the next session hands over and the button that
+ *  starts it, the lookup beside it, the session's cards, then the streak, the goal and the
+ *  reviews falling due in the days after today. */
 export function DeskLayout({ view, failed, onRetry, picker }: { view: HomeView | null; failed: boolean; onRetry: () => void; picker: PickerState }) {
   const lookup = useHomeLookup()
   const trayId = useId()
-  const savedId = useId()
-  const again = view ? view.pending.filter((c) => c.state.reps > 0).length : 0
-  const fresh = view ? view.pending.length - again : 0
-  const split = [again && `${again} từ ôn lại`, fresh && `${fresh} từ mới lưu`].filter(Boolean).join(', ')
 
   return (
     <div>
@@ -30,8 +27,8 @@ export function DeskLayout({ view, failed, onRetry, picker }: { view: HomeView |
           <DueTitle due={view?.due ?? null} failed={failed} onRetry={onRetry} />
           <div className={h.sub}>
             <Link className={h.btn} href="/practice/review" prefetch={false}>Ôn ngay</Link>
-            {split && <span>{split}</span>}
           </div>
+          <ModeLinks />
         </div>
         <div>
           <LookupBox lookup={lookup} placeholder="thời tiết" />
@@ -43,10 +40,7 @@ export function DeskLayout({ view, failed, onRetry, picker }: { view: HomeView |
 
       <div className={`${h.wrap} ${h.desk}`}>
         <section className={h.tray} aria-labelledby={trayId}>
-          <div className={h.lblRow}>
-            <p className={h.lbl} id={trayId}>Các từ sẽ ra trong phiên ôn</p>
-            <Link href="/wordlist" prefetch={false}>Mở sổ tay</Link>
-          </div>
+          <p className={h.lbl} id={trayId}>Phiên ôn hôm nay</p>
           {view && (view.pending.length ? (
             <ol className={h.cards} data-deal="">
               {view.pending.slice(0, CARDS).map((c, i) => {
@@ -60,10 +54,10 @@ export function DeskLayout({ view, failed, onRetry, picker }: { view: HomeView |
                       prefetch={false}
                       style={{ animationDelay: `${i * 40}ms` }}
                     >
-                      <span className={h.meta}><span>{NAME[c.lang]}</span></span>
+                      <span className={h.sr}>{NAME[c.lang]}: </span>
                       <Hw lang={c.lang} text={c.headword} />
                       <Pron w={c} className={h.pr} />
-                      <span className={h.note} data-late={late || undefined}>{dueNote(c.state.reps, c.state.dueAt, view.now)}</span>
+                      {c.state.reps > 0 && <span className={h.note} data-late={late || undefined}>{dueNote(c.state.reps, c.state.dueAt, view.now)}</span>}
                     </Link>
                   </li>
                 )
@@ -82,56 +76,38 @@ export function DeskLayout({ view, failed, onRetry, picker }: { view: HomeView |
         </section>
 
         <div className={h.side}>
-          <Week forecast={view?.forecast ?? null} />
-          {view && view.recent.length > 0 && (
-            <section aria-labelledby={savedId}>
-              <p className={h.lbl} id={savedId}>Mới lưu</p>
-              <ul className={h.saved} data-rise="">
-                {view.recent.slice(0, 5).map((w, i) => (
-                  <li key={w.id} style={{ animationDelay: `${i * 50}ms` }}>
-                    <Link href={w.entryId ? entryPath(w.entryId) : '/wordlist'} prefetch={false}>
-                      <Hw lang={w.lang} text={w.headword} />
-                      {w.meaningVi && <span className={h.m}>{w.meaningVi}</span>}
-                    </Link>
-                    <span className={h.nx}>ôn {whenLabel(Math.max(Date.parse(w.fsrsDueAt), view.now), view.now)}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+          <DayStats view={view} />
+          <Week forecast={view?.forecast.slice(1) ?? null} />
         </div>
       </div>
-
-      <ModeGrid due={view?.due ?? null} label="Luyện tập" />
-      <TheoryGrid label="Lý thuyết" />
     </div>
   )
 }
 
-/** The next seven days as bars; pressing one names its words underneath. */
+/** The days after today as bars; pressing one names its words underneath. Today's count is
+ *  the title's. */
 function Week({ forecast }: { forecast: ForecastDay[] | null }) {
   const id = useId()
-  const [picked, setPicked] = useState(1)
+  const [picked, setPicked] = useState(0)
   const max = forecast ? Math.max(1, ...forecast.map((d) => d.count)) : 1
   const day = forecast?.[picked]
-  const when = picked === 0 ? 'Hôm nay' : picked === 1 ? 'Ngày mai' : day ? `${weekday(day.ts)} ${shortDate(day.ts)}` : ''
+  const when = picked === 0 ? 'Ngày mai' : day ? `${weekday(day.ts)} ${shortDate(day.ts)}` : ''
   return (
     <section aria-labelledby={id}>
-      <p className={h.lbl} id={id}>7 ngày tới</p>
+      <p className={h.lbl} id={id}>Những ngày tới</p>
       <div className={h.bars} role="group" aria-label="Số từ đến hạn mỗi ngày" data-grow="">
         {forecast?.map((d, i) => (
           <button
             key={d.ts}
             type="button"
             className={h.day}
-            data-now={i === 0 || undefined}
             aria-pressed={i === picked}
-            aria-label={`${i === 0 ? 'Hôm nay' : `${weekday(d.ts)} ${shortDate(d.ts)}`}: ${d.count} từ`}
+            aria-label={`${i === 0 ? 'Ngày mai' : `${weekday(d.ts)} ${shortDate(d.ts)}`}: ${d.count} từ`}
             onClick={() => setPicked(i)}
           >
             <span className={h.n}>{d.count}</span>
             <span className={h.col} style={{ height: `${(d.count / max * 100).toFixed(1)}%`, animationDelay: `${i * 45}ms` }} />
-            <span className={h.d}>{i === 0 ? 'Hôm nay' : weekday(d.ts, true)}</span>
+            <span className={h.d}>{weekday(d.ts, true)}</span>
           </button>
         ))}
       </div>

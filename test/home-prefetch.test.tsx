@@ -43,7 +43,7 @@ describe('home page with the header', () => {
   it('prefetches each URL from one link at most, and never a route that reads the session', async () => {
     const { container } = render(<><SiteHeader />{await Home()}<SiteFooter /></>)
     // The desk loads lazily; wait for it, so its links are counted.
-    await screen.findByText('Các từ sẽ ra trong phiên ôn')
+    await screen.findByText('Phiên ôn hôm nay')
     expect(container.querySelector('[data-home-panel]')).toHaveAttribute('data-home-panel', 'desk')
     const urls = prefetched()
     expect(urls.length).toBe(new Set(urls).size)

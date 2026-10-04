@@ -10,7 +10,7 @@ import type { LangCode } from '@/lib/languages'
 import { dueNote } from '@/lib/wordlist/forecast'
 import type { ReviewCard } from '@/lib/wordlist/review'
 import { ANCHOR, type LatLon } from './globe/motion'
-import { DueTitle, HomeBar, Hw, LookupAnswers, LookupBox, ModeGrid, NAME, ORDER, TheoryGrid, useHomeLookup, type PickerState } from './HomeParts'
+import { DayStats, DueTitle, HomeBar, Hw, LookupAnswers, LookupBox, ModeLinks, NAME, ORDER, useHomeLookup, type PickerState } from './HomeParts'
 import h from './Home.module.css'
 
 /** Cities in countries where most people speak the language, far enough apart that two
@@ -68,7 +68,8 @@ export function stageKey(pinned: number, due: number): string {
 }
 
 /** "Quả cầu của tôi": the landing page's globe holding the reader's notebook. Every saved
- *  word is a dot in a country of its language; the first words due today carry their headword. */
+ *  word is a dot in a country of its language; the first words due today carry their headword.
+ *  The streak and the goal sit under it. */
 export function OrbitLayout({ view, failed, onRetry, picker }: { view: HomeView | null; failed: boolean; onRetry: () => void; picker: PickerState }) {
   const lookup = useHomeLookup()
   const reduced = useReducedMotion()
@@ -151,8 +152,8 @@ export function OrbitLayout({ view, failed, onRetry, picker }: { view: HomeView 
           <DueTitle due={view?.due ?? null} failed={failed} onRetry={onRetry} />
           <div className={h.sub}>
             <Link className={h.btn} href="/practice/review" prefetch={false}>Ôn ngay</Link>
-            {view && <span>Sổ tay có {view.total} từ, {view.learned} từ đã thuộc.</span>}
           </div>
+          <ModeLinks />
           <LookupBox lookup={lookup} placeholder="giấc mơ" />
           {view && <Languages view={view} open={open} onToggle={toggle} />}
         </div>
@@ -193,22 +194,9 @@ export function OrbitLayout({ view, failed, onRetry, picker }: { view: HomeView 
 
       <LookupAnswers lookup={lookup} />
 
-      <TheoryGrid
-        label="Mới lưu theo ngôn ngữ"
-        extra={(lang) => {
-          const mine = view?.recent.filter((w) => w.lang === lang).slice(0, 4) ?? []
-          return mine.length > 0 && (
-            <div className={h.chips}>
-              {mine.map((w) => (
-                <Link key={w.id} className={h.chip} href={w.entryId ? entryPath(w.entryId) : '/wordlist'} prefetch={false} title={w.meaningVi ?? undefined}>
-                  <Hw lang={w.lang} text={w.headword} />{w.meaningVi && <small>{w.meaningVi}</small>}
-                </Link>
-              ))}
-            </div>
-          )
-        }}
-      />
-      <ModeGrid due={view?.due ?? null} label="Luyện tập" />
+      <div className={`${h.wrap} ${h.sec}`}>
+        <DayStats view={view} />
+      </div>
     </div>
   )
 }
