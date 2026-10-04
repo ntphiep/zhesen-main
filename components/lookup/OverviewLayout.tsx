@@ -5,10 +5,10 @@ import { LemmaLink } from './LemmaLink'
 import { CharacterPanel } from './CharacterPanel'
 import { ConjugationTable } from './ConjugationTable'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
-import { BACKLINKS_LABEL, BacklinkList } from './LearnerParts'
+import { BACKLINKS_LABEL, BacklinkList, LayerNote } from './LearnerParts'
 import {
   AiCorner, Badge, CARD, CONTAINER, Card, EnglishMark, ExampleRows, FamilyRows, FormLegend, FormTimeline, GrammarList, IrregularNote,
-  PhrasesCard, PivotMark, PosChip, SectionLabel, SynonymsRows, UntranslatedNote, baseFormLabel, hasSynonyms,
+  LevelChip, PhrasesCard, PivotMark, PosChip, SectionLabel, SynonymsRows, UntranslatedNote, baseFormLabel, hasSynonyms,
 } from './WordParts'
 import { parseClassifiers } from '@/lib/dictionary/textQuality'
 import { senseSections, type SenseSection } from '@/lib/dictionary/wordPage'
@@ -22,6 +22,9 @@ interface TileSpec { key: string; rows: number; wide: boolean; node: React.React
 const SPAN = { 3: 'lg:col-span-3', 4: 'lg:col-span-4', 5: 'lg:col-span-5', 7: 'lg:col-span-7', 9: 'lg:col-span-9', 12: 'lg:col-span-12' } as const
 
 const SHOWN_GROUPS = 6
+const MAIN_LINES = 4
+
+interface MainLine { key: string; text: string; pos: string | null; cefr: string | null; en: string | null; mark: 'pivot' | 'english' | null }
 
 /**
  * The whole word on one screen, as cards on a pastel page: the headword, its main meanings
@@ -32,15 +35,23 @@ export function OverviewLayout({ view }: { view: WordView }) {
   const { head } = view
   const sections = senseSections(view.senses)
   const total = sections.reduce((n, s) => n + s.senses.length, 0)
-  const main = mainSenses(sections)
-  const mainCount = main.reduce((n, g) => n + g.senses.length, 0)
+  // A published layer names the senses a learner meets first, each with its own level.
+  const lines: MainLine[] = view.learner?.source === 'ai' && view.learner.senses.length > 0
+    ? view.learner.senses.slice(0, MAIN_LINES).map((s) => ({
+      key: `layer-${s.order}`, text: s.viTerms.join(', '), pos: s.pos, cefr: s.cefr, en: s.enDefinition, mark: s.pivot ? 'pivot' : null,
+    }))
+    : mainSenses(sections, MAIN_LINES).flatMap((g) => g.senses).map((s, i) => ({
+      key: s.id ?? `${s.senseOrder}-${i}`, text: s.glossVi ?? s.pivotVi ?? s.glossEn ?? '', pos: s.pos, cefr: null,
+      en: s.glossVi || s.pivotVi ? s.glossEn : null, mark: s.glossVi ? null : s.pivotVi ? 'pivot' : 'english',
+    }))
+  const mainCount = lines.length
   const classifiers = [...new Set(view.senses.flatMap((s) => parseClassifiers(s.glossEn)))]
   // With every sense already in the top card, the explorer below would repeat it.
   const explorer = total > mainCount
   // The sense-linked sentences lead, but an untranslated one never goes ahead of a translated one.
   const examples = translatedFirst(cleanExamples([...Object.values(view.examplesBySense), ...view.examples], view.resolved, head.lang), view.glosses)
   const siblings = view.siblings.length > 0
-  const heroSpan = main.length === 0 ? (siblings ? 9 : 12) : 5
+  const heroSpan = lines.length === 0 ? (siblings ? 9 : 12) : 5
   const mainSpan = siblings ? 4 : 7
   const { phrasal, other } = head.lang === 'en'
     ? splitPhrasalVerbs(head.headword, view.phrases)
@@ -120,7 +131,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
   const columns = ([0, 1] as const).filter((side) => sides.includes(side))
 
   const jumps = [
-    main.length > 0 && { href: '#meaning', label: 'Nghĩa' },
+    lines.length > 0 && { href: '#meaning', label: 'Nghĩa' },
     view.forms.length > 0 && { href: '#forms', label: 'Dạng từ' },
     hasSynonyms(view) && { href: '#synonyms', label: 'Đồng nghĩa' },
     view.phrases.length > 0 && { href: '#phrases', label: 'Cụm từ' },
@@ -159,7 +170,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
           {view.lemma && <LemmaLink lemma={view.lemma} preview={view.lemmaPreview ?? undefined} lang={head.lang} />}
         </div>
 
-        {main.length > 0 && (
+        {lines.length > 0 && (
           <Card
             id="meaning"
             label="Nghĩa chính"
@@ -167,24 +178,26 @@ export function OverviewLayout({ view }: { view: WordView }) {
             action={explorer ? <a href="#senses" className="text-[13px] font-semibold text-(--zs-pen) hover:underline">Cả {total} nghĩa</a> : undefined}
           >
             <ol className="flex flex-col">
-              {main.flatMap((g) => g.senses).map((s, i) => (
-                <li key={s.id ?? `${s.senseOrder}-${i}`} className="flex gap-3.5 border-t border-(--zs-line) py-3 first:border-0 first:pt-0 last:pb-0">
+              {lines.map((l, i) => (
+                <li key={l.key} className="flex gap-3.5 border-t border-(--zs-line) py-3 first:border-0 first:pt-0 last:pb-0">
                   <span aria-hidden="true" className="w-3 shrink-0 pt-0.5 text-sm font-medium tabular-nums text-(--zs-soft)">{i + 1}</span>
                   <div className="flex min-w-0 flex-col gap-1">
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span className="font-semibold">
-                        {s.glossVi ?? s.pivotVi ?? s.glossEn}
-                        {!s.glossVi && s.pivotVi && <PivotMark />}
-                        {!s.glossVi && !s.pivotVi && <EnglishMark />}
+                        {l.text}
+                        {l.mark === 'pivot' && <PivotMark />}
+                        {l.mark === 'english' && <EnglishMark />}
                       </span>
-                      <PosChip value={s.pos} />
+                      <PosChip value={l.pos} />
+                      <LevelChip level={l.cefr} />
                     </span>
-                    {s.glossEn && (s.glossVi || s.pivotVi) && <span className="text-[12.5px] leading-snug text-(--zs-soft)">{s.glossEn}</span>}
+                    {l.en && <span className="text-[12.5px] leading-snug text-(--zs-soft)">{l.en}</span>}
                   </div>
                 </li>
               ))}
             </ol>
             <UntranslatedNote senses={view.senses} />
+            {view.learner && <LayerNote layer={view.learner} view={view} />}
             {classifiers.length > 0 && (
               <p className="flex flex-wrap items-center gap-2 border-t border-(--zs-line) pt-3 text-sm">
                 <span className="text-xs text-(--zs-soft)">Lượng từ</span>

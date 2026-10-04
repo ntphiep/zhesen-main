@@ -3,6 +3,7 @@ import { classifyRelations } from './relations'
 import { entryPath, searchPath } from './entryId'
 import { hasUnknownLongWord, isClassifierGloss, isCleanExample, isOldSense, isSentenceTranslation, rankSenses } from './textQuality'
 import type { ResolvedText } from './tappable'
+import type { LearnerLayer } from './learner'
 import type { DictEntryDetail, DictExample, DictRelation, DictSense, TermPreview } from './types'
 import type { LangCode } from '@/lib/languages'
 
@@ -61,6 +62,10 @@ export function senseLabel(s: DictSense): string {
   return vi || s.glossEn?.split(/[,;(]/)[0].trim() || ''
 }
 
+/** The Vietnamese terms of a sense, lower-cased; a comma inside parentheses belongs to the term. */
+const viTerms = (s: DictSense): string[] =>
+  (s.glossVi ?? s.pivotVi ?? '').split(/[,;](?![^(]*\))/).map((t) => t.trim().toLocaleLowerCase('vi')).filter(Boolean)
+
 /** Puts a section of old senses after every section with a current one. */
 const OLD_OFFSET = 1e6
 
@@ -70,11 +75,36 @@ function currentSenses(sections: SenseSection[]): SenseSection[] {
   return current.some((sec) => sec.senses.length > 0) ? current.filter((sec) => sec.senses.length > 0) : sections
 }
 
+/** Raw senses in the order of the published learner layer: the first sense each core sense
+ *  covers, in its order, then the rest it covers, then those it does not. take's sense 5
+ *  "chiếm đoạt" carries Wiktionary frequency 1 and led the page while the layer leads with
+ *  "cầm, lấy". */
+export function layerRanked(senses: DictSense[], layer: Pick<LearnerLayer, 'source' | 'senses'> | null): DictSense[] {
+  if (layer?.source !== 'ai') return senses
+  const rank = new Map<string, number>()
+  const n = layer.senses.length
+  for (const core of layer.senses) {
+    core.sourceSenseIds.forEach((id, i) => { if (!rank.has(id)) rank.set(id, i === 0 ? core.order : n + core.order) })
+  }
+  if (rank.size === 0) return senses
+  return senses.map((s) => ({ ...s, senseFrequency: (s.id ? rank.get(s.id) : undefined) ?? null }))
+}
+
 /** The senses the overview leads with: the first of every part of speech, then the rest
  *  of the budget from the first part of speech, which is the one the word is used as most.
- *  An old or vulgar sense is left out while the entry has another. */
+ *  An old or vulgar sense is left out while the entry has another, and so is a sense whose
+ *  every Vietnamese term an earlier one already gave (walk's two "đi bộ", hablar's "nói"). */
 export function mainSenses(all: SenseSection[], max = 4): { section: SenseSection; senses: DictSense[] }[] {
-  const sections = currentSenses(all)
+  const seen = new Set<string>()
+  const sections = currentSenses(all).map((sec) => ({
+    ...sec,
+    senses: sec.senses.filter((s) => {
+      const terms = viTerms(s)
+      if (terms.length > 0 && terms.every((t) => seen.has(t))) return false
+      terms.forEach((t) => seen.add(t))
+      return true
+    }),
+  })).filter((sec) => sec.senses.length > 0)
   const quota = sections.map((s, i) => (i < max ? Math.min(1, s.senses.length) : 0))
   let left = max - quota.reduce((a, b) => a + b, 0)
   for (let i = 0; i < sections.length && left > 0; i++) {
@@ -92,6 +122,17 @@ export function entryGlosses(detail: Pick<DictEntryDetail, 'glossVi' | 'senses'>
 
 /** An en dash bound to the term before it, so no line of the headline starts with it. */
 const SUMMARY_SEPARATOR = '\u00a0– '
+
+/** The first term of each core sense of a published layer, up to five, joined like
+ *  summaryLine. */
+export function layerSummary(layer: Pick<LearnerLayer, 'senses'>): string | null {
+  const terms: string[] = []
+  for (const s of layer.senses) {
+    const term = s.viTerms[0]?.trim()
+    if (term && !terms.some((t) => t.toLowerCase() === term.toLowerCase())) terms.push(term)
+  }
+  return terms.length > 0 ? terms.slice(0, 5).join(SUMMARY_SEPARATOR) : null
+}
 
 /** Up to five first Vietnamese terms of the senses each section shows, joined. */
 export function summaryLine(all: SenseSection[]): string | null {

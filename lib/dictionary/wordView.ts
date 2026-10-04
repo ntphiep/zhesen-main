@@ -4,7 +4,7 @@ import { entryPath } from './entryId'
 import { groupWordForms } from './family'
 import { entryMeaningVi, isCleanExample } from './textQuality'
 import {
-  entryGlosses, exampleCandidates, knownWordExamples, planExamples, relatedTabs, senseLabel, senseSections, summaryLine,
+  entryGlosses, exampleCandidates, knownWordExamples, layerRanked, layerSummary, planExamples, relatedTabs, senseLabel, senseSections, summaryLine,
   type RelatedItem,
 } from './wordPage'
 import type { LangCode } from '@/lib/languages'
@@ -198,7 +198,9 @@ export function buildWordView({
   // Spanish verbs get the conjugation table instead of a line of forms, which for them
   // would run to hundreds. A form's own forms (wents, breakings) are noise.
   const conjugation = detail.lang === 'es' && !lemma ? buildConjugation(inflections) : null
-  const sections = senseSections(detail.senses)
+  // A published layer orders the raw senses, so every layout leads with what it leads with.
+  const senses = layerRanked(detail.senses, learner)
+  const sections = senseSections(senses)
   const allForms = groupWordForms(leadingForms(inflections, sections[0]?.key))
   const forms = conjugation || lemma ? [] : allForms
     .filter((f) => f.standard && f.text.toLowerCase() !== detail.headword.toLowerCase())
@@ -247,9 +249,10 @@ export function buildWordView({
   const glossedFirst = [...phrases.filter((w) => w.gloss), ...phrases.filter((w) => !w.gloss)]
 
   return {
-    // A form carries no level of its own: CEFR-J levels words, and emitted read C1.
+    // A form carries no level of its own: CEFR-J levels words, and emitted read C1. A
+    // published layer levels the sense it leads with.
     head: {
-      ...detail, level: lemma ? null : detail.level,
+      ...detail, level: lemma ? null : (learner?.source === 'ai' && learner.level) || detail.level,
       senses: [], relations: [], senseLinks: [], examples: detail.examples.filter((e) => e.translationVi),
     },
     formOf,
@@ -263,8 +266,8 @@ export function buildWordView({
       : null,
     lemma,
     lemmaPreview: lemma ? previews[lemma.toLowerCase()] ?? null : null,
-    senses: detail.senses,
-    summary: summaryLine(sections),
+    senses,
+    summary: learner?.source === 'ai' && learner.senses.length > 0 ? layerSummary(learner) : summaryLine(sections),
     meaningVi: entryMeaningVi(detail),
     forms,
     conjugation,
@@ -284,7 +287,7 @@ export function buildWordView({
     glosses,
     grammarPoints,
     learner: learner ?? deriveLearnerLayer({
-      entryId: detail.id, lang: detail.lang, senses: detail.senses, examplesBySense: plan.bySense, glosses, senseSynonyms, previews,
+      entryId: detail.id, lang: detail.lang, senses, examplesBySense: plan.bySense, glosses, senseSynonyms, previews,
     }),
     backlinks,
   }
