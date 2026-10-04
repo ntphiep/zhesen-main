@@ -6,13 +6,23 @@ import { percentDecode } from '@/lib/http/percentDecode'
 import { getLanguage, isLangCode } from '@/lib/languages'
 import { googleFont, type OgFont } from '@/lib/og/googleFont'
 
-export const alt = 'Từ và nghĩa tiếng Việt trên Zhesen'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-/** As on the word page: rendered on first request, then kept for the data caches' week. */
-export function generateStaticParams(): { lang: string; id: string }[] {
-  return []
+type Params = { lang: string; id: string }
+
+async function entryOf(params: Params) {
+  const language = isLangCode(params.lang) ? getLanguage(params.lang) : undefined
+  const detail = language ? await getCachedEntryDetail(buildEntryId(language.code, percentDecode(params.id))) : null
+  return language && detail ? { language, detail } : null
+}
+
+/** One card per word, so its alt names the word. Next derives the route's static params from
+ *  this, which a `generateStaticParams` export here would duplicate. As on the word page, the
+ *  card is rendered on first request, then kept for the data caches' week. */
+export async function generateImageMetadata({ params }: { params: Params }) {
+  const entry = await entryOf(params)
+  return entry ? [{ id: 'card', alt: `Từ ${entry.detail.headword} và nghĩa tiếng Việt trên Zhesen`, size, contentType }] : []
 }
 export const revalidate = 604800
 
@@ -54,11 +64,10 @@ async function fonts(han: boolean, headword: string, pinyin: string | null, rest
   return loads.flatMap((r) => (r.status === 'fulfilled' ? r.value : []))
 }
 
-export default async function Image({ params }: { params: Promise<{ lang: string; id: string }> }) {
-  const { lang, id } = await params
-  const language = isLangCode(lang) ? getLanguage(lang) : undefined
-  const detail = language ? await getCachedEntryDetail(buildEntryId(language.code, percentDecode(id))) : null
-  if (!language || !detail) return new Response(null, { status: 404 })
+export default async function Image({ params }: { params: Promise<Params> }) {
+  const entry = await entryOf(await params)
+  if (!entry) return new Response(null, { status: 404 })
+  const { language, detail } = entry
 
   const han = language.script === 'han'
   const pinyin = han ? headwordPinyin(detail) : null
