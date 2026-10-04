@@ -247,13 +247,15 @@ const isPhrase = (t: string) => /[\s-]/.test(t)
  *  it fits, and never when it is the headword or one of its own inflected forms. WordNet's
  *  broader, narrower and same-kind terms are left out: take's 401 were a list of unrelated
  *  verbs. */
-export function relatedTabs({ lang, headword, lemma, relations, containing, kin, formTexts, previews }: {
+export function relatedTabs({ lang, headword, lemma, relations, containing, kin, phrasalVerbs = [], formTexts, previews }: {
   lang: LangCode
   headword: string
   lemma: string | null
   relations: DictRelation[]
   containing: EntryLike[]
   kin: EntryLike[]
+  /** An English verb's phrasal verbs, listed ahead of every other phrase. */
+  phrasalVerbs?: EntryLike[]
   formTexts: string[]
   previews: Record<string, TermPreview>
 }): RelatedTab[] {
@@ -273,7 +275,7 @@ export function relatedTabs({ lang, headword, lemma, relations, containing, kin,
   const kinItems = kin.map(fromEntry)
   const candidates: RelatedTab[] = [
     { key: 'collocations', label: 'Kết hợp từ', items: fromText(c.collocations) },
-    { key: 'compounds', label: 'Cụm từ', items: [...containing.map(fromEntry), ...kinItems.filter((i) => isPhrase(i.text)), ...fromText(c.compounds)] },
+    { key: 'compounds', label: 'Cụm từ', items: [...phrasalVerbs.map(fromEntry), ...containing.map(fromEntry), ...kinItems.filter((i) => isPhrase(i.text)), ...fromText(c.compounds)] },
     { key: 'derived', label: 'Phái sinh', items: [...kinItems.filter((i) => !isPhrase(i.text)), ...fromText(c.derived.filter((t) => isPlausibleDerived(t, lemma ?? headword)))] },
     { key: 'synonyms', label: 'Cận nghĩa', items: fromText(c.synonyms) },
     { key: 'antonyms', label: 'Trái nghĩa', items: fromText(c.antonyms) },

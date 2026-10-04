@@ -77,6 +77,12 @@ describe('splitPhrasalVerbs', () => {
     expect(phrasal.map((w) => [w.text, w.particle])).toEqual([['take off', 'off'], ['Take Up', 'Up']])
     expect(other.map((w) => w.text)).toEqual(['take care', 'intake'])
   })
+
+  it('keeps a verb with two particles as a phrasal verb', () => {
+    const { phrasal, other } = splitPhrasalVerbs('look', [word('look forward to'), word('look up to'), word('look a gift horse in the mouth')])
+    expect(phrasal.map((w) => [w.text, w.particle])).toEqual([['look forward to', 'forward to'], ['look up to', 'up to']])
+    expect(other.map((w) => w.text)).toEqual(['look a gift horse in the mouth'])
+  })
 })
 
 describe('mainSenses', () => {

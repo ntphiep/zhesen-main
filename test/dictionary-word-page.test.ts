@@ -130,6 +130,24 @@ describe('relatedTabs', () => {
     expect(isPlausibleDerived('comida', 'comer')).toBe(true)
     expect(isPlausibleDerived('speech', 'speak')).toBe(true)
   })
+  it('lists a verb\'s phrasal verbs ahead of every other phrase, once each', () => {
+    const tabs = relatedTabs({
+      ...base,
+      relations: [],
+      containing: [
+        { id: 'en:take a bath', headword: 'take a bath', glossVi: 'tắm', glossEn: null },
+        { id: 'en:take off', headword: 'take off', glossVi: 'cởi', glossEn: null },
+      ],
+      phrasalVerbs: [
+        { id: 'en:take off', headword: 'take off', glossVi: 'cất cánh', glossEn: null, pos: 'verb' },
+        { id: 'en:take after', headword: 'take after', glossVi: 'giống', glossEn: null, pos: 'verb' },
+      ],
+    })
+    expect(tabs[0].items.map((i) => [i.text, i.gloss])).toEqual([
+      ['take off', 'cất cánh'], ['take after', 'giống'], ['take a bath', 'tắm'],
+    ])
+  })
+
   it('lists an item once, in the first tab it fits, and never an inflected form', () => {
     const tabs = relatedTabs({
       ...base,

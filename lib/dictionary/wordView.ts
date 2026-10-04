@@ -1,6 +1,7 @@
 import { buildConjugation, type Conjugation } from './conjugation'
 import { deriveLearnerLayer } from './derivedLayer'
 import { entryPath } from './entryId'
+import { phrasalTail } from './phrases'
 import { groupWordForms } from './family'
 import { isFormOnly } from './lemma'
 import { entryMeaningVi, isCleanExample } from './textQuality'
@@ -110,6 +111,7 @@ export interface WordViewInput {
   grammarPoints?: GrammarPoint[]
   containing?: ContainingWord[]
   kin?: DictEntryPreview[]
+  phrasalVerbs?: DictEntryPreview[]
   previews?: Record<string, TermPreview>
   resolvedExamples?: ResolvedText[]
   learner?: LearnerLayer | null
@@ -204,7 +206,7 @@ export function usesHeadword(text: string, headword: string, forms: string[], la
 
 export function buildWordView({
   detail, lemma = null, characters, siblings, inflections = [], grammarPoints = [], containing = [], kin = [],
-  previews = {}, resolvedExamples = [], learner = null, backlinks = [], formOf = null,
+  phrasalVerbs = [], previews = {}, resolvedExamples = [], learner = null, backlinks = [], formOf = null,
 }: WordViewInput): WordView {
   // Spanish verbs get the conjugation table instead of a line of forms, which for them
   // would run to hundreds. A form's own forms (wents, breakings) are noise; better, which has
@@ -233,7 +235,7 @@ export function buildWordView({
 
   const tabs = relatedTabs({
     lang: detail.lang, headword: detail.headword, lemma, relations: detail.relations,
-    containing, kin, formTexts: allForms.map((f) => f.text), previews,
+    containing, kin, phrasalVerbs, formTexts: allForms.map((f) => f.text), previews,
   })
   const tab = (key: string) => tabs.find((t) => t.key === key)?.items ?? []
   const stem = lemma ?? detail.headword
@@ -356,20 +358,14 @@ export function balanceColumns(heights: number[], wide: boolean[] = []): (0 | 1)
   })
 }
 
-/** English particles that make a phrasal verb out of the headword: take up, take off. */
-const PARTICLES = new Set([
-  'up', 'down', 'in', 'out', 'on', 'off', 'over', 'away', 'back', 'about', 'after', 'along', 'apart', 'around',
-  'aside', 'through', 'under', 'by', 'for', 'to', 'with', 'into', 'upon', 'forward', 'together',
-])
-
-/** The phrases that are the headword plus one particle, and the rest. */
+/** The phrases that are the headword plus one or two particles (take up, look forward
+ *  to), and the rest. */
 export function splitPhrasalVerbs(headword: string, phrases: ViewWord[]): { phrasal: (ViewWord & { particle: string })[]; other: ViewWord[] } {
   const phrasal: (ViewWord & { particle: string })[] = []
   const other: ViewWord[] = []
-  const prefix = `${headword.toLowerCase()} `
   for (const w of phrases) {
-    const rest = w.text.toLowerCase().startsWith(prefix) ? w.text.slice(prefix.length) : ''
-    if (PARTICLES.has(rest.toLowerCase())) phrasal.push({ ...w, particle: rest })
+    const particle = phrasalTail(headword, w.text)
+    if (particle) phrasal.push({ ...w, particle })
     else other.push(w)
   }
   return { phrasal, other }

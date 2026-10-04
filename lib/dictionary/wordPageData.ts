@@ -1,8 +1,9 @@
-import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections, getCachedEntriesContaining, getCachedTermPreviews, getCachedTappableTexts, getCachedWordKin } from './cached'
+import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getCachedInflections, getCachedEntriesContaining, getCachedPhrasalVerbs, getCachedTermPreviews, getCachedTappableTexts, getCachedWordKin } from './cached'
 import { getCachedLearnerBacklinks, getCachedLearnerLayer } from './learnerCached'
 import { getCachedGrammarPointsForEntry } from '@/lib/grammar/cached'
 import { groupWordForms } from './family'
 import { formNoteVi, isFormOnly, lemmaFromSenses } from './lemma'
+import { posGroup } from './pos'
 import { exampleCandidates, PREVIEWED_ITEMS, relatedTabs, senseSections } from './wordPage'
 import type { DictEntryDetail } from './types'
 import type { WordViewInput } from './wordView'
@@ -59,8 +60,13 @@ export async function loadWordPage(entryId: string, followForm = true): Promise<
     return texts.length > 0 ? getCachedTappableTexts(detail.lang, texts) : []
   })
 
+  // An English verb lists its phrasal verbs, which `containing` caps among every other phrase.
+  const isEnglishVerb = detail.lang === 'en' && !/\s/.test(detail.headword)
+    && detail.senses.some((s) => posGroup(s.pos)?.key === 'verb')
+
   const [
     characters, [siblings, inflections, grammarPoints, backlinks, learner], containing, kin, resolvedExamples, layerResolved,
+    phrasalVerbs,
   ] = await Promise.all([
     detail.lang === 'zh' ? getCachedCharacters(detail.headword) : Promise.resolve([]),
     byId,
@@ -84,6 +90,7 @@ export async function loadWordPage(entryId: string, followForm = true): Promise<
     // Every sentence the page can show, so none resolves itself from the browser.
     getCachedTappableTexts(detail.lang, candidateTexts),
     layerExamples,
+    isEnglishVerb ? getCachedPhrasalVerbs(detail.headword) : Promise.resolve([]),
   ])
 
   // The related words are stored as bare text, so one more call gives the meaning and
@@ -93,7 +100,7 @@ export async function loadWordPage(entryId: string, followForm = true): Promise<
   // speech, so those are asked for too.
   const tabs = relatedTabs({
     lang: detail.lang, headword: detail.headword, lemma, relations: detail.relations,
-    containing, kin, formTexts: groupWordForms(inflections).map((f) => f.text), previews: {},
+    containing, kin, phrasalVerbs, formTexts: groupWordForms(inflections).map((f) => f.text), previews: {},
   })
   const terms = [
     ...tabs.flatMap((t) => t.items.slice(0, PREVIEWED_ITEMS)).filter((i) => !i.entry || !i.pos).map((i) => i.text),
@@ -103,7 +110,7 @@ export async function loadWordPage(entryId: string, followForm = true): Promise<
   const previews = Object.fromEntries(previewRows.map((p) => [p.matchText.toLowerCase(), p]))
 
   return {
-    detail, lemma, characters, siblings, inflections, grammarPoints, containing, kin, previews,
+    detail, lemma, characters, siblings, inflections, grammarPoints, containing, kin, phrasalVerbs, previews,
     resolvedExamples: [...resolvedExamples, ...layerResolved], learner, backlinks,
   }
 }

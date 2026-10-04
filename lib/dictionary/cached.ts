@@ -20,7 +20,7 @@ import { createContentClient } from '@/lib/supabase/content'
 import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getTermPreviews } from './entryDetail'
 import { getCommonWords, searchOneDirection, type CommonWordsOptions, type Direction } from './search'
 import { resolveTappableTexts, type ResolvedText } from './tappable'
-import { getEntriesContaining } from './containing'
+import { getEntriesContaining, getPhrasalVerbs } from './containing'
 import { getWordKin } from './kin'
 import { getWordOfDay, dayNumber, type DailyWord } from './wordOfDay'
 import { getLevelsForLanguage, getEntriesByLevel, type LevelSummary, type LevelPage } from './levels'
@@ -70,6 +70,12 @@ export const getCachedEntriesContaining = unstable_cache(
   (lang: LangCode, headword: string): Promise<ContainingWord[]> =>
     getEntriesContaining(createContentClient(), lang, headword),
   ['dict-entries-containing-v2'],
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
+)
+
+export const getCachedPhrasalVerbs = unstable_cache(
+  (verb: string): Promise<DictEntryPreview[]> => getPhrasalVerbs(createContentClient(), verb),
+  ['dict-phrasal-verbs'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
