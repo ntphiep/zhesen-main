@@ -352,8 +352,15 @@ export function SynonymsRows({ view, shownRows = 4 }: {
   shownRows?: number
 }) {
   const [expanded, setExpanded] = useState(false)
+  // Two senses with one label are one row: give up showed "Từ bỏ" twice.
+  const byLabel = new Map<string, { key: string; label: string; words: ViewWord[] }>()
+  for (const s of view.senseSynonyms) {
+    const row = byLabel.get(s.label.toLocaleLowerCase('vi'))
+    if (row) row.words.push(...s.words.filter((w) => !row.words.some((x) => x.text === w.text)))
+    else byLabel.set(s.label.toLocaleLowerCase('vi'), { key: `s${s.senseOrder}`, label: s.label, words: [...s.words] })
+  }
   const rows = [
-    ...view.senseSynonyms.map((s) => ({ key: `s${s.senseOrder}`, label: s.label, words: s.words })),
+    ...byLabel.values(),
     ...(view.synonyms.length > 0
       ? [{ key: 'other', label: view.senseSynonyms.length > 0 ? 'Khác' : 'Đồng nghĩa', words: view.synonyms }]
       : []),
