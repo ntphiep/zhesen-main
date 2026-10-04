@@ -75,7 +75,7 @@ export const getCachedEntriesContaining = unstable_cache(
 export const getCachedWordKin = unstable_cache(
   (lang: LangCode, stem: string, headword: string): Promise<DictEntryPreview[]> =>
     getWordKin(createContentClient(), lang, stem, headword),
-  ['dict-word-kin'],
+  ['dict-word-kin-v2'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 

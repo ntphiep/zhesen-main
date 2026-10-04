@@ -9,6 +9,9 @@ import type { LangCode } from '@/lib/languages'
  * with the stem and keeps only the prefix matches, which is what a derived word is. The
  * caller must exclude Chinese: a Chinese prefix is a compound, `getEntriesContaining`.
  */
+const SHORT_STEM = 3
+const SHORT_STEM_ENDINGS = /^(?:s|es|ing|ings|ne|en|er|ers|ed|est)$/
+
 export async function getWordKin(
   supabase: SupabaseClient, lang: LangCode, stem: string, headword: string, limit = 12,
 ): Promise<DictEntryPreview[]> {
@@ -22,6 +25,10 @@ export async function getWordKin(
   for (const r of rows) {
     const h = r.headword.toLowerCase()
     if (seen.has(h) || !h.startsWith(s)) continue
+    // A capital the stem lacks is a name (Goh for go), and past a stem of three letters or
+    // fewer only an inflection is kin: go listed good and god, UN under and until.
+    if (r.headword !== h && stem.trim() === s) continue
+    if (s.length <= SHORT_STEM && !SHORT_STEM_ENDINGS.test(h.slice(s.length))) continue
     seen.add(h)
     kin.push(r)
     if (kin.length >= limit) break

@@ -35,6 +35,15 @@ describe('getWordKin', () => {
     expect(out.map((w) => w.headword)).toEqual(['adjourns'])
   })
 
+  // go listed Goh, good and god; UN listed under, until and university.
+  it('keeps only the inflections of a short stem, and no proper noun', async () => {
+    const { client } = rpcClientReturning([row('goes'), row('Goh'), row('good'), row('god'), row('going'), row('gone'), row('goer')])
+    const out = await getWordKin(client, 'en', 'go', 'go')
+    expect(out.map((w) => w.headword)).toEqual(['goes', 'going', 'gone', 'goer'])
+    const un = rpcClientReturning([row('under'), row('until')])
+    await expect(getWordKin(un.client, 'en', 'UN', 'UN')).resolves.toEqual([])
+  })
+
   it('caps the list so the section stays readable', async () => {
     const rows = Array.from({ length: 30 }, (_, i) => row(`adjourn${i}`))
     const { client } = rpcClientReturning(rows)
