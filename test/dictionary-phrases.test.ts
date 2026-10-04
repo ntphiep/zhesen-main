@@ -36,6 +36,7 @@ describe('phraseCandidates', () => {
   // "Can you tell me how to get to the station?" showed the idiom you tell me, "I don't know".
   it('starts no phrase on the subject of a question', () => {
     expect(keys('Can you tell me how to get there')).not.toContain('you tell me')
+    expect(keys('Can you tell me how to get there')).not.toContain('can you')
     expect(keys('Can you tell me how to get there')).toContain('tell me')
     expect(keys('Well, you tell me')).toContain('you tell me')
   })

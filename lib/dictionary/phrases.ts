@@ -25,7 +25,7 @@ const FUNCTION_WORDS = new Set([
 const OBJECT_PRONOUNS = new Set(['it', 'him', 'her', 'them', 'me', 'us', 'you', 'this', 'that'])
 
 /** A subject after one of these is a question's ("can you tell me how"), never the start of
- *  an idiom such as "you tell me", which means "I don't know". */
+ *  an idiom such as "you tell me", which means "I don't know"; and "can you" is no phrase. */
 const SUBJECTS = new Set(['i', 'you', 'he', 'she', 'it', 'we', 'they'])
 const AUXILIARIES = new Set([
   'can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might', 'must', 'do', 'does', 'did',
@@ -89,7 +89,7 @@ export function phraseCandidates(segments: Segment[]): PhraseCandidate[] {
     for (let n = 2; n <= MAX_WORDS && i + n <= words.length; n++) {
       if (!joined[i + n - 1]) break
       const span = lower.slice(i, i + n)
-      if (span.every((w) => FUNCTION_WORDS.has(w))) continue
+      if (span.every((w) => FUNCTION_WORDS.has(w) || AUXILIARIES.has(w))) continue
       out.push({ key: span.join(' '), text: words.slice(i, i + n).join(' '), first: i, last: i + n - 1 })
     }
     if (i + 2 < words.length && joined[i + 1] && joined[i + 2] && !FUNCTION_WORDS.has(lower[i])
