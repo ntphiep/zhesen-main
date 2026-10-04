@@ -2,7 +2,7 @@ import { z } from '@/lib/zod'
 import { createClient } from '@/lib/supabase/server'
 import { adminUser } from '@/lib/auth/admin'
 import { flushLex } from '@/lib/admin/cache'
-import { CONTENT_REFUSALS, sharedCoverage } from '@/lib/admin/content'
+import { CONTENT_REFUSALS } from '@/lib/admin/content'
 import { badRequest, notFoundJson, readJson, rpcError } from '@/lib/admin/respond'
 
 /** Sense edits and entry flags from /admin/content, and word page reports from
@@ -43,7 +43,6 @@ export async function POST(request: Request): Promise<Response> {
       : await admin.rpc('resolve_feedback', { p_id: b.id, p_status: b.status })
   if (error) return rpcError(error, CONTENT_REFUSALS)
 
-  sharedCoverage.clear()
   if (b.action === 'update_sense' || (b.action === 'resolve_feedback' && b.status === 'applied')) flushLex()
   return Response.json({ ok: true })
 }

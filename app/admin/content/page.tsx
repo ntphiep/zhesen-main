@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/admin'
 import { Loading, num as count, PageHeader, PRIMARY, ReadFailed } from '@/components/admin/Page'
-import { getAdminEntry, getCoverage, sharedCoverage, type Coverage } from '@/lib/admin/content'
+import { getAdminEntry, getCoverage, type Coverage } from '@/lib/admin/content'
 import { searchOneDirection } from '@/lib/dictionary/search'
 import { LANGUAGES } from '@/lib/languages'
 import { EntryEditor } from '@/components/admin/EntryEditor'
@@ -12,10 +12,11 @@ export const metadata = { title: 'Content · Admin' }
 
 const editHref = (id: string) => `/admin/content?entry=${encodeURIComponent(id)}`
 
-/** Streamed after the search and the editor, which do not wait for its full scan. */
+/** Streamed after the search and the editor, which do not wait for its full scan. Read fresh
+ *  on every visit, so an entry flagged a moment ago is listed. */
 async function CoverageSection() {
   const supabase = await createClient()
-  const read = await sharedCoverage(() => getCoverage(supabase)).catch((e: unknown): { failed: unknown } => ({ failed: e }))
+  const read = await getCoverage(supabase).then((value) => ({ value }), (e: unknown): { failed: unknown } => ({ failed: e }))
   if ('failed' in read) return <ReadFailed what="the coverage" error={read.failed} />
   return <CoverageTable coverage={read.value} />
 }
