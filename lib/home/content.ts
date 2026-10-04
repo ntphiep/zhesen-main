@@ -12,18 +12,20 @@ export const TRY_WORDS = ['con mèo', 'trường học', 'âm nhạc', 'cảm ơ
 
 export const TAKE_ENTRY = 'en:take'
 
-/** The verb the phrases section splits, its phrasal verbs, and for each the Chinese and
- *  Spanish entry with the same meaning, picked by hand: a reverse lookup of the Vietnamese
- *  answered 竟然 (an adverb) for turn out. Meanings and headwords are read from the
- *  dictionary (lib/home/landing.ts); an id it no longer holds drops that cell. */
+/** The verb the phrases section splits, its phrasal verbs, and for each the sense shown
+ *  (`lex.senses.sense_order`) with the Chinese and Spanish entry for that sense, picked by
+ *  hand: a reverse lookup of the Vietnamese answered 竟然 (an adverb) for turn out, and the
+ *  ranked first sense of turn up is "tìm ra", which 出现 does not translate. The Vietnamese
+ *  and the headwords are read from the dictionary (lib/home/landing.ts); an id it no longer
+ *  holds drops that cell, and a sense it no longer holds falls back to `leadSense`. */
 export const PHRASE_VERB = 'en:turn'
-export const PHRASES: { id: string; zh: string; es: string }[] = [
-  { id: 'en:turn on', zh: 'zh:打开', es: 'es:encender' },
-  { id: 'en:turn off', zh: 'zh:关', es: 'es:apagar' },
-  { id: 'en:turn up', zh: 'zh:出现', es: 'es:aparecer' },
-  { id: 'en:turn down', zh: 'zh:拒绝', es: 'es:rechazar' },
-  { id: 'en:turn out', zh: 'zh:原来', es: 'es:resultar' },
-  { id: 'en:turn into', zh: 'zh:变成', es: 'es:convertirse' },
+export const PHRASES: { id: string; sense: number; zh: string; es: string }[] = [
+  { id: 'en:turn on', sense: 2, zh: 'zh:打开', es: 'es:encender' },
+  { id: 'en:turn off', sense: 2, zh: 'zh:关', es: 'es:apagar' },
+  { id: 'en:turn up', sense: 1, zh: 'zh:出现', es: 'es:aparecer' },
+  { id: 'en:turn down', sense: 1, zh: 'zh:拒绝', es: 'es:rechazar' },
+  { id: 'en:turn out', sense: 1, zh: 'zh:原来', es: 'es:resultar' },
+  { id: 'en:turn into', sense: 1, zh: 'zh:变成', es: 'es:convertirse' },
 ]
 
 /** Wrong answers for the multiple-choice mode, and pairs that fill the matching mode when

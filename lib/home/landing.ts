@@ -173,7 +173,7 @@ async function previews(lang: LangCode, ids: string[]): Promise<Map<string, Term
 
 /** One verb and its phrasal verbs, each with its Vietnamese meaning and the same meaning in
  *  Chinese and Spanish. A phrase whose read fails is left out; null when fewer than three
- *  remain. The verb keeps the meaning its word page leads with. */
+ *  remain. The verb keeps the first term of the meaning its word page leads with. */
 export async function loadPhrases(): Promise<PhraseFamily | null> {
   const read = (id: string) => getCachedEntryDetail(id).catch((e: unknown) => {
     console.error('landing phrase failed', id, e)
@@ -187,12 +187,12 @@ export async function loadPhrases(): Promise<PhraseFamily | null> {
   ])
   if (!verb) return null
   const phrases = details.flatMap((d, i) => {
-    const sense = d && leadSense(d.senses)
+    const sense = d && (d.senses.find((s) => s.senseOrder === PHRASES[i].sense && s.glossVi?.trim()) ?? leadSense(d.senses))
     return d && sense?.glossVi
       ? [phraseItem(d, verb.headword, firstTerm(sense.glossVi), zh.get(PHRASES[i].zh), es.get(PHRASES[i].es))]
       : []
   })
   return phrases.length >= 3
-    ? { verb: verb.headword, verbVi: verb.glossVi, href: entryPath(verb.id), phrases }
+    ? { verb: verb.headword, verbVi: verb.glossVi ? firstTerm(verb.glossVi) : null, href: entryPath(verb.id), phrases }
     : null
 }

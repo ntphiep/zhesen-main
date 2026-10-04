@@ -62,17 +62,19 @@ describe('a phrasal verb across languages', () => {
 })
 
 describe('the phrases section', () => {
-  it('leaves out a phrase whose read fails and keeps the rest', async () => {
+  it('shows the sense picked for each phrase and leaves out one whose read fails', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     vi.mocked(getCachedEntryDetail).mockImplementation(async (id: string) => {
       if (id === 'en:turn up') throw new Error('timeout')
       const headword = id.slice(3)
-      return { id, headword, glossVi: 'xoay, quay, rẽ', senses: [sense(1, { glossVi: `nghĩa ${headword}` })] } as unknown as DictEntryDetail
+      const senses = [sense(1, { glossVi: `nghĩa 1 ${headword}`, senseFrequency: 1 }), sense(2, { glossVi: `nghĩa 2 ${headword}` })]
+      return { id, headword, glossVi: 'Xoay, quay, rẽ', senses } as unknown as DictEntryDetail
     })
     vi.mocked(getCachedTermPreviews).mockImplementation(async (lang, texts) =>
       texts.map((t) => hit(`${lang}:${t}`, t)))
     const family = await loadPhrases()
-    expect(family?.verbVi).toBe('xoay, quay, rẽ')
+    expect(family?.verbVi).toBe('xoay')
+    expect(family?.phrases.map((p) => p.vi)).toEqual(['nghĩa 2 turn on', 'nghĩa 2 turn off', 'nghĩa 1 turn down', 'nghĩa 1 turn out', 'nghĩa 1 turn into'])
     expect(family?.phrases.map((p) => p.particle)).toEqual(['on', 'off', 'down', 'out', 'into'])
     expect(family?.phrases[1].es).toEqual({ text: 'apagar', href: '/dictionary/es/apagar' })
   })
