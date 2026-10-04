@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { entryMetadata } from '@/lib/dictionary/entryMetadata'
+import { entryMetadata, joinedCase } from '@/lib/dictionary/entryMetadata'
 import type { DictEntryDetail, DictSense } from '@/lib/dictionary/types'
 
 function sense(glossVi: string | null, extra: Partial<DictSense> = {}): DictSense {
@@ -42,7 +42,7 @@ describe('entryMetadata description', () => {
       glossVi: 'Cầm, lấy, mang',
       senses: [sense('Cầm, lấy, mang'), sense('Cầm; nắm.'), sense(null, { pivotVi: 'Chiếm, bắt giữ' }), sense('Đưa')],
     }))
-    expect(m.description).toBe('Tra nghĩa tiếng Việt của take: Cầm, lấy, mang, Cầm, nắm, Chiếm, bắt giữ.')
+    expect(m.description).toBe('Tra nghĩa tiếng Việt của take: Cầm, lấy, mang, cầm, nắm, chiếm, bắt giữ.')
     expect(m.robots).toBeUndefined()
     expect(m.alternates).toEqual({ canonical: '/dictionary/en/take' })
   })
@@ -89,5 +89,20 @@ describe('entryMetadata for a machine translation', () => {
       .toBeUndefined()
     expect(entryMetadata(entry({ ...rare, senses: [mt, sense(null, { pivotVi: 'nhà đạo đức' })] })).robots)
       .toBeUndefined()
+  })
+})
+
+describe('joinedCase', () => {
+  // take's card read "Cầm, lấy, mang, di chuyển, nắm, Chiếm, bắt giữ, đoạt".
+  it('lower-cases each joined gloss after the first', () => {
+    expect(joinedCase(['Cầm, lấy', 'Chiếm, bắt giữ', 'Đoạt'], entry({}))).toEqual(['Cầm, lấy', 'chiếm, bắt giữ', 'đoạt'])
+  })
+  it('keeps a proper noun, an acronym and an inner capital', () => {
+    expect(joinedCase(['Tổ chức', 'Liên Hợp Quốc', 'LHQ', 'iPhone', 'Chính phủ Pháp'], entry({})))
+      .toEqual(['Tổ chức', 'Liên Hợp Quốc', 'LHQ', 'iPhone', 'chính phủ Pháp'])
+  })
+  it('keeps every capital on a proper-noun entry', () => {
+    const paris = entry({ headword: 'Paris', senses: [sense('Paris', { pos: 'proper_noun' }), sense('Chính phủ Pháp', { pos: 'proper_noun' })] })
+    expect(joinedCase(['Paris', 'Chính phủ Pháp'], paris)).toEqual(['Paris', 'Chính phủ Pháp'])
   })
 })

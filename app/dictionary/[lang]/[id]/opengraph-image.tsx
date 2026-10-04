@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { getCachedEntryDetail } from '@/lib/dictionary/cached'
 import { buildEntryId } from '@/lib/dictionary/entryId'
-import { clip, headwordPinyin, vietnameseGlosses } from '@/lib/dictionary/entryMetadata'
+import { clip, headwordPinyin, joinedCase, vietnameseGlosses } from '@/lib/dictionary/entryMetadata'
 import { percentDecode } from '@/lib/http/percentDecode'
 import { getLanguage, isLangCode } from '@/lib/languages'
 import { googleFont, type OgFont } from '@/lib/og/googleFont'
@@ -71,7 +71,7 @@ export default async function Image({ params }: { params: Promise<Params> }) {
 
   const han = language.script === 'han'
   const pinyin = han ? headwordPinyin(detail) : null
-  const gloss = clip(distinctTerms(vietnameseGlosses(detail)).join(', '), 90) || null
+  const gloss = clip(joinedCase(distinctTerms(vietnameseGlosses(detail)), detail).join(', '), 90) || null
   const rest = [language.name, gloss, BRAND].filter(Boolean).join(' ')
   const loaded = await fonts(han, detail.headword, pinyin, rest)
 

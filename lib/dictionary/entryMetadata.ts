@@ -38,6 +38,16 @@ export function vietnameseGlosses(detail: DictEntryDetail): string[] {
   return [...new Set(all)].slice(0, 3)
 }
 
+/** A gloss that names something: two or more capitalised words, an acronym or an inner capital. */
+const PROPER = /^(?:\p{Lu}[\p{Ll}\p{M}]*(?:[\s-]+\p{Lu}[\p{Ll}\p{M}]*)+|\p{Lu}{2,}|\p{L}+\p{Lu}\p{L}*)(?=$|[\s,;(])/u
+
+/** Glosses joined into one line read as one sentence: each after the first starts lower-case
+ *  unless it names something, and a proper-noun entry keeps every capital. */
+export function joinedCase(parts: string[], detail: Pick<DictEntryDetail, 'pos' | 'senses'>): string[] {
+  const proper = detail.senses.length > 0 ? detail.senses.every((s) => s.pos === 'proper_noun') : detail.pos === 'proper_noun'
+  return parts.map((p, i) => (i === 0 || proper || PROPER.test(p) ? p : p.charAt(0).toLocaleLowerCase('vi') + p.slice(1)))
+}
+
 /** Cut at the last space that leaves room for the ellipsis, so no word is broken. */
 export function clip(text: string, max = DESCRIPTION_MAX): string {
   if (text.length <= max) return text
@@ -64,7 +74,7 @@ export function entryMetadata(detail: DictEntryDetail): Metadata {
     ...pageMetadata({
       title: entryTitle(detail),
       description: glosses.length
-        ? clip(`Tra nghĩa tiếng Việt của ${detail.headword}: ${glosses.join(', ')}.`)
+        ? clip(`Tra nghĩa tiếng Việt của ${detail.headword}: ${joinedCase(glosses, detail).join(', ')}.`)
         : `Tra nghĩa của ${detail.headword}.`,
       canonical: entryPath(detail.id),
       noindex: !detail.senses.some((s) => indexableMeaning(s, detail)),
