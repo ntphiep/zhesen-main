@@ -115,3 +115,23 @@ describe('an inflected form', () => {
     expect(view.forms).toEqual([])
   })
 })
+
+describe('the forms of a word whose verb is dialectal', () => {
+  // good printed "gooded, gooding" under "Nguyên thể" for its dialectal verb "to thrive".
+  it('shows neither the verb forms nor an infinitive', async () => {
+    const good = entry('en:good', 'good', [
+      sense('Acting in the interest of good.', 'tốt', { pos: 'adj' }),
+      sense('To thrive.', 'phát đạt', { senseOrder: 2, register: 'dialectal' }),
+    ], { pos: 'adj, verb' })
+    vi.mocked(getCachedEntryDetail).mockImplementation(async (id: string) => ({ 'en:good': good })[id] ?? null)
+    vi.mocked(getCachedInflections).mockResolvedValueOnce([
+      { formText: 'gooded', formLabel: 'past' },
+      { formText: 'better', formLabel: 'comparative' },
+    ])
+    render(<LookupView {...(await loadWordPage('en:good'))!} />)
+    expect(screen.getAllByText('better').length).toBeGreaterThan(0)
+    expect(screen.queryByText(/gooded/)).toBeNull()
+    expect(screen.queryByText('Nguyên thể')).toBeNull()
+    expect(screen.getAllByText('Dạng gốc').length).toBeGreaterThan(0)
+  })
+})

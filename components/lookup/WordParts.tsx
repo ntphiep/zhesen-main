@@ -9,9 +9,8 @@ import { TappableText } from '@/components/reader/TappableText'
 import { useAnchor } from '@/lib/hooks/useAnchor'
 import { isSearchPath, searchPath } from '@/lib/dictionary/entryId'
 import { grammarPointPath } from '@/lib/grammar/path'
-import { posGroups, splitPos } from '@/lib/dictionary/pos'
 import { isSentenceTranslation, untranslatedCount } from '@/lib/dictionary/textQuality'
-import { splitPhrasalVerbs, type FamilyWord, type ViewForm, type ViewWord, type WordView } from '@/lib/dictionary/wordView'
+import { isVerbForm, splitPhrasalVerbs, type FamilyWord, type ViewForm, type ViewWord, type WordView } from '@/lib/dictionary/wordView'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
 import type { DictExample, DictSense } from '@/lib/dictionary/types'
 import type { GrammarPoint } from '@/lib/grammar/types'
@@ -146,9 +145,10 @@ export function FrequencyMeter({ rank, small = false }: { rank: number | null | 
   )
 }
 
-/** What the first cell of the forms calls the headword. */
-export function baseFormLabel(pos: string | null): string {
-  return posGroups(splitPos(pos)).some((g) => g.key === 'verb') ? 'Nguyên thể' : 'Dạng gốc'
+/** What the first cell of the forms calls the headword: an infinitive only beside verb forms.
+ *  good, which has a dialectal verb, called itself "Nguyên thể" above goods and better. */
+export function baseFormLabel(forms: Pick<ViewForm, 'label'>[]): string {
+  return forms.some((f) => isVerbForm(f.label)) ? 'Nguyên thể' : 'Dạng gốc'
 }
 
 /** mis|take: the part outside the stem in blue, the stem in bold ink. */

@@ -77,7 +77,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
           label={<span className="flex items-center gap-2.5"><SectionLabel>Dạng từ</SectionLabel>{irregular && <Badge tone="strong">Bất quy tắc</Badge>}</span>}
           action={<FormLegend irregular={irregular} />}
         >
-          <FormTimeline headword={head.headword} baseLabel={baseFormLabel(head.pos)} forms={view.forms} lang={head.lang} />
+          <FormTimeline headword={head.headword} baseLabel={baseFormLabel(view.forms)} forms={view.forms} lang={head.lang} />
           <IrregularNote forms={view.forms} />
         </Card>
       ),

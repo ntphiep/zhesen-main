@@ -28,7 +28,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
   const examples = cleanExamples(view.examples, view.resolved, lang)
   const mark = headwordForms(view)
   const irregular = view.forms.some((f) => f.irregular)
-  const baseLabel = baseFormLabel(head.pos)
+  const baseLabel = baseFormLabel(view.forms)
   const pinyin = typeof head.attributes.pinyin === 'string' ? head.attributes.pinyin : null
   const showPinyin = pinyin !== null && !head.pronunciations.some((p) => p.ipa?.trim())
 

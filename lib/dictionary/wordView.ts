@@ -3,7 +3,7 @@ import { deriveLearnerLayer } from './derivedLayer'
 import { entryPath } from './entryId'
 import { phrasalTail } from './phrases'
 import { groupWordForms } from './family'
-import { isFormOnly } from './lemma'
+import { formLineLemma, isFormOnly, pointerLemma } from './lemma'
 import { posGroup } from './pos'
 import { entryMeaningVi, isCleanExample, isOldSense } from './textQuality'
 import {
@@ -136,13 +136,25 @@ const formRank = (label: string) => {
   return i < 0 ? FORM_ORDER.length : i
 }
 
-/** Degree forms belong to a current adjective, adverb or determiner sense (few, fewer).
- *  Wiktionary gives music "more music" for its rare adjective "musical" and give up "more give up"
- *  for a US dialectal one; 6,849 English entries carried such a pair. */
+/** Verb and degree forms belong to a sense of that part of speech that is not old and does
+ *  not point at another word, and that is not slang unless its part of speech leads.
+ *  Wiktionary gives good "gooded" for a dialectal verb, music "more music" for a rare
+ *  adjective and fed up "feds up" for a slang verb: 1,648 English entries carried such verb
+ *  forms and 6,849 such degree forms. */
+const VERB_FORMS = new Set([
+  'Ngôi thứ ba số ít', 'Ngôi thứ hai số ít', 'Quá khứ', 'Quá khứ và phân từ II', 'Phân từ II (quá khứ)', 'Phân từ I (-ing)',
+])
+export const isVerbForm = (label: string): boolean => VERB_FORMS.has(label)
 const DEGREE = new Set(['So sánh hơn', 'So sánh nhất'])
+const VERB = new Set(['verb'])
 const GRADED = new Set(['adjective', 'adverb', 'determiner'])
-const takesDegrees = (senses: DictSense[]): boolean =>
-  senses.some((s) => GRADED.has(posGroup(s.pos)?.key ?? '') && !isOldSense(s))
+/** `senses` in dictionary order, which formLineLemma reads. */
+const takesForms = (senses: DictSense[], groups: Set<string>, lead: string | undefined): boolean =>
+  senses.some((s, i) => {
+    const key = posGroup(s.pos)?.key ?? ''
+    return groups.has(key) && !isOldSense(s) && pointerLemma(s.glossEn) === null && formLineLemma(senses, i) === null
+      && (key === lead || !/\bslang\b/.test(s.register ?? ''))
+  })
 
 /** Inflection labels of each part of speech. A spelling two parts share keeps the label
  *  it is read with first, so the entry's leading part goes first: takes under take is the
@@ -226,9 +238,12 @@ export function buildWordView({
   const senses = layerRanked(detail.senses, learner)
   const sections = senseSections(senses)
   const allForms = groupWordForms(leadingForms(inflections, sections[0]?.key))
-  const graded = takesDegrees(senses)
+  const lead = sections[0]?.key
+  const verbal = takesForms(detail.senses, VERB, lead)
+  const graded = takesForms(detail.senses, GRADED, lead)
   const forms = conjugation || formOnly ? [] : allForms
-    .filter((f) => f.standard && f.text.toLowerCase() !== detail.headword.toLowerCase() && (graded || !DEGREE.has(f.label)))
+    .filter((f) => f.standard && f.text.toLowerCase() !== detail.headword.toLowerCase()
+      && (verbal || !VERB_FORMS.has(f.label)) && (graded || !DEGREE.has(f.label)))
     .sort((a, b) => formRank(a.label) - formRank(b.label))
     .map((f) => ({ text: f.text, label: f.label, ...splitForm(detail.headword, f.text, detail.lang) }))
 

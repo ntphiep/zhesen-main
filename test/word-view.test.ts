@@ -149,6 +149,25 @@ describe('buildWordView', () => {
     expect(forms([noun, sense({ senseOrder: 2, pos: 'det', glossVi: 'ít' })])).toEqual(['musics', 'more music', 'most music'])
   })
 
+  // good printed "gooded, gooding" for its dialectal verb, fed up "feds up" for a slang one.
+  it('drops verb forms unless a verb sense a learner meets takes them', () => {
+    const forms = (senses: DictSense[]) => buildWordView({
+      detail: { ...take, id: 'en:fed up', headword: 'fed up', senses },
+      inflections: [
+        { formText: 'feds up', formLabel: 'present singular third-person' },
+        { formText: 'fedded up', formLabel: 'past' },
+        { formText: 'more fed up', formLabel: 'comparative' },
+      ],
+      characters: [], siblings: [],
+    }).forms.map((f) => f.text)
+    const adjective = sense({ senseOrder: 1, pos: 'adjective', glossVi: 'chán ngấy' })
+    const pointer = sense({ senseOrder: 3, glossVi: 'quá khứ của feed up', glossEn: 'simple past and past participle of feed up' })
+    expect(forms([adjective, sense({ senseOrder: 2, glossVi: 'làm chán ngấy', register: 'slang' }), pointer])).toEqual(['more fed up'])
+    expect(forms([adjective, sense({ senseOrder: 2, glossVi: 'phát triển', register: 'dialectal' })])).toEqual(['more fed up'])
+    expect(forms([adjective, sense({ senseOrder: 2, glossVi: 'làm chán ngấy' })])).toEqual(['feds up', 'fedded up', 'more fed up'])
+    expect(forms([sense({ senseOrder: 1, glossVi: 'làm chán ngấy', register: 'slang' }), adjective])).toEqual(['feds up', 'fedded up', 'more fed up'])
+  })
+
   // bumble showed sense sentences that never use bumble.
   it('shows no example that uses neither the headword nor a form of it', () => {
     const ex = (text: string, senseId: string | null) => ({ text, reading: null, translationVi: `${text} (vi)`, translationEn: null, senseId })

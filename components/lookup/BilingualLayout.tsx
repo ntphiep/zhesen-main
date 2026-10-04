@@ -76,7 +76,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
     ...(view.forms.length > 0 ? [{
       id: 'forms', title: 'Dạng từ', count: 0,
       note: irregular && <Badge tone="strong">Bất quy tắc</Badge>,
-      node: <FormCells headword={head.headword} baseLabel={baseFormLabel(head.pos)} forms={view.forms} lang={lang} variant="wide" />,
+      node: <FormCells headword={head.headword} baseLabel={baseFormLabel(view.forms)} forms={view.forms} lang={lang} variant="wide" />,
     }] : []),
     ...(view.conjugation ? [{ id: 'conjugation', title: 'Chia động từ', count: 0, node: <ConjugationTable conjugation={view.conjugation} /> }] : []),
     ...(lang === 'zh' && view.characters.length > 0
