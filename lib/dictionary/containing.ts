@@ -31,9 +31,8 @@ const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /** The phrasal and prepositional verbs of an English verb (give up, look forward to, put
  *  up with), the PHaVE List's first in its order and the rest as `lex.entries_containing`
- *  ranks them, with the lead meaning the word page shows for each. That RPC's own gloss is
- *  sense 1's, which for give up is "đầu hàng" and for get over is empty. Its order put get
- *  at and get by ahead of get out and get back. */
+ *  ranks them, with the lead meaning the word page shows for each, not the RPC's sense 1
+ *  gloss ("đầu hàng" for give up, empty for get over). */
 export async function getPhrasalVerbs(
   supabase: SupabaseClient, verb: string, limit = 24,
 ): Promise<DictEntryPreview[]> {

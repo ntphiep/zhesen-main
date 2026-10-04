@@ -74,8 +74,12 @@ export const getCachedEntriesContaining = unstable_cache(
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
+/** Every match is read, so the PHaVE order picks what leads: go has 53 phrasal verbs, and
+ *  go ahead stood at 35 in the RPC's order. */
+const PHRASAL_VERBS_READ = 80
+
 export const getCachedPhrasalVerbs = unstable_cache(
-  (verb: string): Promise<DictEntryPreview[]> => getPhrasalVerbs(createContentClient(), verb),
+  (verb: string): Promise<DictEntryPreview[]> => getPhrasalVerbs(createContentClient(), verb, PHRASAL_VERBS_READ),
   ['dict-phrasal-verbs'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
