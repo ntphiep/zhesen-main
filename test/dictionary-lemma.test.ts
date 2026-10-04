@@ -53,6 +53,30 @@ describe('lemmaFromSenses', () => {
     expect(lemmaFromSenses([sense('Alternative spelling of color')], 'colour')).toBe('color')
   })
 
+  // casa printed "Dạng gốc: casar" because its third sense is a form of the verb.
+  it('reads a pointer only in the part of speech the entry leads with', () => {
+    const casa = [
+      { ...sense('house'), pos: 'noun' },
+      sense('inflection of casar:'),
+      sense('third-person singular present indicative'),
+    ]
+    expect(lemmaFromSenses(casa, 'casa')).toBeNull()
+    const breaking = [{ ...sense('The act by which something is broken.'), pos: 'noun' }, sense('present participle and gerund of break')]
+    expect(lemmaFromSenses(breaking, 'breaking')).toBeNull()
+    const better = [
+      { ...sense('Greater in amount or quantity'), pos: 'adjective' },
+      { ...sense('To improve.'), senseOrder: 2 },
+      { ...sense('comparative degree of good and well'), pos: 'adjective', senseOrder: 3 },
+    ]
+    expect(lemmaFromSenses(better, 'better')).toBe('good')
+  })
+
+  // went's first sense is the obsolete noun "a path".
+  it('leads with the first sense that is not obsolete', () => {
+    const went = [{ ...sense('A course; a way, a path.'), pos: 'noun', register: 'obsolete' }, sense('simple past of go')]
+    expect(lemmaFromSenses(went, 'went')).toBe('go')
+  })
+
   it('ignores a pointer after sense 15', () => {
     const run = [...Array.from({ length: 117 }, () => sense('To move swiftly.')), sense('past participle of rin')]
     expect(lemmaFromSenses(run, 'run')).toBeNull()

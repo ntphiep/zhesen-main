@@ -1,3 +1,4 @@
+import { isOldSense } from './textQuality'
 import type { DictSense } from './types'
 
 /**
@@ -61,9 +62,14 @@ export function formLineLemma(senses: DictSense[], index: number): string | null
   return null
 }
 
-/** The headword this entry is a form of, or null when it is a word in its own right. */
+/** The headword this entry is a form of, or null when it is a word in its own right. A
+ *  pointer counts only in the part of speech of the first sense that is not obsolete or
+ *  vulgar: casa is a noun whose verb senses are forms of casar, and went's first sense is
+ *  the obsolete noun "a path". */
 export function lemmaFromSenses(senses: DictSense[], headword: string): string | null {
+  const lead = senses.find((s) => !isOldSense(s)) ?? senses[0]
   for (const [i, s] of senses.slice(0, LAST_POINTER_SENSE).entries()) {
+    if (s.pos !== lead.pos) continue
     const m = s.glossEn?.match(POINTER_RE)
     if (!m || (i > 0 && !INFLECTION_RE.test(m[1]))) continue
     const lemma = m[2].trim()
