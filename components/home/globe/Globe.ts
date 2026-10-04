@@ -161,6 +161,8 @@ export class Globe {
   }
 
   draw(): void {
+    // A hidden canvas measures 0x0, which makes the radius negative and the gradient throw.
+    if (this.w <= 0 || this.h <= 0) return
     const { ctx, proj, path } = this
     const C = this.palette()
     proj.rotate(this.rot)

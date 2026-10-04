@@ -1,8 +1,10 @@
 'use client'
-import { lazy, Suspense, useEffect, useSyncExternalStore, type ReactNode } from 'react'
+import { lazy, memo, startTransition, Suspense, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { homeLayout, sessionMarked, type HomeLayout } from '@/lib/home/homeLayout'
 import { useAccount } from '@/lib/hooks/useAccount'
-import { useHomeData } from '@/lib/hooks/useHomeData'
+import { useHomeData, type HomeView } from '@/lib/hooks/useHomeData'
+import type { SrsState } from '@/lib/progress/types'
 import type { DailyTrio } from './TodayLayout'
 import { newsreader } from './fonts'
 
@@ -17,8 +19,14 @@ type Panel = 'landing' | HomeLayout
 const PANELS: Panel[] = ['landing', 'desk', 'today', 'orbit']
 
 const noop = () => () => {}
-/** False on the server and through hydration, true from the first render after it. */
-const useHydrated = () => useSyncExternalStore(noop, () => true, () => false)
+/** False on the server and through hydration, true from the first render after it. The flip
+ *  is a transition: a blocking update reaching a layout that is still hydrating makes React
+ *  swap its server HTML for the empty fallback, which blanked the page for a frame. */
+function useHydrated(): boolean {
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => { startTransition(() => setHydrated(true)) }, [])
+  return hydrated
+}
 /** What the boot script, or a later correction below, wrote on <html>. */
 const useMarked = () => useSyncExternalStore(noop, sessionMarked, () => false)
 
@@ -62,15 +70,12 @@ export function HomeSwitch({ landing, daily }: { landing: ReactNode; daily: Dail
   const picker = { value: hydrated ? stored : null, stored: hydrated ? stored : null }
   const failed = status === 'failed'
 
-  function layout(key: HomeLayout): ReactNode {
-    switch (key) {
-      case 'desk': return <DeskLayout view={view} failed={failed} onRetry={retry} picker={picker} />
-      case 'today': return <TodayLayout view={view} failed={failed} onRetry={retry} picker={picker} daily={daily} supabase={supabase} onGraded={graded} />
-      case 'orbit': return <OrbitLayout view={view} failed={failed} onRetry={retry} picker={picker} />
-    }
-  }
-  // A boundary per layout, so one still loading holds its own server HTML while hydrating.
-  const body = (key: Panel): ReactNode => (key === 'landing' ? landing : <Suspense>{layout(key)}</Suspense>)
+  const body = (key: Panel): ReactNode => (key === 'landing' ? landing : (
+    <Layout
+      name={key} view={view} failed={failed} onRetry={retry} value={picker.value} stored={picker.stored}
+      daily={daily} supabase={supabase} onGraded={graded}
+    />
+  ))
 
   return (
     <main data-home-boot={hydrated ? undefined : ''} data-rendered-home={chosen}>
@@ -84,3 +89,29 @@ export function HomeSwitch({ landing, daily }: { landing: ReactNode; daily: Dail
     </main>
   )
 }
+
+interface LayoutProps {
+  name: HomeLayout
+  view: HomeView | null
+  failed: boolean
+  onRetry: () => void
+  value: HomeLayout | null
+  stored: HomeLayout | null
+  daily: DailyTrio | null
+  supabase: SupabaseClient | null
+  onGraded: (id: string, next: SrsState, back: boolean) => void
+}
+
+/** A layout behind its own boundary, so one still loading holds its server HTML while
+ *  hydrating. Memoised on plain props, so a render that changes nothing it draws, such as
+ *  the boot marks settling after hydration, never reaches that boundary. */
+const Layout = memo(function Layout({ name, value, stored, view, failed, onRetry, daily, supabase, onGraded }: LayoutProps) {
+  const picker = { value, stored }
+  return (
+    <Suspense>
+      {name === 'desk' && <DeskLayout view={view} failed={failed} onRetry={onRetry} picker={picker} />}
+      {name === 'today' && <TodayLayout view={view} failed={failed} onRetry={onRetry} picker={picker} daily={daily} supabase={supabase} onGraded={onGraded} />}
+      {name === 'orbit' && <OrbitLayout view={view} failed={failed} onRetry={onRetry} picker={picker} />}
+    </Suspense>
+  )
+})

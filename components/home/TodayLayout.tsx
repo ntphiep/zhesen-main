@@ -2,7 +2,6 @@
 import { useId } from 'react'
 import Link from 'next/link'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { AddToWordlistButton } from '@/components/lookup/AddToWordlistButton'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { entryPath } from '@/lib/dictionary/entryId'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
@@ -12,7 +11,7 @@ import type { LangCode } from '@/lib/languages'
 import type { SrsState } from '@/lib/progress/types'
 import { localDay } from '@/lib/wordlist/activity'
 import { dayIndex, longDate, mondayIndex } from '@/lib/wordlist/forecast'
-import { DayStats, DueTitle, HomeBar, Hw, LookupAnswers, LookupBox, ModeLinks, NAME, ORDER, useHomeLookup, type PickerState } from './HomeParts'
+import { DayStats, DueTitle, HomeBar, Hw, LookupAnswers, LookupBox, ModeLinks, NAME, ORDER, SaveSlot, useHomeLookup, type PickerState } from './HomeParts'
 import { HomeReviewDeck } from './HomeReviewDeck'
 import h from './Home.module.css'
 
@@ -94,7 +93,7 @@ export function TodayLayout({ view, failed, onRetry, picker, daily, supabase, on
                   <span className={h.gl}>{e.glossVi}</span>
                   <div className={h.acts}>
                     <AudioButton text={e.headword} lang={lang} audioUrl={e.audioUrl} label="Nghe" tone="pane" />
-                    <AddToWordlistButton entry={e} tone="pane" />
+                    <SaveSlot entry={e} />
                   </div>
                 </div>
               )

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { Suspense, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import Link from 'next/link'
 import { AddToWordlistButton } from '@/components/lookup/AddToWordlistButton'
 import { practiceModes } from '@/components/practice/PracticeModes'
@@ -178,6 +178,12 @@ export function LookupBox({ lookup, placeholder }: { lookup: HomeLookup; placeho
   )
 }
 
+/** The save button loads its signed-in half lazily. Its own boundary keeps that load from
+ *  suspending the layout around it, which hid the whole home for about 300 ms. */
+export function SaveSlot({ entry }: { entry: DictEntryPreview }) {
+  return <Suspense><AddToWordlistButton entry={entry} tone="pane" /></Suspense>
+}
+
 function record(e: DictEntryPreview) {
   recentEntries.record({ id: e.id, headword: e.headword, lang: e.lang, glossVi: e.glossVi ?? null })
 }
@@ -202,7 +208,7 @@ export function LookupAnswers({ lookup }: { lookup: HomeLookup }) {
                   <span className={h.gl}>{top.glossVi}</span>
                   <div className={h.acts}>
                     <AudioButton text={top.headword} lang={lang} audioUrl={top.audioUrl} label="Nghe" tone="pane" />
-                    <AddToWordlistButton entry={top} tone="pane" />
+                    <SaveSlot entry={top} />
                   </div>
                 </>
               ) : (
