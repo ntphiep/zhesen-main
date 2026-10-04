@@ -139,6 +139,26 @@ describe('ContainerBoard', () => {
     expect(rest.getAllByText('–')).toHaveLength(2)
   })
 
+  /** The 5 s read: the newest sample, no hour. */
+  const NEWEST = { ...SAMPLER, series: [], host: [{ t: AT, cpu: 20, mem: 1400 * MIB }] }
+  const segments = (name: string) => (screen.getByRole('img', { name }).querySelector('path')?.getAttribute('d')?.match(/[ML]/g) ?? []).length
+
+  it('carries the hour’s trails forward with each 5 s read', async () => {
+    fetchMock.mockImplementation(async (url: string) => ok(url.includes('hour=0') ? NEWEST : SAMPLER))
+    render(<ContainerBoard roles={ROLES} />)
+    await screen.findByText('20%')
+    expect(segments('Host CPU, last hour')).toBe(4)
+    expect(segments('supabase-db CPU, last hour')).toBe(4)
+  })
+
+  it('says when the hour could not be read, beside the 5 s freshness', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      url.includes('hour=0') ? ok(NEWEST) : new Response(JSON.stringify({ error: 'Sampler rows unreadable.' }), { status: 502 }))
+    render(<ContainerBoard roles={ROLES} />)
+    expect(await screen.findByText('Last hour not updated: Sampler rows unreadable.')).toBeInTheDocument()
+    expect(screen.getByText(/^Updated \d\d:\d\d:\d\d · every 5 s$/)).toBeInTheDocument()
+  })
+
   it('offers restart and logs only for compose services', async () => {
     serve(SAMPLER)
     render(<ContainerBoard roles={ROLES} />)

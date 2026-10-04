@@ -4,7 +4,8 @@ import { z } from '@/lib/zod'
 import { usePoll } from '@/lib/hooks/usePoll'
 import { postAdmin } from '@/lib/admin/browser'
 import {
-  LOG_SERVICES, parseContainersResponse, type ContainerState, type ContainersResponse, type SeriesPoint,
+  addRecent, LOG_SERVICES, NO_RECENT, parseContainersResponse, withRecent, type ContainerState, type ContainersResponse,
+  type SeriesPoint,
 } from '@/lib/admin/monitor'
 import { formatBytes } from '@/lib/admin/metrics'
 import { CARD, clock, Status, BUTTON } from '@/components/admin/Page'
@@ -150,7 +151,8 @@ function Card({ c, role, points, now, sampler, onLogs, onRestart }: {
  *  `roles` maps a container name to what it does here. */
 export function ContainerBoard({ roles }: { roles: Record<string, string> }) {
   const hourPoll = usePoll<ContainersResponse>(PATH, HOUR_MS, parseContainersResponse)
-  const poll = usePoll<ContainersResponse>(`${PATH}&hour=0`, EVERY_MS, parseContainersResponse)
+  const [recent, setRecent] = useState(NO_RECENT)
+  const poll = usePoll<ContainersResponse>(`${PATH}&hour=0`, EVERY_MS, parseContainersResponse, (d) => setRecent((r) => addRecent(r, d)))
   const [restart, setRestart] = useState<Service | null>(null)
   const [logs, setLogs] = useState<Service | null>(null)
   const [result, setResult] = useState<{ title: string; at: Date; text: string } | null>(null)
@@ -162,13 +164,16 @@ export function ContainerBoard({ roles }: { roles: Record<string, string> }) {
   const hour = hourData && !('enabled' in hourData) ? hourData : undefined
   const series = new Map<string, SeriesPoint[]>(hour?.series.map((s) => [s.name, s.points]))
   const containers = data ? [...data.containers].sort(byService) : []
-  const host = hour?.host ?? []
+  const host = withRecent(hour?.host ?? [], recent.host, HOUR)
   const last = data?.host.at(-1) ?? host.at(-1)
   const up = containers.filter((c) => c.status === 'running').length
 
   return (
     <div>
-      <p className="mb-3 text-sm"><Freshness poll={poll} everyMs={EVERY_MS} /></p>
+      <p className="mb-3 text-sm">
+        <Freshness poll={poll} everyMs={EVERY_MS} />
+        {hourPoll.state === 'error' && <> · <Status tone="bad">Last hour not updated: {hourPoll.message}</Status></>}
+      </p>
       {data && (
         <>
           {!sampler && <p className="mb-3 text-sm text-(--zs-soft)">Sampler offline; showing a slower SSM read without history.</p>}
@@ -191,7 +196,7 @@ export function ContainerBoard({ roles }: { roles: Record<string, string> }) {
 
           <ul className="mt-4 grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
             {containers.map((c) => (
-              <Card key={c.name} c={c} role={roles[c.name]} points={series.get(c.name) ?? []} now={Date.parse(data.at)} sampler={sampler}
+              <Card key={c.name} c={c} role={roles[c.name]} points={withRecent(series.get(c.name) ?? [], recent.containers[c.name] ?? [], HOUR)} now={Date.parse(data.at)} sampler={sampler}
                 onLogs={setLogs} onRestart={setRestart} />
             ))}
           </ul>

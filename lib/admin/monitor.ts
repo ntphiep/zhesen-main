@@ -347,6 +347,31 @@ export function parseContainersResponse(raw: unknown): ContainersResponse {
   return containersResponse.parse(raw)
 }
 
+/** The newest sample of each 5 s read since the hour was last read. The container board reads
+ *  the hour once a minute; without these its trails ran up to 60 s behind its tiles. */
+export interface RecentPoints { host: SeriesPoint[]; containers: Record<string, SeriesPoint[]> }
+export const NO_RECENT: RecentPoints = { host: [], containers: {} }
+
+/** Two minutes of 5 s reads, twice the interval of the hourly read. */
+const RECENT_KEEP = 24
+
+const push = (list: SeriesPoint[], p: SeriesPoint) => (list.at(-1)?.t === p.t ? list : [...list, p].slice(-RECENT_KEEP))
+
+export function addRecent(recent: RecentPoints, d: ContainersResponse): RecentPoints {
+  if ('enabled' in d) return recent
+  const host = d.host.at(-1)
+  const containers = { ...recent.containers }
+  for (const c of d.containers) containers[c.name] = push(containers[c.name] ?? [], { t: d.at, cpu: c.cpuPercent, mem: c.memBytes })
+  return { host: host ? push(recent.host, host) : recent.host, containers }
+}
+
+/** The hour's points, then the recent ones taken after its last, keeping the newest `keep`. */
+export function withRecent(points: SeriesPoint[], recent: SeriesPoint[], keep: number): SeriesPoint[] {
+  const last = points.at(-1)
+  const after = last ? recent.filter((p) => Date.parse(p.t) > Date.parse(last.t)) : recent
+  return after.length ? [...points, ...after].slice(-keep) : points
+}
+
 const logsResponse = z.union([
   z.object({ enabled: z.literal(false) }),
   z.object({
