@@ -42,10 +42,13 @@ function distinctTerms(glosses: string[]): string[] {
   })
 }
 
-/** A missing face is drawn by next/og's own fallback, so one failed fetch costs looks, not the image. */
-async function fonts(han: boolean, headword: string, rest: string): Promise<OgFont[]> {
+/** A missing face is drawn by next/og's own fallback, so one failed fetch costs looks, not the image.
+ *  Pinyin has its own face: Be Vietnam Pro has no ǎ ǐ ǒ ǔ ǖ ǘ ǚ ǜ, and next/og fetches a missing
+ *  glyph's font with no timeout. */
+async function fonts(han: boolean, headword: string, pinyin: string | null, rest: string): Promise<OgFont[]> {
   const loads = await Promise.allSettled([
     han ? googleFont('Noto Serif SC', [700], headword) : googleFont('Newsreader', [700], headword),
+    pinyin ? googleFont('Noto Sans', [500], pinyin) : Promise.resolve([]),
     googleFont('Be Vietnam Pro', [500, 800], rest),
   ])
   return loads.flatMap((r) => (r.status === 'fulfilled' ? r.value : []))
@@ -60,8 +63,8 @@ export default async function Image({ params }: { params: Promise<{ lang: string
   const han = language.script === 'han'
   const pinyin = han ? headwordPinyin(detail) : null
   const gloss = clip(distinctTerms(vietnameseGlosses(detail)).join(', '), 90) || null
-  const rest = [language.name, pinyin, gloss, BRAND].filter(Boolean).join(' ')
-  const loaded = await fonts(han, detail.headword, rest)
+  const rest = [language.name, gloss, BRAND].filter(Boolean).join(' ')
+  const loaded = await fonts(han, detail.headword, pinyin, rest)
 
   return new ImageResponse(
     (
@@ -76,7 +79,7 @@ export default async function Image({ params }: { params: Promise<{ lang: string
           <div style={{ display: 'flex', color: SEA_700, fontFamily: han ? 'Noto Serif SC' : 'Newsreader', fontWeight: 700, fontSize: headwordSize(detail.headword, han), lineHeight: 1.1 }}>
             {detail.headword}
           </div>
-          {pinyin && <div style={{ display: 'flex', marginTop: 12, color: SEA_600, fontSize: 44, fontWeight: 500 }}>{pinyin}</div>}
+          {pinyin && <div style={{ display: 'flex', marginTop: 12, color: SEA_600, fontFamily: 'Noto Sans', fontSize: 44, fontWeight: 500 }}>{pinyin}</div>}
           {gloss && <div style={{ display: 'flex', marginTop: 28, maxWidth: 1000, color: '#000', fontSize: 42, fontWeight: 500, lineHeight: 1.35 }}>{gloss}</div>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: SEA_700, fontSize: 40, fontWeight: 800, letterSpacing: -0.8 }}>
