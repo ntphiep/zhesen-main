@@ -2,7 +2,7 @@ import { getCachedEntryDetail, getCachedCrossLanguage, getCachedCharacters, getC
 import { getCachedLearnerBacklinks, getCachedLearnerLayer } from './learnerCached'
 import { getCachedGrammarPointsForEntry } from '@/lib/grammar/cached'
 import { groupWordForms } from './family'
-import { formNoteVi, lemmaFromSenses } from './lemma'
+import { formNoteVi, isFormOnly, lemmaFromSenses } from './lemma'
 import { exampleCandidates, PREVIEWED_ITEMS, relatedTabs, senseSections } from './wordPage'
 import type { WordViewInput } from './wordView'
 
@@ -30,7 +30,7 @@ export async function loadWordPage(entryId: string, followForm = true): Promise<
   // the related words so an inflected page is not a dead end. It only reads
   // `detail`, so it does not have to wait for the queries below.
   const lemma = lemmaFromSenses(detail.senses, detail.headword)
-  if (lemma && followForm) {
+  if (lemma && followForm && isFormOnly(detail.senses, lemma)) {
     const lemmaId = (await getCachedTermPreviews(detail.lang, [lemma]))
       .find((p) => p.headword.toLowerCase() === lemma.toLowerCase() && p.id !== detail.id)?.id
     const base = lemmaId ? await loadWordPage(lemmaId, false) : null

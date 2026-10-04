@@ -63,6 +63,47 @@ describe('an inflected form', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'emit' })).toBeInTheDocument()
   })
 
+  // better opened good's page, and its own verb and noun senses could not be reached.
+  it('keeps its own page, level and forms when it has senses of its own', async () => {
+    const better = entry('en:better', 'better', [
+      sense('comparative form of good: more good', 'so sánh hơn của good', { pos: 'adj' }),
+      sense('To improve.', 'cải thiện', { senseOrder: 2 }),
+      sense('A superior.', 'người hơn', { pos: 'noun', senseOrder: 3 }),
+    ], { level: 'A1', pos: 'adj' })
+    vi.mocked(getCachedEntryDetail).mockImplementation(async (id: string) => ({ 'en:better': better, 'en:good': emit })[id] ?? null)
+    vi.mocked(getCachedTermPreviews).mockResolvedValue([{ matchText: 'good', id: 'en:good', headword: 'good', pos: 'adj', ipa: null, reading: null, gender: null, glossVi: 'tốt', glossEn: null }])
+    vi.mocked(getCachedInflections).mockResolvedValueOnce([{ formText: 'bettered', formLabel: 'past' }])
+    const data = await loadWordPage('en:better')
+    expect(data?.detail.id).toBe('en:better')
+    expect(data?.formOf).toBeUndefined()
+    const view = buildWordView(data!)
+    expect(view.head.level).toBe('A1')
+    expect(view.forms.map((f) => f.text)).toEqual(['bettered'])
+  })
+
+  // sobre is a preposition whose verb senses are forms of sobrar.
+  it('keeps its own page when only a later part of speech is a form', async () => {
+    const sobre = entry('es:sobre', 'sobre', [
+      sense('on, upon', 'trên', { pos: 'prep' }),
+      sense('envelope', 'phong bì', { pos: 'noun', senseOrder: 2 }),
+      sense('inflection of sobrar:', 'dạng của sobrar', { senseOrder: 3 }),
+    ], { lang: 'es', pos: 'prep' })
+    vi.mocked(getCachedEntryDetail).mockImplementation(async (id: string) => ({ 'es:sobre': sobre, 'es:sobrar': emit })[id] ?? null)
+    vi.mocked(getCachedTermPreviews).mockResolvedValue([{ matchText: 'sobrar', id: 'es:sobrar', headword: 'sobrar', pos: 'verb', ipa: null, reading: null, gender: null, glossVi: 'thừa', glossEn: null }])
+    expect((await loadWordPage('es:sobre'))?.detail.id).toBe('es:sobre')
+  })
+
+  // went's first sense is the obsolete noun "a path"; the rest is a form of go.
+  it('opens the lemma of a form whose only other sense is obsolete', async () => {
+    const went = entry('en:went', 'went', [
+      sense('A path.', 'lối đi', { pos: 'noun', register: 'obsolete' }),
+      sense('simple past of go', 'quá khứ của go', { senseOrder: 2 }),
+    ])
+    vi.mocked(getCachedEntryDetail).mockImplementation(async (id: string) => ({ 'en:went': went, 'en:go': emit })[id] ?? null)
+    vi.mocked(getCachedTermPreviews).mockResolvedValue([{ matchText: 'go', id: 'en:go', headword: 'go', pos: 'verb', ipa: null, reading: null, gender: null, glossVi: 'đi', glossEn: null }])
+    expect((await loadWordPage('en:went'))?.formOf?.id).toBe('en:went')
+  })
+
   it('keeps its own page, without a level or the forms of the form, when the lemma is not an entry', async () => {
     vi.mocked(getCachedTermPreviews).mockResolvedValue([])
     vi.mocked(getCachedInflections).mockResolvedValueOnce([{ formText: 'emitteds', formLabel: 'plural' }])

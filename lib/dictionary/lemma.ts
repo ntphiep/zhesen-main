@@ -62,10 +62,22 @@ export function formLineLemma(senses: DictSense[], index: number): string | null
   return null
 }
 
+const escapeRe = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/** Whether every sense that is not old points at `lemma`, the rule of migration 0131: emitted,
+ *  or went past its obsolete noun. better has verb and noun senses of its own and keeps its
+ *  page; so does sobre, a preposition that `form_of` records as a form of sobrar. */
+export function isFormOnly(senses: DictSense[], lemma: string): boolean {
+  const ofLemma = new RegExp(String.raw`\bof\s+${escapeRe(lemma)}\s*[.;:)]*\s*$`, 'iu')
+  const own = [...senses.entries()].filter(([, s]) => !isOldSense(s))
+  return own.length > 0 && own.every(([i, s]) => ofLemma.test(s.glossEn?.trim() ?? '')
+    || formLineLemma(senses, i)?.toLowerCase() === lemma.toLowerCase())
+}
+
 /** What the form is, in the words of its pointer sense's Vietnamese gloss up to the lemma:
  *  emitted's "quá khứ và phân từ quá khứ của emit" gives "quá khứ và phân từ quá khứ của". */
 export function formNoteVi(senses: DictSense[], lemma: string): string {
-  const tail = new RegExp(String.raw`\s+${lemma.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\s*$`, 'iu')
+  const tail = new RegExp(String.raw`\s+${escapeRe(lemma)}\s*$`, 'iu')
   for (const [i, s] of senses.entries()) {
     if (pointerLemma(s.glossEn, i)?.toLowerCase() !== lemma.toLowerCase()) continue
     const note = (s.glossVi ?? '').trim().replace(tail, '')

@@ -2,6 +2,7 @@ import { buildConjugation, type Conjugation } from './conjugation'
 import { deriveLearnerLayer } from './derivedLayer'
 import { entryPath } from './entryId'
 import { groupWordForms } from './family'
+import { isFormOnly } from './lemma'
 import { entryMeaningVi, isCleanExample } from './textQuality'
 import {
   entryGlosses, exampleCandidates, knownWordExamples, layerRanked, layerSummary, planExamples, relatedTabs, senseLabel, senseSections, summaryLine,
@@ -206,13 +207,15 @@ export function buildWordView({
   previews = {}, resolvedExamples = [], learner = null, backlinks = [], formOf = null,
 }: WordViewInput): WordView {
   // Spanish verbs get the conjugation table instead of a line of forms, which for them
-  // would run to hundreds. A form's own forms (wents, breakings) are noise.
-  const conjugation = detail.lang === 'es' && !lemma ? buildConjugation(inflections) : null
+  // would run to hundreds. A form's own forms (wents, breakings) are noise; better, which has
+  // senses of its own, keeps its forms and level.
+  const formOnly = lemma !== null && isFormOnly(detail.senses, lemma)
+  const conjugation = detail.lang === 'es' && !formOnly ? buildConjugation(inflections) : null
   // A published layer orders the raw senses, so every layout leads with what it leads with.
   const senses = layerRanked(detail.senses, learner)
   const sections = senseSections(senses)
   const allForms = groupWordForms(leadingForms(inflections, sections[0]?.key))
-  const forms = conjugation || lemma ? [] : allForms
+  const forms = conjugation || formOnly ? [] : allForms
     .filter((f) => f.standard && f.text.toLowerCase() !== detail.headword.toLowerCase())
     .sort((a, b) => formRank(a.label) - formRank(b.label))
     .map((f) => ({ text: f.text, label: f.label, ...splitForm(detail.headword, f.text, detail.lang) }))
@@ -269,7 +272,7 @@ export function buildWordView({
     // A form carries no level of its own: CEFR-J levels words, and emitted read C1. A
     // published layer levels the sense it leads with.
     head: {
-      ...detail, level: lemma ? null : (learner?.source === 'ai' && learner.level) || detail.level,
+      ...detail, level: formOnly ? null : (learner?.source === 'ai' && learner.level) || detail.level,
       senses: [], relations: [], senseLinks: [], examples: detail.examples.filter((e) => e.translationVi),
     },
     formOf,
