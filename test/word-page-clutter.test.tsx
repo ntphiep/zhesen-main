@@ -116,8 +116,27 @@ describe('the learner layouts', () => {
     render(<MapLayout view={view} layer={layer} />)
     const note = screen.getByText(/^Warranty thường gặp nhất/)
     expect(note.className).toContain('line-clamp-4')
-    await userEvent.click(screen.getByRole('button', { name: 'Đọc tiếp' }))
+    const more = screen.getByRole('button', { name: 'Đọc tiếp' })
+    expect(more).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.click(more)
     expect(note.className).not.toContain('line-clamp-4')
+    expect(screen.getByRole('button', { name: 'Thu gọn' })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  // A keyboard reaches every fold, and the word page outlines whatever has focus.
+  it('makes every fold a button the keyboard reaches', async () => {
+    render(<GlanceLayout view={view} layer={{ ...layer, labels }} />)
+    const folds = screen.getAllByRole('button', { name: /^(Xem thêm|Đọc tiếp)/ })
+    expect(folds.map((b) => b.textContent)).toEqual(['Xem thêm 3 nghĩa khác', 'Xem thêm 3 kết hợp', 'Đọc tiếp'])
+    for (const b of folds) {
+      expect(b.tagName).toBe('BUTTON')
+      expect(b).toHaveAttribute('type', 'button')
+      expect(b).toHaveAttribute('aria-expanded', 'false')
+    }
+    await userEvent.tab()
+    let steps = 0
+    while (document.activeElement !== folds[0] && steps++ < 200) await userEvent.tab()
+    expect(document.activeElement).toBe(folds[0])
   })
 
   it('folds the other senses on the reading page after six', async () => {
