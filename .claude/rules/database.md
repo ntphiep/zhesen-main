@@ -121,6 +121,15 @@ on this machine.
   the long tail is disk reads rather than query shape. The EC2 target sets `shared_buffers`
   to 1 GB and `effective_cache_size` to 2560 MB (`infra/supabase/docker-compose.yml:315`),
   which is the gain the cutover buys.
+- `supabase_admin` has no statement timeout, and the instance's 3.8 GB of RAM is shared with
+  the model routers. On 2026-10-04 an ad hoc query that split every Vietnamese gloss inside a
+  correlated subquery reached 2.3 GB, the kernel killed it, and Postgres restarted every
+  connection, twice in four minutes. Open an ad hoc session with
+  `set statement_timeout = '60s'` and `set default_transaction_read_only = on`, and measure
+  one search call per statement.
+- A crash restart empties the cumulative statistics: `n_live_tup` reads 0 and
+  `n_mod_since_analyze` starts again from 0, so the changes made before the crash never
+  trigger an autoanalyze. Run `analyze` on `lex` and `public` after one.
 - `VACUUM` without `FULL` does not return disk space; it marks space for reuse.
 - `vercel.json` pins functions to `icn1` because the database is in `ap-northeast-2`.
   Vercel's default is `iad1` in Washington, which routes every cache miss through the United
