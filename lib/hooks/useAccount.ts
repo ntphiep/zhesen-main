@@ -37,9 +37,3 @@ export function useAccount(): { kind: AccountKind | null; email: string | null }
 
   return { kind, email }
 }
-
-/** An anonymous session must go to /register, which attaches an email to the SAME account
- *  so saved words survive; a browser holding nothing goes to /login. */
-export function signInHref(kind: AccountKind | null): string {
-  return kind === 'anonymous' ? '/register' : '/login'
-}

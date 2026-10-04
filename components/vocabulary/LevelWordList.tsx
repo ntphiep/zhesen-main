@@ -6,8 +6,8 @@ import { PageHead } from '@/components/theory/BlockPage'
 import { ArrowLeft, ArrowRight, Warn } from '@/components/theory/Glyphs'
 import s from '@/components/theory/Theory.module.css'
 import { entryPath } from '@/lib/dictionary/entryId'
-import { levelPageHref, theoryBlockPath, vocabularyLevelPath } from '@/lib/theory/path'
-import { signInHref, useAccount } from '@/lib/hooks/useAccount'
+import { levelPageHref, theoryBlockPath } from '@/lib/theory/path'
+import { useAccount } from '@/lib/hooks/useAccount'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { Language } from '@/lib/languages'
 import { Ipa } from '@/components/ui/Ipa'
@@ -18,7 +18,7 @@ type AddAllState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'done'; added: 
 
 /** `/theory/[lang]/vocabulary/[level]`: a paginated list of every word at one level, plus a
  * one-click bulk import into the wordlist. Browsing is public; the import needs an
- * account, so without one the button is a sign-in prompt carrying this page in `next`.
+ * account, so without one the same label leads to /register and back to this page.
  * The server renders page `?page=N` from row `initialStart`, and the previous and next
  * links are plain `?page=N` URLs, so a crawler reaches every word without the script. */
 export function LevelWordList({ language, level, levelIsEstimated, initialItems, initialStart = 0, total, pageSize }: {
@@ -79,7 +79,7 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
     }
   }
 
-  const here = vocabularyLevelPath(language.code, level)
+  const here = levelPageHref(language.code, level, Math.floor(start / pageSize) + 1)
   const addAllLabel = addAll.kind === 'busy' ? 'Đang thêm…'
     : addAll.kind === 'done' ? `Đã thêm ${addAll.added} từ${addAll.skipped > 0 ? ` (bỏ qua ${addAll.skipped} từ đã có)` : ''}`
     : addAll.kind === 'error' ? 'Lỗi, thử lại'
@@ -112,11 +112,11 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
           ) : (
             kind !== null && (
               <Link
-                href={`${signInHref(kind)}?next=${encodeURIComponent(here)}`}
+                href={`/register?next=${encodeURIComponent(here)}`}
                 prefetch={false}
                 className={s.ghost}
               >
-                {`Đăng nhập để thêm cả ${level} vào sổ tay (${total} từ)`}
+                {addAllLabel}
                 <LinkPending />
               </Link>
             )
