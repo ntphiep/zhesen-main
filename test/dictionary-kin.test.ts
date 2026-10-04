@@ -44,6 +44,18 @@ describe('getWordKin', () => {
     await expect(getWordKin(un.client, 'en', 'UN', 'UN')).resolves.toEqual([])
   })
 
+  // The ending rule above lost runner and running for run, used and useful for use.
+  it.each([
+    ['run', ['runs', 'runner', 'running', 'rune', 'runt', 'Runa'], ['runs', 'runner', 'running']],
+    ['use', ['used', 'useful', 'user', 'useless', 'usher'], ['used', 'useful', 'user', 'useless']],
+    ['go', ['goes', 'going', 'gone', 'goer', 'good', 'god', 'Goh'], ['goes', 'going', 'gone', 'goer']],
+    ['sad', ['sadly', 'sadness', 'sadder', 'saddle'], ['sadly', 'sadness', 'sadder']],
+  ])('keeps the family of %s and drops its look-alikes', async (stem, hits, kept) => {
+    const { client } = rpcClientReturning(hits.map((h) => row(h)))
+    const out = await getWordKin(client, 'en', stem, stem)
+    expect(out.map((w) => w.headword)).toEqual(kept)
+  })
+
   it('caps the list so the section stays readable', async () => {
     const rows = Array.from({ length: 30 }, (_, i) => row(`adjourn${i}`))
     const { client } = rpcClientReturning(rows)

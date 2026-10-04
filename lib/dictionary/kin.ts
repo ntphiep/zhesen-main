@@ -10,7 +10,17 @@ import type { LangCode } from '@/lib/languages'
  * caller must exclude Chinese: a Chinese prefix is a compound, `getEntriesContaining`.
  */
 const SHORT_STEM = 3
-const SHORT_STEM_ENDINGS = /^(?:s|es|ing|ings|ne|en|er|ers|ed|est)$/
+/** What a stem of three letters or fewer takes: goes, gone, goer, seen, sadly, useful. go
+ *  otherwise listed good and god, and UN under and until. */
+const SHORT_STEM_ENDINGS = /^(?:s|es|ed|ing|ings|n|ne|en|er|ers|est|ly|ful|less|ness|ment|able)$/
+
+/** Whether `word` is `stem` plus an ending, after a doubled last consonant (runner, sadder)
+ *  or, past a final e, a bare d, r or st (used, user). */
+function shortStemKin(word: string, stem: string): boolean {
+  let rest = word.slice(stem.length)
+  if (rest[0] === stem.at(-1) && /[^aeiou]/.test(rest[0])) rest = rest.slice(1)
+  return SHORT_STEM_ENDINGS.test(rest) || (stem.endsWith('e') && /^(?:d|r|rs|st)$/.test(rest))
+}
 
 export async function getWordKin(
   supabase: SupabaseClient, lang: LangCode, stem: string, headword: string, limit = 12,
@@ -25,10 +35,9 @@ export async function getWordKin(
   for (const r of rows) {
     const h = r.headword.toLowerCase()
     if (seen.has(h) || !h.startsWith(s)) continue
-    // A capital the stem lacks is a name (Goh for go), and past a stem of three letters or
-    // fewer only an inflection is kin: go listed good and god, UN under and until.
+    // A capital the stem lacks is a name (Goh for go).
     if (r.headword !== h && stem.trim() === s) continue
-    if (s.length <= SHORT_STEM && !SHORT_STEM_ENDINGS.test(h.slice(s.length))) continue
+    if (s.length <= SHORT_STEM && !shortStemKin(h, s)) continue
     seen.add(h)
     kin.push(r)
     if (kin.length >= limit) break
