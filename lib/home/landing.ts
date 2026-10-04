@@ -2,12 +2,10 @@ import { getCachedCrossLanguage, getCachedEntryDetail, getCachedSearch, getCache
 import { getCachedLearnerLayer } from '@/lib/dictionary/learnerCached'
 import { markHeadword, minorSenses, type LearnerLayer, type LearnerLink } from '@/lib/dictionary/learner'
 import { entryPath } from '@/lib/dictionary/entryId'
-import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
+import type { DictEntryDetail, DictEntryPreview, DictSense } from '@/lib/dictionary/types'
 import { byLang, LANG_CODES, type LangCode } from '@/lib/languages'
-import { PHONEMES } from '@/lib/theory/en/pronunciation'
-import { COLLOCATION_PATTERNS } from '@/lib/theory/en/collocation'
-import { theoryBlockPath } from '@/lib/theory/path'
-import { COLLOCATION_SLIPS, EXAMPLE_QUERY, GRAMMAR_SLIPS, SOUND_SLIPS, TAKE_ENTRY } from './content'
+import { z } from '@/lib/zod'
+import { EXAMPLE_QUERY, PHRASE_ENTRIES, PHRASE_VERB, TAKE_ENTRY } from './content'
 
 /** What the landing page reads on the server. Every read is cached, so the page stays static. */
 
@@ -106,33 +104,88 @@ export async function loadTake(): Promise<TakeMap | null> {
   return layer && detail && layer.senses.length ? takeMap(layer, detail) : null
 }
 
-export type SlipKind = 'sound' | 'colloc' | 'grammar'
-export interface Slip {
-  said: string
-  saidLang: LangCode | null
-  right: string
-  rightLang: LangCode
-  pron: string | null
-  vi: string | null
-  why: string
+/** A word in another language with the same meaning, linked when the dictionary has its page. */
+export interface Equivalent {
+  text: string
+  href: string | null
+}
+export interface PhraseItem {
+  headword: string
+  particle: string
   href: string
-  linkText: string
+  vi: string
+  zh: Equivalent | null
+  es: Equivalent | null
+}
+export interface PhraseFamily {
+  verb: string
+  verbVi: string | null
+  href: string
+  phrases: PhraseItem[]
 }
 
-/** Where Vietnamese speakers slip, with the explanations the theory pages already carry. */
-export function slips(): Record<SlipKind, Slip[]> {
-  const pronunciation = theoryBlockPath('en', 'pronunciation')
-  const collocation = theoryBlockPath('en', 'collocation')
-  const mistakes = COLLOCATION_PATTERNS.flatMap((p) => p.mistakes)
+/** Senses that only point at another entry or at the literal reading. */
+const POINTER = /^(used other than figuratively|synonym of|ellipsis of|alternative (form|spelling) of|misspelling of)/i
+
+/** The sense a learner meets first: by sense frequency where the data ranks one, then a
+ *  reviewed Vietnamese gloss before a machine one, then dictionary order. A pointer sense
+ *  and a Google translation never lead. */
+export function leadSense(senses: DictSense[]): DictSense | null {
+  const usable = senses.filter((s) => s.glossVi?.trim() && s.glossViSource !== 'mt:google' && !POINTER.test(s.glossEn ?? ''))
+  return usable.sort((a, b) =>
+    (a.senseFrequency ?? Infinity) - (b.senseFrequency ?? Infinity)
+    || Number(a.glossViIsMt ?? false) - Number(b.glossViIsMt ?? false)
+    || a.senseOrder - b.senseOrder)[0] ?? null
+}
+
+/** "Từ chối, bác bỏ" reads as "từ chối". */
+export function firstTerm(gloss: string): string {
+  const t = gloss.split(/[,;]/)[0].trim()
+  return t.charAt(0).toLocaleLowerCase('vi') + t.slice(1)
+}
+
+const translations = z.object({ translations: z.object({ es: z.array(z.string()) }).partial() }).partial()
+
+/** One phrasal verb: its lead meaning, and the Chinese and Spanish words the Vietnamese
+ *  lookup of that meaning answers first. Spanish keeps to the entry's own translations:
+ *  the lookup's first answer among them, linked, or else the first translation. */
+export function phraseItem(
+  detail: Pick<DictEntryDetail, 'id' | 'headword' | 'attributes'>, verb: string, vi: string, answers: Answers | null,
+): PhraseItem {
+  const link = (e: DictEntryPreview): Equivalent => ({ text: e.headword, href: entryPath(e.id) })
+  const es = translations.safeParse(detail.attributes).data?.translations?.es ?? []
+  const own = new Set(es.map((t) => t.toLowerCase()))
+  const esHit = answers?.es.find((e) => own.has(e.headword.toLowerCase()))
+  const zh = answers?.zh[0]
   return {
-    sound: SOUND_SLIPS.flatMap((s) => {
-      const why = PHONEMES.find((p) => p.symbol === s.symbol)?.trapVi
-      return why ? [{ said: s.said, saidLang: null, right: s.right, rightLang: 'en', pron: s.pron, vi: null, why, href: pronunciation, linkText: 'Bảng phát âm' }] : []
-    }),
-    colloc: COLLOCATION_SLIPS.flatMap((s) => {
-      const m = mistakes.find((x) => x.wrong === s.wrong)
-      return m ? [{ said: m.wrong, saidLang: null, right: m.right, rightLang: 'en', pron: null, vi: s.vi, why: m.whyVi, href: collocation, linkText: 'Collocation' }] : []
-    }),
-    grammar: GRAMMAR_SLIPS.map((s) => ({ said: s.said, saidLang: s.lang, right: s.right, rightLang: s.lang, pron: null, vi: s.vi, why: s.why, href: s.href, linkText: s.linkText })),
+    headword: detail.headword,
+    particle: detail.headword.slice(verb.length).trim(),
+    href: entryPath(detail.id),
+    vi,
+    zh: zh ? link(zh) : null,
+    es: esHit ? link(esHit) : es[0] ? { text: es[0], href: null } : null,
+  }
+}
+
+/** One verb and its phrasal verbs, each with its Vietnamese meaning and the same meaning in
+ *  Chinese and Spanish. Null when fewer than three can be shown. */
+export async function loadPhrases(): Promise<PhraseFamily | null> {
+  try {
+    const [verb, ...details] = await Promise.all([PHRASE_VERB, ...PHRASE_ENTRIES].map((id) => getCachedEntryDetail(id)))
+    if (!verb) return null
+    const picked = details.flatMap((d) => {
+      const sense = d && leadSense(d.senses)
+      return d && sense?.glossVi ? [{ d, vi: firstTerm(sense.glossVi) }] : []
+    })
+    const answers = await Promise.all(picked.map(({ vi }) =>
+      getCachedSearch(vi, [...LANG_CODES], 'vi').then((r) => r.entries, () => null)))
+    const phrases = picked.map(({ d, vi }, i) => phraseItem(d, verb.headword, vi, answers[i]))
+    const verbSense = leadSense(verb.senses)
+    return phrases.length >= 3
+      ? { verb: verb.headword, verbVi: verbSense?.glossVi ? firstTerm(verbSense.glossVi) : null, href: entryPath(verb.id), phrases }
+      : null
+  } catch (e) {
+    console.error('landing phrases failed', e)
+    return null
   }
 }

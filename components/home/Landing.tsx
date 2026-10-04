@@ -1,12 +1,12 @@
 import Link from 'next/link'
 import { getLanguage, type LangCode } from '@/lib/languages'
 import { theoryLangPath } from '@/lib/theory/path'
-import type { Answers, Slip, SlipKind, TakeMap } from '@/lib/home/landing'
+import type { Answers, PhraseFamily, TakeMap } from '@/lib/home/landing'
 import type { WorldFact } from '@/lib/home/worldFacts'
 import { LandingWorld } from './LandingWorld'
 import { ReviewDemo } from './ReviewDemo'
+import { Phrases } from './Phrases'
 import { SensesMap } from './SensesMap'
-import { Slips } from './Slips'
 import { Reveal } from './Reveal'
 import { newsreader, patrickHand } from './fonts'
 import s from './Landing.module.css'
@@ -20,12 +20,12 @@ const THEORY: { lang: LangCode; text: string }[] = [
 const ARROW = <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" /></svg>
 
 /** The page every visitor sees at `/`: the globe and lookup, then what happens to a saved
- *  word, the senses of take, the usual slips, and the way into each language's theory. */
-export function Landing({ example, facts, take, slips }: {
+ *  word, the senses of take, one verb's phrasal verbs, and the way into each language's theory. */
+export function Landing({ example, facts, take, phrases }: {
   example: Answers | null
   facts: Record<LangCode, WorldFact>
   take: TakeMap | null
-  slips: Record<SlipKind, Slip[]>
+  phrases: PhraseFamily | null
 }) {
   return (
     <Reveal className={`${s.landing} ${newsreader.variable} ${patrickHand.variable}`}>
@@ -60,13 +60,19 @@ export function Landing({ example, facts, take, slips }: {
         </section>
       )}
 
-      <section className={s.slips} aria-labelledby="slips-title">
-        <div className={s.wrap}>
-          <h2 id="slips-title" className={s.h2} data-reveal="">Người Việt hay đọc think thành “tink”.</h2>
-          <p className={s.lede} data-reveal="" data-i="1">Phần lý thuyết ghi lại những chỗ người Việt hay sai, kèm cách sửa.</p>
-          <Slips slips={slips} />
-        </div>
-      </section>
+      {phrases && (
+        <section className={s.phrases} aria-labelledby="phrases-title">
+          <div className={s.wrap}>
+            <h2 id="phrases-title" className={s.h2} data-reveal="">
+              {phrases.phrases.slice(0, 2).map((p) => `${p.headword} là ${p.vi}`).join(', ')}.
+            </h2>
+            <p className={s.lede} data-reveal="" data-i="1">
+              Mỗi cụm động từ có nghĩa riêng, nối sang từ cùng nghĩa trong tiếng Trung và <span className={s.nw}>tiếng Tây Ban Nha</span>.
+            </p>
+            <Phrases family={phrases} />
+          </div>
+        </section>
+      )}
 
       <section className={s.theory} aria-label="Lý thuyết">
         {THEORY.map((t, i) => {
