@@ -1,12 +1,17 @@
 -- 0130_term_previews_current_sense.sql
 -- The preview gloss on family, phrase and lemma chips leads with a current sense. 0027 took the
--- first gloss by `sense_order`, so cookies previewed as "Cướp bóng" and going as "Đến thường
--- xuyên": 2,262 entries lead with an obsolete, archaic, dated, rare, vulgar or offensive sense,
--- 391 of them in the top 20k. A published learner layer now gives the preview its first sense,
--- as on the word page; otherwise the order matches `rankSenses` (lib/dictionary/textQuality.ts):
--- old register last, then `sense_frequency`, then `sense_order`. Ranked by frequency alone, take
--- would preview as "chiếm đoạt, lấy" (frequency 1) where its layer says "cầm, lấy, mang, di
--- chuyển". The signature, columns and grants are unchanged.
+-- first gloss by `sense_order`, so going previewed as "đến thường xuyên". A published learner
+-- layer now gives the preview its first sense, as on the word page; otherwise the order matches
+-- `rankSenses` (lib/dictionary/textQuality.ts): old register last, then `sense_frequency`, then
+-- `sense_order`. Ranked by frequency alone, take would preview as "chiếm đoạt, lấy" (frequency 1)
+-- where its layer says "cầm, lấy, mang, di chuyển". Run read-only on production on 2026-10-04,
+-- this changes 7,467 of 869,401 previews, 4,722 of them in the top 20k and 4,040 through a layer.
+--
+-- `create or replace` keeps the owner and grants but resets every attribute the text omits. On
+-- 2026-10-04 production held: security invoker, stable, parallel unsafe, cost 100, rows 1000,
+-- proconfig {search_path=lex, extensions, public}. All are restated below. `sense_frequency` is
+-- text holding "1" to "5" (16,686 rows); only those cast, as `parseSenseFrequency` reads them, so
+-- no other value can fail the cast. Bump the `dict-term-previews` cache key once applied.
 
 set lock_timeout = '5s';
 
@@ -15,6 +20,10 @@ returns table(match_text text, id text, headword text, pos text, ipa text, readi
               gender text, gloss_vi text, gloss_en text)
 language sql
 stable
+security invoker
+parallel unsafe
+cost 100
+rows 1000
 set search_path = lex, extensions, public
 as $$
   with want as (
@@ -36,7 +45,7 @@ as $$
            row_number() over (
              partition by s.entry_id
              order by coalesce(s.register, '') ~ '\m(obsolete|archaic|dated|rare|vulgar|offensive)\M',
-                      case when s.sense_frequency ~ '^\d+$' then s.sense_frequency::int end nulls last,
+                      case when s.sense_frequency ~ '^[1-5]$' then s.sense_frequency::int end nulls last,
                       s.sense_order) as k
     from lex.senses s
     where s.entry_id in (select h.id from hit h where h.rn = 1)
