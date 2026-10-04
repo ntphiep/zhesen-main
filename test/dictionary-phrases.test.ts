@@ -33,6 +33,13 @@ describe('phraseCandidates', () => {
     expect(found).toContainEqual({ key: 'gave up', text: 'gave it up', first: 1, last: 3 })
   })
 
+  // "Can you tell me how to get to the station?" showed the idiom you tell me, "I don't know".
+  it('starts no phrase on the subject of a question', () => {
+    expect(keys('Can you tell me how to get there')).not.toContain('you tell me')
+    expect(keys('Can you tell me how to get there')).toContain('tell me')
+    expect(keys('Well, you tell me')).toContain('you tell me')
+  })
+
   it('stops at six words', () => {
     expect(keys('at the end of the day we went home').some((k) => k.split(' ').length > 6)).toBe(false)
     expect(keys('at the end of the day')).toContain('at the end of the day')
@@ -58,6 +65,16 @@ describe('pickPhrases', () => {
   it('drops a candidate the dictionary answered with a single word', () => {
     const segments = tokenize('en', 'can not')
     expect(pickPhrases(phraseCandidates(segments), new Map([['can not', entry('cannot')]]))).toEqual([])
+  })
+
+  // want to and play in showed English pointers with no Vietnamese meaning.
+  it('drops an entry with no Vietnamese meaning and a sum-of-parts entry', () => {
+    const segments = tokenize('en', 'I want to play in the garden')
+    const found = new Map([
+      ['want to', { ...entry('want to'), glossVi: null }],
+      ['play in', { ...entry('play in'), glossEn: 'Used other than figuratively or idiomatically: see play, in.' }],
+    ])
+    expect(pickPhrases(phraseCandidates(segments), found)).toEqual([])
   })
 
   it('lists an entry once however often the passage repeats it', () => {

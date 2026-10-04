@@ -24,6 +24,18 @@ const FUNCTION_WORDS = new Set([
 /** The object a separable phrasal verb takes between its verb and its particle. */
 const OBJECT_PRONOUNS = new Set(['it', 'him', 'her', 'them', 'me', 'us', 'you', 'this', 'that'])
 
+/** A subject after one of these is a question's ("can you tell me how"), never the start of
+ *  an idiom such as "you tell me", which means "I don't know". */
+const SUBJECTS = new Set(['i', 'you', 'he', 'she', 'it', 'we', 'they'])
+const AUXILIARIES = new Set([
+  'can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might', 'must', 'do', 'does', 'did',
+  'is', 'are', 'was', 'were', 'am', 'have', 'has', 'had',
+])
+
+/** Wiktionary's sum-of-parts entries, such as play in: "Used other than figuratively or
+ *  idiomatically: see play, in." */
+const SUM_OF_PARTS = /^used other than figuratively or idiomatically/i
+
 const PARTICLES = new Set([
   'up', 'down', 'in', 'out', 'on', 'off', 'over', 'away', 'back', 'about', 'along', 'around', 'round', 'aside',
   'through', 'by', 'apart', 'together', 'forward',
@@ -73,6 +85,7 @@ export function phraseCandidates(segments: Segment[]): PhraseCandidate[] {
   const lower = words.map((w) => w.toLowerCase())
   const out: PhraseCandidate[] = []
   for (let i = 0; i < words.length; i++) {
+    if (SUBJECTS.has(lower[i]) && i > 0 && joined[i] && AUXILIARIES.has(lower[i - 1])) continue
     for (let n = 2; n <= MAX_WORDS && i + n <= words.length; n++) {
       if (!joined[i + n - 1]) break
       const span = lower.slice(i, i + n)
@@ -93,12 +106,14 @@ export interface FoundPhrase {
   entry: DictEntryPreview
 }
 
-/** The candidates the dictionary holds as multi-word entries, longest first where two
- *  overlap, then in reading order, each entry once. */
+/** The candidates the dictionary holds as multi-word entries with a Vietnamese meaning,
+ *  longest first where two overlap, then in reading order, each entry once. want to and go
+ *  to are entries with no Vietnamese, and play in is a sum-of-parts entry. */
 export function pickPhrases(candidates: PhraseCandidate[], found: Map<string, DictEntryPreview>): FoundPhrase[] {
   const hits = candidates
     .map((c) => ({ c, entry: found.get(c.key) }))
-    .filter((h): h is { c: PhraseCandidate; entry: DictEntryPreview } => !!h.entry && /\s/.test(h.entry.headword.trim()))
+    .filter((h): h is { c: PhraseCandidate; entry: DictEntryPreview } => !!h.entry && /\s/.test(h.entry.headword.trim())
+      && Boolean(h.entry.glossVi?.trim()) && !SUM_OF_PARTS.test(h.entry.glossEn?.trim() ?? ''))
     .sort((a, b) => (b.c.last - b.c.first) - (a.c.last - a.c.first) || a.c.first - b.c.first)
   const covered = new Set<number>()
   const picked: { c: PhraseCandidate; entry: DictEntryPreview }[] = []
