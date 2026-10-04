@@ -43,7 +43,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
   const irregular = view.forms.some((f) => f.irregular)
   const anchor = useAnchor()
 
-  const wordRows = (words: (ViewWord | FamilyWord)[], family = false): Row[] =>
+  const wordRows = (words: (ViewWord | FamilyWord)[], family = false, tag?: string): Row[] =>
     words.map((w) => ({
       key: w.text,
       left: (
@@ -53,6 +53,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
           </WordLink>
           <PosChip value={w.pos} />
           <LevelChip level={w.level} />
+          {tag && <span className="text-xs text-(--zs-soft)">{tag}</span>}
         </span>
       ),
       right: <span className={`text-[15px] ${w.gloss ? '' : 'text-(--zs-soft)'}`}>{w.gloss ?? 'Chưa có nghĩa'}{w.glossIsEnglish && <EnglishMark />}</span>,
@@ -88,7 +89,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
     ...(view.family.length + view.related.length > 0 ? [{
       id: 'family', title: 'Họ từ', count: view.family.length + view.related.length,
       note: view.family.length > 0 && <span className="text-[13px] text-(--zs-soft)">cùng gốc {view.lemma ?? head.headword}</span>,
-      node: <RowList rows={[...wordRows(view.family, true), ...wordRows(view.related)]} shown={6} more={(n) => `Xem thêm ${n} từ`} />,
+      node: <RowList rows={[...wordRows(view.family, true), ...wordRows(view.related, false, 'liên quan')]} shown={6} more={(n) => `Xem thêm ${n} từ`} />,
     }] : []),
     ...(view.synonyms.length + view.antonyms.length > 0 ? [{
       id: 'synonyms', title: view.antonyms.length > 0 ? 'Đồng nghĩa và trái nghĩa' : 'Đồng nghĩa', count: view.synonyms.length + view.antonyms.length,

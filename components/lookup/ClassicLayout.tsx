@@ -109,7 +109,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
             <WordTable words={view.family} head="Từ" family level />
             {view.related.length > 0 && (
               <div className="flex flex-col gap-2">
-                <span className="text-xs text-(--zs-soft)">Cùng gốc</span>
+                <span className="text-xs text-(--zs-soft)">Từ liên quan</span>
                 <ChipRow words={view.related} />
               </div>
             )}

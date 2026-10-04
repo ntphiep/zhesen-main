@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { LookupView } from '@/components/lookup/LookupView'
 import { wordLayout } from '@/lib/dictionary/wordLayout'
 import type { DictEntryDetail, DictExample, DictSense } from '@/lib/dictionary/types'
@@ -41,5 +42,22 @@ describe('the overview examples', () => {
     render(<LookupView detail={entry({ senses, examples })} characters={[]} siblings={[]} />)
     const card = document.getElementById('examples')!
     expect(within(card).getByText('Cô ấy đã bỏ thuốc.')).toBeInTheDocument()
+  })
+})
+
+describe('thesaurus-style related terms', () => {
+  // run listed speedy, way and rush under "Cùng gốc", which says they share its origin.
+  const run = entry({
+    id: 'en:run', headword: 'run', senses: [sense(1, 'chạy', 'To move swiftly.', { id: 'en:run#1' })],
+    relations: ['speedy', 'rush'].map((t) => ({ relationType: 'related', relatedText: t, relatedEntryId: null })),
+  })
+
+  it.each([['Tổng quan'], ['Song ngữ'], ['Cổ điển']])('calls them related words, not words of the same root, in %s', async (name) => {
+    render(<LookupView detail={run} characters={[]} siblings={[]} />)
+    await userEvent.click(screen.getByRole('button', { name }))
+    await screen.findAllByText('speedy')
+    expect(screen.getAllByText(/liên quan/i).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/cùng gốc/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/từ cùng họ/)).not.toBeInTheDocument()
   })
 })

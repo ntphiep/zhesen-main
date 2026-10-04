@@ -480,7 +480,7 @@ export function PhrasesCard({ headword, lang, phrases }: { headword: string; lan
 }
 
 /** Họ từ as rows: the word with the part it adds in blue, its meaning over its part of
- *  speech, and its level. Words that share the root follow as chips. */
+ *  speech, and its level. Related words follow as chips. */
 export function FamilyRows({ family, related, shown = 6 }: { family: FamilyWord[]; related: ViewWord[]; shown?: number }) {
   const [expanded, setExpanded] = useState(false)
   const rows = expanded ? family : family.slice(0, shown)
@@ -509,7 +509,7 @@ export function FamilyRows({ family, related, shown = 6 }: { family: FamilyWord[
       )}
       {related.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs text-(--zs-soft)">Cùng gốc</span>
+          <span className="text-xs text-(--zs-soft)">Từ liên quan</span>
           <ChipRow words={related} />
         </div>
       )}

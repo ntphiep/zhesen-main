@@ -131,7 +131,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
   const stats = [
     { n: total, label: 'nghĩa' },
     { n: view.phrases.length, label: 'cụm từ' },
-    { n: view.family.length + view.related.length, label: 'từ cùng họ' },
+    { n: view.family.length, label: 'từ cùng họ' },
   ].filter((s) => s.n > 0)
 
   return (

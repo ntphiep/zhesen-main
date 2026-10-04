@@ -216,7 +216,7 @@ export function relatedTabs({ lang, headword, lemma, relations, containing, kin,
     { key: 'derived', label: 'Phái sinh', items: [...kinItems.filter((i) => !isPhrase(i.text)), ...fromText(c.derived.filter((t) => isPlausibleDerived(t, lemma ?? headword)))] },
     { key: 'synonyms', label: 'Cận nghĩa', items: fromText(c.synonyms) },
     { key: 'antonyms', label: 'Trái nghĩa', items: fromText(c.antonyms) },
-    { key: 'related', label: 'Cùng gốc từ', items: fromText(c.related) },
+    { key: 'related', label: 'Từ liên quan', items: fromText(c.related) },
   ]
   const seen = new Set([headword, ...formTexts].map((t) => t.toLowerCase()))
   return candidates
