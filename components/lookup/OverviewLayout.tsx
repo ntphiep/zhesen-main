@@ -37,18 +37,24 @@ export function OverviewLayout({ view }: { view: WordView }) {
   const sections = senseSections(view.senses)
   const total = sections.reduce((n, s) => n + s.senses.length, 0)
   // A published layer names the senses a learner meets first, each with its own level.
-  const lines: MainLine[] = view.learner?.source === 'ai' && view.learner.senses.length > 0
-    ? view.learner.senses.slice(0, MAIN_LINES).map((s) => ({
+  const layer = view.learner?.source === 'ai' && view.learner.senses.length > 0 ? view.learner.senses.slice(0, MAIN_LINES) : null
+  const leadSenses = layer ? [] : mainSenses(sections, MAIN_LINES).flatMap((g) => g.senses)
+  const lines: MainLine[] = layer
+    ? layer.map((s) => ({
       key: `layer-${s.order}`, text: s.viTerms.join(', '), pos: s.pos, cefr: s.cefr, en: s.enDefinition, mark: s.pivot ? 'pivot' : null,
     }))
-    : mainSenses(sections, MAIN_LINES).flatMap((g) => g.senses).map((s, i) => ({
+    : leadSenses.map((s, i) => ({
       key: s.id ?? `${s.senseOrder}-${i}`, text: s.glossVi ?? s.pivotVi ?? s.glossEn ?? '', pos: s.pos, cefr: null,
       en: s.glossVi || s.pivotVi ? s.glossEn : null, mark: s.glossVi ? null : s.pivotVi ? 'pivot' : 'english',
     }))
-  const mainCount = lines.length
   const classifiers = [...new Set(view.senses.flatMap((s) => parseClassifiers(s.glossEn)))]
-  // With every sense already in the top card, the explorer below would repeat it.
-  const explorer = total > mainCount
+  // The explorer holds what the top card leaves out: give up's "từ bỏ" senses were read twice.
+  const covered = new Set(layer?.flatMap((s) => s.sourceSenseIds))
+  const rest = sections
+    .map((sec) => ({ ...sec, senses: sec.senses.filter((s) => !leadSenses.includes(s) && !(s.id && covered.has(s.id))) }))
+    .filter((sec) => sec.senses.length > 0)
+  const restCount = rest.reduce((n, s) => n + s.senses.length, 0)
+  const explorer = restCount > 0
   // The sense-linked sentences lead, but an untranslated one never goes ahead of a translated one.
   const examples = translatedFirst(cleanExamples([...Object.values(view.examplesBySense), ...view.examples], view.resolved, head.lang), view.glosses)
   const heroSpan = lines.length === 0 ? 12 : 5
@@ -106,8 +112,12 @@ export function OverviewLayout({ view }: { view: WordView }) {
       ),
     },
     explorer && {
-      key: 'senses', wide: true, rows: 6 + 2 * sections.length,
-      node: <Card id="senses" label={`Tất cả ${total} nghĩa, theo nhóm`}><SenseExplorer sections={sections} /></Card>,
+      key: 'senses', wide: true, rows: 6 + 2 * rest.length,
+      node: (
+        <Card id="senses" label={restCount === total ? `Tất cả ${total} nghĩa, theo nhóm` : `${restCount} nghĩa khác, theo nhóm`}>
+          <SenseExplorer sections={rest} />
+        </Card>
+      ),
     },
     view.siblings.length > 0 && {
       key: 'other-languages', wide: false, rows: 2 + 2 * view.siblings.length,
@@ -173,7 +183,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
             id="meaning"
             label="Nghĩa chính"
             className={SPAN[7]}
-            action={explorer ? <a href="#senses" className="text-[13px] font-semibold text-(--zs-pen) hover:underline">Cả {total} nghĩa</a> : undefined}
+            action={explorer ? <a href="#senses" className="text-[13px] font-semibold text-(--zs-pen) hover:underline">Thêm {restCount} nghĩa</a> : undefined}
           >
             <ol className="flex flex-col">
               {lines.map((l, i) => (

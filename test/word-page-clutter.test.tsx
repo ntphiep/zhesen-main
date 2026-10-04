@@ -73,6 +73,21 @@ describe('the overview hero', () => {
   })
 })
 
+describe('the overview senses', () => {
+  // give up's "Tất cả 12 nghĩa" repeated the "từ bỏ" senses of the main card above it.
+  it('lists in the explorer only the senses the main card leaves out', () => {
+    const terms = ['từ bỏ', 'đầu hàng', 'cống hiến', 'nhượng lại', 'tiết lộ']
+    const giveUp = { ...take, id: 'en:give up', headword: 'give up', senses: terms.map((t, i) => sense(i + 1, t, `gloss ${i + 1}`)) }
+    render(<LookupView detail={giveUp} characters={[]} siblings={[]} />)
+    const main = document.getElementById('meaning')!
+    const explorer = document.getElementById('senses')!
+    expect(within(main).getByRole('link', { name: 'Thêm 1 nghĩa' })).toHaveAttribute('href', '#senses')
+    expect(explorer).toHaveTextContent('1 nghĩa khác, theo nhóm')
+    expect(within(explorer).getByRole('button', { name: 'tiết lộ' })).toBeInTheDocument()
+    expect(within(explorer).queryByRole('button', { name: 'từ bỏ' })).not.toBeInTheDocument()
+  })
+})
+
 describe('the first meaning comes before the forms', () => {
   const withForms = { detail: take, characters: [], siblings: [], inflections: [{ formText: 'took', formLabel: 'past' }, { formText: 'takes', formLabel: 'third-person singular' }] }
 
