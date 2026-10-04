@@ -20,6 +20,14 @@ describe('lemmaFromSenses', () => {
     expect(lemmaFromSenses([sense('plural of sheep')], 'sheep')).toBeNull()
   })
 
+  // fed up named feed, and took off could not name take off at all.
+  it('reads a lemma of as many words as the headword', () => {
+    expect(lemmaFromSenses([sense('simple past and past participle of feed up')], 'fed up')).toBe('feed up')
+    expect(lemmaFromSenses([sense('simple past of take off')], 'took off')).toBe('take off')
+    expect(lemmaFromSenses([sense('simple past of take off in some senses')], 'took off')).toBe('take')
+    expect(lemmaFromSenses([sense('plural of person in law')], 'people')).toBe('person')
+  })
+
   it('leaves an ordinary definition alone', () => {
     expect(lemmaFromSenses([sense('A formal gathering of persons.')], 'congress')).toBeNull()
     expect(lemmaFromSenses([sense('To think of something.')], 'consider')).toBeNull()

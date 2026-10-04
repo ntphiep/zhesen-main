@@ -33,6 +33,18 @@ const POINTER_RE = new RegExp(String.raw`^((?:(?:${POINTER_WORDS.join('|')}|\([^
 const INFLECTION_RE = new RegExp(String.raw`\b(?:${INFLECTION_WORDS.join('|')})\b`, 'i')
 
 const FORM_LINE_RE = new RegExp(String.raw`^(?:(?:${POINTER_WORDS.join('|')}|\([^)]*\))[\s.,;]*)+$`, 'iu')
+/** Words after the pointed-at word that run on to the end of the gloss. */
+const RUN_ON_RE = /^((?:\s+[\p{L}][\p{L}''’-]*)+)\s*[.;:)]*\s*$/u
+
+/** The lemma a pointer match names. fed up's "simple past and past participle of feed up"
+ *  names feed up, not feed: a headword of several words takes as many from the gloss. */
+function pointedAt(gloss: string, m: RegExpMatchArray, headword: string): string {
+  const first = m[2].trim()
+  const words = headword.trim().split(/\s+/).length
+  if (words < 2) return first
+  const rest = gloss.slice((m.index ?? 0) + m[0].length).match(RUN_ON_RE)?.[1].trim().split(/\s+/) ?? []
+  return rest.length === words - 1 ? [first, ...rest].join(' ') : first
+}
 
 /** The word the sense at `index` (dictionary order, from 0) points at: "plural of person"
  *  and Wiktionary's heading "inflection of casar:" name person and casar. It needs a grammar
@@ -63,14 +75,16 @@ export function formLineLemma(senses: DictSense[], index: number): string | null
 }
 
 const escapeRe = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+/** A gloss ending in "of <lemma>", as "plural of hora" and "simple past of take off" do. */
+const ofLemma = (lemma: string) => new RegExp(String.raw`\bof\s+${escapeRe(lemma)}\s*[.;:)]*\s*$`, 'iu')
 
 /** Whether every sense that is not old points at `lemma`, the rule of migration 0131: emitted,
  *  or went past its obsolete noun. better has verb and noun senses of its own and keeps its
  *  page; so does sobre, a preposition that `form_of` records as a form of sobrar. */
 export function isFormOnly(senses: DictSense[], lemma: string): boolean {
-  const ofLemma = new RegExp(String.raw`\bof\s+${escapeRe(lemma)}\s*[.;:)]*\s*$`, 'iu')
+  const pointer = ofLemma(lemma)
   const own = [...senses.entries()].filter(([, s]) => !isOldSense(s))
-  return own.length > 0 && own.every(([i, s]) => ofLemma.test(s.glossEn?.trim() ?? '')
+  return own.length > 0 && own.every(([i, s]) => pointer.test(s.glossEn?.trim() ?? '')
     || formLineLemma(senses, i)?.toLowerCase() === lemma.toLowerCase())
 }
 
@@ -79,7 +93,7 @@ export function isFormOnly(senses: DictSense[], lemma: string): boolean {
 export function formNoteVi(senses: DictSense[], lemma: string): string {
   const tail = new RegExp(String.raw`\s+${escapeRe(lemma)}\s*$`, 'iu')
   for (const [i, s] of senses.entries()) {
-    if (pointerLemma(s.glossEn, i)?.toLowerCase() !== lemma.toLowerCase()) continue
+    if (pointerLemma(s.glossEn, i) === null || !ofLemma(lemma).test(s.glossEn?.trim() ?? '')) continue
     const note = (s.glossVi ?? '').trim().replace(tail, '')
     if (note && /\scủa$/u.test(note)) return note.charAt(0).toLocaleLowerCase('vi') + note.slice(1)
   }
@@ -96,7 +110,7 @@ export function lemmaFromSenses(senses: DictSense[], headword: string): string |
     if (s.pos !== lead.pos) continue
     const m = s.glossEn?.match(POINTER_RE)
     if (!m || (i > 0 && !INFLECTION_RE.test(m[1]))) continue
-    const lemma = m[2].trim()
+    const lemma = pointedAt(s.glossEn ?? '', m, headword)
     // A gloss that points back at the headword ("plural of sheep") says nothing:
     // the learner is already on that page.
     if (lemma.toLowerCase() !== headword.toLowerCase()) return lemma
