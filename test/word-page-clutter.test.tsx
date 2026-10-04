@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { WARRANTY_LAYER_ROW, WARRANTY_SENSES } from './helpers/learner'
+import { GlanceLayout } from '@/components/lookup/GlanceLayout'
 import { LookupView } from '@/components/lookup/LookupView'
+import { MapLayout } from '@/components/lookup/MapLayout'
+import { ReadLayout } from '@/components/lookup/ReadLayout'
 import { wordLayout } from '@/lib/dictionary/wordLayout'
 import { buildWordView } from '@/lib/dictionary/wordView'
-import type { LearnerBacklink } from '@/lib/dictionary/learner'
+import { parseLearnerLayer, type LearnerBacklink } from '@/lib/dictionary/learner'
 import type { CrossLangSibling, DictEntryDetail, DictSense } from '@/lib/dictionary/types'
 
 vi.mock('@/lib/supabase/client', async () => {
@@ -79,5 +83,58 @@ describe('the first meaning comes before the forms', () => {
     const meaning = within(panel).getAllByText('cầm, nắm').find((el) => el.closest('[hidden]') === null)!
     const forms = within(panel).getAllByRole('heading', { name: /^Dạng từ/ }).find((el) => el.closest('[hidden]') === null)!
     expect(meaning.compareDocumentPosition(forms) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+})
+
+describe('the learner layouts', () => {
+  const warranty: DictEntryDetail = {
+    id: 'en:warranty', lang: 'en', headword: 'warranty', traditional: null, level: null, ipa: null, pos: 'noun',
+    glossVi: 'sự bảo đảm', glossEn: 'A guarantee', audioUrl: null,
+    senses: WARRANTY_SENSES, pronunciations: [], examples: [], relations: [], attributes: {}, senseLinks: [],
+  }
+  const layer = parseLearnerLayer(WARRANTY_LAYER_ROW)
+  const view = buildWordView({ detail: warranty, characters: [], siblings: [], learner: layer })
+  const labels = Array.from({ length: 9 }, (_, i) => ({
+    senseId: `en:x#${i}`, coreSenseOrder: null, viTerms: [`nghĩa ${i}`], domain: null, register: null,
+    isInflection: false, lemma: null, lemmaEntryId: null,
+  }))
+  const gistLine = (gist: string) => (_: string, el: Element | null) => el?.tagName === 'P' && el.textContent === gist
+  const LAYOUTS = [['MapLayout', MapLayout], ['ReadLayout', ReadLayout], ['GlanceLayout', GlanceLayout]] as const
+
+  // "bảo hành – sự bảo đảm" over senses titled "bảo hành, giấy bảo hành" and "sự bảo đảm, sự cam đoan",
+  // then "3 nghĩa chính · 5 nghĩa khác · 9 kết hợp".
+  it.each(LAYOUTS)('%s drops the counters and a gist its senses already list', (_, Layout) => {
+    const { unmount } = render(<Layout view={view} layer={layer} />)
+    expect(document.querySelector('header')).not.toHaveTextContent(/nghĩa chính/)
+    expect(screen.queryByText(gistLine('bảo hành – sự bảo đảm'))).not.toBeInTheDocument()
+    unmount()
+    render(<Layout view={view} layer={{ ...layer, gistVi: ['bảo hành', 'giấy tờ'] }} />)
+    expect(screen.getByText(gistLine('bảo hành – giấy tờ'))).toBeInTheDocument()
+  })
+
+  it('folds a long usage note, and opens it', async () => {
+    render(<MapLayout view={view} layer={layer} />)
+    const note = screen.getByText(/^Warranty thường gặp nhất/)
+    expect(note.className).toContain('line-clamp-4')
+    await userEvent.click(screen.getByRole('button', { name: 'Đọc tiếp' }))
+    expect(note.className).not.toContain('line-clamp-4')
+  })
+
+  it('folds the other senses on the reading page after six', async () => {
+    render(<ReadLayout view={view} layer={{ ...layer, labels }} />)
+    const minor = document.getElementById('minor-senses')!
+    expect(within(minor).getAllByRole('listitem')).toHaveLength(6)
+    await userEvent.click(within(minor).getByRole('button', { name: 'Xem thêm 3 nghĩa khác' }))
+    expect(within(minor).getAllByRole('listitem')).toHaveLength(9)
+  })
+
+  it('folds the other senses and the collocations at a glance after six', async () => {
+    render(<GlanceLayout view={view} layer={{ ...layer, labels }} />)
+    expect(screen.queryByText('nghĩa 6')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Xem thêm 3 nghĩa khác' }))
+    expect(screen.getByText('nghĩa 8')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'breach of warranty' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Xem thêm 3 kết hợp' }))
+    expect(screen.getByRole('link', { name: 'breach of warranty' })).toBeInTheDocument()
   })
 })

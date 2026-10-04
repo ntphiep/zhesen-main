@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import {
-  Chip, CollocationGloss, Equivalents, Examples, FORMS_LABEL, LayerNote, LearnerHeader, LearnerRail, Mention, PANEL, PhraseTable, SenseChips,
+  Chip, CollocationGloss, Equivalents, Examples, FORMS_LABEL, FoldedList, LayerNote, LearnerHeader, LearnerRail, Mention, PANEL, PhraseTable, SenseChips,
   SourceLine, minorGloss, minorTerms, toneOf,
 } from './LearnerParts'
 import { CARD, CONTAINER, PivotMark, SectionLabel } from './WordParts'
 import { LINK_KIND_VI, domainLabel, minorSenses, registerLabel, type LearnerLayer, type LearnerLink, type MinorSense } from '@/lib/dictionary/learner'
 import type { WordView } from '@/lib/dictionary/wordView'
+
+/** Rows of a long list shown before expanding: take has 46 other senses and 32 collocations. */
+const SHOWN = 6
 
 function Badge({ order }: { order: number }) {
   return (
@@ -47,7 +50,7 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
 
   return (
     <div className="flex flex-col gap-6">
-      <LearnerHeader view={view} layer={layer} minor={other.length} forms={inflections.length} />
+      <LearnerHeader view={view} layer={layer} />
       <div className={`${CONTAINER} grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.9fr)] xl:gap-5`}>
         <section data-reveal="0" className="flex min-w-0 flex-col gap-3">
           <SectionLabel className="px-1">Nghĩa</SectionLabel>
@@ -73,8 +76,8 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
               <SourceLine ids={s.sourceSenseIds} view={view} />
             </article>
           ))}
-          <MinorPanel label="Nghĩa khác" senses={other} />
-          <MinorPanel label={FORMS_LABEL} senses={inflections} />
+          <MinorPanel label="Nghĩa khác" senses={other} noun="nghĩa khác" />
+          <MinorPanel label={FORMS_LABEL} senses={inflections} noun="dạng từ" />
         </section>
 
         {/* A derived layer has no collocations of its own, so the column lists the entry's phrases. */}
@@ -86,15 +89,18 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
             {derived ? (
               view.phrases.length === 0 ? <p className="text-sm text-(--zs-soft)">Chưa có cụm từ.</p> : <PhraseTable view={view} />
             ) : collocations.length === 0 ? <p className="text-sm text-(--zs-soft)">Chưa có kết hợp.</p> : (
-              <ul className="flex flex-col gap-3 text-sm">
-                {collocations.map(({ order, link }) => item(order, `${order}-${link.text}`, (
+              <FoldedList
+                shown={SHOWN}
+                noun="kết hợp"
+                className="flex flex-col gap-3 text-sm"
+                rows={collocations.map(({ order, link }) => item(order, `${order}-${link.text}`, (
                   <>
                     <Mention link={link} /> <span className="font-mono text-[11px] text-(--zs-soft)">{link.pattern}</span>
                     {link.reading && <span className="block text-xs text-(--zs-soft)">{link.reading}</span>}
                     <CollocationGloss link={link} view={view} />
                   </>
                 )))}
-              </ul>
+              />
             )}
           </div>
         </section>
@@ -103,9 +109,12 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
           <SectionLabel className="px-1">Từ liên quan</SectionLabel>
           {related.length > 0 && (
             <div className={PANEL}>
-              <ul className="flex flex-col gap-3 text-sm">
-                {related.map(({ order, link }) => item(order, `${order}-${link.kind}-${link.text}`, relatedBody(link)))}
-              </ul>
+              <FoldedList
+                shown={SHOWN}
+                noun="từ"
+                className="flex flex-col gap-3 text-sm"
+                rows={related.map(({ order, link }) => item(order, `${order}-${link.kind}-${link.text}`, relatedBody(link)))}
+              />
             </div>
           )}
           {equivalents.length > 0 && (
@@ -124,13 +133,16 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
   )
 }
 
-function MinorPanel({ label, senses }: { label: string; senses: MinorSense[] }) {
+function MinorPanel({ label, senses, noun }: { label: string; senses: MinorSense[]; noun: string }) {
   if (senses.length === 0) return null
   return (
     <div className={PANEL}>
       <SectionLabel>{label} · {senses.length}</SectionLabel>
-      <ul className="flex flex-col gap-2 text-sm">
-        {senses.map((m) => (
+      <FoldedList
+        shown={SHOWN}
+        noun={noun}
+        className="flex flex-col gap-2 text-sm"
+        rows={senses.map((m) => (
           <li key={m.senseId} className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span>{minorTerms(m)}</span>
             {m.domain && <Chip tone="domain">{domainLabel(m.domain)}</Chip>}
@@ -139,7 +151,7 @@ function MinorPanel({ label, senses }: { label: string; senses: MinorSense[] }) 
             {m.isInflection && m.glossEn && <span className="basis-full text-xs text-(--zs-soft)">{minorGloss(m)}</span>}
           </li>
         ))}
-      </ul>
+      />
     </div>
   )
 }

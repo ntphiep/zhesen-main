@@ -129,7 +129,7 @@ export function MapLayout({ view, layer }: { view: WordView; layer: LearnerLayer
 
   return (
     <div className="flex flex-col gap-6">
-      <LearnerHeader view={view} layer={layer} minor={other.length} forms={inflections.length} />
+      <LearnerHeader view={view} layer={layer} />
       <div ref={box} className={`${CONTAINER} grid scroll-mt-[calc(var(--header-h)+1rem)] grid-cols-1 items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[330px_minmax(0,1fr)_300px] xl:gap-6`}>
         {/* No inner scroll: the main senses always show whole. A long list of the others
             unfolds below them, and the unfolded list scrolls with the page. */}

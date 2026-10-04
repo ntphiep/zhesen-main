@@ -256,19 +256,19 @@ export function MinorBody({ minor, view }: { minor: MinorSense; view: WordView }
   )
 }
 
+/** Whether the gist holds a term no sense lists. 4,355 of 5,198 AI gists on 2026-10-04 did
+ *  not, and a derived gist is the senses' first terms, so the senses below say it again. */
+const gistAddsTerm = (layer: Pick<LearnerLayer, 'gistVi' | 'senses'>) => {
+  const terms = new Set(layer.senses.flatMap((s) => s.viTerms.map((t) => t.trim().toLocaleLowerCase('vi'))))
+  return layer.gistVi.some((g) => g.split(',').some((t) => !terms.has(t.trim().toLocaleLowerCase('vi'))))
+}
+
 /** The headword block every learner layout opens with, as compact as the prototype's: the
  *  word with its level and parts of speech, its sound, the layer's short equivalents in
- *  bold, and the save button with what the layer holds beside them. */
-export function LearnerHeader({ view, layer, minor, forms }: { view: WordView; layer: LearnerLayer; minor: number; forms: number }) {
+ *  bold unless the senses repeat them, and the save button. */
+export function LearnerHeader({ view, layer }: { view: WordView; layer: LearnerLayer }) {
   const head = view.head
   const posLabels = posGroups(layer.senses.map((s) => s.pos)).map((g) => g.labelVi)
-  const collocations = layer.senses.reduce((n, s) => n + s.collocations.length, 0)
-  const stats = [
-    { n: layer.senses.length, label: 'nghĩa chính' },
-    { n: minor, label: 'nghĩa khác' },
-    { n: forms, label: 'dạng từ' },
-    { n: collocations, label: 'kết hợp' },
-  ].filter((s) => s.n > 0)
   const gender = genderLabel(head.attributes)
   const pinyin = typeof head.attributes.pinyin === 'string' ? head.attributes.pinyin : null
   // As in LookupHero: the pronunciation row carries the pinyin when there is one.
@@ -297,7 +297,7 @@ export function LearnerHeader({ view, layer, minor, forms }: { view: WordView; l
           {view.hanViet && <span className="italic text-(--zs-soft)">Hán-Việt: {view.hanViet}</span>}
           <Pronunciation headword={head.headword} prons={head.pronunciations} lang={head.lang} />
         </div>
-        {layer.gistVi.length > 0 && (
+        {gistAddsTerm(layer) && (
           <p className="text-[21px] font-semibold leading-snug tracking-[-0.01em] text-balance sm:text-2xl">
             {layer.gistVi.map((g, i) => (
               <span key={g}>{i > 0 && <span aria-hidden="true" className="font-normal text-(--zs-pen)">{'\u00a0– '}</span>}{g}</span>
@@ -306,13 +306,6 @@ export function LearnerHeader({ view, layer, minor, forms }: { view: WordView; l
         )}
         <div className="flex flex-col items-start gap-2 pt-1 sm:col-start-2 sm:row-span-3 sm:row-start-1 sm:items-end sm:pt-0">
           <AddToWordlistButton size="lg" entry={saveableEntry(head)} />
-          {stats.length > 0 && (
-            <p className="text-[12.5px] text-(--zs-soft) sm:text-right">
-              {stats.map((s, i) => (
-                <span key={s.label}>{i > 0 && ' · '}<b className="font-semibold text-(--zs-ink)">{s.n}</b> {s.label}</span>
-              ))}
-            </p>
-          )}
         </div>
       </header>
     </div>
@@ -335,7 +328,7 @@ export function LearnerRail({ view, layer, phrases = true }: { view: WordView; l
       {layer.usageNoteVi && (
         <section className={PANEL}>
           <SectionLabel>Mô tả chung</SectionLabel>
-          <p className="text-[14.5px] leading-relaxed text-(--zs-soft)">{layer.usageNoteVi}</p>
+          <UsageNote text={layer.usageNoteVi} />
         </section>
       )}
       {layer.confusables.length > 0 && (
@@ -365,6 +358,32 @@ export function LearnerRail({ view, layer, phrases = true }: { view: WordView; l
       )}
       {derived && <CrossLanguagePanel siblings={view.siblings} className={`${CARD} p-4 sm:p-5`} />}
       <Backlinks view={view} />
+    </>
+  )
+}
+
+/** Characters four lines hold in the narrowest rail, a 390 px phone; a longer note folds. */
+const NOTE_FOLD = 160
+
+function UsageNote({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const long = text.length > NOTE_FOLD
+  return (
+    <>
+      <p className={`text-[14.5px] leading-relaxed text-(--zs-soft) ${long && !expanded ? 'line-clamp-4' : ''}`}>{text}</p>
+      {long && <MoreButton expanded={expanded} label="Đọc tiếp" onClick={() => setExpanded((v) => !v)} />}
+    </>
+  )
+}
+
+/** A list showing its first `shown` rows, with a button for the rest. */
+export function FoldedList({ rows, shown, noun, className }: { rows: React.ReactNode[]; shown: number; noun: string; className: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const hidden = rows.length - shown
+  return (
+    <>
+      <ul className={className}>{expanded || hidden <= 0 ? rows : rows.slice(0, shown)}</ul>
+      {hidden > 0 && <MoreButton expanded={expanded} label={`Xem thêm ${hidden} ${noun}`} onClick={() => setExpanded((v) => !v)} />}
     </>
   )
 }

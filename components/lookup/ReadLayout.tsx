@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Chip, FORMS_LABEL, LayerNote, LearnerHeader, LearnerRail, LemmaMention, PANEL, SenseBody, SenseChips, minorGloss, minorTerms } from './LearnerParts'
+import { Chip, FORMS_LABEL, FoldedList, LayerNote, LearnerHeader, LearnerRail, LemmaMention, PANEL, SenseBody, SenseChips, minorGloss, minorTerms } from './LearnerParts'
 import { CARD, CONTAINER, SectionLabel } from './WordParts'
 import { minorSenses, type LearnerLayer, type MinorSense } from '@/lib/dictionary/learner'
 import { useAnchor } from '@/lib/hooks/useAnchor'
@@ -54,7 +54,7 @@ export function ReadLayout({ view, layer }: { view: WordView; layer: LearnerLaye
 
   return (
     <div className="flex flex-col gap-6">
-      <LearnerHeader view={view} layer={layer} minor={other.length} forms={inflections.length} />
+      <LearnerHeader view={view} layer={layer} />
       <div className={`${CONTAINER} grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,900px)_300px] lg:justify-between lg:gap-12`}>
         <div className="flex min-w-0 flex-col gap-10">
           {layer.senses.map((s) => (
@@ -69,8 +69,8 @@ export function ReadLayout({ view, layer }: { view: WordView; layer: LearnerLaye
                 {other.length === 0 ? FORMS_LABEL : 'Nghĩa khác và dạng từ'} · {minor.length}
               </SectionLabel>
               {/* The subtitles only tell the two apart when both are there. */}
-              <MinorTable label={inflections.length > 0 ? 'Nghĩa khác' : null} senses={other} />
-              <MinorTable label={other.length > 0 ? FORMS_LABEL : null} senses={inflections} />
+              <MinorTable label={inflections.length > 0 ? 'Nghĩa khác' : null} senses={other} noun="nghĩa khác" />
+              <MinorTable label={other.length > 0 ? FORMS_LABEL : null} senses={inflections} noun="dạng từ" />
             </section>
           )}
           <LayerNote layer={layer} view={view} />
@@ -93,13 +93,19 @@ export function ReadLayout({ view, layer }: { view: WordView; layer: LearnerLaye
   )
 }
 
-function MinorTable({ label, senses }: { label: string | null; senses: MinorSense[] }) {
+/** Rows of each table shown before expanding: take has 46 other senses. */
+const MINOR_SHOWN = 6
+
+function MinorTable({ label, senses, noun }: { label: string | null; senses: MinorSense[]; noun: string }) {
   if (senses.length === 0) return null
   return (
     <>
       {label && <SectionLabel as="h3" className="mt-2">{label} · {senses.length}</SectionLabel>}
-      <ul className={`${CARD} px-2 py-1`}>
-        {senses.map((m) => (
+      <FoldedList
+        shown={MINOR_SHOWN}
+        noun={noun}
+        className={`${CARD} px-2 py-1`}
+        rows={senses.map((m) => (
           <li key={m.senseId} className="grid gap-1.5 border-t border-(--zs-line) px-2.5 py-2.5 text-sm first:border-0 sm:grid-cols-[minmax(0,2fr)_10rem_minmax(0,3fr)] sm:items-baseline sm:gap-3">
             <span className="flex flex-col">
               <span className="font-semibold">{minorTerms(m)}</span>
@@ -111,7 +117,7 @@ function MinorTable({ label, senses }: { label: string | null; senses: MinorSens
             <span className="line-clamp-3 text-[13px] text-(--zs-soft)" title={minorGloss(m) ?? undefined}>{minorGloss(m)}</span>
           </li>
         ))}
-      </ul>
+      />
     </>
   )
 }

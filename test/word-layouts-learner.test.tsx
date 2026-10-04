@@ -238,7 +238,7 @@ describe('MapLayout', () => {
     const list = screen.getByRole('navigation', { name: 'Các nghĩa' })
     expect(within(list).getByText('Là dạng của từ khác')).toBeInTheDocument()
     expect(within(list).getAllByText('ngôi thứ ba số ít hiện tại thức chỉ định của casar').length).toBeGreaterThan(0)
-    expect(screen.getByText((_, el) => el?.tagName === 'P' && /^3 nghĩa chính · 1 nghĩa khác · 1 dạng từ/.test(el.textContent ?? ''))).toBeInTheDocument()
+    expect(within(list).getByText('Là dạng của từ khác').closest('li')).toHaveTextContent(/^Là dạng của từ khác1$/)
   })
 
   it('shows the usage note, the confusables, the backlinks and the AI note', () => {
