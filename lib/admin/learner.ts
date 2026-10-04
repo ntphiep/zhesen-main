@@ -97,12 +97,35 @@ export function parseLayerList(raw: unknown): LearnerLayerSummary[] {
   }))
 }
 
-export async function listLearnerLayers(supabase: SupabaseClient): Promise<LearnerLayerSummary[]> {
-  const { data, error } = await supabase.schema('lex').from('learner_entries')
-    .select('entry_id, status, model, reviewer, prompt_version, created_at, review, entries(headword, lang), learner_senses(count), learner_links(count), sense_labels(count)')
+/** Rows per page of /admin/learner. Unpaged, PostgREST's 1,000-row cap cut the list at
+ *  1,000 of 4,854 layers, and those 1,000 rows made a 2.6 MB page. */
+export const LAYERS_PER_PAGE = 100
+
+const pageRow = z.record(z.string(), z.unknown())
+const countsRow = z.object({ entry_id: z.string(), learner_senses: z.unknown(), learner_links: z.unknown(), sense_labels: z.unknown() })
+
+/** One page of layers in entry order, and how many there are. The embedded counts are read
+ *  for that page's ids only: beside an offset, PostgREST counted them for every skipped row
+ *  too, 0.89 s for page 48 against 0.18 s for page 1. */
+export async function listLearnerLayers(supabase: SupabaseClient, page = 1): Promise<{ layers: LearnerLayerSummary[]; total: number }> {
+  const lex = supabase.schema('lex')
+  const from = (page - 1) * LAYERS_PER_PAGE
+  const { data, error, count } = await lex.from('learner_entries')
+    .select('entry_id, status, model, reviewer, prompt_version, created_at, review, entries(headword, lang)', { count: 'exact' })
     .order('entry_id')
+    .range(from, from + LAYERS_PER_PAGE - 1)
+  // PGRST103: a page past the last one, which a stale link can ask for.
+  if (error?.code === 'PGRST103') return { layers: [], total: count ?? 0 }
   if (error) throw error
-  return parseLayerList(data ?? [])
+  const rows = z.array(pageRow).parse(data ?? [])
+  const ids = rows.map((r) => String(r.entry_id))
+  if (ids.length === 0) return { layers: [], total: count ?? 0 }
+  const counts = await lex.from('learner_entries')
+    .select('entry_id, learner_senses(count), learner_links(count), sense_labels(count)')
+    .in('entry_id', ids)
+  if (counts.error) throw counts.error
+  const byId = new Map(z.array(countsRow).parse(counts.data ?? []).map((c) => [c.entry_id, c]))
+  return { layers: parseLayerList(rows.map((r) => ({ ...r, ...byId.get(String(r.entry_id)) }))), total: count ?? ids.length }
 }
 
 const auditRow = z.object({

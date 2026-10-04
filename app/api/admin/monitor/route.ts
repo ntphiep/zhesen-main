@@ -11,7 +11,8 @@ const NO_STORE = { 'Cache-Control': 'no-store' }
 /** What /admin/monitor polls: `live` (Postgres, every 10 s), `host` (the instance), `containers`
  *  (the same snapshot plus the last hour per container) and `logs` (one container's last 15
  *  minutes, on demand). `host` and `containers` read the sampler's 5 s rows and fall back to
- *  one SSM command when those are stale or missing. */
+ *  one SSM command when those are stale or missing. `containers&hour=0` leaves out the hour,
+ *  580 kB of the 590 kB answer, and carries the host's newest point instead. */
 export async function GET(request: Request): Promise<Response> {
   const supabase = await createClient()
   if (!(await adminUser(supabase))) return notFoundJson()
@@ -31,15 +32,18 @@ export async function GET(request: Request): Promise<Response> {
   if (part === 'logs' && !LOG_SERVICES.some((s) => s === service)) return badRequest()
 
   if (part !== 'logs') {
+    const hourly = part === 'containers' && url.searchParams.get('hour') !== '0'
     // A failed read (migration not applied, sampler never ran) is the same as a stale one.
     const [host, hour] = await Promise.all([
       readHost(supabase).catch(() => null),
-      part === 'containers' ? readContainerSeries(supabase).catch(() => null) : null,
+      hourly ? readContainerSeries(supabase).catch(() => null) : null,
     ])
     if (host && part === 'host') return Response.json(host, { headers: NO_STORE })
     if (host) {
+      const newest = { t: host.at, cpu: host.cpuPercent, mem: host.memory?.used ?? null }
       return Response.json({
-        at: host.at, source: host.source, containers: host.containers, series: hour?.series ?? [], host: hour?.host ?? [],
+        at: host.at, source: host.source, containers: host.containers,
+        series: hour?.series ?? [], host: hourly ? hour?.host ?? [] : [newest],
       }, { headers: NO_STORE })
     }
   }

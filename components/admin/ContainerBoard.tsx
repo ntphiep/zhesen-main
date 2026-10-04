@@ -15,6 +15,10 @@ import { containerTone, duration, Freshness, HEALTH, LogViewer, Trail } from '@/
 const EVERY_MS = 5_000
 /** One hour of 5-second sampler rows. */
 const HOUR = 720
+/** The hour gains one row per 5 s, so it is read once a minute: read every 5 s it was 590 kB
+ *  each time. The 5 s poll leaves it out. */
+const HOUR_MS = 60_000
+const PATH = '/api/admin/monitor?part=containers'
 
 type Service = (typeof LOG_SERVICES)[number]
 
@@ -145,7 +149,8 @@ function Card({ c, role, points, now, sampler, onLogs, onRestart }: {
 /** Every container on the instance every 5 seconds, with the last hour from the sampler.
  *  `roles` maps a container name to what it does here. */
 export function ContainerBoard({ roles }: { roles: Record<string, string> }) {
-  const poll = usePoll<ContainersResponse>('/api/admin/monitor?part=containers', EVERY_MS, parseContainersResponse)
+  const hourPoll = usePoll<ContainersResponse>(PATH, HOUR_MS, parseContainersResponse)
+  const poll = usePoll<ContainersResponse>(`${PATH}&hour=0`, EVERY_MS, parseContainersResponse)
   const [restart, setRestart] = useState<Service | null>(null)
   const [logs, setLogs] = useState<Service | null>(null)
   const [result, setResult] = useState<{ title: string; at: Date; text: string } | null>(null)
@@ -153,10 +158,12 @@ export function ContainerBoard({ roles }: { roles: Record<string, string> }) {
   const data = poll.state === 'loading' ? undefined : poll.data
   if (data && 'enabled' in data) return <p className="text-sm text-(--zs-soft)">AWS read not configured (AWS_ROLE_ARN).</p>
   const sampler = data?.source === 'sampler'
-  const series = new Map<string, SeriesPoint[]>(data?.series.map((s) => [s.name, s.points]))
+  const hourData = hourPoll.state === 'loading' ? undefined : hourPoll.data
+  const hour = hourData && !('enabled' in hourData) ? hourData : undefined
+  const series = new Map<string, SeriesPoint[]>(hour?.series.map((s) => [s.name, s.points]))
   const containers = data ? [...data.containers].sort(byService) : []
-  const host = data?.host ?? []
-  const last = host.at(-1)
+  const host = hour?.host ?? []
+  const last = data?.host.at(-1) ?? host.at(-1)
   const up = containers.filter((c) => c.status === 'running').length
 
   return (

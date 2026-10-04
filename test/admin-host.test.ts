@@ -169,6 +169,17 @@ describe('GET /api/admin/monitor, host and containers', () => {
     expect(runShell).not.toHaveBeenCalled()
   })
 
+  it('leaves the hour out of part=containers&hour=0 and carries the newest host point', async () => {
+    rpc.mockResolvedValue({ data: rows(Date.now() - 2000), error: null })
+    const body = parseContainersResponse(await (await get('containers&hour=0')).json())
+    if ('enabled' in body) throw new Error('expected a snapshot')
+    expect(body.containers.map((c) => c.name)).toEqual(['supabase-db', 'supabase-meta'])
+    expect(body.series).toEqual([])
+    expect(body.host).toEqual([{ t: body.at, cpu: 25, mem: 1_000_000_000 }])
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(rpc).toHaveBeenCalledWith('host_samples_since', expect.objectContaining({ p_slim: false }))
+  })
+
   it('answers part=containers from SSM with no series when the rows are stale', async () => {
     rpc.mockResolvedValue({ data: rows(Date.now() - 60_000), error: null })
     const body = parseContainersResponse(await (await get('containers')).json())
