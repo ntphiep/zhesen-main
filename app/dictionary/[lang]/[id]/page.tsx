@@ -1,6 +1,6 @@
-import { notFound } from 'next/navigation'
-import { getCachedEntryDetail } from '@/lib/dictionary/cached'
-import { buildEntryId } from '@/lib/dictionary/entryId'
+import { notFound, permanentRedirect } from 'next/navigation'
+import { getCachedEntryDetail, getCachedPhraseLemmaId } from '@/lib/dictionary/cached'
+import { buildEntryId, entryPath } from '@/lib/dictionary/entryId'
 import { entryMetadata } from '@/lib/dictionary/entryMetadata'
 import { LookupView } from '@/components/lookup/LookupView'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
@@ -57,8 +57,14 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function Page({ params }: { params: Params }) {
   const { lang, id } = await params
   if (!isLangCode(lang)) notFound()
-  const data = await loadWordPage(buildEntryId(lang, percentDecode(id)))
-  if (!data) notFound()
+  const word = percentDecode(id)
+  const data = await loadWordPage(buildEntryId(lang, word))
+  if (!data) {
+    // An inflected phrase has no entry of its own: /dictionary/en/gave%20up opens give up.
+    const lemma = /\s/.test(word) ? await getCachedPhraseLemmaId(lang, word) : null
+    if (lemma) permanentRedirect(entryPath(lemma))
+    notFound()
+  }
   return (
     <>
       <BreadcrumbJsonLd trail={[{ name: 'Từ điển', path: '/dictionary' }, { name: data.formOf?.headword ?? data.detail.headword }]} />

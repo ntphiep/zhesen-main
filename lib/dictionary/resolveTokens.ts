@@ -3,6 +3,7 @@ import type { LangCode } from '@/lib/languages'
 import type { DictEntryPreview } from './types'
 import { entryPreviewRow, inflectionEntryLookupRow, headwordRow, toPreview } from './rows'
 import { PREVIEW_SELECT } from './entrySelect'
+import { buildEntryId } from './entryId'
 import { fetchInChunks } from '@/lib/supabase/paginate'
 
 /** Resolve word tokens to dictionary entries for tap-to-lookup: lowercased token against
@@ -45,6 +46,18 @@ export async function resolveTokens(
     if (p && !out.has(r.form_text)) out.set(r.form_text, p)
   }
   return out
+}
+
+/** The entry an inflected phrase is a form of ("gave up" is a form of en:give up), or null.
+ *  A single inflected word has an entry of its own that names its lemma; a phrase has none. */
+export async function phraseLemmaId(supabase: SupabaseClient, lang: LangCode, text: string): Promise<string | null> {
+  const form = text.trim().toLowerCase()
+  if (!/\s/.test(form)) return null
+  const { data, error } = await supabase.schema('lex')
+    .rpc('resolve_inflections', { p_lang: lang, p_forms: [form] })
+  if (error) throw error
+  const own = buildEntryId(lang, form)
+  return inflectionEntryLookupRow.array().parse(data ?? []).find((r) => r.entry_id !== own)?.entry_id ?? null
 }
 
 const HAN = /\p{Script=Han}/u

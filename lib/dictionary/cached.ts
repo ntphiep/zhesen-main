@@ -21,6 +21,7 @@ import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getTer
 import { getCommonWords, searchOneDirection, type CommonWordsOptions, type Direction } from './search'
 import { resolveTappableTexts, type ResolvedText } from './tappable'
 import { getEntriesContaining, getPhrasalVerbs } from './containing'
+import { phraseLemmaId } from './resolveTokens'
 import { getWordKin } from './kin'
 import { getWordOfDay, dayNumber, type DailyWord } from './wordOfDay'
 import { getLevelsForLanguage, getEntriesByLevel, type LevelSummary, type LevelPage } from './levels'
@@ -76,6 +77,12 @@ export const getCachedEntriesContaining = unstable_cache(
 export const getCachedPhrasalVerbs = unstable_cache(
   (verb: string): Promise<DictEntryPreview[]> => getPhrasalVerbs(createContentClient(), verb),
   ['dict-phrasal-verbs'],
+  { revalidate: LEX_REVALIDATE, tags: ['lex'] },
+)
+
+export const getCachedPhraseLemmaId = unstable_cache(
+  (lang: LangCode, text: string): Promise<string | null> => phraseLemmaId(createContentClient(), lang, text),
+  ['dict-phrase-lemma'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 
