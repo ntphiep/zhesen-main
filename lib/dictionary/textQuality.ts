@@ -51,9 +51,10 @@ export function stripPhraseStop(gloss: string): string {
  * carries them ("holding" -> "CÔNG TY CỔ PHẦN") and they are not emphasis.
  */
 export function cleanGlossVi(gloss: string | null): string | null {
-  const trimmed = gloss?.trim()
+  const trimmed = gloss?.replace(NOT_THE_MEANING, ' ').replace(/\s{2,}/g, ' ').trim()
   if (!trimmed) return null
   const t = stripPhraseStop(trimmed)
+  if (ACRONYM.test(t)) return t
   const body = /\p{Lu}/u.test(t) && t === t.toLocaleUpperCase('vi') ? t.toLocaleLowerCase('vi') : t
   // A capital inside the first word is the word's own spelling ("iPhone", "eBay"), so
   // the whole gloss is left as written.
@@ -61,6 +62,14 @@ export function cleanGlossVi(gloss: string | null): string | null {
   if (/\p{Lu}/u.test(first.slice(1))) return body
   return body.charAt(0).toLocaleUpperCase('vi') + body.slice(1)
 }
+
+/** LHQ, USB, FAT12: capitals without a Vietnamese letter. CHÀO and KHÔNG are words. */
+const ACRONYM = /^[A-Z][A-Z0-9]{1,5}$/
+
+/** Old-dictionary markers (138 senses), a grammar label and notes to the translator ("replace
+ *  bạn with an appropriate pronoun", 9 senses) carried inside the Vietnamese meaning. A
+ *  register such as "(từ lóng)" stays: it is part of the meaning. */
+const NOT_THE_MEANING = /\(*\((?:từ Mỹ,\s*nghĩa Mỹ|không thể so sánh được|(?:generic,\s*)?replace [^)]*)\)/giu
 
 /** Whether a sense carries any Vietnamese gloss (direct or via the English pivot). */
 const hasVi = (s: DictSense): boolean => Boolean(s.glossVi || s.pivotVi)

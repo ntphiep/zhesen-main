@@ -18,6 +18,18 @@ describe('parseSenseFrequency', () => {
 })
 
 describe('senseSections', () => {
+  // casa listed "inflection of casar:" as a meaning, and did the ISO 639 code of Dida.
+  it('leaves out a Wiktionary heading and a language code beside real meanings', () => {
+    const casa = senseSections([
+      sense({ senseOrder: 1, pos: 'noun', glossVi: 'nhà', glossEn: 'house' }),
+      sense({ senseOrder: 2, glossEn: 'inflection of casar:' }),
+      sense({ senseOrder: 3, pos: 'noun', glossEn: 'ISO 639-3 code for Dida' }),
+    ])
+    expect(casa.flatMap((s) => s.senses.map((x) => x.senseOrder))).toEqual([1])
+    const code = senseSections([sense({ senseOrder: 1, pos: 'noun', glossEn: 'ISO 639-3 code for Dida' })])
+    expect(code.flatMap((s) => s.senses.map((x) => x.senseOrder))).toEqual([1])
+  })
+
   // Dictionary order put a cricket meaning fourth on take; the rank is what a learner meets.
   it('orders a part of speech by rank, then by Vietnamese gloss, then dictionary order', () => {
     const [verb, noun] = senseSections([

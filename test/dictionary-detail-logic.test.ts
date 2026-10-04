@@ -74,6 +74,22 @@ describe('cleanGlossVi', () => {
   it('leaves a word whose own spelling carries an inner capital', () => {
     expect(cleanGlossVi('iPhone của Apple')).toBe('iPhone của Apple')
   })
+  it('keeps an acronym in capitals', () => {
+    // /dictionary/en/UN showed "Lhq".
+    expect(cleanGlossVi('LHQ')).toBe('LHQ')
+    expect(cleanGlossVi('FAT12')).toBe('FAT12')
+    expect(cleanGlossVi('KHÔNG')).toBe('Không')
+  })
+  it('drops an old dictionary marker and a grammar label from the meaning', () => {
+    expect(cleanGlossVi('xe tải (từ Mỹ, nghĩa Mỹ)')).toBe('Xe tải')
+    expect(cleanGlossVi('((Từ Mỹ,nghĩa Mỹ) xe tải')).toBe('Xe tải')
+    expect(cleanGlossVi('trung bình (không thể so sánh được)')).toBe('Trung bình')
+    expect(cleanGlossVi('lóng ngóng (từ lóng)')).toBe('Lóng ngóng (từ lóng)')
+  })
+  it('drops an English note to the translator', () => {
+    expect(cleanGlossVi('bạn bao nhiêu tuổi? (replace bạn with an appropriate pronoun)')).toBe('Bạn bao nhiêu tuổi?')
+    expect(cleanGlossVi('(generic, replace bạn with the appropriate pronoun) bạn sống ở đâu?')).toBe('Bạn sống ở đâu?')
+  })
   it('returns null for nothing', () => {
     expect(cleanGlossVi(null)).toBeNull()
     expect(cleanGlossVi('   ')).toBeNull()
@@ -178,7 +194,7 @@ describe('classifyRelations', () => {
     const texts = [
       'Informal and slang terms', 'Formal terms', 'vasoactive § Related terms', 'See: Thesaurus:remote place',
       'Any of Thesaurus:copulate + "with"', 'More: see Wiktionary:Semantic relations', 'more at eleven',
-      'see others at vitamin B complex', 'Like other masculine words', 'see to', 'see red', 'grab',
+      'see others at vitamin B complex', 'Like other masculine words', 'mul:D', 'mul:ε-Fe', 'see to', 'see red', 'grab',
     ]
     const c = classifyRelations(texts.map((relatedText) => ({ relationType: 'synonym', relatedText, relatedEntryId: null })))
     expect(c.synonyms).toEqual(['see to', 'see red', 'grab'])

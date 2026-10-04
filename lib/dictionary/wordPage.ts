@@ -34,13 +34,20 @@ export interface SenseSection {
   senses: DictSense[]
 }
 
+/** A Wiktionary heading stored as a sense ("inflection of casar:", 684 senses) or an ISO 639
+ *  code: shown only when the entry has nothing else. */
+const isNotAMeaning = (s: DictSense): boolean =>
+  (!s.glossVi && !s.pivotVi && /:\s*$/.test(s.glossEn ?? '')) || /^ISO 639/.test(s.glossEn ?? '')
+
 /** Sections in dictionary order of their first sense, counting an old or vulgar sense (see
  *  isOldSense) only in a section that has nothing else. Classifier notes are not meanings. */
 export function senseSections(senses: DictSense[]): SenseSection[] {
   const sections = new Map<string, SenseSection>()
   const first = new Map<string, number>()
+  const notes = senses.filter(isNotAMeaning)
   for (const s of senses) {
     if (isClassifierGloss(s.glossEn)) continue
+    if (notes.includes(s) && notes.length < senses.length) continue
     const g = posGroup(s.pos)
     const key = g?.key ?? ''
     const sec = sections.get(key) ?? {

@@ -34,9 +34,10 @@ const uniq = (xs: string[]) => [...new Set(xs)]
 
 /** Wiktionary headings and cross-references the import kept as words: "Informal and slang
  *  terms" under take, "vasoactive § Related terms", "See: Thesaurus:remote place": 2,003
- *  production rows over 1,805 entries on 2026-09-27. "see to" and "see red" are real phrases. */
+ *  production rows over 1,805 entries on 2026-09-27. "see to" and "see red" are real phrases.
+ *  "mul:D" names a translingual entry (639 rows). */
 const WIKTIONARY_NOTE =
-  /§|\b(?:Thesaurus|Appendix):|\bWiktionary\b|^(?:more at|see at|see (?:many )?others|for more see|also:)\s|^(?:Formal|Informal and slang) terms$|^Like other \w+ words$/i
+  /§|\b(?:Thesaurus|Appendix):|\bWiktionary\b|^(?:more at|see at|see (?:many )?others|for more see|also:)\s|^(?:Formal|Informal and slang) terms$|^Like other \w+ words$|^[a-z]{2,3}:\S/i
 
 /**
  * Bucket lex relations into UI sections. The WordNet types (hypernym, hyponym, meronym,
