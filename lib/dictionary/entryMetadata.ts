@@ -56,15 +56,19 @@ function indexableMeaning(sense: DictSense, detail: DictEntryDetail): boolean {
 }
 
 /** The word page's head. An entry with no indexable Vietnamese meaning is left out of the
- *  index; its links are still followed. */
+ *  index; its links are still followed. The large card shows the 1200×630 opengraph-image
+ *  uncropped. */
 export function entryMetadata(detail: DictEntryDetail): Metadata {
   const glosses = vietnameseGlosses(detail)
-  return pageMetadata({
-    title: entryTitle(detail),
-    description: glosses.length
-      ? clip(`Tra nghĩa tiếng Việt của ${detail.headword}: ${glosses.join(', ')}.`)
-      : `Tra nghĩa của ${detail.headword}.`,
-    canonical: entryPath(detail.id),
-    noindex: !detail.senses.some((s) => indexableMeaning(s, detail)),
-  })
+  return {
+    ...pageMetadata({
+      title: entryTitle(detail),
+      description: glosses.length
+        ? clip(`Tra nghĩa tiếng Việt của ${detail.headword}: ${glosses.join(', ')}.`)
+        : `Tra nghĩa của ${detail.headword}.`,
+      canonical: entryPath(detail.id),
+      noindex: !detail.senses.some((s) => indexableMeaning(s, detail)),
+    }),
+    twitter: { card: 'summary_large_image' },
+  }
 }

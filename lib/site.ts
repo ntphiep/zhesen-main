@@ -22,8 +22,8 @@ export const SITE_URL =
  */
 export const SITE_SOCIAL = {
   openGraph: { type: 'website', siteName: 'Zhesen', locale: 'vi_VN' },
-  // No image is declared on purpose: a card pointing at a missing file renders
-  // worse than a card with no image at all.
+  // `summary` for a page with no image of its own. The word page draws one in its
+  // opengraph-image and sets `summary_large_image` (lib/dictionary/entryMetadata.ts).
   twitter: { card: 'summary' },
 } satisfies Pick<Metadata, 'openGraph' | 'twitter'>
 

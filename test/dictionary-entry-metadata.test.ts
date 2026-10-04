@@ -46,6 +46,9 @@ describe('entryMetadata description', () => {
     expect(m.robots).toBeUndefined()
     expect(m.alternates).toEqual({ canonical: '/dictionary/en/take' })
   })
+  it('asks for the large card, which shows the word image uncropped', () => {
+    expect(entryMetadata(entry({})).twitter).toEqual({ card: 'summary_large_image' })
+  })
   it('never quotes an English definition', () => {
     const m = entryMetadata(entry({ glossVi: 'cầm', senses: [sense(null)] }))
     expect(m.description).toBe('Tra nghĩa tiếng Việt của take: cầm.')
