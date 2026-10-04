@@ -5,7 +5,7 @@ import { AddToWordlistButton } from './AddToWordlistButton'
 import { CharacterPanel } from './CharacterPanel'
 import { ConjugationTable } from './ConjugationTable'
 import { LemmaLink } from './LemmaLink'
-import { BACKLINKS_LABEL, BacklinkList } from './LearnerParts'
+import { BACKLINKS_LABEL, BacklinkList, LayerNote } from './LearnerParts'
 import {
   AiCorner, Badge, CONTAINER, EnglishMark, FormCells, FrequencyMeter, GrammarList, LevelChip, MorphText, MoreButton, PivotMark, PosChip, WordChip,
   UntranslatedNote, WordLink, baseFormLabel,
@@ -60,15 +60,6 @@ export function BilingualLayout({ view }: { view: WordView }) {
     }))
 
   const blocks: { id: string; title: string; note?: React.ReactNode; count: number; node: React.ReactNode }[] = [
-    ...(view.forms.length > 0 ? [{
-      id: 'forms', title: 'Dạng từ', count: 0,
-      note: irregular && <Badge tone="strong">Bất quy tắc</Badge>,
-      node: <FormCells headword={head.headword} baseLabel={baseFormLabel(head.pos)} forms={view.forms} lang={lang} variant="wide" />,
-    }] : []),
-    ...(view.conjugation ? [{ id: 'conjugation', title: 'Chia động từ', count: 0, node: <ConjugationTable conjugation={view.conjugation} /> }] : []),
-    ...(lang === 'zh' && view.characters.length > 0
-      ? [{ id: 'characters', title: 'Chữ và bộ thủ', count: 0, node: <CharacterPanel characters={view.characters} /> }]
-      : []),
     ...sections.map((sec) => ({
       id: sec.anchor,
       title: sec.labelVi,
@@ -81,6 +72,16 @@ export function BilingualLayout({ view }: { view: WordView }) {
         />
       ),
     })),
+    // After the meanings, so a phone opens on the first one.
+    ...(view.forms.length > 0 ? [{
+      id: 'forms', title: 'Dạng từ', count: 0,
+      note: irregular && <Badge tone="strong">Bất quy tắc</Badge>,
+      node: <FormCells headword={head.headword} baseLabel={baseFormLabel(head.pos)} forms={view.forms} lang={lang} variant="wide" />,
+    }] : []),
+    ...(view.conjugation ? [{ id: 'conjugation', title: 'Chia động từ', count: 0, node: <ConjugationTable conjugation={view.conjugation} /> }] : []),
+    ...(lang === 'zh' && view.characters.length > 0
+      ? [{ id: 'characters', title: 'Chữ và bộ thủ', count: 0, node: <CharacterPanel characters={view.characters} /> }]
+      : []),
     ...(view.phrases.length > 0 ? [{
       id: 'phrases', title: 'Cụm từ', count: view.phrases.length,
       note: <span className="text-[13px] text-(--zs-soft)">{view.phrases.length} cụm</span>,
@@ -177,6 +178,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
         <div className="flex min-w-0 flex-col gap-12">
           {view.lemma && <LemmaLink lemma={view.lemma} preview={view.lemmaPreview ?? undefined} lang={lang} />}
           <UntranslatedNote senses={view.senses} />
+          {view.learner && <div className="-mt-9"><LayerNote layer={view.learner} view={view} /></div>}
           <div className="flex flex-col gap-10">
             <div aria-hidden="true" className="hidden grid-cols-2 gap-x-10 border-b-2 border-(--c-l) pb-2 text-xs font-bold tracking-[0.02em] text-(--zs-soft) md:grid">
               <span>{lang === 'en' ? LANG_LABELS.en : `${LANG_LABELS[lang]}, tiếng Anh`}</span>
@@ -199,13 +201,10 @@ export function BilingualLayout({ view }: { view: WordView }) {
   )
 }
 
-/** The headword, its sound, level and first equivalents, kept in view while the rows scroll. */
+/** The headword, its sound and level, kept in view while the rows scroll. The other languages
+ *  have a block of their own. */
 function WordBar({ view }: { view: WordView }) {
   const { head } = view
-  const firsts = (['zh', 'es', 'en'] as const)
-    .filter((l) => l !== head.lang)
-    .map((l) => view.siblings.find((s) => s.lang === l))
-    .filter((s) => s !== undefined)
   return (
     <div className="z-20 border-b-2 border-(--c-l) bg-(--zs-bg)/88 backdrop-blur-[10px] md:sticky md:top-[var(--header-h)]">
       <div className={`${CONTAINER} flex flex-wrap items-center gap-x-4 gap-y-2.5 py-3.5`}>
@@ -215,13 +214,6 @@ function WordBar({ view }: { view: WordView }) {
         <LevelChip level={head.level} strong />
         <FrequencyMeter rank={head.frequencyRank} small />
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 lg:ml-auto">
-          {firsts.map((s) => (
-            <Link key={s.id} href={entryPath(s.id)} className="flex items-baseline gap-1.5 text-[13px] hover:underline">
-              <span className="text-(--zs-soft)">{LANG_LABELS[s.lang]}</span>
-              <span data-hw="" lang={s.lang} className="text-lg text-(--zs-pen)">{s.headword}</span>
-              {s.reading && <span className="text-(--zs-soft)">{s.reading}</span>}
-            </Link>
-          ))}
           <AddToWordlistButton size="lg" entry={{ ...head, pronunciations: [] }} />
         </div>
       </div>

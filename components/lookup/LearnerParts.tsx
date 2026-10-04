@@ -1,10 +1,11 @@
+import { useState } from 'react'
 import { AddToWordlistButton } from './AddToWordlistButton'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { saveableEntry } from './LookupHero'
 import { Pronunciation } from './Pronunciation'
 import {
-  CARD, CONTAINER, FamilyRows, FrequencyMeter, LevelChip, PivotMark, PosChip, SectionLabel, SynonymsRows, WordLink, WordTable,
-  hasSynonyms,
+  CARD, CONTAINER, FamilyRows, FrequencyMeter, LevelChip, MoreButton, PivotMark, PosChip, SectionLabel, SynonymsRows, WordLink,
+  WordTable, hasSynonyms,
 } from './WordParts'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { TappableText } from '@/components/reader/TappableText'
@@ -382,10 +383,16 @@ export function Backlinks({ view, className = PANEL }: { view: Pick<WordView, 'b
   )
 }
 
+/** Backlinks a list shows before expanding: take has 24. */
+const SHOWN_BACKLINKS = 6
+
 export function BacklinkList({ view }: { view: Pick<WordView, 'backlinks' | 'head'> }) {
+  const [expanded, setExpanded] = useState(false)
+  const hidden = view.backlinks.length - SHOWN_BACKLINKS
   return (
+    <div className="flex flex-col gap-3">
       <ul className="flex flex-col gap-2 text-sm">
-        {view.backlinks.map((b) => (
+        {(expanded ? view.backlinks : view.backlinks.slice(0, SHOWN_BACKLINKS)).map((b) => (
           <li key={b.entryId} className="flex flex-col">
             <span className="flex flex-wrap items-baseline gap-x-2">
               <Mention link={{ text: b.headword, targetEntryId: b.entryId }} />
@@ -396,6 +403,8 @@ export function BacklinkList({ view }: { view: Pick<WordView, 'backlinks' | 'hea
           </li>
         ))}
       </ul>
+      {hidden > 0 && <MoreButton expanded={expanded} label={`Xem thêm ${hidden} từ`} onClick={() => setExpanded((v) => !v)} />}
+    </div>
   )
 }
 

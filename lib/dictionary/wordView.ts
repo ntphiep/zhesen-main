@@ -208,6 +208,11 @@ export function buildWordView({
     .map((f) => ({ text: f.text, label: f.label, ...splitForm(detail.headword, f.text, detail.lang) }))
 
   const glosses = entryGlosses(detail)
+  // Chinese, then Spanish, then English, as the cross-language card orders them. A row with no
+  // Vietnamese read "chưa dịch", and an acronym (HIT for 打) is a match on letters, not meaning.
+  const shownSiblings = siblings
+    .filter((s) => s.glossVi && !/^[A-Z0-9]{2,}$/.test(s.headword))
+    .sort((a, b) => LANG_ORDER.indexOf(a.lang) - LANG_ORDER.indexOf(b.lang))
   const candidates = knownWordExamples(exampleCandidates(sections, detail.examples), resolvedExamples, detail.lang)
   const plan = planExamples(sections, candidates, glosses)
 
@@ -278,8 +283,7 @@ export function buildWordView({
     synonyms: tab('synonyms').filter((i) => !claimed.has(i.text.toLowerCase())).map(toWord),
     antonyms: tab('antonyms').map(toWord),
     related: tab('related').map(toWord),
-    // Chinese, then Spanish, then English, as the cross-language card orders them.
-    siblings: [...siblings].sort((a, b) => LANG_ORDER.indexOf(a.lang) - LANG_ORDER.indexOf(b.lang)),
+    siblings: shownSiblings,
     characters,
     examplesBySense: plan.bySense,
     examples: plan.others,
@@ -289,7 +293,8 @@ export function buildWordView({
     learner: learner ?? deriveLearnerLayer({
       entryId: detail.id, lang: detail.lang, senses, examplesBySense: plan.bySense, glosses, senseSynonyms, previews,
     }),
-    backlinks,
+    // A word the other-languages panel already shows is not listed again.
+    backlinks: backlinks.filter((b) => !shownSiblings.some((s) => s.id === b.entryId)),
   }
 }
 

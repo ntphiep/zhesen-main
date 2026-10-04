@@ -23,6 +23,7 @@ const SPAN = { 3: 'lg:col-span-3', 4: 'lg:col-span-4', 5: 'lg:col-span-5', 7: 'l
 
 const SHOWN_GROUPS = 6
 const MAIN_LINES = 4
+const SHOWN_FAMILY = 4
 
 interface MainLine { key: string; text: string; pos: string | null; cefr: string | null; en: string | null; mark: 'pivot' | 'english' | null }
 
@@ -50,9 +51,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
   const explorer = total > mainCount
   // The sense-linked sentences lead, but an untranslated one never goes ahead of a translated one.
   const examples = translatedFirst(cleanExamples([...Object.values(view.examplesBySense), ...view.examples], view.resolved, head.lang), view.glosses)
-  const siblings = view.siblings.length > 0
-  const heroSpan = lines.length === 0 ? (siblings ? 9 : 12) : 5
-  const mainSpan = siblings ? 4 : 7
+  const heroSpan = lines.length === 0 ? 12 : 5
   const { phrasal, other } = head.lang === 'en'
     ? splitPhrasalVerbs(head.headword, view.phrases)
     : { phrasal: [], other: view.phrases }
@@ -91,7 +90,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
       node: <PhrasesCard headword={head.headword} lang={head.lang} phrases={view.phrases} />,
     },
     (view.family.length > 0 || view.related.length > 0) && {
-      key: 'family', wide: false, rows: 2 + 2 * Math.min(view.family.length, 6) + (view.related.length > 0 ? 3 : 0),
+      key: 'family', wide: false, rows: 2 + 2 * Math.min(view.family.length, SHOWN_FAMILY) + (view.related.length > 0 ? 3 : 0),
       node: (
         <Card
           id="family"
@@ -102,13 +101,21 @@ export function OverviewLayout({ view }: { view: WordView }) {
             </span>
           }
         >
-          <FamilyRows family={view.family} related={view.related} />
+          <FamilyRows family={view.family} related={view.related} shown={SHOWN_FAMILY} />
         </Card>
       ),
     },
     explorer && {
       key: 'senses', wide: true, rows: 6 + 2 * sections.length,
       node: <Card id="senses" label={`Tất cả ${total} nghĩa, theo nhóm`}><SenseExplorer sections={sections} /></Card>,
+    },
+    view.siblings.length > 0 && {
+      key: 'other-languages', wide: false, rows: 2 + 2 * view.siblings.length,
+      node: (
+        <div id="other-languages" className="min-w-0 max-lg:scroll-mt-16">
+          <CrossLanguagePanel siblings={view.siblings} className={`p-5 sm:p-6 ${CARD}`} />
+        </div>
+      ),
     },
     examples.length > 0 && {
       key: 'examples', wide: false, rows: 1 + 2.5 * Math.min(examples.length, 3),
@@ -123,31 +130,23 @@ export function OverviewLayout({ view }: { view: WordView }) {
       node: <Card label="Ngữ pháp"><GrammarList points={view.grammarPoints} /></Card>,
     },
     view.backlinks.length > 0 && {
-      key: 'backlinks', wide: false, rows: 1 + 2 * view.backlinks.length,
+      key: 'backlinks', wide: false, rows: 2 + 2 * Math.min(view.backlinks.length, 6),
       node: <Card id="backlinks" label={BACKLINKS_LABEL}><BacklinkList view={view} /></Card>,
     },
   ] satisfies (TileSpec | false)[]).filter((t) => t !== false)
   const sides = balanceColumns(tiles.map((t) => t.rows), tiles.map((t) => t.wide))
   const columns = ([0, 1] as const).filter((side) => sides.includes(side))
 
+  // One row for the sections a learner jumps to; the rest are a scroll away.
   const jumps = [
     lines.length > 0 && { href: '#meaning', label: 'Nghĩa' },
-    view.forms.length > 0 && { href: '#forms', label: 'Dạng từ' },
-    hasSynonyms(view) && { href: '#synonyms', label: 'Đồng nghĩa' },
     view.phrases.length > 0 && { href: '#phrases', label: 'Cụm từ' },
-    view.family.length + view.related.length > 0 && { href: '#family', label: 'Họ từ' },
-    siblings && { href: '#other-languages', label: 'Ngôn ngữ khác' },
     examples.length > 0 && { href: '#examples', label: 'Ví dụ' },
   ].filter((j) => j !== false)
-  const stats = [
-    { n: total, label: 'nghĩa' },
-    { n: view.phrases.length, label: 'cụm từ' },
-    { n: view.family.length, label: 'từ cùng họ' },
-  ].filter((s) => s.n > 0)
 
   return (
     <>
-      {jumps.length > 2 && (
+      {jumps.length > 1 && (
         <nav aria-label="Mục trong trang" className="sticky top-[var(--header-h)] z-10 border-b border-(--zs-line) bg-(--zs-bg)/88 backdrop-blur lg:hidden">
           <div className={`${CONTAINER} flex gap-1.5 overflow-x-auto py-2`}>
             {jumps.map((j) => (
@@ -163,8 +162,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
           <LookupHero
             detail={head}
             hanViet={view.hanViet}
-            summary={view.summary}
-            stats={stats}
+            summary={lines.length > 0 ? null : view.summary}
             posLabels={sections.filter((s) => s.key).map((s) => s.labelVi)}
           />
           {view.lemma && <LemmaLink lemma={view.lemma} preview={view.lemmaPreview ?? undefined} lang={head.lang} />}
@@ -174,7 +172,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
           <Card
             id="meaning"
             label="Nghĩa chính"
-            className={SPAN[mainSpan]}
+            className={SPAN[7]}
             action={explorer ? <a href="#senses" className="text-[13px] font-semibold text-(--zs-pen) hover:underline">Cả {total} nghĩa</a> : undefined}
           >
             <ol className="flex flex-col">
@@ -205,12 +203,6 @@ export function OverviewLayout({ view }: { view: WordView }) {
               </p>
             )}
           </Card>
-        )}
-
-        {siblings && (
-          <div id="other-languages" className="min-w-0 max-lg:scroll-mt-16 lg:col-span-3">
-            <CrossLanguagePanel siblings={view.siblings} className={`h-full p-5 sm:p-6 ${CARD}`} />
-          </div>
         )}
 
         {/* Wider than either column, so it takes a row of its own. */}

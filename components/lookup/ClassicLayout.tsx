@@ -4,7 +4,7 @@ import { CharacterPanel } from './CharacterPanel'
 import { ConjugationTable } from './ConjugationTable'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { LemmaLink } from './LemmaLink'
-import { Backlinks } from './LearnerParts'
+import { Backlinks, LayerNote } from './LearnerParts'
 import { SenseList } from './SenseList'
 import { useAnchor } from '@/lib/hooks/useAnchor'
 import {
@@ -34,12 +34,13 @@ export function ClassicLayout({ view }: { view: WordView }) {
 
   const anchor = useAnchor()
   const parts = [
-    ...sections.map((s) => ({ href: `#${s.anchor}`, label: s.labelVi, count: s.senses.length })),
-    view.phrases.length > 0 && { href: '#phrases', label: 'Cụm từ', count: view.phrases.length },
-    view.family.length + view.related.length > 0 && { href: '#family', label: 'Họ từ', count: view.family.length + view.related.length },
-    view.antonyms.length > 0 && { href: '#antonyms', label: 'Trái nghĩa', count: view.antonyms.length },
-    view.synonyms.length > 0 && { href: '#synonyms', label: view.senseSynonyms.length > 0 ? 'Đồng nghĩa khác' : 'Đồng nghĩa', count: view.synonyms.length },
-    examples.length > 0 && { href: '#examples', label: 'Ví dụ khác', count: examples.length },
+    ...sections.map((s) => ({ href: `#${s.anchor}`, label: s.labelVi })),
+    view.forms.length > 0 && { href: '#forms', label: 'Dạng từ' },
+    view.phrases.length > 0 && { href: '#phrases', label: 'Cụm từ' },
+    view.family.length + view.related.length > 0 && { href: '#family', label: 'Họ từ' },
+    view.antonyms.length > 0 && { href: '#antonyms', label: 'Trái nghĩa' },
+    view.synonyms.length > 0 && { href: '#synonyms', label: view.senseSynonyms.length > 0 ? 'Đồng nghĩa khác' : 'Đồng nghĩa' },
+    examples.length > 0 && { href: '#examples', label: 'Ví dụ khác' },
   ].filter((p) => p !== false).map((p) => ({ ...p, href: `#${anchor(p.href.slice(1))}` }))
 
   return (
@@ -66,26 +67,24 @@ export function ClassicLayout({ view }: { view: WordView }) {
           <Pronunciation headword={head.headword} prons={head.pronunciations} lang={lang} />
           {view.summary && <p className="text-lg leading-snug sm:text-[19px]">{view.summary}</p>}
           {view.lemma && <LemmaLink lemma={view.lemma} preview={view.lemmaPreview ?? undefined} lang={lang} />}
-          {view.forms.length > 0 && (
-            <section id={anchor('forms')} className="mt-3 flex flex-col gap-3">
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-[15px] font-extrabold">Dạng từ</h2>
-                {irregular && <Badge>{baseLabel === 'Nguyên thể' ? 'Động từ bất quy tắc' : 'Bất quy tắc'}</Badge>}
-              </div>
-              <FormCells headword={head.headword} baseLabel={baseLabel} forms={view.forms} lang={lang} variant="compact" />
-            </section>
-          )}
         </header>
 
+        {/* The rail lists the same parts on a wide screen. */}
         {parts.length > 1 && (
-          <nav aria-label="Mục trong trang" className="-mt-4 flex flex-wrap gap-2">
+          <nav aria-label="Mục trong trang" className="-mt-4 flex gap-2 overflow-x-auto lg:hidden">
             {parts.map((p) => (
-              <a key={p.href} href={p.href} className="rounded-full border border-(--edge) px-3 py-1.5 text-[13px] font-semibold transition-colors duration-150 ease-std hover:bg-(--zs-chip)">
-                {p.label}{p.count > 0 && <span className="font-normal text-(--zs-soft)"> · {p.count}</span>}
+              <a key={p.href} href={p.href} className="shrink-0 rounded-full border border-(--edge) px-3 py-1.5 text-[13px] font-semibold transition-colors duration-150 ease-std hover:bg-(--zs-chip)">
+                {p.label}
               </a>
             ))}
           </nav>
         )}
+
+        <SenseList
+          senses={view.senses} lang={lang} examples={view.examplesBySense} resolved={view.resolved} glosses={view.glosses}
+          senseSynonyms={view.senseSynonyms} mark={mark}
+        />
+        {view.learner && <div className="-mt-6"><LayerNote layer={view.learner} view={view} /></div>}
 
         {view.conjugation && (
           <Section id="conjugation" title="Chia động từ"><ConjugationTable conjugation={view.conjugation} /></Section>
@@ -93,11 +92,11 @@ export function ClassicLayout({ view }: { view: WordView }) {
         {lang === 'zh' && view.characters.length > 0 && (
           <Section id="characters" title="Chữ và bộ thủ"><CharacterPanel characters={view.characters} /></Section>
         )}
-
-        <SenseList
-          senses={view.senses} lang={lang} examples={view.examplesBySense} resolved={view.resolved} glosses={view.glosses}
-          senseSynonyms={view.senseSynonyms} mark={mark}
-        />
+        {view.forms.length > 0 && (
+          <Section id="forms" title="Dạng từ" note={irregular ? (baseLabel === 'Nguyên thể' ? 'Động từ bất quy tắc' : 'Bất quy tắc') : undefined}>
+            <FormCells headword={head.headword} baseLabel={baseLabel} forms={view.forms} lang={lang} variant="compact" />
+          </Section>
+        )}
 
         {view.phrases.length > 0 && (
           <Section id="phrases" title="Cụm từ" note={`${view.phrases.length} cụm từ`}>
