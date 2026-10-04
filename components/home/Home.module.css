@@ -4,7 +4,8 @@
    scale and fonts. Type keeps to the scale: 12, 14, 16, 21, 28, 37.5 and 50 px.
    Every motion here runs once, under a second, and is gone under prefers-reduced-motion. */
 
-.home { padding-bottom: 4rem; }
+/* At least a screen tall, so the footer starts below the fold while the reader's numbers load. */
+.home { min-height: 100svh; padding-bottom: 4rem; }
 /* The page container of globals.css and the header, so every edge lines up. */
 .wrap { max-width: var(--container-page); margin: 0 auto; padding-left: 1.5rem; padding-right: 1.5rem; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -135,6 +136,8 @@ a.card:hover { transform: translateY(-3px) rotate(-0.4deg); }
 .plain { color: inherit; text-decoration: none; }
 .plain:hover .hw { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.12em; }
 .rc .reveal { margin-top: 1.4rem; min-width: 10rem; }
+.rc[data-wait] { visibility: hidden; }
+.rc .ico { width: 2rem; height: 2rem; }
 .back { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 360ms var(--ease-enter); }
 .rc[data-open] .back { grid-template-rows: 1fr; }
 .back > div { overflow: hidden; }
@@ -186,6 +189,7 @@ a.card:hover { transform: translateY(-3px) rotate(-0.4deg); }
 .frz svg { width: 1rem; height: 1rem; fill: transparent; stroke: var(--sea-400); stroke-width: 1.5; stroke-linejoin: round; transition: fill 150ms var(--ease-std); }
 .frz svg[data-on] { fill: var(--sea-400); }
 .frz span { margin-left: 0.2rem; }
+.frz[data-wait] { visibility: hidden; }
 .frzNote { margin: 0.35rem 0 0; font-size: 0.75rem; line-height: 1.45; color: var(--zs-soft); }
 .goal { height: 6px; margin-top: 0.7rem; border-radius: 9px; background: var(--tint-3); overflow: hidden; }
 .goal i { display: block; height: 100%; border-radius: inherit; background: var(--sea-500); transform-origin: left; transition: transform 520ms var(--ease-std), background-color 150ms var(--ease-std); }
@@ -278,6 +282,8 @@ a.card:hover { transform: translateY(-3px) rotate(-0.4deg); }
 @media (max-width: 760px) {
   .today { font-size: var(--s4); }
   .top6 { gap: 1.2rem; }
+  /* The picker on its own row from the first paint: its label widens once hydrated. */
+  .bar > div { flex-basis: 100%; }
   .recent .lbl { display: block; margin-bottom: 0.4rem; }
   .lite { grid-template-columns: 1fr; }
   .pane { min-height: 0; }

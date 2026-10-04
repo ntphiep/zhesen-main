@@ -155,7 +155,7 @@ export function OrbitLayout({ view, failed, onRetry, picker }: { view: HomeView 
           </div>
           <ModeLinks />
           <LookupBox lookup={lookup} placeholder="giấc mơ" />
-          {view && <Languages view={view} open={open} onToggle={toggle} />}
+          <Languages view={view} open={open} onToggle={toggle} />
         </div>
         <div className={h.globeCol}>
           <div className={h.stage}>
@@ -201,24 +201,27 @@ export function OrbitLayout({ view, failed, onRetry, picker }: { view: HomeView 
   )
 }
 
+const NO_WORDS = { total: 0, learned: 0, learning: 0, unseen: 0 }
+
 /** One row per language: its words, how many are due, and a meter of learned, learning
- *  and never graded. Opening a row lists its due words and turns the globe to it. */
-function Languages({ view, open, onToggle }: { view: HomeView; open: LangCode | null; onToggle: (l: LangCode) => void }) {
+ *  and never graded. Opening a row lists its due words and turns the globe to it. Until the
+ *  numbers load the rows stand empty, so the globe beside them does not move. */
+function Languages({ view, open, onToggle }: { view: HomeView | null; open: LangCode | null; onToggle: (l: LangCode) => void }) {
   const id = useId()
   return (
     <>
       <ul className={h.langs}>
         {ORDER.map((lang) => {
-          const p = view.progress[lang]
-          const due = view.pending.filter((c) => c.lang === lang)
+          const p = view?.progress[lang] ?? NO_WORDS
+          const due = view?.pending.filter((c) => c.lang === lang) ?? []
           const pct = (n: number) => `${(n / Math.max(1, p.total) * 100).toFixed(1)}%`
           const isOpen = open === lang
           return (
             <li key={lang} className={h.lrow} data-l={lang} data-open={isOpen || undefined}>
-              <button type="button" aria-expanded={isOpen} aria-controls={`${id}-${lang}`} onClick={() => onToggle(lang)}>
+              <button type="button" disabled={!view} aria-expanded={isOpen} aria-controls={`${id}-${lang}`} onClick={() => onToggle(lang)}>
                 <span className={h.swatch} aria-hidden="true" />
-                <span><span className={h.nm}>{NAME[lang]}</span> <span className={h.ct}>{p.total} từ</span></span>
-                <span className={h.due}>{due.length ? `${due.length} đến hạn` : 'Chưa có từ đến hạn'}</span>
+                <span><span className={h.nm}>{NAME[lang]}</span> <span className={h.ct}>{view && `${p.total} từ`}</span></span>
+                <span className={h.due}>{!view ? '\u00a0' : due.length ? `${due.length} đến hạn` : 'Chưa có từ đến hạn'}</span>
                 <span className={h.meter} data-grow="" aria-hidden="true">
                   <i className={h.k} style={{ width: pct(p.learned) }} />
                   <i className={h.g} style={{ width: pct(p.learning) }} />
@@ -232,7 +235,7 @@ function Languages({ view, open, onToggle }: { view: HomeView; open: LangCode | 
                       {due.map((c) => (
                         <li key={c.id}>
                           <Link href={c.entryId ? entryPath(c.entryId) : '/wordlist'} prefetch={false}>
-                            <Hw lang={c.lang} text={c.headword} /><small>{dueNote(c.state.reps, c.state.dueAt, view.now)}</small>
+                            <Hw lang={c.lang} text={c.headword} /><small>{dueNote(c.state.reps, c.state.dueAt, view?.now ?? 0)}</small>
                           </Link>
                         </li>
                       ))}

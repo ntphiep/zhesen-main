@@ -75,10 +75,13 @@ export function DeskLayout({ view, failed, onRetry, picker }: { view: HomeView |
           ))}
         </section>
 
-        <div className={h.side}>
-          <DayStats view={view} />
-          <Week forecast={view?.forecast.slice(1) ?? null} />
-        </div>
+        {/* After the cards, which fill the tray above it on a phone. */}
+        {view && (
+          <div className={h.side}>
+            <DayStats view={view} />
+            <Week forecast={view.forecast.slice(1)} />
+          </div>
+        )}
       </div>
     </div>
   )

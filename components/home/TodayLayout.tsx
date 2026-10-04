@@ -53,10 +53,15 @@ export function TodayLayout({ view, failed, onRetry, picker, daily, supabase, on
             <section className={h.deck} aria-label="Phiên ôn hôm nay">
               <div className={h.lblRow}><p className={h.lbl}>Phiên ôn hôm nay</p></div>
               <div className={h.slot}>
-                <div className={`${h.rc} ${h.done}`}>
-                  <p className={h.empty}>&nbsp;</p>
+                {/* A card's lines, hidden, so the first card takes the same room. */}
+                <div className={h.rc} data-wait="" aria-hidden="true">
+                  <div className={h.meta}><span>&nbsp;</span></div>
+                  <div className={h.head}><span className={h.hw}>&nbsp;</span><span className={h.ico} /></div>
+                  <span className={`${h.pr} ${h.pron}`}>&nbsp;</span>
+                  <span className={`${h.btn} ${h.reveal}`}>&nbsp;</span>
                 </div>
               </div>
+              <p className={h.after} />
             </section>
           )}
           <section className={h.leeches} aria-labelledby={leechId}>
@@ -116,34 +121,37 @@ function Calendar({ view }: { view: HomeView | null }) {
   const n = narrow ? 17 : 26
   const cells: React.ReactNode[] = []
   let studied = 0
-  if (view) {
-    const today = dayIndex(view.now)
-    const start = today - mondayIndex(view.now) - (n - 1) * 7
-    let lastMonth = 0
-    for (let c = 0; c < n; c++) {
-      const month = Number(localDay(view.now + (start + c * 7 - today) * DAY).slice(5, 7))
-      cells.push(<span key={`m${c}`} className={h.mo} style={{ gridColumn: c + 2 }}>{c > 0 && month !== lastMonth ? `Tháng ${month}` : ''}</span>)
-      lastMonth = month
-      for (let r = 0; r < 7; r++) {
-        const d = start + c * 7 + r
-        const ts = view.now + (d - today) * DAY
-        const on = view.days.has(localDay(ts))
-        if (on && d <= today) studied++
-        cells.push(
-          <i
-            key={`${c}-${r}`}
-            style={{ gridColumn: c + 2, gridRow: r + 2, animationDelay: d === today && view.gradedNow ? undefined : `${c * 22}ms` }}
-            data-on={on || undefined}
-            data-fut={d > today || undefined}
-            data-now={d === today || undefined}
-            data-pop={d === today && view.gradedNow > 0 ? '' : undefined}
-            title={`${longDate(ts)}${on ? ', có học' : ''}`}
-          />,
-        )
+  // Empty weeks hold the grid's place while the days load.
+  const today = view ? dayIndex(view.now) : 0
+  const start = view ? today - mondayIndex(view.now) - (n - 1) * 7 : 0
+  let lastMonth = 0
+  for (let c = 0; c < n; c++) {
+    const month = view ? Number(localDay(view.now + (start + c * 7 - today) * DAY).slice(5, 7)) : 0
+    cells.push(<span key={`m${c}`} className={h.mo} style={{ gridColumn: c + 2 }}>{view && c > 0 && month !== lastMonth ? `Tháng ${month}` : '\u00a0'}</span>)
+    lastMonth = month
+    for (let r = 0; r < 7; r++) {
+      if (!view) {
+        cells.push(<i key={`${c}-${r}`} style={{ gridColumn: c + 2, gridRow: r + 2 }} />)
+        continue
       }
+      const d = start + c * 7 + r
+      const ts = view.now + (d - today) * DAY
+      const on = view.days.has(localDay(ts))
+      if (on && d <= today) studied++
+      cells.push(
+        <i
+          key={`${c}-${r}`}
+          style={{ gridColumn: c + 2, gridRow: r + 2, animationDelay: d === today && view.gradedNow ? undefined : `${c * 22}ms` }}
+          data-on={on || undefined}
+          data-fut={d > today || undefined}
+          data-now={d === today || undefined}
+          data-pop={d === today && view.gradedNow > 0 ? '' : undefined}
+          title={`${longDate(ts)}${on ? ', có học' : ''}`}
+        />,
+      )
     }
-    ROW_LABEL.forEach((t, r) => cells.push(<span key={`w${r}`} className={h.wl} style={{ gridRow: r + 2 }} aria-hidden="true">{t}</span>))
   }
+  ROW_LABEL.forEach((t, r) => cells.push(<span key={`w${r}`} className={h.wl} style={{ gridRow: r + 2 }} aria-hidden="true">{t}</span>))
   return (
     <section className={h.cal} aria-labelledby={id}>
       <p className={h.lbl} id={id}>Những ngày đã học</p>

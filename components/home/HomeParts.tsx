@@ -270,19 +270,16 @@ function StreakFact({ view }: { view: HomeView | null }) {
     <div className={h.fact}>
       <b><CountUp value={view?.streak ?? null} /></b>
       <span>ngày học liền</span>
-      {s && (
-        <>
-          <p className={h.frz}>
-            {Array.from({ length: MAX_FREEZES }, (_, i) => (
-              <svg key={i} aria-hidden="true" viewBox="0 0 16 16" data-on={i < s.freezes || undefined}>
-                <path d="M8 1.5 2.5 3.6v4c0 3.3 2.3 5.8 5.5 6.9 3.2-1.1 5.5-3.6 5.5-6.9v-4z" />
-              </svg>
-            ))}
-            <span>{s.freezes}/{MAX_FREEZES} lượt giữ chuỗi</span>
-          </p>
-          {s.savedYesterday && <p className={h.frzNote}>Hôm qua đã dùng một lượt giữ chuỗi.</p>}
-        </>
-      )}
+      {/* Drawn while the numbers load too, hidden, so the card keeps its height. */}
+      <p className={h.frz} data-wait={s ? undefined : ''} aria-hidden={s ? undefined : true}>
+        {Array.from({ length: MAX_FREEZES }, (_, i) => (
+          <svg key={i} aria-hidden="true" viewBox="0 0 16 16" data-on={(s && i < s.freezes) || undefined}>
+            <path d="M8 1.5 2.5 3.6v4c0 3.3 2.3 5.8 5.5 6.9 3.2-1.1 5.5-3.6 5.5-6.9v-4z" />
+          </svg>
+        ))}
+        <span>{s?.freezes ?? 0}/{MAX_FREEZES} lượt giữ chuỗi</span>
+      </p>
+      {s?.savedYesterday && <p className={h.frzNote}>Hôm qua đã dùng một lượt giữ chuỗi.</p>}
     </div>
   )
 }
