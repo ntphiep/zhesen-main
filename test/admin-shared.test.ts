@@ -41,7 +41,10 @@ describe('roleCredentials', () => {
   const ROLE = 'arn:aws:iam::123456789012:role/zhesen-vercel'
   const creds = (expiresAt: number) => ({ accessKeyId: 'AKIA', secretAccessKey: 's', expiration: new Date(expiresAt) })
 
-  beforeEach(() => exchange.mockReset())
+  // A braced body: vitest calls a function returned from beforeEach as the test's cleanup.
+  beforeEach(() => {
+    exchange.mockReset()
+  })
 
   it('exchanges the token once for every client until the credentials near expiry', async () => {
     let now = 0
@@ -54,6 +57,30 @@ describe('roleCredentials', () => {
     now = 3_600_000 - 60_000
     await provider()
     expect(exchange).toHaveBeenCalledTimes(2)
+  })
+
+  it('runs one exchange for every caller that arrives near expiry', async () => {
+    let now = 0
+    exchange.mockResolvedValueOnce(creds(3_600_000)).mockResolvedValueOnce(creds(7_200_000))
+    const provider = roleCredentials(ROLE, 'eu-west-1', () => now)
+    await provider()
+    now = 3_600_000 - 60_000
+    const all = await Promise.all(Array.from({ length: 5 }, () => provider()))
+    expect(exchange).toHaveBeenCalledTimes(2)
+    expect(all.every((c) => c.expiration?.getTime() === 7_200_000)).toBe(true)
+  })
+
+  it('keeps the old credentials while a refresh fails, until they actually expire', async () => {
+    let now = 0
+    exchange.mockResolvedValueOnce(creds(3_600_000)).mockRejectedValue(new Error('Throttling'))
+    const provider = roleCredentials(ROLE, 'eu-central-1', () => now)
+    await provider()
+    now = 3_600_000 - 60_000
+    const kept = await Promise.all([provider(), provider()])
+    expect(kept.map((c) => c.expiration?.getTime())).toEqual([3_600_000, 3_600_000])
+    expect(exchange).toHaveBeenCalledTimes(2)
+    now = 3_600_000
+    await expect(provider()).rejects.toThrow('Throttling')
   })
 
   it('does not keep a failed exchange', async () => {

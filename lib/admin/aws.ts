@@ -40,19 +40,24 @@ const providers = new Map<string, CredentialsProvider>()
  * The role's credentials, shared by every client on this instance until they near expiry.
  * The SDK keeps credentials per client and every read here builds new clients, so each page
  * and each poll paid one STS AssumeRoleWithWebIdentity per client, five on /admin/infra.
- * A failed exchange is not kept.
+ * Callers that arrive during a refresh wait on the same exchange; if it fails, they keep
+ * the old credentials until those actually expire. A failed first exchange is not kept.
  */
 export function roleCredentials(roleArn: string, region: string = REGION, now: () => number = Date.now): CredentialsProvider {
   const key = `${roleArn} ${region}`
   const known = providers.get(key)
   if (known) return known
   const exchange = awsCredentialsProvider({ roleArn, clientConfig: { region } })
-  let held: Promise<Credentials> | null = null
+  const left = (c: Credentials) => (c.expiration ? c.expiration.getTime() - now() : Infinity)
+  let current: Credentials | null = null
+  let refreshing: Promise<Credentials> | null = null
   const provider: CredentialsProvider = async () => {
-    const current = held && await held.catch(() => null)
-    if (current && (!current.expiration || current.expiration.getTime() - now() > REFRESH_MS)) return current
-    held = exchange()
-    return held
+    if (current && left(current) > REFRESH_MS) return current
+    refreshing ??= exchange()
+      .then((c) => { current = c; return c })
+      .finally(() => { refreshing = null })
+    const old = current
+    return old && left(old) > 0 ? refreshing.catch(() => old) : refreshing
   }
   providers.set(key, provider)
   return provider
