@@ -59,12 +59,13 @@ export default async function Page({ params }: { params: Params }) {
   if (!isLangCode(lang)) notFound()
   const word = percentDecode(id)
   const data = await loadWordPage(buildEntryId(lang, word))
-  if (!data) {
-    // An inflected phrase has no entry of its own: /dictionary/en/gave%20up opens give up.
-    const lemma = /\s/.test(word) ? await getCachedPhraseLemmaId(lang, word) : null
+  // An inflected phrase opens the entry that lists it as a form: gave up has no entry, and
+  // took off has one with a Vietnamese gloss only, as 1,754 English phrases a form resolves do.
+  if (/\s/.test(word) && (!data || data.detail.senses.every((s) => !s.glossEn))) {
+    const lemma = await getCachedPhraseLemmaId(lang, word)
     if (lemma) permanentRedirect(entryPath(lemma))
-    notFound()
   }
+  if (!data) notFound()
   return (
     <>
       <BreadcrumbJsonLd trail={[{ name: 'Từ điển', path: '/dictionary' }, { name: data.formOf?.headword ?? data.detail.headword }]} />

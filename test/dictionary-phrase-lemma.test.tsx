@@ -15,6 +15,7 @@ vi.mock('@/components/lookup/LookupView', () => ({ LookupView: () => null }))
 import Page from '@/app/dictionary/[lang]/[id]/page'
 import { getCachedPhraseLemmaId } from '@/lib/dictionary/cached'
 import { phraseLemmaId } from '@/lib/dictionary/resolveTokens'
+import { loadWordPage } from '@/lib/dictionary/wordPageData'
 
 function client(rows: unknown[]) {
   const rpc = vi.fn(async () => ({ data: rows, error: null }))
@@ -46,6 +47,23 @@ describe('word page for an inflected phrase', () => {
     await expect(Page({ params: Promise.resolve({ lang: 'en', id: 'gave%20up' }) }))
       .rejects.toThrow('NEXT_REDIRECT /dictionary/en/give%20up')
     expect(getCachedPhraseLemmaId).toHaveBeenCalledWith('en', 'gave up')
+  })
+
+  // took off had a page of its own holding one Vietnamese gloss beside take off.
+  it('redirects an entry with no English gloss to the phrase it is a form of', async () => {
+    const tookOff = { detail: { id: 'en:took off', headword: 'took off', senses: [{ pos: null, glossVi: 'cất cánh', glossEn: null, senseOrder: 1 }] } }
+    vi.mocked(loadWordPage).mockResolvedValueOnce(tookOff as unknown as Awaited<ReturnType<typeof loadWordPage>>)
+    vi.mocked(getCachedPhraseLemmaId).mockResolvedValueOnce('en:take off')
+    await expect(Page({ params: Promise.resolve({ lang: 'en', id: 'took%20off' }) }))
+      .rejects.toThrow('NEXT_REDIRECT /dictionary/en/take%20off')
+  })
+
+  it('keeps a phrase with an English gloss on its own page', async () => {
+    const fedUp = { detail: { id: 'en:fed up', headword: 'fed up', senses: [{ pos: 'adj', glossVi: 'chán ngấy', glossEn: 'Annoyed.', senseOrder: 1 }] } }
+    vi.mocked(loadWordPage).mockResolvedValueOnce(fedUp as unknown as Awaited<ReturnType<typeof loadWordPage>>)
+    vi.mocked(getCachedPhraseLemmaId).mockClear()
+    await expect(Page({ params: Promise.resolve({ lang: 'en', id: 'fed%20up' }) })).resolves.toBeTruthy()
+    expect(getCachedPhraseLemmaId).not.toHaveBeenCalled()
   })
 
   it('is not found when no phrase owns the form', async () => {
