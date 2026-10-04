@@ -67,8 +67,9 @@ const MARKERS: [RegExp, string][] = [
 ]
 
 /** A variant is a spelling someone might meet while reading but should not copy.
- *  These sort below the real inflections instead of being mixed in with them. */
-const VARIANT = /alternative|archaic|obsolete|dated|nonstandard|misspelling|misconstruction|pronunciation-spelling|dialectal|Scotland|Early Modern|^or$/
+ *  These sort below the real inflections instead of being mixed in with them. day listed
+ *  the "Internet Leet plural" dayz; 74 English entries had such a slang or joke form. */
+const VARIANT = /alternative|archaic|obsolete|dated|nonstandard|misspelling|misconstruction|pronunciation-spelling|dialectal|Scotland|Early Modern|Internet|Leet|humorous|hypercorrect|slang|euphemistic|derogatory|^or$/
 
 /** A label with no Vietnamese name is a usage note ("countable uncountable"), not a form, so
  *  it is never printed and the form sorts with the variants. */

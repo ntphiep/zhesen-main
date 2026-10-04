@@ -253,6 +253,17 @@ describe('groupWordForms, whatever the row order', () => {
     expect(forms.every((f) => !f.standard)).toBe(true)
   })
 
+  // day listed dayz, an "Internet Leet plural", beside days.
+  it('treats an internet, slang or joke spelling as a variant', () => {
+    const forms = groupWordForms([
+      { formText: 'days', formLabel: 'plural' },
+      { formText: 'dayz', formLabel: 'Internet Leet plural' },
+      { formText: 'octopodes', formLabel: 'humorous hypercorrect plural' },
+      { formText: 'gats', formLabel: 'plural slang' },
+    ])
+    expect(forms.filter((f) => f.standard).map((f) => f.text)).toEqual(['days'])
+  })
+
   // better, record and casa printed Pronunciation-spelling, Agent and Augmentative.
   it('never shows an English label', () => {
     const forms = groupWordForms([
