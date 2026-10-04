@@ -2,6 +2,8 @@
 import { useId } from 'react'
 import Link from 'next/link'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { AddToWordlistButton } from '@/components/lookup/AddToWordlistButton'
+import { AudioButton } from '@/components/ui/AudioButton'
 import { entryPath } from '@/lib/dictionary/entryId'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { HomeView } from '@/lib/hooks/useHomeData'
@@ -86,11 +88,15 @@ export function TodayLayout({ view, failed, onRetry, picker, daily, supabase, on
             {ORDER.map((lang) => {
               const e = daily[lang]
               return e && (
-                <Link key={lang} className={h.w3} data-l={lang} href={entryPath(e.id)} prefetch={false}>
+                <div key={lang} className={h.w3} data-l={lang}>
                   <span className={h.tp}>{NAME[lang]}</span>
-                  <Hw lang={lang} text={e.headword} />
+                  <Link className={h.hw} data-l={lang} lang={lang} href={entryPath(e.id)} prefetch={false}>{e.headword}</Link>
                   <span className={h.gl}>{e.glossVi}</span>
-                </Link>
+                  <div className={h.acts}>
+                    <AudioButton text={e.headword} lang={lang} audioUrl={e.audioUrl} label="Nghe" tone="pane" />
+                    <AddToWordlistButton entry={e} tone="pane" />
+                  </div>
+                </div>
               )
             })}
           </div>
