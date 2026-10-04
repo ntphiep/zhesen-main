@@ -8,16 +8,18 @@
 -- out of the eight results the lookup shows. 4,112 English entries carry sense_frequency;
 -- no other language does.
 --
--- lex.gloss_terms gains sense_rank, the best sense_frequency among the senses that write the
--- term, filled by lex.gloss_terms_reload (0107's body plus that column). search_vi takes the
--- nearer of the two positions, so a rank only lifts a sense and an entry without one scores as
--- before. Both bodies are otherwise the live definitions (0099 and 0107); the SET clauses are
--- restated, as create or replace drops the ones it omits.
+-- lex.gloss_terms gains sense_rank, the best place the page gives a sense that writes the
+-- term, filled by lex.gloss_terms_reload (0107's body plus that column) for the entries that
+-- rank a sense. sense_frequency is a band within a part of speech, so the place is the
+-- `rankSenses` order, not the band. search_vi takes the nearer of the two positions, so a rank
+-- only lifts a sense and an entry without one scores as before. Both bodies are otherwise the
+-- live definitions (0099 and 0107); the SET clauses are restated, as create or replace drops
+-- the ones it omits.
 --
--- Measured against a temporary copy of lex.gloss_terms on production on 2026-10-04: "bỏ cuộc"
--- lists give up third, and 22 of 30 sample queries change order, mostly by lifting the common
--- word ("yêu": love from fifth to first; "làm việc": work from sixth to first; "nói": say from
--- fourth to first). Ties at 3.85 grow, and frequency_rank orders them ("người" now opens with who).
+-- Measured with 0120 in a rolled-back transaction on production on 2026-10-04, top 3 of 20
+-- queries: người, thời gian, gia đình and nước keep theirs; "bỏ cuộc" lists give up third;
+-- "nói" opens with say, "lấy" with take, "của" with of, "mèo" with cat and "vượt qua" with
+-- pass; "yêu" lists love second; "nhà" moves place to second.
 --
 -- TO ROLL BACK: replay 0099's lex.search_vi and 0107's lex.gloss_terms_reload, then
 -- alter table lex.gloss_terms drop column sense_rank.
@@ -31,7 +33,7 @@ set statement_timeout = '900s';
 alter table lex.gloss_terms add column if not exists sense_rank smallint;
 
 comment on column lex.gloss_terms.sense_rank is
-  'The best sense_frequency among the senses whose gloss writes this term; null when none is ranked.';
+  'The best place the word page gives a sense whose gloss writes this term, in an entry that ranks a sense by sense_frequency; null in any other entry.';
 
 create or replace function lex.gloss_terms_reload(p_entries text[] default null)
 returns void
@@ -57,10 +59,25 @@ begin
          min(sense_order),
          min(sense_rank)
   from (
-    select s.entry_id, e.lang, v.term, v.head, s.sense_order,
-           case when s.sense_frequency ~ '^[1-9][0-9]?$' then s.sense_frequency::smallint end as sense_rank
+    select s.entry_id, e.lang, v.term, v.head, s.sense_order, r.sense_rank
     from lex.senses s
     join lex.entries e on e.id = s.entry_id
+    -- The place `rankSenses` (lib/dictionary/textQuality.ts) gives the sense on its page, in
+    -- an entry that ranks a sense by sense_frequency. sense_frequency is a band within a part
+    -- of speech, not a rank: when has five senses at "1", and its noun sense 13 "thời gian"
+    -- would otherwise score as sense 1.
+    left join (
+      select x.id,
+             (row_number() over (
+                partition by x.entry_id
+                order by coalesce(x.register, '') ~ '\m(obsolete|archaic|dated|rare|vulgar|offensive|dialectal)\M',
+                         case when x.sense_frequency ~ '^[1-5]$' then x.sense_frequency::int end nulls last,
+                         x.gloss_vi is null, x.sense_order))::smallint as sense_rank
+      from lex.senses x
+      where (p_entries is null or x.entry_id = any (p_entries))
+        and x.entry_id in (select y.entry_id from lex.senses y
+                           where y.sense_frequency ~ '^[1-5]$' and (p_entries is null or y.entry_id = any (p_entries)))
+    ) r on r.id = s.id
     cross join lateral (
       select btrim(regexp_replace(lower(part), '\s*\(.*$', ''), ' .,;:!?') as base
       -- A closed parenthesis goes before the split, so a comma inside it cuts nothing.
@@ -151,8 +168,8 @@ begin
         end)
         - (case when g.head then 0.15 else 0.0 end)
         -- A gloss deep inside a long entry is a weaker answer than sense 1 of the right
-        -- word: "bau troi" is sense 13 of element and sense 28 of blue. A sense ranked by
-        -- sense_frequency counts at that rank when it is nearer the top, as on its page.
+        -- word: "bau troi" is sense 13 of element and sense 28 of blue. A sense its page
+        -- places nearer the top counts at that place.
         - 0.5 * (1.0 - 1.0 / sqrt(least(g.sense_order, coalesce(g.sense_rank, g.sense_order)) + 1.0))
       )::real as hit_rank
     from q
@@ -224,7 +241,7 @@ $function$;
 
 -- Only an entry with a ranked sense gains a sense_rank.
 select lex.gloss_terms_reload(array(
-  select distinct s.entry_id from lex.senses s where s.sense_frequency is not null
+  select distinct s.entry_id from lex.senses s where s.sense_frequency ~ '^[1-5]$'
 ));
 
 insert into supabase_migrations.schema_migrations (version, name)

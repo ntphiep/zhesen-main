@@ -4,7 +4,8 @@
 -- measured on production on 2026-10-04, lex.search('give u', array['en'], 5) answered give up
 -- hope, give up a newspaper, give up, give up a habit and give up one's appointment, in plan
 -- order, and with the lookup's cap of 8 a longer phrase could push give up itself out. The
--- body is the live definition (identical to 0103) with the two order clauses extended.
+-- body is the live definition (identical to 0103) with the two order clauses extended, and
+-- the gloss of each row is taken from the sense the word page leads with.
 
 set lock_timeout = '5s';
 
@@ -135,8 +136,18 @@ AS $function$
   select
     e.id, e.lang::text, e.headword, e.traditional, e.level, e.frequency_rank, e.attributes,
     lex.entry_pos(e.id) as pos,
-    (select s.gloss_vi from lex.senses s where s.entry_id = e.id order by s.sense_order limit 1) as gloss_vi,
-    (select s.gloss_en from lex.senses s where s.entry_id = e.id order by s.sense_order limit 1) as gloss_en,
+    -- The sense the word page leads with, in `rankSenses` order (lib/dictionary/textQuality.ts):
+    -- give up's sense 1 "đầu hàng" answered the lookup box while its page led with "từ bỏ".
+    (select s.gloss_vi from lex.senses s where s.entry_id = e.id
+       order by coalesce(s.register, '') ~ '\m(obsolete|archaic|dated|rare|vulgar|offensive|dialectal)\M',
+                case when s.sense_frequency ~ '^[1-5]$' then s.sense_frequency::int end nulls last,
+                s.gloss_vi is null, s.sense_order
+       limit 1) as gloss_vi,
+    (select s.gloss_en from lex.senses s where s.entry_id = e.id
+       order by coalesce(s.register, '') ~ '\m(obsolete|archaic|dated|rare|vulgar|offensive|dialectal)\M',
+                case when s.sense_frequency ~ '^[1-5]$' then s.sense_frequency::int end nulls last,
+                s.gloss_vi is null, s.sense_order
+       limit 1) as gloss_en,
     (select p.ipa from lex.pronunciations p where p.entry_id = e.id and p.ipa is not null
        order by case when e.lang::text = 'en' and lower(p.accent) like '%us%' then 0
                      when e.lang::text = 'en' and lower(p.accent) like '%uk%' then 1
