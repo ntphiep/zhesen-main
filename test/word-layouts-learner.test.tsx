@@ -334,7 +334,7 @@ describe('a layer derived from the dictionary', () => {
 
   it('names the datasets of the examples on show, and labels the one a model wrote', () => {
     const example = (sourceId: string, n: number): DictExample =>
-      ({ text: `A house ${n}.`, reading: null, translationVi: `Một ngôi nhà ${n}.`, translationEn: null, senseId: `en:x#${n}`, sourceId })
+      ({ text: `A house ${n}. It has a warranty.`, reading: null, translationVi: `Một ngôi nhà ${n}.`, translationEn: null, senseId: `en:x#${n}`, sourceId })
     const senses: DictSense[] = [1, 2, 3].map((n) => ({ id: `en:x#${n}`, pos: 'noun', glossVi: `nhà ${n}`, glossEn: `House ${n}.`, senseOrder: n, glossViIsMt: false }))
     const detail = { ...warranty, id: 'en:x', senses, examples: [example('wiktionary-en', 1), example('tatoeba', 2), example('zhesen-ai', 3)] }
     const { view: v, layer: l } = derivedView(detail)

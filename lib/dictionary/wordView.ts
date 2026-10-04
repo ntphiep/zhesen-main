@@ -191,6 +191,16 @@ export function splitAroundStem(word: string, stem: string): { before: string; s
   return n >= 2 ? { before: '', stem: word.slice(0, n), after: word.slice(n) } : { before: '', stem: word, after: '' }
 }
 
+/** Whether a sentence uses the headword or one of its forms (2,365 sense sentences in the top
+ *  20k did not). Only a one-word English or Spanish headword is checked: a phrase splits
+ *  around its object ("gave it up") and Chinese has no spaces. */
+export function usesHeadword(text: string, headword: string, forms: string[], lang: LangCode): boolean {
+  const head = headword.trim().toLocaleLowerCase()
+  if (lang === 'zh' || /\s/.test(head)) return true
+  const words = new Set([head, ...forms.map((f) => f.toLocaleLowerCase())])
+  return (text.toLocaleLowerCase().match(/[\p{L}\p{M}'’-]+/gu) ?? []).some((t) => words.has(t) || t.startsWith(head))
+}
+
 export function buildWordView({
   detail, lemma = null, characters, siblings, inflections = [], grammarPoints = [], containing = [], kin = [],
   previews = {}, resolvedExamples = [], learner = null, backlinks = [], formOf = null,
@@ -213,7 +223,9 @@ export function buildWordView({
   const shownSiblings = siblings
     .filter((s) => s.glossVi && !/^[A-Z0-9]{2,}$/.test(s.headword))
     .sort((a, b) => LANG_ORDER.indexOf(a.lang) - LANG_ORDER.indexOf(b.lang))
-  const candidates = knownWordExamples(exampleCandidates(sections, detail.examples), resolvedExamples, detail.lang)
+  const formTexts = inflections.map((f) => f.formText)
+  const ownExamples = detail.examples.filter((e) => usesHeadword(e.text, detail.headword, formTexts, detail.lang))
+  const candidates = knownWordExamples(exampleCandidates(sections, ownExamples), resolvedExamples, detail.lang)
   const plan = planExamples(sections, candidates, glosses)
 
   const tabs = relatedTabs({

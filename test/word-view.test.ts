@@ -118,6 +118,21 @@ describe('groupSenses', () => {
 describe('buildWordView', () => {
   const view = buildWordView({ detail: take, characters: [], siblings: [] })
 
+  // bumble showed sense sentences that never use bumble.
+  it('shows no example that uses neither the headword nor a form of it', () => {
+    const ex = (text: string, senseId: string | null) => ({ text, reading: null, translationVi: `${text} (vi)`, translationEn: null, senseId })
+    const v = buildWordView({
+      detail: {
+        ...take,
+        examples: [ex('She took the pen.', 'en:take#1'), ex('Bring it here.', 'en:take#2'), ex('That was a great take.', null), ex('Give me that.', null)],
+      },
+      inflections: [{ formText: 'took', formLabel: 'past' }],
+      characters: [], siblings: [],
+    })
+    const texts = [...Object.values(v.examplesBySense), ...v.examples].map((e) => e.text)
+    expect(texts).toEqual(['She took the pen.', 'That was a great take.'])
+  })
+
   it('lists a synonym under the sense it shares a meaning with, and nowhere else', () => {
     expect(view.senseSynonyms.map((s) => [s.senseOrder, s.label, s.words.map((w) => w.text)])).toEqual([
       [1, 'cầm', ['grab']],
