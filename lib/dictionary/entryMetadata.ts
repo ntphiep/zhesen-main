@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { pageMetadata } from '@/lib/site'
 import { entryPath } from './entryId'
+import { phrasalTail } from './phrases'
+import { posGroup } from './pos'
 import { formatPronunciation, pickAccentRows } from './pronunciation'
 import type { DictEntryDetail, DictSense } from './types'
 
@@ -27,6 +29,12 @@ function entryTitle(detail: DictEntryDetail, lemma: string | null): string {
   if (detail.lang === 'zh') {
     const pinyin = headwordPinyin(detail)
     return `${pinyin ? `${detail.headword} (${pinyin})` : detail.headword} là gì? ${answer}`
+  }
+  // "give up là gì" and "cụm động từ give up" are what searchers type for a phrasal verb.
+  const verb = detail.headword.split(' ')[0]
+  if (!lemma && verb !== detail.headword && phrasalTail(verb, detail.headword) !== null
+    && detail.senses.some((s) => posGroup(s.pos)?.key === 'verb')) {
+    return `${detail.headword} là gì? Cụm động từ: nghĩa, cách dùng`
   }
   return `${detail.headword} là gì? ${answer}`
 }

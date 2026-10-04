@@ -106,3 +106,20 @@ describe('joinedCase', () => {
     expect(joinedCase(['Paris', 'Chính phủ Pháp'], paris)).toEqual(['Paris', 'Chính phủ Pháp'])
   })
 })
+
+describe('entryMetadata title for a phrasal verb', () => {
+  const verb = sense('từ bỏ', { pos: 'verb' })
+  it('names a verb with its particles as a phrasal verb', () => {
+    expect(entryMetadata(entry({ id: 'en:give up', headword: 'give up', senses: [verb] })).title)
+      .toBe('give up là gì? Cụm động từ: nghĩa, cách dùng')
+    expect(entryMetadata(entry({ id: 'en:look forward to', headword: 'look forward to', senses: [verb] })).title)
+      .toBe('look forward to là gì? Cụm động từ: nghĩa, cách dùng')
+  })
+  it('keeps the plain title for a collocation, a noun phrase and a single verb', () => {
+    expect(entryMetadata(entry({ id: 'en:make a decision', headword: 'make a decision', senses: [verb] })).title)
+      .toBe('make a decision là gì? Nghĩa tiếng Việt')
+    expect(entryMetadata(entry({ id: 'en:break up', headword: 'break up', senses: [sense('chia tay', { pos: 'noun' })] })).title)
+      .toBe('break up là gì? Nghĩa tiếng Việt')
+    expect(entryMetadata(entry({ senses: [verb] })).title).toBe('take là gì? Nghĩa tiếng Việt')
+  })
+})
