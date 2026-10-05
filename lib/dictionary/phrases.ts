@@ -21,6 +21,14 @@ const FUNCTION_WORDS = new Set([
   'that', 'these', 'those', 'there', 'not', 'so', 'than', 'then', 'up', 'out', 'off', 'down', 'over', 'into',
 ])
 
+/** The Spanish counterpart: "de la" is an entry glossed "của", and "lo que", "para que" and
+ *  "es que" are entries too, so a run made only of these would sit on nearly every passage. */
+const ES_FUNCTION_WORDS = new Set([
+  'a', 'al', 'de', 'del', 'el', 'la', 'las', 'lo', 'los', 'un', 'una', 'unos', 'unas', 'y', 'e', 'o', 'u', 'ni',
+  'que', 'en', 'con', 'por', 'para', 'se', 'me', 'te', 'le', 'les', 'nos', 'os', 'mi', 'mis', 'tu', 'tus', 'su',
+  'sus', 'es', 'son', 'no',
+])
+
 /** The object a separable phrasal verb takes between its verb and its particle. */
 const OBJECT_PRONOUNS = new Set(['it', 'him', 'her', 'them', 'me', 'us', 'you', 'this', 'that'])
 
@@ -69,9 +77,12 @@ export interface PhraseCandidate {
   last: number
 }
 
-/** English candidates, in passage order. Words joined by punctuation are never one
- *  phrase: "up. Then" ends a sentence between them. */
-export function phraseCandidates(segments: Segment[]): PhraseCandidate[] {
+/** Candidates in passage order. Words joined by punctuation are never one phrase: "up.
+ *  Then" ends a sentence between them. The question and separable-verb rules are English;
+ *  Spanish keeps only the n-grams and its own function words. */
+export function phraseCandidates(segments: Segment[], lang: 'en' | 'es' = 'en'): PhraseCandidate[] {
+  const en = lang === 'en'
+  const functionWords = en ? FUNCTION_WORDS : ES_FUNCTION_WORDS
   const words: string[] = []
   // Whether the word at this index follows the previous one across whitespace alone.
   const joined: boolean[] = []
@@ -85,14 +96,14 @@ export function phraseCandidates(segments: Segment[]): PhraseCandidate[] {
   const lower = words.map((w) => w.toLowerCase())
   const out: PhraseCandidate[] = []
   for (let i = 0; i < words.length; i++) {
-    if (SUBJECTS.has(lower[i]) && i > 0 && joined[i] && AUXILIARIES.has(lower[i - 1])) continue
+    if (en && SUBJECTS.has(lower[i]) && i > 0 && joined[i] && AUXILIARIES.has(lower[i - 1])) continue
     for (let n = 2; n <= MAX_WORDS && i + n <= words.length; n++) {
       if (!joined[i + n - 1]) break
       const span = lower.slice(i, i + n)
-      if (span.every((w) => FUNCTION_WORDS.has(w) || AUXILIARIES.has(w))) continue
+      if (span.every((w) => functionWords.has(w) || (en && AUXILIARIES.has(w)))) continue
       out.push({ key: span.join(' '), text: words.slice(i, i + n).join(' '), first: i, last: i + n - 1 })
     }
-    if (i + 2 < words.length && joined[i + 1] && joined[i + 2] && !FUNCTION_WORDS.has(lower[i])
+    if (en && i + 2 < words.length && joined[i + 1] && joined[i + 2] && !FUNCTION_WORDS.has(lower[i])
       && OBJECT_PRONOUNS.has(lower[i + 1]) && PARTICLES.has(lower[i + 2])) {
       out.push({ key: `${lower[i]} ${lower[i + 2]}`, text: words.slice(i, i + 3).join(' '), first: i, last: i + 2 })
     }

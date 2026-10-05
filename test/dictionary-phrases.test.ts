@@ -10,6 +10,26 @@ const entry = (headword: string): DictEntryPreview => ({
 
 const keys = (text: string) => phraseCandidates(tokenize('en', text)).map((c) => c.key)
 
+describe('phraseCandidates for Spanish', () => {
+  const es = (text: string) => phraseCandidates(tokenize('es', text), 'es').map((c) => c.key)
+
+  // 36,598 Spanish multiword entries, 253 of them A1-B2, were never looked for.
+  it('asks for a fixed phrase such as sin embargo', () => {
+    expect(es('Sin embargo, no quiero ir')).toContain('sin embargo')
+    expect(es('Lo hizo a pesar de todo')).toContain('a pesar de')
+  })
+
+  // "de la" is an entry glossed "của", which would sit on nearly every passage.
+  it('skips a run made only of Spanish function words', () => {
+    expect(es('la casa de la playa')).not.toContain('de la')
+    expect(es('la casa de la playa')).toContain('la playa')
+  })
+
+  it('applies no English rule: an object pronoun between two words is not dropped', () => {
+    expect(es('lo tengo it up')).not.toContain('tengo up')
+  })
+})
+
 describe('phraseCandidates', () => {
   it('asks for every run of two to six words, lowercased', () => {
     const k = keys('I Gave up smoking')

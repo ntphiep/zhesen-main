@@ -89,6 +89,13 @@ describe('lookUpText', () => {
     expect(resolveTokens).toHaveBeenCalledWith(client, 'es', expect.arrayContaining(['perro', 'casa']))
   })
 
+  it('finds a Spanish fixed phrase in a Spanish passage', async () => {
+    const sinEmbargo = { ...preview('sin embargo'), id: 'es:sin embargo', lang: 'es' as const }
+    resolveTokens.mockResolvedValueOnce(new Map([['sin embargo', sinEmbargo]]))
+    const out = await lookUpText(client, 'Sin embargo, no quiero', 'es')
+    expect(out.phrases).toEqual([{ text: 'Sin embargo', entry: sinEmbargo }])
+  })
+
   it('falls back to the letter rule when no language is named', async () => {
     const out = await lookUpText(client, 'Tengo un perro en mi casa')
     expect(out.lang).toBe('en')

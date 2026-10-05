@@ -26,7 +26,7 @@ export interface TextLookup {
   /** The language the passage was read as, which decides tokenization. */
   lang: LangCode
   words: LookedUpWord[]
-  /** English multi-word entries in the passage, in reading order; see ./phrases. */
+  /** English and Spanish multi-word entries in the passage, in reading order; see ./phrases. */
   phrases: FoundPhrase[]
 }
 
@@ -51,7 +51,7 @@ export async function lookUpText(supabase: SupabaseClient, text: string, given?:
   const segments = tokenize(lang, text)
   const words = segments.filter((s) => s.word)
   if (words.length === 0) return { lang, words: [], phrases: [] }
-  const candidates = lang === 'en' ? phraseCandidates(segments) : []
+  const candidates = phraseCandidates(segments, lang)
   const found = await resolveTokens(supabase, lang, [...words.map((w) => w.text), ...candidates.map((c) => c.key)])
   return {
     lang,
