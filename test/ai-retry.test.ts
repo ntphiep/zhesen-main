@@ -98,8 +98,9 @@ describe('the route logs every failed call', () => {
       body: JSON.stringify({ task: 'enrich', input: { lang: 'en', headword: 'serendipity' } }),
     }))
     expect(res.status).toBe(502)
-    expect(log).toHaveBeenCalledOnce()
-    const line = log.mock.calls[0].join(' ')
+    const lines = log.mock.calls.filter((c) => c[0] === 'ai failed')
+    expect(lines).toHaveLength(1)
+    const line = lines[0].join(' ')
     expect(line).toContain('"task":"enrich"')
     expect(line).toContain('"router":"nine.test"')
     expect(line).toContain('"status":502')

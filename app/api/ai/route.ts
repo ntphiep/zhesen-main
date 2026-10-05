@@ -130,6 +130,20 @@ async function signedIn(): Promise<boolean> {
   return (await permanentUser(await createClient())) !== null
 }
 
+/** One call off the account's daily allowance (supabase/migrations/0180_ai_daily_cap.sql),
+ *  false once it is spent. A check that fails lets the call through: the minute budgets
+ *  above still hold, and the line in the log says the cap is not counting. */
+async function takeDailyCall(): Promise<boolean> {
+  try {
+    const { data, error } = await (await createClient()).rpc('ai_take_call')
+    if (error) throw new Error(error.message)
+    return z.boolean().parse(data)
+  } catch (e) {
+    console.error('ai cap check failed', e instanceof Error ? e.message : String(e))
+    return true
+  }
+}
+
 export async function GET() {
   const enabled = (await signedIn()) && (await aiConfig()) !== null
   return Response.json({ enabled }, { headers: PRIVATE })
@@ -177,6 +191,9 @@ export async function POST(request: Request) {
       { error: 'AI đang bận. Thử lại sau ít giây.' },
       { status: 429, headers: { 'Retry-After': '60' } },
     )
+  }
+  if (!(await takeDailyCall())) {
+    return Response.json({ error: 'Hết lượt hỏi AI hôm nay. Thử lại vào ngày mai.' }, { status: 429 })
   }
 
   // The browser leaving, Dừng included, stops the model call as the deadline does.
