@@ -36,3 +36,32 @@ describe('WordReviewCard', () => {
     expect(screen.getByRole('link', { name: 'nguồn' })).toHaveAttribute('href', 'https://commons.wikimedia.org/wiki/File:En-us-dog.ogg')
   })
 })
+
+// A saved word often has no example; the learner layer usually has one.
+describe('WordReviewCard back from the learner layer', () => {
+  const zh: ReviewCard = {
+    ...card, id: 'w2', lang: 'zh', headword: '学习', ipa: 'xué xí', meaningVi: 'học', meaningEn: null,
+    example: null, exampleTranslation: null, notes: 'Hay đi với 知识.',
+    learner: {
+      gist: ['học', 'học tập'],
+      example: { text: '我们一起学习。', reading: 'wǒmen yìqǐ xuéxí.', vi: 'Chúng ta cùng học.', byModel: true },
+    },
+  }
+
+  it('shows the learner example, its source mark, the extra terms and the notes', () => {
+    render(<WordReviewCard card={zh} revealed onReveal={() => {}} onGrade={() => {}} />)
+    expect(screen.getByText('我们一起学习。')).toBeInTheDocument()
+    expect(screen.getByText('Chúng ta cùng học.')).toBeInTheDocument()
+    expect(screen.getByText('câu soạn mới')).toBeInTheDocument()
+    expect(screen.getByText('học, học tập')).toBeInTheDocument()
+    expect(screen.getByText('Hay đi với 知识.')).toBeInTheDocument()
+  })
+
+  it('keeps the saved example and drops a gist that adds no term', () => {
+    const saved = { ...zh, example: '他在学习。', exampleTranslation: 'Anh ấy đang học.', learner: { ...zh.learner!, gist: ['Học.'] } }
+    render(<WordReviewCard card={saved} revealed onReveal={() => {}} onGrade={() => {}} />)
+    expect(screen.getByText('他在学习。')).toBeInTheDocument()
+    expect(screen.queryByText('我们一起学习。')).not.toBeInTheDocument()
+    expect(screen.queryByText('Học.')).not.toBeInTheDocument()
+  })
+})

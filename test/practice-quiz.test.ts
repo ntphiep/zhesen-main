@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { buildQuiz, type QuizWord } from '@/lib/practice/quiz'
-import { listLearnerDistractors } from '@/lib/dictionary/learner'
+import { listLearnerDistractors, listLearnerGists } from '@/lib/dictionary/learner'
 import { queryBuilder } from './helpers/supabase'
 
 const w = (id: string, headword: string, meaningVi: string | null): QuizWord =>
@@ -113,5 +113,27 @@ describe('listLearnerDistractors', () => {
     const out = await listLearnerDistractors(client, ['en:dog'])
     expect(out.get('en:dog')).toEqual({ confusable: ['con sói'], synonym: ['chó săn'] })
     expect(gists.eq).toHaveBeenCalledWith('status', 'published')
+  })
+})
+
+describe('listLearnerGists', () => {
+  it('takes the first sense\'s first openly licensed example', async () => {
+    const ex = (order: number, text: string, sourceId: number | null, license: string | null) => ({
+      example_order: order, text, reading: null, vi: `vi ${text}`, source_example_id: sourceId,
+      examples: sourceId === null ? null : { sources: { license } },
+    })
+    const rows = queryBuilder({ data: [{
+      entry_id: 'zh:学习', gist_vi: ['học', 'học tập'],
+      learner_senses: [
+        { sense_order: 2, learner_examples: [ex(1, 'second sense', null, null)] },
+        { sense_order: 1, learner_examples: [ex(2, 'written', null, null), ex(1, 'closed', 7, 'proprietary')] },
+      ],
+    }], error: null })
+    const client = { schema: vi.fn(() => ({ from: vi.fn(() => rows) })) } as unknown as SupabaseClient
+    const out = await listLearnerGists(client, ['zh:学习'])
+    expect(out.get('zh:学习')).toEqual({
+      gist: ['học', 'học tập'],
+      example: { text: 'written', reading: null, vi: 'vi written', byModel: true },
+    })
   })
 })

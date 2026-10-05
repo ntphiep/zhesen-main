@@ -5,6 +5,7 @@ import type { Grade, SrsState } from '@/lib/progress/types'
 import { cardStateFromDbValue, cardStateToDbValue, review } from '@/lib/progress/srs'
 import { appliesToSchedule, MODE_SKILL, type PracticeMode, type Skill } from '@/lib/practice/grading'
 import { stripPhraseStop } from '@/lib/dictionary/textQuality'
+import { listLearnerGists, type LearnerGist } from '@/lib/dictionary/learner'
 import { countNewToday, studyDayEnd } from './activity'
 
 /** A due wordlist entry plus its spaced-repetition state, ready to review. */
@@ -21,6 +22,9 @@ export interface ReviewCard {
   audioUrl: string | null
   /** The dictionary entry the word was saved from. Absent where a caller builds a card by hand. */
   entryId?: string | null
+  notes?: string | null
+  /** The published learner layer of the entry, when it has one. */
+  learner?: LearnerGist
   state: SrsState
 }
 
@@ -36,6 +40,7 @@ const cardRowSchema = z.object({
   example_translation: z.string().nullable(),
   audio_url: z.string().nullable(),
   entry_id: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
   fsrs_stability: z.number(),
   fsrs_difficulty: z.number(),
   fsrs_elapsed_days: z.number(),
@@ -62,7 +67,7 @@ export const SKILL_COLUMNS: Record<Skill, string> = { recall: 'fsrs_', recogniti
 export function cardSelect(skill: Skill): string {
   const prefix = SKILL_COLUMNS[skill]
   const state = STATE_COLUMNS.map((c) => (skill === 'recall' ? `fsrs_${c}` : `fsrs_${c}:${prefix}${c}`))
-  return 'id, lang, headword, reading, ipa, meaning_vi, meaning_en, example, example_translation, audio_url, entry_id, ' +
+  return 'id, lang, headword, reading, ipa, meaning_vi, meaning_en, example, example_translation, audio_url, entry_id, notes, ' +
     state.join(', ')
 }
 
@@ -73,6 +78,7 @@ export function rowToCard(r: CardRow): ReviewCard {
     id: r.id, lang: r.lang, headword: r.headword, reading: r.reading, ipa: r.ipa,
     meaningVi: r.meaning_vi && stripPhraseStop(r.meaning_vi), meaningEn: r.meaning_en, example: r.example,
     exampleTranslation: r.example_translation, audioUrl: r.audio_url, entryId: r.entry_id ?? null,
+    notes: r.notes ?? null,
     state: {
       vocabId: r.id,
       stability: r.fsrs_stability,
@@ -131,11 +137,23 @@ export async function listDueCards(
   const learned = z.array(cardRowSchema).parse(reviews ?? []).map(rowToCard)
 
   const room = Math.min(newLimit - newToday, limit - learned.length)
-  if (room <= 0) return learned
+  if (room <= 0) return withLearner(supabase, learned)
 
   const { data: fresh, error: freshError } = await page(true, room)
   if (freshError) throw freshError
-  return [...learned, ...z.array(cardRowSchema).parse(fresh ?? []).map(rowToCard)]
+  return withLearner(supabase, [...learned, ...z.array(cardRowSchema).parse(fresh ?? []).map(rowToCard)])
+}
+
+/** Attach each entry's learner layer for the card's back. Without it the back shows the
+ *  saved word alone, so a failed read is not the session's failure. */
+async function withLearner(supabase: SupabaseClient, cards: ReviewCard[]): Promise<ReviewCard[]> {
+  const ids = [...new Set(cards.flatMap((c) => (c.entryId ? [c.entryId] : [])))]
+  if (ids.length === 0) return cards
+  const gists = await listLearnerGists(supabase, ids).catch(() => new Map<string, LearnerGist>())
+  return cards.map((c) => {
+    const learner = c.entryId ? gists.get(c.entryId) : undefined
+    return learner ? { ...c, learner } : c
+  })
 }
 
 /** How many cards the next session will hand over (RLS scopes to the user). Must use the

@@ -85,6 +85,8 @@
 .ex [lang]:not([lang="zh"]) { font-family: var(--latin); }
 .ex [lang="es"] { font-family: var(--latin-italic); font-style: italic; }
 .ex small { display: block; margin-top: 0.3rem; padding-left: 0.55rem; border-left: 3px solid var(--sea-300); font-size: 0.875rem; color: var(--zs-soft); }
+.ex small.byModel { padding-left: 0; border-left: 0; font-size: 0.65625rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
+.notes { margin: 0.8rem auto 0; max-width: 26rem; font-size: 0.9375rem; color: var(--zs-soft); white-space: pre-line; }
 
 /* Buttons */
 .btn, .ghost { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1.3rem; border-radius: 999px; font-size: 0.9375rem; font-weight: 700; text-decoration: none; cursor: pointer; transition: background-color 150ms var(--ease-std), border-color 150ms var(--ease-std), transform 160ms var(--ease-spring); }

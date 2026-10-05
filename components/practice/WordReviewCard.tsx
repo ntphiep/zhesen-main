@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react'
 import { AudioButton, SourceLink } from '@/components/ui/AudioButton'
 import type { ReviewCard } from '@/lib/wordlist/review'
+import { cardBack } from '@/lib/practice/cardBack'
 import type { Grade } from '@/lib/progress/types'
 import { Ipa } from '@/components/ui/Ipa'
 import { Hw } from '@/components/practice/SessionParts'
@@ -32,6 +33,7 @@ export function WordReviewCard({
   // Showing the meaning is a new step: the press that showed it cannot also grade it.
   const settled = useKeyGate(revealed)
   const goodRef = useRef<HTMLButtonElement>(null)
+  const back = cardBack(card)
 
   useEffect(() => {
     ;(revealed ? goodRef : revealRef).current?.focus({ preventScroll: true })
@@ -72,13 +74,16 @@ export function WordReviewCard({
         <>
           <div role="status" aria-live="polite" className={p.face}>
             {card.meaningVi && <div className={p.mean}>{card.meaningVi}</div>}
+            {back.gist && <div className={p.gloss}>{back.gist}</div>}
             {card.meaningEn && <div className={p.gloss}>{card.meaningEn}</div>}
-            {card.example && (
+            {back.example && (
               <div className={p.ex}>
-                <span lang={card.lang}>{card.example}</span>
-                {card.exampleTranslation && <small>{card.exampleTranslation}</small>}
+                <span lang={card.lang}>{back.example.text}</span>
+                {back.example.translation && <small>{back.example.translation}</small>}
+                {back.example.byModel && <small className={p.byModel}>câu soạn mới</small>}
               </div>
             )}
+            {back.notes && <p className={p.notes}>{back.notes}</p>}
           </div>
           <div className={p.grades}>
             {GRADES.map((g, i) => (

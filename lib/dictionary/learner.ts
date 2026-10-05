@@ -422,6 +422,38 @@ export function markHeadword(text: string, headword: string, lang: LangCode, for
   return out
 }
 
+/** What a review card's back borrows from a published learner layer. */
+export interface LearnerGist {
+  gist: string[]
+  example: { text: string; reading: string | null; vi: string; byModel: boolean } | null
+}
+
+const gistLayerRow = layerRow.pick({ entry_id: true, gist_vi: true }).extend({
+  learner_senses: z.array(z.object({
+    sense_order: z.number(),
+    learner_examples: layerRow.shape.learner_senses.element.shape.learner_examples,
+  })),
+})
+
+/** The gist and the first sense's first shown example of each entry, in one read. */
+export async function listLearnerGists(supabase: SupabaseClient, entryIds: string[]): Promise<Map<string, LearnerGist>> {
+  if (entryIds.length === 0) return new Map()
+  const { data, error } = await supabase.schema('lex').from('learner_entries')
+    .select('entry_id, gist_vi, learner_senses(sense_order, learner_examples(example_order, text, reading, vi, source_example_id, examples(sources(license))))')
+    .in('entry_id', entryIds).eq('status', 'published')
+  if (error) throw error
+  return new Map(gistLayerRow.array().parse(data ?? []).map((r): [string, LearnerGist] => {
+    const first = [...r.learner_senses].sort((a, b) => a.sense_order - b.sense_order)[0]
+    // Same licence rule as the word page.
+    const x = first?.learner_examples.filter((e) => !e.examples?.sources || isOpenLicence(e.examples.sources.license))
+      .sort((a, b) => a.example_order - b.example_order)[0]
+    return [r.entry_id, {
+      gist: r.gist_vi,
+      example: x ? { text: x.text, reading: x.reading, vi: x.vi, byModel: x.source_example_id === null } : null,
+    }]
+  }))
+}
+
 const distractorLinkRow = z.object({
   entry_id: z.string(),
   kind: z.enum(['confusable', 'synonym']),

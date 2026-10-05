@@ -14,6 +14,7 @@ import type { Grade, SrsState } from '@/lib/progress/types'
 import { onStep } from '@/lib/progress/srs'
 import { dueNote, whenLabel } from '@/lib/wordlist/forecast'
 import { gradeWordById, type ReviewCard } from '@/lib/wordlist/review'
+import { cardBack } from '@/lib/practice/cardBack'
 import { Hw, NAME, Pron } from './HomeParts'
 import h from './Home.module.css'
 
@@ -66,6 +67,7 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
   const { logDay, failed } = useGradeSync(supabase)
   const settled = useKeyGate([turn, open].join(':'))
   const current = queue[0] ?? null
+  const face = current ? cardBack(current) : null
 
   useEffect(() => {
     if (open) goodRef.current?.focus({ preventScroll: true })
@@ -137,9 +139,14 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
             <div className={h.back}>
               <div inert={!open}>
                 <div className={h.mean} role="status">{current.meaningVi}</div>
-                {current.example && (
-                  <p className={h.ex}><span lang={current.lang}>{current.example}</span>{current.exampleTranslation}</p>
+                {face?.gist && <p className={h.ex}>{face.gist}</p>}
+                {face?.example && (
+                  <p className={h.ex}>
+                    <span lang={current.lang}>{face.example.text}</span>{face.example.translation}
+                    {face.example.byModel && <small className={h.byModel}>câu soạn mới</small>}
+                  </p>
                 )}
+                {face?.notes && <p className={h.ex}>{face.notes}</p>}
                 <div className={h.grades}>
                   {GRADES.map((g) => (
                     <button
