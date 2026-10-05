@@ -19,7 +19,7 @@ export function practiceModes(due: number | null): PracticeModeLink[] {
     { href: '/practice/write', label: 'Viết từ', sub: 'Nhìn nghĩa, gõ từ', primary: false },
     { href: '/practice/dictation', label: 'Nghe và chép', sub: 'Nghe rồi gõ từ', primary: false },
     { href: '/practice/match', label: 'Ghép cặp', sub: 'Nối từ với nghĩa', primary: false },
-    { href: '/practice/speak', label: 'Luyện nói', sub: 'Đọc to, kiểm tra phát âm', primary: false },
+    { href: '/practice/speak', label: 'Luyện nói', sub: 'Nhìn nghĩa, nói to từ', primary: false },
   ]
 }
 

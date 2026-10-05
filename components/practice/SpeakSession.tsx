@@ -24,7 +24,7 @@ const RECOGNITION_ERRORS: Record<string, string> = {
   network: 'Trình duyệt mất kết nối tới bộ nhận giọng nói. Thử lại sau ít giây.',
 }
 
-interface SpeakWord { id: string; headword: string; meaningVi: string | null; audioUrl: string | null; lang: LangCode }
+interface SpeakWord { id: string; headword: string; meaningVi: string; audioUrl: string | null; lang: LangCode }
 
 export function SpeakSession() {
   const supabase = useMemo(() => createClient(), [])
@@ -37,20 +37,23 @@ export function SpeakSession() {
   const [listening, setListening] = useState(false)
   const [heard, setHeard] = useState<string | null>(null)
   const [result, setResult] = useState<TypedResult | null>(null)
+  // Saying a word already on screen is reading, not recall: only an answer given before the
+  // word is shown is graded.
+  const [revealed, setRevealed] = useState(false)
   const [micError, setMicError] = useState<string | null>(null)
   const [score, setScore] = useState(0)
   const [round, setRound] = useState(0)
 
   useEffect(() => {
     let active = true
-    listPracticeWords(supabase)
+    listPracticeWords(supabase, { needsMeaning: true })
       .then((words) => {
         if (!active) return
-        const usable = words
-          .filter((w) => w.headword)
-          .map((w): SpeakWord => ({ id: w.id, headword: w.headword, meaningVi: w.meaningVi, audioUrl: w.audioUrl, lang: w.lang }))
+        const usable = words.flatMap((w): SpeakWord[] => w.headword && w.meaningVi
+          ? [{ id: w.id, headword: w.headword, meaningVi: w.meaningVi, audioUrl: w.audioUrl, lang: w.lang }]
+          : [])
         setQueue(shuffle(usable).slice(0, SIZE))
-        setIndex(0); setHeard(null); setResult(null); setScore(0); setListening(false); setMicError(null)
+        setIndex(0); setHeard(null); setResult(null); setRevealed(false); setScore(0); setListening(false); setMicError(null)
       })
       .catch(() => active && setQueue([]))
     return () => { active = false; recognitionRef.current?.stop() }
@@ -81,10 +84,12 @@ export function SpeakSession() {
       const verdict = checkTypedAnswer(transcript, current.headword)
       setHeard(transcript)
       setResult(verdict)
-      if (verdict !== 'wrong') setScore((s) => s + 1)
       // Successes count towards the schedule, failures do not: the recogniser mishears
       // for reasons that are not the learner's, so `gradeForMode` returns null there.
-      recordGrade(current.id, 'speak', gradeForMode('speak', { correct: verdict !== 'wrong', nearly: verdict === 'close' }))
+      if (!revealed) {
+        if (verdict !== 'wrong') setScore((s) => s + 1)
+        recordGrade(current.id, 'speak', gradeForMode('speak', { correct: verdict !== 'wrong', nearly: verdict === 'close' }))
+      }
       if (!logged.current) { logged.current = true; logDay() }
     }
     // Without a message the button flips straight back to "Nói" and a blocked
@@ -98,7 +103,7 @@ export function SpeakSession() {
     r.start()
   }
   function next() {
-    setHeard(null); setResult(null); setMicError(null); setListening(false); setIndex((i) => i + 1)
+    setHeard(null); setResult(null); setRevealed(false); setMicError(null); setListening(false); setIndex((i) => i + 1)
   }
 
   return (
@@ -106,13 +111,18 @@ export function SpeakSession() {
       <SessionBar label={`Luyện nói · ${index + 1}/${queue.length} · Đúng ${score}`} done={index + (result === null ? 0 : 1)} total={queue.length} />
 
       <div key={index} className={p.card}>
-        <div className={p.head}>
-          <Hw text={current.headword} lang={current.lang} className={p.big} />
-          <AudioButton text={current.headword} lang={current.lang} audioUrl={current.audioUrl} />
-          <span className={p.src}><SourceLink url={current.audioUrl} /></span>
-        </div>
-        {current.meaningVi && <div className={`${p.mean} mt-2`}>{current.meaningVi}</div>}
-        <p className={p.ask}>Nghe mẫu rồi đọc lại</p>
+        <p className={p.meta}>Nghĩa</p>
+        <div className={`${p.mid} mt-2`}>{current.meaningVi}</div>
+        {revealed || result !== null ? (
+          <div className={`${p.head} mt-2`}>
+            <Hw text={current.headword} lang={current.lang} className={p.big} />
+            <AudioButton text={current.headword} lang={current.lang} audioUrl={current.audioUrl} />
+            <span className={p.src}><SourceLink url={current.audioUrl} /></span>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setRevealed(true)} className={`${p.ghost} mt-3`}>Hiện từ</button>
+        )}
+        <p className={p.ask}>{revealed || result !== null ? 'Nghe mẫu rồi đọc lại' : 'Nói từ có nghĩa này'}</p>
 
         {result === null && (
           <button type="button" onClick={listen} disabled={listening} data-on={listening || undefined} className={p.mic}>
