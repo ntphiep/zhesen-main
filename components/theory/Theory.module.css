@@ -162,6 +162,17 @@ a.card:hover .h3 { text-decoration: underline; text-decoration-thickness: 1.5px;
 /* ---------- Links and buttons ---------- */
 .more { display: inline-flex; align-items: center; gap: 0.35rem; width: fit-content; font-size: 0.9375rem; font-weight: 700; color: var(--zs-pen); text-decoration: none; }
 .more:hover { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 0.2em; }
+/* A heading that opens its own page: the arrow says so before the hover does. */
+.go { color: inherit; text-decoration: none; }
+.go svg { display: inline-block; width: 0.9em; height: 0.9em; margin-left: 0.15em; vertical-align: -0.1em; color: var(--zs-pen); transition: translate 230ms var(--ease-spring); }
+.go:hover { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 0.2em; }
+.go:hover svg { translate: 3px 0; }
+
+/* ---------- TOEIC topic ---------- */
+.headword { font-size: var(--s3); line-height: 1.15; color: var(--zs-ink); text-decoration: none; }
+a.headword:hover { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 0.18em; }
+.meaning { margin: 0; font-size: 1.0625rem; line-height: 1.45; font-weight: 700; color: var(--zs-pen); }
+.example .label { margin-top: 0.2rem; font-size: 0.6875rem; }
 .btn, .ghost { display: inline-flex; flex: 0 1 auto; max-width: 100%; align-items: center; justify-content: center; gap: 0.45rem; min-height: 2.75rem; padding: 0.55rem 1.2rem; border-radius: 999px; font-size: 0.9375rem; font-weight: 700; line-height: 1.2; text-align: center; text-decoration: none; cursor: pointer; transition: background-color 150ms var(--ease-std), border-color 150ms var(--ease-std), color 150ms var(--ease-std), transform 160ms var(--ease-spring); }
 .btn { border: 1.5px solid var(--zs-btn); background: var(--zs-btn); color: var(--zs-btn-ink); }
 .btn:hover:not(:disabled) { border-color: var(--zs-btn-hover); background: var(--zs-btn-hover); }

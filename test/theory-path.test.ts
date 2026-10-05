@@ -4,6 +4,8 @@ import {
   phonemePath,
   theoryBlockPath,
   theoryLangPath,
+  toeicPartPath,
+  toeicTopicPath,
   vocabularyLevelPath,
   wordClassPath,
 } from '@/lib/theory/path'
@@ -27,6 +29,11 @@ describe('theory paths', () => {
 
   it('points a part of speech at its own page', () => {
     expect(wordClassPath('en', 'noun')).toBe('/theory/en/word-class/noun')
+  })
+
+  it('gives each TOEIC topic and part a page under the block', () => {
+    expect(toeicTopicPath('en', 'office')).toBe('/theory/en/toeic/topic/office')
+    expect(toeicPartPath('en', 5)).toBe('/theory/en/toeic/part/5')
   })
 
   it('points a sound at its anchor on the one pronunciation page', () => {

@@ -65,4 +65,12 @@ describe('hub sitemap', () => {
     expect(urls).toContain(`${SITE_URL}/dictionary`)
     expect(urls).not.toContain(`${SITE_URL}/practice`)
   })
+
+  it('lists each TOEIC part and topic page once', () => {
+    const toeic = hubSitemap().map((e) => e.url).filter((u) => /\/toeic\/(part|topic)\//.test(u))
+    expect(toeic).toHaveLength(19)
+    expect(new Set(toeic).size).toBe(19)
+    expect(toeic).toContain(`${SITE_URL}/theory/en/toeic/part/5`)
+    expect(toeic).toContain(`${SITE_URL}/theory/en/toeic/topic/office`)
+  })
 })

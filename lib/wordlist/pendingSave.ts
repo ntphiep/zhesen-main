@@ -43,3 +43,11 @@ export function takePendingSave(id: string, now: number = Date.now()): boolean {
     return false
   }
 }
+
+/** Fired on `window` after a bulk save, with the entry ids now in the notebook, so each save
+ *  button on the page stops offering a save its mount-time check missed. */
+export const WORDS_SAVED_EVENT = 'zhesen:words-saved'
+
+export function announceSaved(entryIds: string[]): void {
+  window.dispatchEvent(new CustomEvent(WORDS_SAVED_EVENT, { detail: entryIds }))
+}

@@ -1,8 +1,8 @@
 'use client'
-import { useEffectEvent, useLayoutEffect, useMemo, useState } from 'react'
+import { useEffect, useEffectEvent, useLayoutEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addWord, draftFromDictEntry, isWordSaved, WordAlreadyExistsError } from '@/lib/wordlist/store'
-import { takePendingSave } from '@/lib/wordlist/pendingSave'
+import { takePendingSave, WORDS_SAVED_EVENT } from '@/lib/wordlist/pendingSave'
 import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
 import type { SaveContext } from '@/lib/wordlist/types'
 
@@ -47,6 +47,16 @@ export function SavedButton({ entry, size = 'sm', tone, context }: {
     })
     return () => { live = false }
   }, [supabase, entry.id])
+
+  useEffect(() => {
+    const onSaved = (e: Event) => {
+      if (e instanceof CustomEvent && Array.isArray(e.detail) && e.detail.includes(entry.id)) {
+        setState((s) => (s === 'idle' ? 'exists' : s))
+      }
+    }
+    window.addEventListener(WORDS_SAVED_EVENT, onSaved)
+    return () => window.removeEventListener(WORDS_SAVED_EVENT, onSaved)
+  }, [entry.id])
 
   async function save() {
     setState('saving')

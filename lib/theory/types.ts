@@ -124,6 +124,9 @@ export interface CollocationSet {
 
 export type ToeicSection = 'listening' | 'reading'
 
+/** A block of the guide that a part's own page repeats under its tips and traps. */
+export type ToeicExtra = 'grammar' | 'paraphrase' | 'practice'
+
 /** A strategy or a trap inside one part, with the sentence that shows it when there is one. */
 export interface ToeicTip {
   titleVi: string
@@ -139,6 +142,7 @@ export interface ToeicPart {
   nameEn: string
   titleVi: string
   questions: number
+  extras: readonly ToeicExtra[]
   /** What the test taker sees and hears, in one or two sentences. */
   formatVi: string
   tips: ToeicTip[]

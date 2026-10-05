@@ -1,7 +1,8 @@
 import type { MetadataRoute } from 'next'
 import { LANG_CODES } from '@/lib/languages'
 import { BLOCKS_BY_LANG } from '@/lib/theory/blocks'
-import { theoryBlockPath, theoryLangPath } from '@/lib/theory/path'
+import { theoryBlockPath, theoryLangPath, toeicPartPath, toeicTopicPath } from '@/lib/theory/path'
+import { toeicGuide } from '@/lib/theory/content'
 import { SITE_URL } from '@/lib/site'
 
 /**
@@ -16,6 +17,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/theory',
     ...LANG_CODES.map((lang) => theoryLangPath(lang)),
     ...LANG_CODES.flatMap((lang) => BLOCKS_BY_LANG[lang].map((b) => theoryBlockPath(lang, b.key))),
+    ...LANG_CODES.flatMap((lang) => (toeicGuide(lang)?.parts ?? []).map((p) => toeicPartPath(lang, p.number))),
+    ...LANG_CODES.flatMap((lang) => (toeicGuide(lang)?.wordTopics ?? []).map((t) => toeicTopicPath(lang, t.id))),
   ]
   return paths.map((path) => ({
     url: `${SITE_URL}${path}`,

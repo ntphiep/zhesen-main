@@ -19,6 +19,7 @@ const TOEIC_PARTS: readonly ToeicPart[] = [
     nameEn: 'Photographs',
     titleVi: 'Mô tả tranh',
     questions: 6,
+    extras: [],
     formatVi: 'Mỗi câu có một bức ảnh trong đề. Máy đọc bốn câu mô tả, đề không in chữ nào. Chọn câu tả đúng nhất.',
     tips: [
       {
@@ -66,6 +67,7 @@ const TOEIC_PARTS: readonly ToeicPart[] = [
     nameEn: 'Question-Response',
     titleVi: 'Hỏi và đáp',
     questions: 25,
+    extras: [],
     formatVi: 'Máy đọc một câu hỏi hoặc một câu nói, rồi ba câu đáp, mỗi thứ chỉ một lần. Đề không in gì cả. Sau mỗi câu có 5 giây để chọn.',
     tips: [
       {
@@ -118,6 +120,7 @@ const TOEIC_PARTS: readonly ToeicPart[] = [
     nameEn: 'Conversations',
     titleVi: 'Hội thoại',
     questions: 39,
+    extras: ['paraphrase'],
     formatVi: '13 đoạn hội thoại giữa hai hoặc ba người, mỗi đoạn ba câu hỏi. Câu hỏi và bốn đáp án in trong đề, một số câu kèm bảng hoặc hình.',
     tips: [
       {
@@ -170,6 +173,7 @@ const TOEIC_PARTS: readonly ToeicPart[] = [
     nameEn: 'Talks',
     titleVi: 'Bài nói ngắn',
     questions: 30,
+    extras: ['paraphrase'],
     formatVi: '10 bài nói của một người: thông báo, tin nhắn thoại, quảng cáo, bản tin, hướng dẫn tham quan, trích đoạn cuộc họp. Mỗi bài ba câu hỏi in trong đề.',
     tips: [
       {
@@ -207,6 +211,7 @@ const TOEIC_PARTS: readonly ToeicPart[] = [
     nameEn: 'Incomplete Sentences',
     titleVi: 'Điền vào câu',
     questions: 30,
+    extras: ['grammar', 'practice'],
     formatVi: 'Mỗi câu thiếu một từ hoặc một cụm. Chọn một trong bốn đáp án để điền vào chỗ trống.',
     tips: [
       {
@@ -249,6 +254,7 @@ const TOEIC_PARTS: readonly ToeicPart[] = [
     nameEn: 'Text Completion',
     titleVi: 'Điền vào đoạn văn',
     questions: 16,
+    extras: ['grammar'],
     formatVi: 'Bốn đoạn văn như email, thông báo, quảng cáo, mỗi đoạn bốn chỗ trống. Ba chỗ điền từ hoặc cụm, một chỗ chọn cả một câu hợp với đoạn.',
     tips: [
       {
@@ -281,6 +287,7 @@ const TOEIC_PARTS: readonly ToeicPart[] = [
     nameEn: 'Reading Comprehension',
     titleVi: 'Đọc hiểu',
     questions: 54,
+    extras: ['paraphrase'],
     formatVi: '10 đoạn đơn với 29 câu hỏi, rồi 5 bộ hai hoặc ba đoạn liên quan với 25 câu hỏi. Đoạn đơn gồm email, thư, quảng cáo, chuỗi tin nhắn, bài báo.',
     tips: [
       {

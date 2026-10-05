@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { theoryContent } from '@/lib/theory/content'
+import { findToeicPart, findToeicTopic, theoryContent } from '@/lib/theory/content'
 import { posGroup } from '@/lib/dictionary/pos'
 import { splitIpa } from '@/lib/theory/ipa'
 import { DOCUMENTED_WORD_CLASSES, PHONEME_ANCHORS } from '@/lib/theory/anchors'
@@ -195,5 +195,24 @@ describe('toeic', () => {
 
   it('links only to https pages', () => {
     for (const l of t.links) expect(l.url).toMatch(/^https:\/\//)
+  })
+
+  it('keys each word topic with a unique slug its URL can carry', () => {
+    const ids = t.wordTopics.map((topic) => topic.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const id of ids) expect(id).toMatch(/^[a-z-]+$/)
+  })
+
+  it('opens the Part 5 set on Part 5 only', () => {
+    expect(t.parts.filter((p) => p.extras.includes('practice')).map((p) => p.number)).toEqual([5])
+  })
+
+  it('finds a topic or a part by its exact slug in a language that has the block', () => {
+    expect(findToeicTopic('en', 'office')?.titleVi).toBe('Văn phòng và họp')
+    expect(findToeicPart('en', '5')?.number).toBe(5)
+    expect(findToeicTopic('en', 'Office')).toBeUndefined()
+    expect(findToeicTopic('es', 'office')).toBeUndefined()
+    for (const part of ['05', '8', '0', '5.0']) expect(findToeicPart('en', part)).toBeUndefined()
+    expect(findToeicPart('es', '5')).toBeUndefined()
   })
 })

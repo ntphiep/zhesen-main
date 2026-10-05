@@ -27,6 +27,14 @@ export function wordClassPath(lang: LangCode, key: string): string {
   return `${theoryBlockPath(lang, 'word-class')}/${encodeURIComponent(key)}`
 }
 
+export function toeicTopicPath(lang: LangCode, id: string): string {
+  return `${theoryBlockPath(lang, 'toeic')}/topic/${encodeURIComponent(id)}`
+}
+
+export function toeicPartPath(lang: LangCode, part: number): string {
+  return `${theoryBlockPath(lang, 'toeic')}/part/${part}`
+}
+
 /** One phoneme inside the single pronunciation page. A fragment rather than a route of
  *  its own: 44 sounds are one table the reader scans, and every link into it comes from
  *  a transcription that names the symbol. */

@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { entryPath, buildEntryId } from '@/lib/dictionary/entryId'
-import { buildGrammarPointId, grammarPointPath } from '@/lib/grammar/path'
+import { toeicPartPath, toeicTopicPath } from '@/lib/theory/path'
 import { BlockPage } from './BlockPage'
 import { ToeicPractice } from './ToeicPractice'
-import { ArrowRight, Warn } from './Glyphs'
+import { GrammarGrid, ParaphraseList, PartBody } from './ToeicParts'
+import { ArrowRight } from './Glyphs'
 import s from './Theory.module.css'
-import type { ToeicGuide, ToeicNote, ToeicPart, ToeicSection, ToeicTip } from '@/lib/theory/types'
-import type { Language } from '@/lib/languages'
+import type { ToeicGuide, ToeicNote, ToeicPart, ToeicSection } from '@/lib/theory/types'
+import type { Language, LangCode } from '@/lib/languages'
 
 const SECTIONS: { key: ToeicSection; name: string; titleVi: string }[] = [
   { key: 'listening', name: 'Listening', titleVi: 'Listening, khoảng 45 phút' },
@@ -65,7 +66,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
                 {guide.parts.filter((p) => p.section === sec.key).map((p) => (
                   <tr key={p.number}>
                     <th scope="row">
-                      <a href={`#part-${p.number}`}>Part {p.number}</a>
+                      <Link href={toeicPartPath(language.code, p.number)}>Part {p.number}</Link>
                     </th>
                     <td>
                       {p.titleVi} <span className={s.en} lang="en">{p.nameEn}</span>
@@ -107,35 +108,14 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
       {SECTIONS.map((sec) => (
         <section key={sec.key} id={sec.key} className={s.sec} data-loose="">
           <h2 className={s.h2}>{sec.titleVi}</h2>
-          {guide.parts.filter((p) => p.section === sec.key).map((p) => <PartCard key={p.number} part={p} />)}
+          {guide.parts.filter((p) => p.section === sec.key).map((p) => <PartCard key={p.number} lang={language.code} part={p} />)}
         </section>
       ))}
 
       <section id="grammar" className={s.sec}>
         <h2 className={s.h2}>Ngữ pháp hay ra ở Part 5 và Part 6</h2>
         <p className={s.prose}>Mỗi điểm có bài đầy đủ trong khối Ngữ pháp.</p>
-        <div className={s.grid}>
-          {guide.grammar.map((g) => (
-            <article key={g.titleVi} className={`${s.card} flex flex-col gap-3`}>
-              <h3 className={s.h3}>{g.titleVi}</h3>
-              {g.formula && <p className={s.formula}>{g.formula}</p>}
-              <p className={s.small}>{g.explainVi}</p>
-              <div className={s.example}>
-                <p className={s.src} lang="en">{g.example.en}</p>
-                <p className={s.vi}>{g.example.vi}</p>
-              </div>
-              {g.grammarKey && (
-                <Link
-                  href={grammarPointPath(buildGrammarPointId(language.code, g.grammarKey))}
-                  prefetch={false}
-                  className={`${s.more} mt-auto`}
-                >
-                  Xem bài ngữ pháp <ArrowRight />
-                </Link>
-              )}
-            </article>
-          ))}
-        </div>
+        <GrammarGrid lang={language.code} grammar={guide.grammar} />
       </section>
 
       <section id="paraphrase" className={s.sec}>
@@ -143,15 +123,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
         <p className={s.prose}>
           Đáp án đúng ở Part 3, Part 4 và Part 7 thường nói lại ý của bài bằng từ khác. Dòng trên là câu trong bài, dòng giữa là cách đáp án viết lại.
         </p>
-        <ul className={`${s.grid} m-0 list-none p-0`}>
-          {guide.paraphrases.map((p) => (
-            <li key={p.heard} className={`${s.card} flex flex-col gap-1`}>
-              <p className={`${s.src} ${s.heard}`} lang="en">{p.heard}</p>
-              <p className={`${s.src} ${s.answer}`} lang="en">{p.answer}</p>
-              <p className={s.vi}>{p.vi}</p>
-            </li>
-          ))}
-        </ul>
+        <ParaphraseList paraphrases={guide.paraphrases} />
       </section>
 
       <section id="words" className={s.sec}>
@@ -162,7 +134,11 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
         <div className={s.grid} data-wide="">
           {guide.wordTopics.map((t) => (
             <article key={t.id} id={`words-${t.id}`} className={s.card} data-accent="">
-              <h3 className={s.h3}>{t.titleVi}</h3>
+              <h3 className={s.h3}>
+                <Link href={toeicTopicPath(language.code, t.id)} prefetch={false} className={s.go}>
+                  {t.titleVi} <ArrowRight />
+                </Link>
+              </h3>
               <ul className={s.lexicon}>
                 {t.words.map((w) => (
                   <li key={w.word}>
@@ -222,53 +198,19 @@ function NoteBody({ note }: { note: ToeicNote }) {
   )
 }
 
-function PartCard({ part: p }: { part: ToeicPart }) {
+function PartCard({ lang, part: p }: { lang: LangCode; part: ToeicPart }) {
   return (
     <article id={`part-${p.number}`} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h3 className={s.h3} data-lg="">Part {p.number}. {p.titleVi}</h3>
+          <h3 className={s.h3} data-lg="">
+            <Link href={toeicPartPath(lang, p.number)} className={s.go}>Part {p.number}. {p.titleVi} <ArrowRight /></Link>
+          </h3>
           <span className={s.note}><span lang="en">{p.nameEn}</span>, {p.questions} câu</span>
         </div>
         <p className={s.prose}>{p.formatVi}</p>
       </div>
-      <TipList tips={p.tips} />
-      <section className={s.callout}>
-        <h4 className={s.label}><Warn />Bẫy hay gặp</h4>
-        <ul>
-          {p.traps.map((t) => (
-            <li key={t.titleVi}>
-              <p className="m-0 font-bold">{t.titleVi}</p>
-              <p className={s.small}>{t.bodyVi}</p>
-              {t.example && (
-                <div className={`${s.example} mt-2`}>
-                  <p className={s.src} lang="en">{t.example.en}</p>
-                  <p className={s.vi}>{t.example.vi}</p>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <PartBody part={p} trapHeading="h4" />
     </article>
-  )
-}
-
-function TipList({ tips }: { tips: readonly ToeicTip[] }) {
-  return (
-    <ul className={`${s.grid} m-0 list-none p-0`}>
-      {tips.map((t) => (
-        <li key={t.titleVi} className={`${s.card} flex flex-col gap-2`}>
-          <p className={s.h3} data-sm="">{t.titleVi}</p>
-          <p className={s.small}>{t.bodyVi}</p>
-          {t.example && (
-            <div className={s.example}>
-              <p className={s.src} lang="en">{t.example.en}</p>
-              <p className={s.vi}>{t.example.vi}</p>
-            </div>
-          )}
-        </li>
-      ))}
-    </ul>
   )
 }
