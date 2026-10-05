@@ -171,6 +171,110 @@ def test_schema_hint_is_an_enum():
     assert '..' not in L.SCHEMA_HINT['level']
 
 
+# ---------------------------------------------------------------- families and reviewers
+
+def test_family_joins_one_model_across_names():
+    assert L.family('omni:agy/gemini-3.7-flash-low') == L.family('omni:agy/gemini-3.7-flash-tiered')
+    assert L.family('gemini/gemma-4-31b-it') == L.family('omni:ddgw/tinfoil/gemma4-31b')
+    assert L.family('ag/gemini-3-pro-low') == L.family('gc/gemini-3-pro-preview')
+    assert L.family('gemini/gemini-3.5-flash-lite') != L.family('gemini/gemini-3.5-flash')
+
+
+def test_vendor():
+    assert L.vendor('gemini/gemma-4-31b-it') == L.vendor('omni:agy/gemini-3.7-flash-low') == 'google'
+    assert L.vendor('omni:ddgw/tinfoil/gpt-oss-120b') == 'openai'
+    assert L.vendor('omni:openrouter/nvidia/nemotron-3-super:free') == 'nvidia'
+    assert L.vendor('omni:openrouter/stealth/space-bunny-alpha-high') == 'spacebunnyalpha'
+
+
+def test_independent_reviewer():
+    assert not L.independent('omni:agy/gemini-3.7-flash-tiered', 'omni:agy/gemini-3.7-flash-low')  # en:8
+    assert not L.independent('gemini/gemma-4-31b-it', 'omni:ddgw/tinfoil/gemma4-31b')
+    assert not L.independent('gemini/gemini-3.5-flash-lite', 'omni:openrouter/stealth/space-bunny-alpha')  # weaker
+    assert L.independent('omni:ddgw/tinfoil/gpt-oss-120b', 'omni:openrouter/stealth/space-bunny-alpha')
+
+
+def test_review_pick_avoids_vendor_and_weaker_models():
+    p = pool(['gemini/gemma-4-31b-it', 'gemini/gemini-3.5-flash-lite', 'omni:ddgw/gpt-5.4-nano',
+              'omni:ddgw/tinfoil/gpt-oss-120b'])
+    shut = {L.family('omni:agy/gemini-3.7-flash-low'), L.vendor('omni:agy/gemini-3.7-flash-low')}
+    assert p.pick(None, shut, L.rank('omni:openrouter/stealth/space-bunny-alpha')) == 'omni:ddgw/tinfoil/gpt-oss-120b'
+    assert p.pick(None, shut, L.rank('omni:openrouter/stealth/space-bunny-alpha')) == 'omni:ddgw/tinfoil/gpt-oss-120b'
+    assert p.pick(None, shut, 0) is None
+
+
+# ---------------------------------------------------------------- content checks
+
+RAW = {'lang': 'en', 'headword': 'go', 'level': 'A1', 'senses': [], 'examples': []}
+
+
+def layer(**kw):
+    base = {'gist_vi': ['đi'], 'level': 'A1', 'usage_note_vi': 'Dùng hằng ngày.',
+            'core_senses': [{'vi_terms': ['đi'], 'vi_definition': 'di chuyển', 'register': None,
+                             'examples': [{'text': 'We go home.', 'vi': 'Chúng tôi về nhà.'}]}]}
+    base.update(kw)
+    return base
+
+
+def test_content_clean_layer_passes():
+    assert L.content_errors(layer(), RAW, ['went']) == []
+
+
+def test_content_example_needs_headword_or_form():
+    bad = layer(core_senses=[{'vi_terms': ['đi'], 'examples': [{'text': 'They left early.', 'vi': 'Họ về sớm.'}]}])
+    assert any('does not contain' in e for e in L.content_errors(bad, RAW, ['went']))
+    ok = layer(core_senses=[{'vi_terms': ['đi'], 'examples': [{'text': 'She went out.', 'vi': 'Cô ấy ra ngoài.'}]}])
+    assert L.content_errors(ok, RAW, ['went']) == []
+    es = {'lang': 'es', 'headword': 'realizar', 'level': 'B1'}
+    assert L.mentions('Realizó el trabajo.', 'realizar', [], 'es')
+    assert not L.mentions('Daniel se dio cuenta de que llovía.', 'realizar', [], 'es')
+    assert L.content_errors(layer(level='B1', core_senses=[{'examples': [{'text': 'Daniel se dio cuenta.', 'vi': 'x'}]}]),
+                            es) != []
+
+
+def test_content_example_length():
+    long = ' '.join(['go'] * 26)
+    errs = L.content_errors(layer(core_senses=[{'examples': [{'text': long, 'vi': 'x'}]}]), RAW)
+    assert any('26 words' in e for e in errs)
+
+
+def test_content_gist_repeat_and_brackets():
+    assert 'gist_vi repeats a term' in L.content_errors(layer(gist_vi=['như vậy', 'đó', 'Như vậy']), RAW)
+    assert any('brackets' in e for e in L.content_errors(layer(gist_vi=['có', '(thức giả định)']), RAW))
+
+
+def test_content_cjk_punctuation_in_vietnamese():
+    errs = L.content_errors(layer(usage_note_vi='Dùng trong 「事情」，như việc.'), RAW)
+    assert any('Chinese punctuation' in e for e in errs)
+
+
+def test_content_vulgar_in_a1_note():
+    zh = {'lang': 'zh', 'headword': '日', 'level': 'HSK1'}
+    note = '日 thường xuất hiện trong 生日. Nghĩa địt, đụ là từ tục.'
+    lay = layer(usage_note_vi=note, core_senses=[{'examples': [{'text': '生日快乐', 'vi': 'Chúc mừng sinh nhật'}]}])
+    assert any('vulgar' in e for e in L.content_errors(lay, zh))
+    lay['usage_note_vi'] = '日 thường xuất hiện trong 生日.'
+    assert L.content_errors(lay, zh) == []
+
+
+# ---------------------------------------------------------------- sample gate
+
+def test_gate_lots_sample_and_decision():
+    import gate
+    rows = [{'entry_id': f'en:w{i}', 'model': 'm/a', 'status': 'published', 'created_at': '2026-09-30T10:00:00+00:00'}
+            for i in range(60)]
+    rows += [{'entry_id': 'en:h', 'model': 'm/a', 'status': 'hidden', 'created_at': '2026-09-30T10:00:00+00:00'},
+             {'entry_id': 'zh:x', 'model': 'm/a', 'status': 'published', 'created_at': '2026-10-05T10:00:00+00:00'}]
+    got = gate.lots(rows, now=datetime(2026, 10, 5, tzinfo=timezone.utc))
+    assert list(got) == [('m/a', 'en', '2026-W40')] and len(got[('m/a', 'en', '2026-W40')]) == 60
+    assert list(gate.lots(rows, {'2026-W41'})) == [('m/a', 'zh', '2026-W41')]
+    s = gate.sample(got[('m/a', 'en', '2026-W40')], gate.SAMPLE_SIZE, 'salt')
+    assert len(s) == 50 and s == gate.sample(list(reversed(got[('m/a', 'en', '2026-W40')])), 50, 'salt')
+    assert gate.defect([{'verdict': 'reject'}, {'verdict': 'reject'}, {'verdict': 'accept'}])
+    assert not gate.defect([{'verdict': 'reject'}, {'verdict': 'accept'}, {'verdict': 'accept'}])
+    assert gate.decide(50, 5) == (0.1, False) and gate.decide(50, 6)[1]
+
+
 # ---------------------------------------------------------------- glossfix guard
 
 def test_glossfix_guard_counts_only_loads():

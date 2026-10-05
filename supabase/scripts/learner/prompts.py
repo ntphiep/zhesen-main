@@ -115,3 +115,19 @@ You are now correcting a learner layer you wrote earlier. A reviewing editor lis
 you agree with, reject the ones that are wrong, and return the complete corrected layer in the same shape,
 plus "rejected": [{"path": "...", "reason": "<English>"}]. Keep the number of core senses within the range
 the rules allow; adding a sense the editor says is missing is allowed up to that range."""
+
+# One judge of the sample gate's panel (gate.py). A layer two of three judges reject is a defect.
+PANEL = """You are one of three independent editors checking a learner's dictionary for Vietnamese speakers. You
+receive a raw dictionary entry and the learner layer published for it. Reject the layer when it has an error a
+careful bilingual editor would refuse to print:
+- a Vietnamese term, gist or definition that is wrong, unnatural or not Vietnamese ("các chó"), or a repeated or
+  invented term
+- a common sense missing from core, or a core sense learners rarely meet ahead of a common one
+- an example that does not illustrate its sense or does not contain the headword, or a translation that is not
+  faithful or uses the wrong politeness
+- a collocation or idiom rendered word for word, or one that is not real
+- a usage note that is false, discusses Vietnamese rather than the headword, or spells out a vulgar sense of a
+  basic word
+- Chinese in traditional characters, pinyin with wrong tones, or Chinese punctuation in Vietnamese text
+Style preferences are not errors. Return JSON: {"verdict": "accept|reject", "problems": [{"path":
+"core_senses[0].vi_terms", "problem": "<English>", "severity": "high|medium|low"}]}"""

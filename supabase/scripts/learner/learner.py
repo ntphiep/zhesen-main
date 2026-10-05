@@ -139,7 +139,7 @@ MIN_BILLIONS = 20
 RANK = [re.compile(p) for p in (
     r'gemini-3(\.\d)?-pro|gemini-pro|gpt-6|gpt-5\.[5-9]|deepseek-v4(\.\d)?-pro|kimi-k3|glm-5|grok-4',
     r'gemini-3\.[5-9]-flash|deepseek-v4|qwen3\.[5-9]|nemotron-3-ultra|mimo|muse-spark',
-    r'gemini-3(\.\d)?-flash|gemma-4-31b|nemotron-3-super|gpt-oss-120b|deepseek|qwen3|dots|ling|space-bunny',
+    r'gemini-3(\.\d)?-flash|gemma-?4-31b|nemotron-3-super|gpt-oss-120b|deepseek|qwen3|dots|ling|space-bunny',
 )]
 LIGHT = re.compile(r'(^|[-/_.])(lite|mini|nano|lightning|code)([-/_.:]|$)|(^|/)free$')
 # A refusal that names a quota or an unconfigured provider; 9router wraps both in a 503.
@@ -216,9 +216,36 @@ def provider(name):
 
 def family(name):
     """The model behind a name, whichever router and provider serve it: ag/gemini-3-pro-low and
-    gc/gemini-3-pro-preview are one model, so one of them never reviews the other."""
+    gc/gemini-3-pro-preview are one model, so one of them never reviews the other, and neither do
+    gemini-3.7-flash-low and gemini-3.7-flash-tiered (en:8) or gemini/gemma-4-31b-it and
+    omni:ddgw/tinfoil/gemma4-31b."""
     base = name.rsplit('/', 1)[-1].lower()
-    return re.sub(r'(:free|-(low|medium|high|xhigh|max|extra-low|preview|thinking|agentic|agent|\d{4}))+$', '', base)
+    base = re.sub(r'(:free|-(low|medium|high|xhigh|max|extra-low|preview|thinking|agentic|agent|tiered|it|instruct'
+                  r'|\d{4}))+$', '', base)
+    return re.sub(r'[-_.]', '', base)
+
+
+VENDORS = [(re.compile(p), v) for p, v in (
+    (r'gemini|gemma', 'google'), (r'^gpt|^o\d', 'openai'), (r'deepseek', 'deepseek'), (r'qwen|qwq', 'alibaba'),
+    (r'nemotron', 'nvidia'), (r'llama', 'meta'), (r'mistral|mixtral|stral', 'mistral'), (r'kimi|moonshot', 'moonshot'),
+    (r'glm', 'zhipu'), (r'grok', 'xai'), (r'mimo', 'xiaomi'), (r'minimax', 'minimax'), (r'ernie', 'baidu'),
+    (r'hunyuan', 'tencent'), (r'doubao|^seed', 'bytedance'), (r'^step\d', 'stepfun'), (r'^(ling|ring)', 'inclusionai'),
+    (r'^dots', 'rednote'), (r'^phi\d', 'microsoft'), (r'^command|^aya', 'cohere'), (r'^nova', 'amazon'),
+)]
+
+
+def vendor(name):
+    """Who trained the model, read from its family, or the family itself when the name does not say
+    (stealth/space-bunny-alpha): a reviewer from the writer's vendor shares its blind spots."""
+    f = family(name)
+    return next((v for p, v in VENDORS if p.search(f)), f)
+
+
+def independent(reviewer, writer):
+    """True when `reviewer` may judge `writer`'s work: another family and vendor, ranked at least
+    as strong. 2,990 of 6,024 layers were reviewed by a lite, mini, nano or gemma model."""
+    return (not {family(reviewer), vendor(reviewer)} & {family(writer), vendor(writer)}
+            and rank(reviewer) <= rank(writer))
 
 
 def reset_after(body):
@@ -258,6 +285,7 @@ class Pool:
         self.temperature = dict.fromkeys(self.models, True)
         self.busy = dict.fromkeys(self.models, 0)
         self.tier = {m: rank(m) for m in self.models}
+        self.kin = {m: {family(m), vendor(m)} for m in self.models}
         # Answered or not, per call, and when last answered: pick() orders by these first.
         self.hist = {m: deque(maxlen=20) for m in self.models}
         self.ok_at = dict.fromkeys(self.models, 0.0)
@@ -404,20 +432,21 @@ class Pool:
         h = self.hist[model]
         return 2 if len(h) == h.maxlen and not any(h) else 1
 
-    def pick(self, prefer, avoid):
+    def pick(self, prefer, avoid, ceiling=None):
         """The preferred model when it is ready, else the best ready one no other worker is
         calling, so the workers spread over several models rather than trip one rate limit. Best
         is measured success first (`standing`), then name tier. A light model, or one that has not
         answered its last 20 calls, is taken only when no better one is ready, busy or not. No
-        provider takes more than its PROVIDER_LIMIT, else PER_PROVIDER, calls at once, and no model
-        of a family in `avoid` is taken."""
+        provider takes more than its PROVIDER_LIMIT, else PER_PROVIDER, calls at once, no model of a
+        family or vendor in `avoid` is taken, and with `ceiling` none ranked weaker than it."""
         now = time.time()
         night = datetime.now(timezone.utc).hour in NIGHT_UTC
         with LOCK:
             load = {}
             for m, n in self.busy.items():
                 load[provider(m)] = load.get(provider(m), 0) + n
-            ready = sorted((m for m in self.models if self.cool[m] <= now and family(m) not in avoid
+            ready = sorted((m for m in self.models if self.cool[m] <= now and not self.kin[m] & avoid
+                            and (ceiling is None or self.tier[m] <= ceiling)
                             and (night or provider(m) not in NIGHT_ONLY)
                             and load.get(provider(m), 0) < PROVIDER_LIMIT.get(provider(m), PER_PROVIDER)),
                            key=lambda m: (self.standing(m, now), self.tier[m]))
@@ -430,16 +459,19 @@ class Pool:
                 self.busy[model] += 1
             return model
 
-    def ask(self, system, user, prefer=None, avoid=(), bad_limit=0):
+    def ask(self, system, user, prefer=None, avoid=(), bad_limit=0, stronger_than=None, wait=16 * 3600):
         """(model, parsed JSON, seconds) from `prefer` when it is ready, else the best ready
-        model whose family is not in `avoid`. A reply cut at the token limit or without JSON rests
-        that model and the call moves on; after `bad_limit` such replies, when set, the call gives
-        up. Waits up to 16 hours for a model, because a daily quota reopens at midnight Pacific."""
+        model of neither a family nor a vendor in `avoid` and, with `stronger_than`, ranked at least
+        as strong as that model. A reply cut at the token limit or without JSON rests that model and
+        the call moves on; after `bad_limit` such replies, when set, the call gives up. Waits up to
+        `wait` seconds for a model, by default 16 hours, because a daily quota reopens at midnight
+        Pacific."""
         text = system + '\n\n' + user
-        avoid = {family(m) for m in avoid}
-        last, bad, deadline = None, 0, time.time() + 16 * 3600
+        avoid = {k for m in avoid for k in (family(m), vendor(m))}
+        ceiling = rank(stronger_than) if stronger_than else None
+        last, bad, deadline = None, 0, time.time() + wait
         while time.time() < deadline:
-            model = self.pick(prefer, avoid)
+            model = self.pick(prefer, avoid, ceiling)
             if not model:
                 time.sleep(random.uniform(5, 20))
                 continue
@@ -607,8 +639,67 @@ def normalise(layer, raw):
     return layer
 
 
-def validate(layer, raw, trad):
-    """Structural problems; an empty list means the layer can be loaded."""
+MAX_EXAMPLE_WORDS = 25
+CJK_PUNCT = re.compile(r'[「」『』【】《》〈〉，。：；！？、（）]')
+# Words a Vietnamese reader takes as obscene; zh:日 printed two of them in an A1 usage note.
+VULGAR_VI = re.compile(r'(?<!\w)(địt|đụ|đéo|lồn|buồi|cặc|đĩ)(?!\w)', re.I)
+
+
+def mentions(text, head, forms, lang):
+    """True when an example contains the headword, its stem (all but its last two letters, at least
+    three) or one of its listed forms: "Daniel se dio cuenta de que" illustrated realizar without
+    containing it."""
+    t = (text or '').lower()
+    if lang == 'zh':
+        return head in t or any(f in t for f in forms)
+    return head.lower()[:max(3, len(head) - 2)] in t or any(f.lower() in t for f in forms)
+
+
+def content_errors(layer, raw, forms=()):
+    """What a bilingual editor rejected in the audit's sample of 45 layers and a script can see."""
+    errs = []
+    gist = [g for g in layer.get('gist_vi') or [] if isinstance(g, str)]
+    if len({g.strip().lower() for g in gist}) < len(gist):
+        errs.append('gist_vi repeats a term')
+    if any(re.search(r'[()\[\]（）]', g) for g in gist):
+        errs.append('gist_vi: a term in brackets; give the bare equivalent')
+    vi = gist + [layer.get('usage_note_vi')] + [k.get('note_vi') for k in layer.get('confusables') or []
+                                               if isinstance(k, dict)]
+    vulgar = []
+    for i, c in enumerate(layer.get('core_senses') or []):
+        if not isinstance(c, dict):
+            continue
+        vi += list(c.get('vi_terms') or []) + [c.get('vi_definition')]
+        vi += [k.get(f) for k in c.get('collocations') or [] if isinstance(k, dict) for f in ('vi', 'example_vi')]
+        vi += [k.get('note_vi') for kind in ('synonyms', 'antonyms') for k in c.get(kind) or [] if isinstance(k, dict)]
+        if c.get('register') in ('vulgar', 'offensive'):
+            vulgar += c.get('vi_terms') or []
+        for j, x in enumerate(c.get('examples') or []):
+            if not isinstance(x, dict):
+                continue
+            vi.append(x.get('vi'))
+            text = x.get('text') or ''
+            if raw['lang'] != 'zh' and len(text.split()) > MAX_EXAMPLE_WORDS:
+                errs.append(f'core {i} example {j}: {len(text.split())} words; give one of at most 20')
+            if text and not mentions(text, raw['headword'], forms, raw['lang']):
+                errs.append(f'core {i} example {j}: does not contain {raw["headword"]!r} or a form of it')
+    for o in layer.get('other_senses') or []:
+        if isinstance(o, dict):
+            vi += list(o.get('vi_terms') or [])
+            if register_label(o.get('register')) in ('vulgar', 'offensive'):
+                vulgar += o.get('vi_terms') or []
+    vi += [f.get('proposed_vi') for f in layer.get('gloss_fixes') or [] if isinstance(f, dict)]
+    if any(isinstance(t, str) and CJK_PUNCT.search(t) for t in vi):
+        errs.append('Vietnamese text contains Chinese punctuation such as ， 。 「」; use Vietnamese punctuation')
+    note = layer.get('usage_note_vi') if isinstance(layer.get('usage_note_vi'), str) else ''
+    if (layer.get('level') == 'A1' or raw.get('level') in ('A1', 'HSK1')) and (
+            VULGAR_VI.search(note) or any(isinstance(t, str) and t and t.lower() in note.lower() for t in vulgar)):
+        errs.append('usage_note_vi of an A1 word spells out a vulgar sense; leave it to other_senses with register "vulgar"')
+    return errs
+
+
+def validate(layer, raw, trad, forms=()):
+    """Structural and content problems; an empty list means the layer can be loaded."""
     ids = {s['id'] for s in raw['senses']}
     ex_ids = {x['id'] for x in raw['examples']}
     lo, hi = core_range(len(ids))
@@ -684,7 +775,7 @@ def validate(layer, raw, trad):
     dup = len(covered) - len(set(covered))
     if dup:
         errs.append(f'{dup} raw senses covered twice')
-    return errs
+    return errs + content_errors(layer, raw, forms)
 
 
 # ---------------------------------------------------------------- steps
@@ -696,25 +787,54 @@ def write_user(raw):
             f'Return JSON of this shape:\n{json.dumps(SCHEMA_HINT, ensure_ascii=False)}')
 
 
-def build(entry_id, trad, pool):
-    """Write, check, review and correct one entry. The reviewer is never the writer, and the
-    corrections go back to the writer when it is ready. Returns the cache record."""
-    raw = raw_entry(entry_id)
-    writer, layer, secs = pool.ask(SYSTEM, write_user(raw))
-    rec = {'raw': raw, 'report': {'id': entry_id, 'writer': writer, 'seconds_write': secs}}
-    errs = validate(normalise(layer, raw), raw, trad)
-    if errs:
-        # One retry with the problems spelled out; the model usually fixes all of them.
-        writer, layer, secs = pool.ask(SYSTEM, write_user(raw) + '\n\nYour previous answer had these problems; '
-                                       f'return the whole corrected layer:\n{json.dumps(errs)}\n\nPrevious answer:\n'
-                                       + json.dumps(layer, ensure_ascii=False), prefer=writer)
-        errs = validate(normalise(layer, raw), raw, trad)
-        rec['report'].update(writer=writer, seconds_retry=secs)
-    if errs:
-        rec['report']['errors'] = errs
+def forms_of(raw):
+    """The entry's lemma and the headwords filed as its forms (went for go), which an example may
+    contain instead of the headword."""
+    lang, head = raw['lang'], raw['headword']
+    own = rest(f'entries?id=eq.{q(raw["id"])}&select=form_of') or [{}]
+    rows = rest(f'entries?lang=eq.{lang}&form_of=eq.{q(head)}&select=headword&limit=300') or []
+    return sorted({r['headword'] for r in rows} | ({own[0]['form_of']} if own[0].get('form_of') else set()))
+
+
+# A reviewer of another vendor, at least as strong as the writer, may be resting; past this the
+# written layer is kept as a draft and only the review is asked again.
+REVIEW_WAIT = 3600
+
+
+def build(entry_id, trad, pool, draft=None, avoid=()):
+    """Write, check, review and correct one entry. The reviewer is of another family and vendor
+    than the writer and of `avoid`, and ranks at least as strong as the writer; the corrections go
+    back to the writer when it is ready. A `draft` record, whose layer passed the checks, skips the
+    writing. Returns the cache record."""
+    if draft:
+        raw, layer, forms = draft['raw'], draft['draft'], draft.get('forms') or forms_of(draft['raw'])
+        rec = {'raw': raw, 'forms': forms, 'report': {k: v for k, v in draft['report'].items()
+                                                      if k in ('id', 'writer', 'seconds_write', 'seconds_retry')}}
+        writer = rec['report']['writer']
+    else:
+        raw = raw_entry(entry_id)
+        forms = forms_of(raw)
+        writer, layer, secs = pool.ask(SYSTEM, write_user(raw))
+        rec = {'raw': raw, 'forms': forms, 'report': {'id': entry_id, 'writer': writer, 'seconds_write': secs}}
+        errs = validate(normalise(layer, raw), raw, trad, forms)
+        if errs:
+            # One retry with the problems spelled out; the model usually fixes all of them.
+            writer, layer, secs = pool.ask(SYSTEM, write_user(raw) + '\n\nYour previous answer had these problems; '
+                                           f'return the whole corrected layer:\n{json.dumps(errs)}\n\nPrevious answer:\n'
+                                           + json.dumps(layer, ensure_ascii=False), prefer=writer)
+            errs = validate(normalise(layer, raw), raw, trad, forms)
+            rec['report'].update(writer=writer, seconds_retry=secs)
+        if errs:
+            rec['report']['errors'] = errs
+            return rec
+    try:
+        reviewer, review, secs = pool.ask(REVIEW, f'Raw entry:\n{json.dumps(raw, ensure_ascii=False)}\n\n'
+                                                  f'Learner layer:\n{json.dumps(layer, ensure_ascii=False)}',
+                                          avoid={writer, *avoid}, stronger_than=writer, wait=REVIEW_WAIT)
+    except RuntimeError as e:
+        rec['draft'] = layer
+        rec['report']['errors'] = [f'no reviewer of another vendor at least as strong as {writer}: {str(e)[:120]}']
         return rec
-    reviewer, review, secs = pool.ask(REVIEW, f'Raw entry:\n{json.dumps(raw, ensure_ascii=False)}\n\n'
-                                              f'Learner layer:\n{json.dumps(layer, ensure_ascii=False)}', avoid={writer})
     rec['report']['reviewer'] = reviewer
     issues = [i for i in review.get('issues') or [] if isinstance(i, dict)]
     rec['report']['seconds_review'] = secs
@@ -725,7 +845,7 @@ def build(entry_id, trad, pool):
                                            f'\n\nYour layer:\n{json.dumps(layer, ensure_ascii=False)}\n\nReviewer issues:\n'
                                            f'{json.dumps(issues, ensure_ascii=False)}', prefer=writer, avoid={reviewer})
         rec['report'].update(fixer=fixer, seconds_fix=secs)
-        fix_errs = validate(normalise(fixed, raw), raw, trad)
+        fix_errs = validate(normalise(fixed, raw), raw, trad, forms)
         if fix_errs:
             # The review was not applied, so no gloss a dictionary wrote is replaced on its word.
             rec['report']['fix_errors'] = fix_errs
@@ -884,7 +1004,7 @@ def cmd_run(a):
         except (OSError, ValueError):
             rec = None
         if not rec or rec['report'].get('errors'):
-            rec = build(entry_id, trad, pool)
+            rec = build(entry_id, trad, pool, draft=rec if rec and rec.get('draft') else None)
             with open(path + '.tmp', 'w') as fh:
                 json.dump(rec, fh, ensure_ascii=False, indent=1)
             os.replace(path + '.tmp', path)
@@ -932,7 +1052,7 @@ def cmd_load(a):
     for path in a.files:
         rec = json.load(open(path))
         errs = rec['report'].get('errors') or ([] if 'layer' in rec else ['no layer'])
-        errs = errs or validate(normalise(rec['layer'], rec['raw']), rec['raw'], trad)
+        errs = errs or validate(normalise(rec['layer'], rec['raw']), rec['raw'], trad, rec.get('forms') or ())
         if errs:
             log('skip', path, json.dumps(errs, ensure_ascii=False)[:200])
             continue

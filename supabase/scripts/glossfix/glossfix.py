@@ -330,11 +330,11 @@ def guard():
 
 def other_family_ready(pool, model):
     now = time.time()
-    return any(learner.family(m) != learner.family(model) and pool.cool[m] <= now for m in pool.models)
+    return any(learner.independent(m, model) and pool.cool[m] <= now for m in pool.models)
 
 
 class Pool(learner.Pool if learner else object):
-    """learner.Pool, except that a call asked to avoid a family takes that family when no other model is
+    """learner.Pool, except that a call asked to avoid a family takes any model when no qualified one is
     ready, so a judge falls back to the writer's family instead of waiting for a dead provider."""
 
     def __init__(self, models):
@@ -342,8 +342,8 @@ class Pool(learner.Pool if learner else object):
         for m in self.models:
             self.cap[m] = 8000
 
-    def pick(self, prefer, avoid):
-        return super().pick(prefer, avoid) or (super().pick(prefer, set()) if avoid else None)
+    def pick(self, prefer, avoid, ceiling=None):
+        return super().pick(prefer, avoid, ceiling) or (super().pick(prefer, set()) if avoid else None)
 
 
 def review(pool, call, rnd=random):
@@ -367,9 +367,9 @@ def review(pool, call, rnd=random):
     judge, verdicts = None, None
     if disputed and other_family_ready(pool, writer):
         items = [(s, out[s['id']]['vi'], s['vi']) if flip else (s, s['vi'], out[s['id']]['vi']) for s, flip in disputed]
-        judge, verdicts, _ = pool.ask(JUDGE.format(lang=lang), judge_text(items), avoid={writer})
-    # Pool.pick falls back to the writer's family when the other one rests; such a judge is not trusted.
-    if judge and learner.family(judge) != learner.family(writer):
+        judge, verdicts, _ = pool.ask(JUDGE.format(lang=lang), judge_text(items), avoid={writer}, stronger_than=writer)
+    # Pool.pick falls back to any model when no qualified one is ready; such a judge is not trusted.
+    if judge and learner.independent(judge, writer):
         picks = {}
         for it in (verdicts.get('r') if isinstance(verdicts, dict) else None) or []:
             if isinstance(it, dict) and isinstance(it.get('n'), int) and 1 <= it['n'] <= len(items) and it.get('pick') in ('A', 'B'):
