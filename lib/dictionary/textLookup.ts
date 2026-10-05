@@ -30,11 +30,10 @@ export interface TextLookup {
   phrases: FoundPhrase[]
 }
 
-export async function lookUpText(supabase: SupabaseClient, text: string): Promise<TextLookup> {
-  // The same heuristic the search box uses, at passage length: Han script anywhere means
-  // Chinese, a Spanish-only letter means Spanish, otherwise English. Tokenization is all
-  // it decides, and `tokenizeLatin` treats English and Spanish alike.
-  const lang = detectOrder(text)[0]
+/** `lang` is the language Azure detected or the learner selected. Without it the letter
+ *  heuristic decides, and it reads 30.5% of Spanish Tatoeba sentences as English. */
+export async function lookUpText(supabase: SupabaseClient, text: string, given?: LangCode): Promise<TextLookup> {
+  const lang = given ?? detectOrder(text)[0]
   if (lang === 'zh') {
     const [resolved] = await resolveTappableTexts(supabase, lang, [text])
     if (!resolved) return { lang, words: [], phrases: [] }

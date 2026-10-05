@@ -15,7 +15,7 @@ import { isWordMatch } from '@/lib/dictionary/detect'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { TranslateLangCode } from '@/lib/translate/azure'
 import type { Direction } from '@/lib/dictionary/search'
-import type { LangCode } from '@/lib/languages'
+import { isLangCode, type LangCode } from '@/lib/languages'
 import s from './Lookup.module.css'
 import { ErrorLine } from './ErrorLine'
 
@@ -67,12 +67,14 @@ const MAX_LOOKUP_WORDS = 3
 /** A word row on the block's pastel ground. */
 const ROW = 'flex flex-wrap items-baseline gap-2 rounded-xl px-2 py-1.5 transition-colors duration-150 ease-std hover:bg-(--zs-bg)'
 
+/** `text` is the passage a settled state answers: the previous answer stays on screen
+ *  through the debounce, and the word list must not read its language as this one's. */
 type State =
   | { kind: 'idle' }
   | { kind: 'loading' }
-  | { kind: 'done'; from: string; translations: Partial<Record<TranslateLangCode, string>> }
-  | { kind: 'disabled' }
-  | { kind: 'error'; message: string }
+  | { kind: 'done'; text: string; from: string; translations: Partial<Record<TranslateLangCode, string>> }
+  | { kind: 'disabled'; text: string }
+  | { kind: 'error'; text: string; message: string }
 
 /**
  * The whole-passage half of a lookup panel: a machine translation of the text, and, for a
@@ -117,34 +119,39 @@ export function PassageBlock({ text, direction, targets, known }: {
         // No source language is sent: Azure detects it. See fetchTranslation's own note.
         const outcome = await fetchTranslation(trimmed, undefined, to, ctrl.signal)
         if (outcome.status === 'ok') {
-          setState({ kind: 'done', from: outcome.from, translations: outcome.translations })
+          setState({ kind: 'done', text: trimmed, from: outcome.from, translations: outcome.translations })
         }
-        else if (outcome.status === 'disabled') setState({ kind: 'disabled' })
-        else setState({ kind: 'error', message: outcome.message })
+        else if (outcome.status === 'disabled') setState({ kind: 'disabled', text: trimmed })
+        else setState({ kind: 'error', text: trimmed, message: outcome.message })
       } catch (e) {
         if ((e as Error).name !== 'AbortError') {
-          setState({ kind: 'error', message: 'Chưa dịch được đoạn này. Thử lại.' })
+          setState({ kind: 'error', text: trimmed, message: 'Chưa dịch được đoạn này. Thử lại.' })
         }
       }
     }, TRANSLATE_DEBOUNCE_MS)
     return () => { clearTimeout(id); ctrl.abort() }
   }, [trimmed, tooLong, to])
 
-  // The word list is a different request to a different route, and it answers whether or
-  // not Azure is configured, so it does not wait on the translation.
+  // The word list waits for the translation, because Azure's detected language decides how
+  // the passage is read: the letter rule took 30.5% of Spanish sentences for English. With
+  // no detection it takes the one selected language, else the route's letter rule. Azure
+  // answered after the typing stopped, so that path needs no debounce of its own.
+  const settled = tooLong || (state.kind !== 'idle' && state.kind !== 'loading' && state.text === trimmed)
+  const detected = state.kind === 'done' && isLangCode(state.from) ? state.from : undefined
+  const wordLang = detected ?? (targets.length === 1 ? targets[0] : undefined)
   useEffect(() => {
-    if (direction !== 'fw' || trimmed.length > MAX_WORDLIST_CHARS) return
+    if (direction !== 'fw' || !settled || trimmed.length > MAX_WORDLIST_CHARS) return
     const ctrl = new AbortController()
     const id = setTimeout(async () => {
       try {
-        const outcome = await fetchTextLookup(trimmed, ctrl.signal)
+        const outcome = await fetchTextLookup(trimmed, ctrl.signal, wordLang)
         setWords(outcome.status === 'ok' ? outcome.data : null)
       } catch {
         setWords(null)
       }
-    }, TRANSLATE_DEBOUNCE_MS)
+    }, tooLong ? TRANSLATE_DEBOUNCE_MS : 0)
     return () => { clearTimeout(id); ctrl.abort() }
-  }, [direction, trimmed])
+  }, [direction, trimmed, settled, tooLong, wordLang])
 
   // Reuses the translation this block already holds: no second Azure request, and each
   // search goes through the cached route.

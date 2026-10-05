@@ -80,4 +80,17 @@ describe('lookUpText', () => {
     expect(out.words).toEqual([])
     expect(resolveTokens).not.toHaveBeenCalled()
   })
+
+  // 19,512 of 64,005 Spanish Tatoeba sentences carry no Spanish-only letter, so the letter
+  // rule read them as English: casa answered "Một thị trấn ở Arkansas".
+  it('reads the passage in the language the caller names', async () => {
+    const out = await lookUpText(client, 'Tengo un perro en mi casa', 'es')
+    expect(out.lang).toBe('es')
+    expect(resolveTokens).toHaveBeenCalledWith(client, 'es', expect.arrayContaining(['perro', 'casa']))
+  })
+
+  it('falls back to the letter rule when no language is named', async () => {
+    const out = await lookUpText(client, 'Tengo un perro en mi casa')
+    expect(out.lang).toBe('en')
+  })
 })

@@ -1,5 +1,6 @@
 import { z } from '@/lib/zod'
 import type { TextLookup } from './textLookup'
+import type { LangCode } from '@/lib/languages'
 
 /** The browser half of the passage lookup. Apart from `./textLookup` because that module
  *  resolves tokens on the server, and its imports reach the server-only secrets. */
@@ -34,11 +35,11 @@ export type TextLookupOutcome =
 
 /** Layer one, through the route: the browser holds no Supabase credentials for `lex` and
  *  the per-address budget lives on the server. */
-export async function fetchTextLookup(text: string, signal?: AbortSignal): Promise<TextLookupOutcome> {
+export async function fetchTextLookup(text: string, signal?: AbortSignal, lang?: LangCode): Promise<TextLookupOutcome> {
   const res = await fetch('/dictionary/text/lookup', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(lang ? { text, lang } : { text }),
     signal,
   })
   const body: unknown = await res.json().catch(() => null)

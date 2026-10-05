@@ -180,6 +180,40 @@ describe('PassageBlock word list (fw direction)', () => {
   })
 })
 
+describe('PassageBlock word list language (fw direction)', () => {
+  const sentLang = (fetchMock: ReturnType<typeof stubRoutes>) => {
+    const call = fetchMock.mock.calls.find((c) => String(c[0]) === '/dictionary/text/lookup')
+    const body: unknown = JSON.parse(String(call?.[1]?.body))
+    return (body as { lang?: string }).lang
+  }
+
+  // "Tengo un perro y dos gatos en mi casa" has no Spanish-only letter, and was read as
+  // English: casa answered "Một thị trấn ở Arkansas".
+  it('reads the passage in the language Azure detected', async () => {
+    const fetchMock = stubRoutes(
+      { enabled: true, from: 'es', translations: { vi: 'Tôi có một con chó.' } },
+      { lang: 'es', words: [{ text: 'perro', entry: wordEntry({ id: 'es:perro', lang: 'es', headword: 'perro' }) }] },
+    )
+    render(<PassageBlock text="Tengo un perro" direction="fw" targets={['en', 'es', 'zh']} />)
+    await screen.findByText('Từng từ trong đoạn', {}, { timeout: 3000 })
+    expect(sentLang(fetchMock)).toBe('es')
+  })
+
+  it('falls back to the one selected language when translation is off', async () => {
+    const fetchMock = stubRoutes({ enabled: false }, { lang: 'es', words: [{ text: 'perro', entry: null }] })
+    render(<PassageBlock text="Tengo un perro" direction="fw" targets={['es']} />)
+    await screen.findByText('Từng từ trong đoạn', {}, { timeout: 3000 })
+    expect(sentLang(fetchMock)).toBe('es')
+  })
+
+  it('names no language when Azure is off and several are selected', async () => {
+    const fetchMock = stubRoutes({ enabled: false }, { lang: 'en', words: [{ text: 'dog', entry: null }] })
+    render(<PassageBlock text="The dog barks" direction="fw" targets={['en', 'es']} />)
+    await screen.findByText('Từng từ trong đoạn', {}, { timeout: 3000 })
+    expect(sentLang(fetchMock)).toBeUndefined()
+  })
+})
+
 describe('PassageBlock dictionary hits for a short translation (vi direction)', () => {
   function stubTranslateAndSearch(translateBody: unknown, searchBody: unknown) {
     const fetchMock = vi.fn<typeof fetch>(async (url) => {

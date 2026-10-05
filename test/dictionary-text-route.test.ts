@@ -27,6 +27,16 @@ describe('POST /dictionary/text/lookup', () => {
     expect(lookUpText).toHaveBeenCalledWith(expect.anything(), 'The dog barks.')
   })
 
+  it('passes the language the page names on to the lookup', async () => {
+    await post({ text: 'Tengo un perro', lang: 'es' })
+    expect(lookUpText).toHaveBeenCalledWith(expect.anything(), 'Tengo un perro', 'es')
+  })
+
+  it('refuses a language the dictionary does not index', async () => {
+    expect((await post({ text: 'Xin chào', lang: 'vi' })).status).toBe(400)
+    expect(lookUpText).not.toHaveBeenCalled()
+  })
+
   // The same ceiling as the `translate` task, because both layers read one passage.
   it('refuses a passage over the cap without touching the database', async () => {
     const res = await post({ text: 'x'.repeat(1001) })

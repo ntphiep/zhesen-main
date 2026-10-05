@@ -19,7 +19,10 @@ const rateLimit = createRateLimiter({ limit: PASSAGES_PER_MINUTE, windowMs: 60_0
 
 // The same ceiling as the `translate` task, because the two layers read the same passage
 // and a text one layer refuses is a text the page cannot finish answering.
-const requestBody = z.object({ text: z.string().trim().min(1).max(1000) })
+const requestBody = z.object({
+  text: z.string().trim().min(1).max(1000),
+  lang: z.enum(['en', 'es', 'zh']).optional(),
+})
 
 export async function POST(request: Request) {
   const caller = clientKey(request)
@@ -45,5 +48,7 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Đoạn văn bản quá dài hoặc để trống.' }, { status: 400 })
   }
 
-  return Response.json(await lookUpText(createContentClient(), parsed.data.text))
+  const { text, lang } = parsed.data
+  const client = createContentClient()
+  return Response.json(await (lang ? lookUpText(client, text, lang) : lookUpText(client, text)))
 }
