@@ -100,27 +100,31 @@ describe('parseDueRows', () => {
   })
 })
 
-/** PostgREST answers the three RPCs; each push endpoint answers by its last path segment. */
-function fakeFetch(due: unknown, rpcStatus: Partial<Record<string, number>> = {}) {
+/** PostgREST answers the four RPCs; each push endpoint answers by its last path segment. */
+function fakeFetch(due: unknown, rpcStatus: Partial<Record<string, number>> = {}, claimed: (user: string) => boolean = () => true) {
   const calls: { url: string; headers: Record<string, string>; body: unknown }[] = []
   const impl = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
     const url = String(input)
     const headers = Object.fromEntries(new Headers(init?.headers).entries())
     const rpc = /\/rpc\/(\w+)$/.exec(url)?.[1]
-    calls.push({ url, headers, body: rpc ? JSON.parse(String(init?.body)) : init?.body })
+    const body: unknown = rpc ? JSON.parse(String(init?.body)) : init?.body
+    calls.push({ url, headers, body })
     if (rpc) {
       const status = rpcStatus[rpc] ?? 200
-      return new Response(status === 200 ? JSON.stringify(rpc === 'reminders_due' ? due : 1) : 'boom', { status })
+      if (status !== 200) return new Response('boom', { status })
+      const user = typeof body === 'object' && body !== null && 'p_user_id' in body ? String(body.p_user_id) : ''
+      const answer = rpc === 'reminders_due' ? due : rpc === 'reminders_claim' ? claimed(user) : rpc === 'reminders_release' ? true : 1
+      return new Response(JSON.stringify(answer), { status })
     }
     const answer = url.split('/').pop()
     if (answer === 'timeout') throw new DOMException('The operation was aborted due to timeout', 'TimeoutError')
-    return new Response('', { status: Number(answer) })
+    return new Response('', { status: Number(answer), headers: answer === '429' ? { 'Retry-After': '3600' } : {} })
   })
   return { impl, calls }
 }
 
-async function runWith(due: unknown, rpcStatus?: Partial<Record<string, number>>) {
-  const { impl, calls } = fakeFetch(due, rpcStatus)
+async function runWith(due: unknown, rpcStatus?: Partial<Record<string, number>>, claimed?: (user: string) => boolean) {
+  const { impl, calls } = fakeFetch(due, rpcStatus, claimed)
   const log = vi.fn()
   const vapid = await testVapid()
   const options: RunOptions = {
@@ -129,55 +133,85 @@ async function runWith(due: unknown, rpcStatus?: Partial<Record<string, number>>
   return { options, calls, log, result: () => run(options) }
 }
 
-const rpcBody = (calls: { url: string; body: unknown }[], name: string) =>
-  calls.find((c) => c.url.endsWith(`/rpc/${name}`))?.body
+const rpcBodies = (calls: { url: string; body: unknown }[], name: string) =>
+  calls.filter((c) => c.url.endsWith(`/rpc/${name}`)).map((c) => c.body)
+const AT = '2026-10-05T13:30:00.000Z'
+/** Each call in order, an RPC by its name and a push by its URL. */
+const order = (calls: { url: string }[]) => calls.map((c) => c.url.replace('http://rest:3000/rpc/', ''))
 
 describe('run', () => {
-  it('stamps a user once one push lands, and sends the headers the push services read', async () => {
+  it('claims the user before the first push, and sends the headers the push services read', async () => {
     const { calls, result } = await runWith([
       { user_id: ids.a, due: 7, subscriptions: [sub(ids.s1, 'https://fcm.googleapis.com/fcm/send/201')] },
     ])
     expect(await result()).toEqual({ users: 1, sent: 1, gone: 0, failed: 0 })
+    expect(order(calls)).toEqual(['reminders_due', 'reminders_claim', 'https://fcm.googleapis.com/fcm/send/201'])
 
     const due = calls[0]
-    expect(due.url).toBe('http://rest:3000/rpc/reminders_due')
     expect(due.headers).toMatchObject({ 'content-profile': 'admin', apikey: 'service-key', authorization: 'Bearer service-key' })
-    expect(due.body).toEqual({ p_now: '2026-10-05T13:30:00.000Z' })
+    expect(due.body).toEqual({ p_now: AT })
+    expect(calls[1].body).toEqual({ p_user_id: ids.a, p_now: AT })
 
-    const push = calls[1]
-    expect(push.url).toBe('https://fcm.googleapis.com/fcm/send/201')
+    const push = calls[2]
     expect(push.headers).toMatchObject({
       ttl: '14400', urgency: 'normal', topic: 'review',
       'content-encoding': 'aes128gcm', 'content-type': 'application/octet-stream',
     })
     expect(push.headers.authorization).toMatch(/^vapid t=.+, k=/)
-    expect(rpcBody(calls, 'reminders_sent')).toEqual({ p_user_ids: [ids.a], p_now: '2026-10-05T13:30:00.000Z' })
-    expect(rpcBody(calls, 'push_subscriptions_gone')).toBeUndefined()
   })
 
-  it('drops a subscription the service answers 404 or 410 for, without stamping', async () => {
+  it('sends nothing to a user another run already claimed today', async () => {
     const { calls, result } = await runWith([
-      { user_id: ids.a, due: 2, subscriptions: [
-        sub(ids.s1, 'https://fcm.googleapis.com/fcm/send/404'), sub(ids.s2, 'https://web.push.apple.com/410'),
-      ] },
-    ])
-    expect(await result()).toEqual({ users: 0, sent: 0, gone: 2, failed: 0 })
-    expect(rpcBody(calls, 'push_subscriptions_gone')).toEqual({ p_ids: [ids.s1, ids.s2] })
-    expect(rpcBody(calls, 'reminders_sent')).toBeUndefined()
+      { user_id: ids.a, due: 2, subscriptions: [sub(ids.s1, 'https://fcm.googleapis.com/fcm/send/201')] },
+    ], {}, () => false)
+    expect(await result()).toEqual({ users: 0, sent: 0, gone: 0, failed: 0 })
+    expect(order(calls)).toEqual(['reminders_due', 'reminders_claim'])
   })
 
-  it.each(['429', '500', 'timeout'])('leaves a %s for the next hour: no stamp, no delete, one log line', async (answer) => {
+  it('throws before any push when the claim fails, so a failure never sends twice', async () => {
+    const { calls, result } = await runWith([
+      { user_id: ids.a, due: 2, subscriptions: [sub(ids.s1, 'https://fcm.googleapis.com/fcm/send/201')] },
+    ], { reminders_claim: 500 })
+    await expect(result()).rejects.toThrow('rpc reminders_claim: HTTP 500')
+    expect(order(calls)).toEqual(['reminders_due', 'reminders_claim'])
+  })
+
+  it.each(['403', '404', '410'])('drops a subscription the service answers %s for, and gives the day back', async (answer) => {
+    const { calls, result } = await runWith([
+      { user_id: ids.a, due: 2, subscriptions: [sub(ids.s1, `https://fcm.googleapis.com/fcm/send/${answer}`)] },
+    ])
+    expect(await result()).toEqual({ users: 0, sent: 0, gone: 1, failed: 0 })
+    expect(rpcBodies(calls, 'reminders_release')).toEqual([{ p_user_id: ids.a, p_now: AT }])
+    expect(rpcBodies(calls, 'push_subscriptions_gone')).toEqual([{ p_ids: [ids.s1] }])
+  })
+
+  it.each(['500', 'timeout'])('gives the day back on a %s for the next hour, with one log line', async (answer) => {
     const { calls, log, result } = await runWith([
       { user_id: ids.a, due: 2, subscriptions: [sub(ids.s1, `https://fcm.googleapis.com/fcm/send/${answer}`)] },
     ])
     expect(await result()).toEqual({ users: 0, sent: 0, gone: 0, failed: 1 })
-    expect(rpcBody(calls, 'reminders_sent')).toBeUndefined()
-    expect(rpcBody(calls, 'push_subscriptions_gone')).toBeUndefined()
+    expect(rpcBodies(calls, 'reminders_release')).toEqual([{ p_user_id: ids.a, p_now: AT }])
+    expect(rpcBodies(calls, 'push_subscriptions_gone')).toEqual([])
     expect(log).toHaveBeenCalledTimes(1)
     expect(log.mock.calls[0][0]).toContain(ids.s1)
   })
 
-  it('stamps a user when one of several browsers is reached', async () => {
+  it('stops pushing to a service that answers 429 for the rest of the run, and logs its Retry-After', async () => {
+    const { calls, log, result } = await runWith([
+      { user_id: ids.a, due: 2, subscriptions: [sub(ids.s1, 'https://fcm.googleapis.com/fcm/send/429')] },
+      { user_id: ids.b, due: 5, subscriptions: [
+        sub(ids.s2, 'https://fcm.googleapis.com/fcm/send/201'), sub(ids.s3, 'https://web.push.apple.com/201'),
+      ] },
+    ])
+    expect(await result()).toEqual({ users: 1, sent: 1, gone: 0, failed: 2 })
+    expect(calls.some((c) => c.url === 'https://fcm.googleapis.com/fcm/send/201')).toBe(false)
+    expect(calls.some((c) => c.url === 'https://web.push.apple.com/201')).toBe(true)
+    expect(log).toHaveBeenCalledTimes(1)
+    expect(log.mock.calls[0][0]).toContain('Retry-After 3600')
+    expect(rpcBodies(calls, 'reminders_release')).toEqual([{ p_user_id: ids.a, p_now: AT }])
+  })
+
+  it('keeps the claim when one of several browsers is reached', async () => {
     const { calls, result } = await runWith([
       { user_id: ids.a, due: 2, subscriptions: [
         sub(ids.s1, 'https://fcm.googleapis.com/fcm/send/410'), sub(ids.s2, 'https://fcm.googleapis.com/fcm/send/201'),
@@ -185,8 +219,17 @@ describe('run', () => {
       { user_id: ids.b, due: 5, subscriptions: [sub(ids.s3, 'https://fcm.googleapis.com/fcm/send/500')] },
     ])
     expect(await result()).toEqual({ users: 1, sent: 1, gone: 1, failed: 1 })
-    expect(rpcBody(calls, 'reminders_sent')).toEqual({ p_user_ids: [ids.a], p_now: '2026-10-05T13:30:00.000Z' })
-    expect(rpcBody(calls, 'push_subscriptions_gone')).toEqual({ p_ids: [ids.s1] })
+    expect(rpcBodies(calls, 'reminders_release')).toEqual([{ p_user_id: ids.b, p_now: AT }])
+    expect(rpcBodies(calls, 'push_subscriptions_gone')).toEqual([{ p_ids: [ids.s1] }])
+  })
+
+  it('logs a failed release and goes on to the next user', async () => {
+    const { log, result } = await runWith([
+      { user_id: ids.a, due: 2, subscriptions: [sub(ids.s1, 'https://fcm.googleapis.com/fcm/send/500')] },
+      { user_id: ids.b, due: 5, subscriptions: [sub(ids.s2, 'https://fcm.googleapis.com/fcm/send/201')] },
+    ], { reminders_release: 500 })
+    expect(await result()).toEqual({ users: 1, sent: 1, gone: 0, failed: 1 })
+    expect(log.mock.calls.map((c) => c[0]).join('\n')).toContain(`release ${ids.a}: rpc reminders_release: HTTP 500`)
   })
 
   it('signs one JWT per push service for the whole run', async () => {
@@ -209,7 +252,7 @@ describe('run', () => {
       { user_id: ids.a, due: 7, subscriptions: [sub(ids.s1, 'https://fcm.googleapis.com/fcm/send/201')] },
     ])
     await result()
-    const body = calls[1].body
+    const body = calls[2].body
     expect(body).toBeInstanceOf(Uint8Array)
     expect(body instanceof Uint8Array && body.length).toBe(86 + '{"due":7}'.length + 1 + 16)
   })
@@ -220,7 +263,7 @@ describe('run', () => {
     expect(calls).toHaveLength(1)
   })
 
-  it.each(['reminders_due', 'reminders_sent', 'push_subscriptions_gone'])('throws when %s fails', async (name) => {
+  it.each(['reminders_due', 'push_subscriptions_gone'])('throws when %s fails', async (name) => {
     const { result } = await runWith([
       { user_id: ids.a, due: 2, subscriptions: [
         sub(ids.s1, 'https://fcm.googleapis.com/fcm/send/201'), sub(ids.s2, 'https://fcm.googleapis.com/fcm/send/410'),

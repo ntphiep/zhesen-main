@@ -4,9 +4,11 @@
 --
 -- RLS scopes both tables to their owner, and only a permanent account may create a reminder:
 -- an anonymous account lives in one browser's cookie and has no page to turn it off from.
--- sent_on is written only by admin.reminders_sent (0142), so the learner holds no privilege
--- on it. A subscription is written only by public.push_subscribe, which moves an endpoint to
--- the account that registered it last, so a shared browser reminds the last account only.
+-- sent_on is written only by admin.reminders_claim and admin.reminders_release (0142), so
+-- the learner holds no privilege on it. A subscription row is created only by
+-- public.push_subscribe, which moves an endpoint to the account that turned the reminder on
+-- there last, so a shared browser reminds that account only. Its owner may update the keys
+-- of their own row, which a browser can rotate.
 --
 -- The endpoint is limited to the push services browsers use, because the sender on the
 -- instance POSTs to it: FCM (Chrome, Android, Opera, Samsung), Mozilla, Apple and WNS (Edge).
@@ -47,30 +49,42 @@ create trigger reminders_set_updated_at
 alter table public.reminders enable row level security;
 alter table public.push_subscriptions enable row level security;
 
+drop policy if exists reminders_select_own on public.reminders;
 create policy reminders_select_own on public.reminders
   for select to authenticated using (user_id = (select auth.uid()));
+drop policy if exists reminders_insert_own on public.reminders;
 create policy reminders_insert_own on public.reminders
   for insert to authenticated with check (
     user_id = (select auth.uid())
     and not coalesce(((select auth.jwt()) ->> 'is_anonymous')::boolean, false)
   );
+drop policy if exists reminders_update_own on public.reminders;
 create policy reminders_update_own on public.reminders
   for update to authenticated
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
+drop policy if exists reminders_delete_own on public.reminders;
 create policy reminders_delete_own on public.reminders
   for delete to authenticated using (user_id = (select auth.uid()));
 
+drop policy if exists push_subscriptions_select_own on public.push_subscriptions;
 create policy push_subscriptions_select_own on public.push_subscriptions
   for select to authenticated using (user_id = (select auth.uid()));
+drop policy if exists push_subscriptions_delete_own on public.push_subscriptions;
 create policy push_subscriptions_delete_own on public.push_subscriptions
   for delete to authenticated using (user_id = (select auth.uid()));
+drop policy if exists push_subscriptions_update_own on public.push_subscriptions;
+create policy push_subscriptions_update_own on public.push_subscriptions
+  for update to authenticated
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
 
 -- postgres's default privileges in public hand every API role every privilege on a new
 -- table (0058).
 revoke all on public.reminders, public.push_subscriptions from anon, authenticated, service_role;
 grant select, delete on public.reminders, public.push_subscriptions to authenticated;
 grant insert (hour, time_zone), update (hour, time_zone) on public.reminders to authenticated;
+grant update (p256dh, auth) on public.push_subscriptions to authenticated;
 
 -- One row per browser. An endpoint already held by another account moves to the caller.
 -- Ten browsers per account is the ceiling; the sender removes the ones that expire.
@@ -87,6 +101,8 @@ begin
   if v_uid is null or coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) then
     raise exception 'permanent_account_required' using errcode = '42501';
   end if;
+  -- Serialises one account's calls, so concurrent ones cannot all pass the count below.
+  perform pg_advisory_xact_lock(hashtextextended('push_subscribe:' || v_uid::text, 0));
   if (select count(*) from public.push_subscriptions
       where user_id = v_uid and endpoint is distinct from p_endpoint) >= 10 then
     raise exception 'too_many_devices' using errcode = '54000';

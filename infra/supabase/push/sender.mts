@@ -128,8 +128,13 @@ export interface RunOptions {
 
 export interface RunResult { users: number; sent: number; gone: number; failed: number }
 
-/** One hourly pass. A 2xx stamps the user, 404 or 410 drops the subscription, anything else
- *  is logged and tried again next hour. A failed RPC throws, so the unit exits 1. */
+/** A push service's answer that the subscription will never work again: dropped by the
+ *  browser (404, 410), or made for a VAPID key this deployment no longer holds (403). */
+const GONE = new Set([403, 404, 410])
+
+/** One hourly pass. Each user is claimed for the local day before the first push and given
+ *  back only when no browser was reached, so nothing reminds a learner twice in one day.
+ *  A 429 stops pushes to that service for the run. A failed RPC throws, so the unit exits 1. */
 export async function run(o: RunOptions): Promise<RunResult> {
   const rpc = async (name: string, body: object): Promise<unknown> => {
     const res = await o.fetch(`${o.restUrl}/rpc/${name}`, {
@@ -150,16 +155,20 @@ export async function run(o: RunOptions): Promise<RunResult> {
   const rows = parseDueRows(await rpc('reminders_due', { p_now: at }))
   // One JWT per push service per run.
   const tokens = new Map<string, Promise<string>>()
-  const stamped: string[] = []
+  // Push services that answered 429 get nothing more this run.
+  const throttled = new Set<string>()
   const gone: string[] = []
+  let users = 0
   let sent = 0
   let failed = 0
 
   for (const row of rows) {
+    if ((await rpc('reminders_claim', { p_user_id: row.userId, p_now: at })) !== true) continue
     const payload = utf8.encode(JSON.stringify({ due: row.due }))
     let reached = false
     for (const sub of row.subscriptions) {
       const origin = new URL(sub.endpoint).origin
+      if (throttled.has(origin)) { failed++; continue }
       let token = tokens.get(origin)
       if (!token) { token = vapidAuth(sub.endpoint, o.vapid, o.now); tokens.set(origin, token) }
       try {
@@ -174,19 +183,31 @@ export async function run(o: RunOptions): Promise<RunResult> {
         })
         const text = await res.text()
         if (res.ok) { reached = true; sent++ }
-        else if (res.status === 404 || res.status === 410) gone.push(sub.id)
-        else { failed++; o.log(`push ${origin} ${sub.id}: HTTP ${res.status} ${text.slice(0, 200)}`) }
+        else if (GONE.has(res.status)) gone.push(sub.id)
+        else {
+          failed++
+          if (res.status === 429) throttled.add(origin)
+          const wait = res.status === 429 ? `, Retry-After ${res.headers.get('retry-after') ?? 'unset'}, paused for this run` : ''
+          o.log(`push ${origin} ${sub.id}: HTTP ${res.status}${wait} ${text.slice(0, 200)}`)
+        }
       } catch (e) {
         failed++
         o.log(`push ${origin} ${sub.id}: ${e instanceof Error ? e.message : String(e)}`)
       }
     }
-    if (reached) stamped.push(row.userId)
+    if (reached) users++
+    else {
+      // A failed release only costs this learner today's reminder, never a second one.
+      try {
+        await rpc('reminders_release', { p_user_id: row.userId, p_now: at })
+      } catch (e) {
+        o.log(`release ${row.userId}: ${e instanceof Error ? e.message : String(e)}`)
+      }
+    }
   }
 
-  if (stamped.length) await rpc('reminders_sent', { p_user_ids: stamped, p_now: at })
   if (gone.length) await rpc('push_subscriptions_gone', { p_ids: gone })
-  return { users: stamped.length, sent, gone: gone.length, failed }
+  return { users, sent, gone: gone.length, failed }
 }
 
 function required(name: string): string {

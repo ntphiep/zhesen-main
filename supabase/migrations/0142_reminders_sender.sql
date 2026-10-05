@@ -1,10 +1,10 @@
 -- 0142_reminders_sender.sql
--- The three calls the push sender (infra/supabase/push/sender.mts) makes every hour as
+-- The four calls the push sender (infra/supabase/push/sender.mts) makes every hour as
 -- service_role, through PostgREST's admin schema like the sampler (0072).
 --
 -- reviewed-destructive: lead, 2026-10-05; deletes only the feature's own re-registered or expired push subscriptions
 --
--- TO ROLL BACK: drop the three functions.
+-- TO ROLL BACK: drop the four functions.
 
 -- Who gets a reminder now: the local hour has reached the learner's hour and is at most 22,
 -- nothing was sent on this local date, a browser is registered, and the session has cards.
@@ -41,23 +41,43 @@ as $$
     and s.due > 0;
 $$;
 
--- Stamps the local date each user was reminded on, so the next hourly run skips them.
-create or replace function admin.reminders_sent(p_user_ids uuid[], p_now timestamptz default now())
-returns integer
+-- Claims a user for today before the first push: true once per local date, so neither a
+-- failure after a push nor a second run can remind the same learner twice in one day.
+create or replace function admin.reminders_claim(p_user_id uuid, p_now timestamptz default now())
+returns boolean
 language sql
 security definer
 set search_path = pg_catalog, public
 as $$
-  with stamped as (
+  with claimed as (
     update public.reminders r
        set sent_on = (p_now at time zone r.time_zone)::date
-     where r.user_id = any (p_user_ids)
+     where r.user_id = p_user_id
+       and r.sent_on is distinct from (p_now at time zone r.time_zone)::date
     returning 1
   )
-  select count(*)::integer from stamped;
+  select exists (select 1 from claimed);
 $$;
 
--- Subscriptions the push service answered 404 or 410 for: the browser dropped them.
+-- Gives today's claim back when no browser was reached, so the next hour tries again.
+create or replace function admin.reminders_release(p_user_id uuid, p_now timestamptz default now())
+returns boolean
+language sql
+security definer
+set search_path = pg_catalog, public
+as $$
+  with released as (
+    update public.reminders r
+       set sent_on = null
+     where r.user_id = p_user_id
+       and r.sent_on = (p_now at time zone r.time_zone)::date
+    returning 1
+  )
+  select exists (select 1 from released);
+$$;
+
+-- Subscriptions the push service answered 403, 404 or 410 for: the browser dropped them, or
+-- they belong to a VAPID key this deployment no longer holds.
 create or replace function admin.push_subscriptions_gone(p_ids uuid[])
 returns integer
 language sql
@@ -72,10 +92,12 @@ as $$
 $$;
 
 revoke all on function admin.reminders_due(timestamptz) from public, anon, authenticated;
-revoke all on function admin.reminders_sent(uuid[], timestamptz) from public, anon, authenticated;
+revoke all on function admin.reminders_claim(uuid, timestamptz) from public, anon, authenticated;
+revoke all on function admin.reminders_release(uuid, timestamptz) from public, anon, authenticated;
 revoke all on function admin.push_subscriptions_gone(uuid[]) from public, anon, authenticated;
 grant execute on function admin.reminders_due(timestamptz) to service_role;
-grant execute on function admin.reminders_sent(uuid[], timestamptz) to service_role;
+grant execute on function admin.reminders_claim(uuid, timestamptz) to service_role;
+grant execute on function admin.reminders_release(uuid, timestamptz) to service_role;
 grant execute on function admin.push_subscriptions_gone(uuid[]) to service_role;
 
 notify pgrst, 'reload schema';

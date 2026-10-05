@@ -140,9 +140,11 @@ snapshots and compression analytics 3, usage history 30. OmniRoute's defaults ar
 365, and its cleanup runs every 6 hours with a `VACUUM` after it.
 
 Review reminder (issue #91): `zhesen-push.timer` runs `docker compose run --rm push` every hour.
-`push/sender.mts` asks `admin.reminders_due` who has reached their hour, sends one web push per
-browser, stamps the users reached and deletes the subscriptions a push service answered 404 or 410
-for. One line per run, plus one per failed push, in `journalctl -u zhesen-push`. The VAPID pair is
+`push/sender.mts` asks `admin.reminders_due` who has reached their hour, claims each user for the
+local day before sending one web push per browser, gives the day back when no browser was reached,
+and deletes the subscriptions a push service answered 403, 404 or 410 for. A 429 pauses that push
+service until the next run. One line per run, plus one per failed push, in
+`journalctl -u zhesen-push`. The VAPID pair is
 SSM `/zhesen/prod/vapid_public_key` (String) and `/zhesen/prod/vapid_private_key` (SecureString),
 made by hand: a new pair orphans every subscription, and the public half must equal Vercel's
 `NEXT_PUBLIC_VAPID_PUBLIC_KEY`. Run one pass by hand with `systemctl start zhesen-push.service`.
