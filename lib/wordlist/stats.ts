@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/languages'
 import { computeStreak, getActivityDays, streakState, type Streak } from './activity'
 import { SESSION_LIMITS } from './review'
-import type { WordStatus } from './types'
+import type { NotebookState, WordStatus } from './types'
 import { localDay } from '@/lib/wordlist/activity'
 import { fetchAllRows } from '@/lib/supabase/paginate'
 
@@ -120,6 +120,27 @@ export interface LangProgress {
 export function progressPart(reps: number, intervalDays: number): Exclude<keyof LangProgress, 'total'> {
   if (intervalDays >= MATURE_DAYS) return 'learned'
   return reps > 0 ? 'learning' : 'unseen'
+}
+
+const notebookRow = z.object({
+  entry_id: z.string(),
+  status: z.enum(['new', 'learning', 'known']),
+  fsrs_reps: z.number(),
+  fsrs_scheduled_days: z.number(),
+})
+
+/** The saved ones among `entryIds`, in one query that RLS scopes to the reader. Known is
+ *  the learner's own mark or the mature interval the progress bar counts as learned. */
+export async function readNotebookStates(supabase: SupabaseClient, entryIds: string[]): Promise<Map<string, NotebookState>> {
+  if (entryIds.length === 0) return new Map()
+  const { data, error } = await supabase.from('user_words')
+    .select('entry_id, status, fsrs_reps, fsrs_scheduled_days')
+    .in('entry_id', entryIds)
+  if (error) throw error
+  return new Map(notebookRow.array().parse(data).map((r): [string, NotebookState] => [
+    r.entry_id,
+    r.status === 'known' || progressPart(r.fsrs_reps, r.fsrs_scheduled_days) === 'learned' ? 'known' : 'saved',
+  ]))
 }
 
 export function computeLangProgress(rows: StatRow[]): Record<LangCode, LangProgress> {

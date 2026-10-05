@@ -17,6 +17,7 @@ import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { TranslateLangCode } from '@/lib/translate/azure'
 import type { Direction } from '@/lib/dictionary/search'
 import { isLangCode, type LangCode } from '@/lib/languages'
+import { usePassageNotebook } from '@/lib/hooks/usePassageNotebook'
 import s from './Lookup.module.css'
 import { ErrorLine } from './ErrorLine'
 
@@ -189,6 +190,9 @@ export function PassageBlock({ text, direction, targets, known }: {
     }
   }, [words, listed])
 
+  const viText = state.kind === 'done' && state.text === trimmed ? state.translations.vi ?? null : null
+  const notebook = usePassageNotebook(direction === 'fw' ? source : null, viText)
+
   // Reuses the translation this block already holds: no second Azure request, and each
   // search goes through the cached route.
   useEffect(() => {
@@ -211,7 +215,6 @@ export function PassageBlock({ text, direction, targets, known }: {
 
   if (!trimmed) return null
   const unseen = (list: DictEntryPreview[]) => (known ? list.filter((e) => !known.has(e.id)) : list)
-  const viText = state.kind === 'done' && state.text === trimmed ? state.translations.vi ?? null : null
   // "give up" typed alone is already the panel's own top hit.
   const phrases = (words?.phrases ?? []).filter((p) => !known?.has(p.entry.id))
 
@@ -236,9 +239,31 @@ export function PassageBlock({ text, direction, targets, known }: {
           {/* The passage is the reading surface: every word the dictionary holds opens the
               popover, and a save keeps its sentence. Past the word-list ceiling it is plain. */}
           <p lang={words.lang} className="m-0 whitespace-pre-wrap text-[1.0625rem] text-(--zs-ink)">
-            <TappableText text={listed} lang={words.lang} resolved={source} translation={viText} />
+            <TappableText text={listed} lang={words.lang} resolved={source} translation={viText} notes={notebook.notes} />
             {trimmed.slice(listed.length)}
           </p>
+          {notebook.notes && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-(--zs-soft)">
+              {/* The three line styles say what the colours say. */}
+              <span className="underline decoration-sea-500 decoration-dotted underline-offset-2">Chưa lưu</span>
+              <span className="rounded-[3px] bg-(--zs-mark) px-0.5 text-(--zs-mark-ink) underline decoration-sea-500 decoration-dashed underline-offset-2">Đang học</span>
+              <span className="text-(--zs-ink) underline decoration-sea-500 decoration-solid underline-offset-2">Đã biết</span>
+              {notebook.offer > 0 && (
+                <button
+                  type="button"
+                  onClick={notebook.saveOffer}
+                  disabled={notebook.saving}
+                  className="rounded-full bg-(--zs-btn) px-3 py-1 text-xs font-semibold text-(--zs-btn-ink) transition-colors duration-150 ease-std enabled:hover:bg-(--zs-btn-hover) disabled:opacity-60 motion-reduce:transition-none"
+                >
+                  Lưu {notebook.offer} từ mới trình độ {words.lang === 'zh' ? 'HSK1 tới HSK4' : 'A1 tới B2'}
+                </button>
+              )}
+              <span role="status" className="font-semibold text-(--zs-ink)">
+                {notebook.savedCount !== null && `Đã lưu ${notebook.savedCount} từ vào sổ tay.`}
+              </span>
+              {notebook.failed && <ErrorLine>Chưa lưu được. Thử lại.</ErrorLine>}
+            </div>
+          )}
         </div>
       )}
 

@@ -4,6 +4,7 @@ import { tokenize, type Segment } from '@/lib/reader/tokenize'
 import { WordPopover } from './WordPopover'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
 import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
+import { STATUS_LABELS, type WordNote } from '@/lib/wordlist/types'
 import type { LangCode } from '@/lib/languages'
 import { loadSupabaseClient } from '@/lib/supabase/loadClient'
 import { sentenceAt } from '@/lib/reader/sentence'
@@ -38,6 +39,12 @@ function withMarks(text: string, from: number, marks: [number, number][]): React
   return out
 }
 
+/** A noted word's name says what its line style and colour show. */
+function noteLabel(word: string, note: WordNote): string | undefined {
+  if (note.state !== 'new') return `${word}, ${STATUS_LABELS[note.state === 'saved' ? 'learning' : 'known']}`
+  return note.level ? `${word}, trình độ ${note.level}` : undefined
+}
+
 /** Room kept between the popover and the edge of the viewport. */
 const GUTTER = 12
 
@@ -62,7 +69,7 @@ function placePopover(anchor: HTMLElement, word: HTMLElement) {
  * public (anon) client, and a failure degrades to plain text.
  */
 export function TappableText({
-  text, lang, resolved, quiet = false, mark = [], marks = [], translation = null,
+  text, lang, resolved, quiet = false, mark = [], marks = [], translation = null, notes,
 }: {
   text: string
   lang: LangCode
@@ -80,6 +87,9 @@ export function TappableText({
   /** The Vietnamese of the whole text. A saved word keeps its sentence as the example, and
    *  this translation only when that sentence is the whole text. */
   translation?: string | null
+  /** The reader's notebook by entry id, signed in only: saved words sit on the mark with a
+   *  dashed line, known ones in ink with a solid line, and a new word may carry its level. */
+  notes?: ReadonlyMap<string, WordNote>
 }) {
   // Tokenised up front, not left empty until the effect below answers: the words are on
   // screen from the first paint and only become tappable once the entries arrive. Starting
@@ -225,25 +235,33 @@ export function TappableText({
           return tail ? <span key={i} className="whitespace-nowrap">{word}{tail}</span> : <span key={i}>{word}</span>
         }
         const on = active === i
+        const note = entry && notes?.get(entry.id)
+        const ink = note?.state === 'saved' ? 'bg-(--zs-mark) text-(--zs-mark-ink)'
+          : note?.state === 'known' ? 'text-(--zs-ink)'
+            : bold || !quiet ? 'text-(--zs-pen)' : ''
         return (
           // Nowrap with the punctuation after it, which otherwise wrapped alone at some widths.
           <span key={i} className={`relative ${tail ? 'whitespace-nowrap' : ''}`}>
             <button
               type="button"
               ref={(el) => { if (el) words.current.set(i, el); else words.current.delete(i) }}
+              aria-label={note ? noteLabel(seg.text, note) : undefined}
               aria-expanded={on}
               aria-controls={on ? `${id}-pop` : undefined}
               onClick={() => (on ? close() : open(i))}
               // Open and hovered words sit on the chip in ink, which holds 4.5:1 where the
               // blue of a marked word does not. The sea-500 dots hold 3:1 on every surface.
-              className={`rounded-[3px] underline decoration-dotted transition-colors duration-150 ease-std ${lang === 'zh' ? '' : HIT_AREA} ${
+              className={`rounded-[3px] underline transition-colors duration-150 ease-std ${lang === 'zh' ? '' : HIT_AREA} ${
+                note?.state === 'saved' ? 'decoration-dashed' : note?.state === 'known' ? 'decoration-solid' : 'decoration-dotted'
+              } ${
                 quiet ? 'underline-offset-4' : 'underline-offset-2'
               } ${bold ? 'font-bold' : ''} ${
                 on ? 'bg-(--zs-chip) text-(--zs-ink) decoration-transparent'
-                  : `decoration-sea-500 hover:bg-(--zs-chip) hover:text-(--zs-ink) ${bold || !quiet ? 'text-(--zs-pen)' : ''}`
+                  : `decoration-sea-500 hover:bg-(--zs-chip) hover:text-(--zs-ink) ${ink}`
               }`}
             >
               {withMarks(seg.text, offsets[i], marks)}
+              {note?.level && <span className="ml-0.5 inline-block align-super text-[0.625rem] font-bold text-(--zs-soft)">{note.level}</span>}
             </button>
             {tail}
             {on && (

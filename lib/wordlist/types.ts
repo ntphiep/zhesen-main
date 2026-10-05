@@ -52,6 +52,16 @@ export interface UserWord {
   aiFields?: AiField[]
 }
 
+/** Where a dictionary entry stands in the reader's notebook: saved and still being learnt,
+ *  or known. An entry not saved has no state. */
+export type NotebookState = 'saved' | 'known'
+
+/** A word of a passage as its reader sees it: `level` only on a new word worth saving. */
+export interface WordNote {
+  state: NotebookState | 'new'
+  level: string | null
+}
+
 /** The sentence a word was tapped in, kept as the card's example when it is saved. */
 export interface SaveContext {
   text: string
