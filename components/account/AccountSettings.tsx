@@ -13,6 +13,8 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { STATUS_OPTIONS } from '@/lib/wordlist/types'
 import { LANGUAGES } from '@/lib/languages'
 import type { WordlistStats as Stats } from '@/lib/wordlist/stats'
+import type { Reminder } from '@/lib/push/reminders'
+import { ReminderPanel } from './ReminderPanel'
 import { Said } from './Said'
 import s from './Account.module.css'
 
@@ -33,13 +35,15 @@ const ROLE_LABEL: Record<Profile['role'], string> = {
  * still signed in; there is no reset link.
  */
 export function AccountSettings({
-  email, profile, stats, joinedAt,
+  email, profile, stats, joinedAt, reminders,
 }: {
   email: string
   profile: Profile | null
   stats: Stats
   /** When the account was created, as `auth.users.created_at` holds it. */
   joinedAt: string | null
+  /** Absent when the deployment has no VAPID key (`pushConfig`). */
+  reminders?: { publicKey: string; userId: string; current: Reminder | null }
 }) {
   const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
@@ -241,6 +245,8 @@ export function AccountSettings({
           </div>
           {exportFeedback && <Said tone={exportFeedback.tone} text={exportFeedback.text} />}
         </section>
+
+        {reminders && <ReminderPanel {...reminders} />}
       </div>
     </div>
   )

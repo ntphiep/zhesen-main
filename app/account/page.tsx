@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { accountKind } from '@/lib/auth/account'
 import { getProfile } from '@/lib/auth/profile'
 import { getWordlistStats } from '@/lib/wordlist/stats'
+import { getReminder, pushConfig } from '@/lib/push/reminders'
 import { AccountSettings } from '@/components/account/AccountSettings'
 import { AdminEntry } from '@/components/account/AdminEntry'
 import s from '@/components/account/Account.module.css'
@@ -21,8 +22,9 @@ export default async function AccountPage() {
   const user = data.user
   if (kind !== 'permanent' || !user?.email) redirect(kind === 'anonymous' ? '/register' : '/login')
 
-  const [profile, stats] = await Promise.all([
-    getProfile(supabase, user.id), getWordlistStats(supabase),
+  const push = pushConfig()
+  const [profile, stats, reminder] = await Promise.all([
+    getProfile(supabase, user.id), getWordlistStats(supabase), push ? getReminder(supabase, user.id) : null,
   ])
 
   return (
@@ -39,6 +41,7 @@ export default async function AccountPage() {
           profile={profile}
           stats={stats}
           joinedAt={user.created_at ?? null}
+          reminders={push ? { publicKey: push.publicKey, userId: user.id, current: reminder } : undefined}
         />
       </div>
     </main>
