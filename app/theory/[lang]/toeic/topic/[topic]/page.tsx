@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!language || !t) return {}
   return pageMetadata({
     title: `Từ vựng TOEIC: ${t.titleVi}`,
-    description: `Học ${t.words.length} từ TOEIC về ${lowerFirst(t.titleVi)} với nghĩa trong đề, câu ví dụ và phát âm.`,
+    description: `Học ${t.words.length} từ TOEIC về ${lowerFirst(t.titleVi)} với nghĩa trong đề và phát âm.`,
     canonical: toeicTopicPath(language.code, t.id),
   })
 }

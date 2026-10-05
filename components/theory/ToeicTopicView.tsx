@@ -22,7 +22,8 @@ export function ToeicTopicView({ language, guide, topic, words }: {
   words: ToeicStudyWord[]
 }) {
   const next = guide.wordTopics[guide.wordTopics.findIndex((t) => t.id === topic.id) + 1]
-  const saveable = words.flatMap((w) => (w.entry ? [{ entry: w.entry, example: w.example }] : []))
+  const path = toeicTopicPath(language.code, topic.id)
+  const drafts = words.flatMap((w) => (w.draft ? [w.draft] : []))
   return (
     <main className={`${s.page} font-ui`} data-l={language.code}>
       <PageHead
@@ -31,16 +32,16 @@ export function ToeicTopicView({ language, guide, topic, words }: {
         title={topic.titleVi}
         lede="Nghĩa ghi theo cách dùng trong đề."
       >
-        {saveable.length > 0 && (
+        {drafts.length > 0 && (
           <div className="mt-5">
-            <ToeicTopicSave lang={language.code} path={toeicTopicPath(language.code, topic.id)} words={saveable} />
+            <ToeicTopicSave lang={language.code} path={path} drafts={drafts} />
           </div>
         )}
       </PageHead>
 
       <div className={`${s.body} mx-auto max-w-page px-6`}>
         <ul className={`${s.grid} m-0 list-none p-0`} data-reveal="">
-          {words.map((w) => <WordCard key={w.word} lang={language.code} word={w} />)}
+          {words.map((w) => <WordCard key={w.word} lang={language.code} path={path} word={w} />)}
         </ul>
         {next && <NextPage href={toeicTopicPath(language.code, next.id)} title={next.titleVi} prefetch={false} />}
       </div>
@@ -48,7 +49,7 @@ export function ToeicTopicView({ language, guide, topic, words }: {
   )
 }
 
-function WordCard({ lang, word: w }: { lang: LangCode; word: ToeicStudyWord }) {
+function WordCard({ lang, path, word: w }: { lang: LangCode; path: string; word: ToeicStudyWord }) {
   return (
     <li className={`${s.card} flex flex-col gap-2.5`} data-accent="">
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
@@ -67,9 +68,9 @@ function WordCard({ lang, word: w }: { lang: LangCode; word: ToeicStudyWord }) {
           {w.example.byModel && <p className={s.label}>câu soạn mới</p>}
         </div>
       )}
-      {w.entry && (
+      {w.entry && w.draft && (
         <div className="mt-auto pt-1">
-          <Suspense><AddToWordlistButton entry={w.entry} /></Suspense>
+          <Suspense><AddToWordlistButton entry={w.entry} draft={w.draft} returnTo={path} /></Suspense>
         </div>
       )}
     </li>

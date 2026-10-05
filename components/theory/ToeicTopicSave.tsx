@@ -7,22 +7,19 @@ import { loadSupabaseClient } from '@/lib/supabase/loadClient'
 import { announceSaved } from '@/lib/wordlist/pendingSave'
 import { ArrowRight, Warn } from './Glyphs'
 import s from './Theory.module.css'
-import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
-import type { ToeicExample } from '@/lib/theory/toeicStudy'
-
-/** The tag every word saved from a TOEIC topic carries, which `/practice?tag=` filters on. */
-export const TOEIC_TAG = 'toeic'
+import type { WordDraft } from '@/lib/wordlist/types'
 
 type SaveState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'done'; added: number } | { kind: 'error' }
 
 /** Save every word of a topic not yet in the notebook, with its test meaning, its sentence
  *  and the TOEIC tag. The notebook belongs to an account, so without one the same label
  *  leads to /register and back to the topic. */
-export function ToeicTopicSave({ lang, path, words }: {
+export function ToeicTopicSave({ lang, path, drafts }: {
   lang: LangCode
   path: string
-  words: { entry: DictEntryPreview; example: ToeicExample | null }[]
+  /** Built by `toeicDraft`, as each word's own save is. */
+  drafts: WordDraft[]
 }) {
   const { kind } = useAccount()
   const [state, setState] = useState<SaveState>({ kind: 'idle' })
@@ -31,22 +28,16 @@ export function ToeicTopicSave({ lang, path, words }: {
     setState({ kind: 'busy' })
     try {
       // Imported on the click, as in `LevelWordList`: reading the topic needs neither.
-      const [{ createClient }, { addWords, draftFromDictEntry, listSavedEntryIds }] = await Promise.all([
+      const [{ createClient }, { addWords, listSavedEntryIds }] = await Promise.all([
         loadSupabaseClient(),
         import('@/lib/wordlist/store'),
       ])
       const supabase = createClient()
       const saved = await listSavedEntryIds(supabase, lang)
-      const drafts = words.filter((w) => !saved.has(w.entry.id)).map((w) => ({
-        ...draftFromDictEntry(w.entry),
-        example: w.example?.text ?? null,
-        exampleTranslation: w.example?.vi ?? null,
-        tags: [TOEIC_TAG],
-      }))
       // What `addWords` inserted, not what it was asked to: a save in another tab is invisible above.
-      const added = await addWords(supabase, drafts)
+      const added = await addWords(supabase, drafts.filter((d) => !d.entryId || !saved.has(d.entryId)))
       setState({ kind: 'done', added: added.length })
-      announceSaved(words.map((w) => w.entry.id))
+      announceSaved(drafts.flatMap((d) => (d.entryId ? [d.entryId] : [])))
     } catch {
       setState({ kind: 'error' })
     }
@@ -79,7 +70,7 @@ export function ToeicTopicSave({ lang, path, words }: {
         {label}
       </button>
       {state.kind === 'done' && (
-        <Link href={`/practice?tag=${TOEIC_TAG}`} prefetch={false} className={s.ghost}>
+        <Link href="/practice" prefetch={false} className={s.ghost}>
           Luyện tập <ArrowRight />
           <LinkPending />
         </Link>

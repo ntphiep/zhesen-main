@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { addWord, draftFromDictEntry, isWordSaved, WordAlreadyExistsError } from '@/lib/wordlist/store'
 import { takePendingSave, WORDS_SAVED_EVENT } from '@/lib/wordlist/pendingSave'
 import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
-import type { SaveContext } from '@/lib/wordlist/types'
+import type { SaveContext, WordDraft } from '@/lib/wordlist/types'
 
 type State = 'idle' | 'saving' | 'added' | 'exists' | 'error'
 
@@ -19,12 +19,14 @@ const PILL_STATE: Record<State, string> = {
 }
 
 /** The real save, mounted only once an account is in place. */
-export function SavedButton({ entry, size = 'sm', tone, context }: {
+export function SavedButton({ entry, size = 'sm', tone, context, draft }: {
   entry: DictEntryPreview | DictEntryDetail
   size?: 'sm' | 'lg'
   tone?: 'pane'
   /** The sentence the word was tapped in, saved as its example. */
   context?: SaveContext | null
+  /** A complete row that replaces the one built from the entry. */
+  draft?: WordDraft
 }) {
   const supabase = useMemo(() => createClient(), [])
   const [state, setState] = useState<State>('idle')
@@ -61,7 +63,7 @@ export function SavedButton({ entry, size = 'sm', tone, context }: {
   async function save() {
     setState('saving')
     try {
-      await addWord(supabase, draftFromDictEntry(entry, context))
+      await addWord(supabase, draft ?? draftFromDictEntry(entry, context))
       setState('added')
     } catch (e) {
       setState(e instanceof WordAlreadyExistsError ? 'exists' : 'error')

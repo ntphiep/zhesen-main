@@ -6,7 +6,7 @@ import { LinkPending } from '@/components/ui/LinkPending'
 import { useAccount } from '@/lib/hooks/useAccount'
 import { rememberPendingSave } from '@/lib/wordlist/pendingSave'
 import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
-import type { SaveContext } from '@/lib/wordlist/types'
+import type { SaveContext, WordDraft } from '@/lib/wordlist/types'
 
 // Loaded once an account is known: it reaches supabase-js and zod, which the word page
 // otherwise never needs before it is interactive.
@@ -18,13 +18,16 @@ const SavedButton = dynamic(() => import('./SavedButton').then((m) => m.SavedBut
  * `SavedButton` finishes the save the visitor asked for.
  *
  * `lg` is the word page's primary action: 44px tall, the height of a touch target.
- * `tone="pane"` draws it in the colours of the landing page's language lanes.
+ * `tone="pane"` draws it in the colours of the landing page's language lanes. `draft`
+ * replaces the row built from the entry, and `returnTo` the word page as the way back.
  */
-export function AddToWordlistButton({ entry, size = 'sm', tone, context }: {
+export function AddToWordlistButton({ entry, size = 'sm', tone, context, draft, returnTo }: {
   entry: DictEntryPreview | DictEntryDetail
   size?: 'sm' | 'lg'
   tone?: 'pane'
   context?: SaveContext | null
+  draft?: WordDraft
+  returnTo?: string
 }) {
   const { kind } = useAccount()
 
@@ -32,7 +35,7 @@ export function AddToWordlistButton({ entry, size = 'sm', tone, context }: {
   if (kind !== 'permanent') {
     return (
       <Link
-        href={`/register?next=${encodeURIComponent(entryPath(entry.id))}`}
+        href={`/register?next=${encodeURIComponent(returnTo ?? entryPath(entry.id))}`}
         prefetch={false}
         onClick={() => rememberPendingSave(entry.id)}
         className={tone === 'pane'
@@ -46,5 +49,5 @@ export function AddToWordlistButton({ entry, size = 'sm', tone, context }: {
       </Link>
     )
   }
-  return <SavedButton entry={entry} size={size} tone={tone} context={context} />
+  return <SavedButton entry={entry} size={size} tone={tone} context={context} draft={draft} />
 }

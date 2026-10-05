@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 
 vi.mock('next/navigation', () => ({ notFound: () => { throw new Error('NEXT_NOT_FOUND') } }))
-vi.mock('@/lib/dictionary/cached', () => ({ getCachedEntryDetail: vi.fn() }))
-vi.mock('@/lib/dictionary/learnerCached', () => ({ getCachedLearnerLayer: vi.fn(async () => null) }))
+vi.mock('@/lib/dictionary/cached', () => ({ getCachedEntryDetail: vi.fn(), getCachedInflections: vi.fn(async () => []) }))
+vi.mock('@/lib/theory/toeicLayer', () => ({ getCachedToeicLayer: vi.fn(async () => null) }))
 // A guest: each save leads to /register.
 vi.mock('@/lib/supabase/client', async () => {
   const { accountAuthStub } = await import('./helpers/supabase')
@@ -50,7 +50,7 @@ describe('TOEIC topic page', () => {
   it('names the topic in its title, counts its words and gives it its own canonical', async () => {
     const m = await generateMetadata(params('en', 'office'))
     expect(m.title).toBe('Từ vựng TOEIC: Văn phòng và họp')
-    expect(m.description).toBe(`Học ${office.words.length} từ TOEIC về văn phòng và họp với nghĩa trong đề, câu ví dụ và phát âm.`)
+    expect(m.description).toBe(`Học ${office.words.length} từ TOEIC về văn phòng và họp với nghĩa trong đề và phát âm.`)
     expect(m.alternates?.canonical).toBe('/theory/en/toeic/topic/office')
   })
 
@@ -61,7 +61,10 @@ describe('TOEIC topic page', () => {
     expect(screen.getByRole('link', { name: 'agenda' })).toHaveAttribute('href', '/dictionary/en/agenda')
     expect(screen.queryByRole('link', { name: 'memo' })).not.toBeInTheDocument()
     expect(screen.getByText('memo')).toBeInTheDocument()
-    expect(await screen.findAllByRole('link', { name: 'Thêm vào sổ tay' })).toHaveLength(office.words.length - 1)
+    const saves = await screen.findAllByRole('link', { name: 'Thêm vào sổ tay' })
+    expect(saves).toHaveLength(office.words.length - 1)
+    // Back to the topic, where the save finishes with the test meaning, not the word page's first sense.
+    for (const a of saves) expect(a).toHaveAttribute('href', `/register?next=${encodeURIComponent('/theory/en/toeic/topic/office')}`)
     expect(screen.getByRole('link', { name: /Lưu cả chủ đề vào sổ tay/ })).toBeInTheDocument()
   })
 })
