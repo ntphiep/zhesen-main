@@ -106,3 +106,24 @@ describe('the notebook', () => {
     expect(onSave).toHaveBeenCalledWith('id1', expect.objectContaining({ meaningVi: 'món đồ lạ', aiFields: ['example'] }))
   })
 })
+
+describe('changing the headword after a fill', () => {
+  it('drops the level and the AI labels filled for the old headword', async () => {
+    vi.mocked(callAi).mockResolvedValue({
+      status: 'ok',
+      data: { meaningVi: 'con chó', ipa: '', pos: '', level: 'A1', example: '', exampleVi: '' },
+    })
+    const onAdd = vi.fn()
+    render(<AddWordDialog open onClose={() => {}} onAdd={onAdd} />)
+    await userEvent.click(screen.getByRole('tab', { name: /Thủ công/i }))
+    await userEvent.type(screen.getByPlaceholderText('Ví dụ: dog'), 'dog')
+    await userEvent.click(await screen.findByRole('button', { name: /Điền bằng AI/i }))
+    await screen.findByDisplayValue('con chó')
+    await userEvent.clear(screen.getByPlaceholderText('Ví dụ: dog'))
+    await userEvent.type(screen.getByPlaceholderText('Ví dụ: dog'), 'ubiquitous')
+    await userEvent.click(screen.getByRole('button', { name: /Lưu từ/i }))
+    const draft = onAdd.mock.calls[0][0]
+    expect(draft.level).toBeNull()
+    expect(draft.aiFields).toBeUndefined()
+  })
+})

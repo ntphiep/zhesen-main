@@ -59,6 +59,13 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
   const [match, setMatch] = useState<DictEntryPreview | null>(null)
   const offer = match && match.lang === manualLang && match.headword.toLowerCase() === headword.trim().toLowerCase()
     ? match : null
+  // A level and AI labels belong to the headword they were filled for.
+  const [aiHeadword, setAiHeadword] = useState('')
+  if (headword.trim() !== aiHeadword) {
+    setAiHeadword(headword.trim())
+    if (aiFilled.length > 0) setAiFilled([])
+    if (aiLevel !== null) setAiLevel(null)
+  }
 
   // Adjust state during render, not in an effect: react.dev/learn/you-might-not-need-an-effect.
   const [prevQuery, setPrevQuery] = useState(query)
