@@ -214,6 +214,25 @@ describe('PassageBlock word list language (fw direction)', () => {
   })
 })
 
+describe('PassageBlock word list past its ceiling (fw direction)', () => {
+  // Translation takes 5,000 characters and the word list 1,000; between the two the list
+  // used to vanish without a word.
+  it('looks up the first 1,000 characters, cut between words, and says so', async () => {
+    const text = 'The dog barks at night. '.repeat(60).trim()
+    const fetchMock = stubRoutes(
+      { enabled: true, from: 'en', translations: { vi: 'Con chó sủa.' } },
+      { lang: 'en', words: [{ text: 'dog', entry: null }] },
+    )
+    render(<PassageBlock text={text} direction="fw" targets={['en']} />)
+    expect(await screen.findByText('Chỉ tra từng từ trong 1.000 ký tự đầu.', {}, { timeout: 3000 })).toBeInTheDocument()
+    const call = fetchMock.mock.calls.find((c) => String(c[0]) === '/dictionary/text/lookup')
+    const sent = (JSON.parse(String(call?.[1]?.body)) as { text: string }).text
+    expect(sent.length).toBeLessThanOrEqual(1000)
+    expect(text.startsWith(sent)).toBe(true)
+    expect(text[sent.length]).toMatch(/\s/)
+  })
+})
+
 describe('PassageBlock dictionary hits for a short translation (vi direction)', () => {
   function stubTranslateAndSearch(translateBody: unknown, searchBody: unknown) {
     const fetchMock = vi.fn<typeof fetch>(async (url) => {

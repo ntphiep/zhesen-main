@@ -29,6 +29,17 @@ export const MAX_PASSAGE_CHARS = 5000
  *  would make it the slowest thing on the page. */
 export const MAX_WORDLIST_CHARS = 1000
 
+/** The part of a passage the word list reads: the first MAX_WORDLIST_CHARS, cut at the
+ *  last whitespace so no word is halved. Han text carries none and is cut at the ceiling,
+ *  never between the two halves of a surrogate pair. */
+export function wordListPart(text: string): string {
+  if (text.length <= MAX_WORDLIST_CHARS) return text
+  const space = text.slice(0, MAX_WORDLIST_CHARS + 1).search(/\s\S*$/)
+  let cut = space > MAX_WORDLIST_CHARS / 2 ? space : MAX_WORDLIST_CHARS
+  if (/[\uD800-\uDBFF]/.test(text[cut - 1])) cut--
+  return text.slice(0, cut).trimEnd()
+}
+
 /** Two words is where one dictionary entry stops being the whole answer. It used to be
  *  three, which left a gap: at two words the panel had no translation to show and said
  *  "Chưa tìm thấy từ nào" instead, then replaced that with "Đang dịch…" on the third word.
@@ -139,19 +150,20 @@ export function PassageBlock({ text, direction, targets, known }: {
   const settled = tooLong || (state.kind !== 'idle' && state.kind !== 'loading' && state.text === trimmed)
   const detected = state.kind === 'done' && isLangCode(state.from) ? state.from : undefined
   const wordLang = detected ?? (targets.length === 1 ? targets[0] : undefined)
+  const listed = wordListPart(trimmed)
   useEffect(() => {
-    if (direction !== 'fw' || !settled || trimmed.length > MAX_WORDLIST_CHARS) return
+    if (direction !== 'fw' || !settled) return
     const ctrl = new AbortController()
     const id = setTimeout(async () => {
       try {
-        const outcome = await fetchTextLookup(trimmed, ctrl.signal, wordLang)
+        const outcome = await fetchTextLookup(listed, ctrl.signal, wordLang)
         setWords(outcome.status === 'ok' ? outcome.data : null)
       } catch {
         setWords(null)
       }
     }, tooLong ? TRANSLATE_DEBOUNCE_MS : 0)
     return () => { clearTimeout(id); ctrl.abort() }
-  }, [direction, trimmed, settled, tooLong, wordLang])
+  }, [direction, listed, settled, tooLong, wordLang])
 
   // Reuses the translation this block already holds: no second Azure request, and each
   // search goes through the cached route.
@@ -267,6 +279,9 @@ export function PassageBlock({ text, direction, targets, known }: {
         </div>
       )}
 
+      {words && words.words.length > 0 && listed !== trimmed && (
+        <p className="text-xs text-(--zs-soft)">Chỉ tra từng từ trong 1.000 ký tự đầu.</p>
+      )}
       {words && words.words.length > 0 && (
         <details>
           <summary className="cursor-pointer rounded-md text-sm font-semibold text-(--zs-ink)">Từng từ trong đoạn</summary>

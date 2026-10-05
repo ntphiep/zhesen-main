@@ -17,8 +17,8 @@ import { clientKey, createRateLimiter } from '@/lib/http/rateLimit'
 const PASSAGES_PER_MINUTE = 30
 const rateLimit = createRateLimiter({ limit: PASSAGES_PER_MINUTE, windowMs: 60_000 })
 
-// The same ceiling as the `translate` task, because the two layers read the same passage
-// and a text one layer refuses is a text the page cannot finish answering.
+// Every distinct word costs a dictionary read, so the list stops at 1,000 characters while
+// `POST /dictionary/translate` takes 5,000; the page sends the first 1,000 of a longer passage.
 const requestBody = z.object({
   text: z.string().trim().min(1).max(1000),
   lang: z.enum(['en', 'es', 'zh']).optional(),

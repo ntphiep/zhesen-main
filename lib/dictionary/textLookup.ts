@@ -10,8 +10,8 @@ import type { LangCode } from '@/lib/languages'
 /**
  * Phrase, sentence and paragraph lookup, layer one: split the text and resolve every word
  * against the dictionary. No model is involved, so this answers whether or not the
- * assistant is configured. The whole-passage translation is layer two, the `translate`
- * task in `lib/ai/tasks.ts`.
+ * assistant is configured. The whole-passage translation is layer two, Azure AI Translator
+ * behind `POST /dictionary/translate`.
  */
 
 /** One word of the passage, in the order it was written. A word with no entry stays in
