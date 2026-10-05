@@ -1,8 +1,9 @@
 #!/bin/sh
 # Full enrichment: levelled entries, then collocation targets, then the AI level guess.
 cd /opt/zhesen/enrich
-# The router URLs and keys that learner.Pool reads.
+# The router URLs, then the routers' zhesen-batch keys that learner.Pool reads.
 . /opt/zhesen/learner/env.sh
+set -a; . /opt/zhesen/batch.env; set +a
 python3 enrich.py --workers 4 || exit 1
 python3 enrich.py --workers 4 || exit 1
 # Senses first written by a weaker model or a Claude model are rewritten by the current chain.

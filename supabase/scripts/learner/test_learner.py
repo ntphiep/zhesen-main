@@ -7,7 +7,8 @@ import io, os, random, sys, tempfile, time, urllib.error
 from datetime import datetime, timezone
 
 os.environ.setdefault('AI_BASE_URL', 'http://127.0.0.1:9/v1')
-os.environ.setdefault('AI_API_KEY', 'test')
+os.environ['BATCH_AI_API_KEY'] = 'batch-test'
+os.environ['AI_API_KEY'] = 'site-test'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import learner as L  # noqa: E402
 
@@ -34,8 +35,43 @@ def test_provider_folds_aliases():
 def test_reserved_under_every_alias():
     assert not L.usable('agy/gemini-3.7-flash-medium')
     assert not L.usable('antigravity/gemini-3.7-flash-medium')
-    assert not L.usable('or/qwen/qwen3.8-27b:free')
+    for name in ('gemini/gemini-3.8-flash', 'gemini/gemini-3.7-flash', 'gemini/gemini-3.6-flash',
+                 'ds-web/deepseek-v4-pro', 'deepseek-web/deepseek-v4-flash', 'ag/gpt-oss-120b-medium'):
+        assert not L.usable(name), name
     assert L.usable('agy/gemini-3.7-flash-low')
+    assert L.usable('orca/deepseek/deepseek-v4-flash-free') and L.usable('kr/glm-5')
+
+
+def test_no_openrouter_free_model_under_any_prefix():
+    for name in ('or/qwen/qwen3.8-27b:free', 'openrouter/google/gemma-4-31b-it:free',
+                 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free-high', 'omni:openrouter/meta/llama-4-70b:free'):
+        assert not L.usable(name.removeprefix('omni:')), name
+    assert L.usable('openrouter/stealth/space-bunny-alpha')
+
+
+def test_pool_uses_the_batch_key_only():
+    p = pool(['gemini/gemma-4-31b-it'])
+    assert p.routers[''][1] == 'batch-test'
+    saved = os.environ.pop('BATCH_AI_API_KEY')
+    try:
+        L.Pool(['gemini/gemma-4-31b-it'])
+    except SystemExit as e:
+        assert 'batch.env' in str(e)
+    else:
+        raise AssertionError('the site key was used')
+    finally:
+        os.environ['BATCH_AI_API_KEY'] = saved
+
+
+def test_gemini_daily_quota_rests_until_0700_utc():
+    assert L.until_quota_reset(datetime(2026, 10, 5, 14, 54, tzinfo=timezone.utc)) == (16 * 60 + 6) * 60
+    assert L.until_quota_reset(datetime(2026, 10, 5, 6, 0, tzinfo=timezone.utc)) == 3600
+    p = pool(['gemini/gemma-4-31b-it', 'gemini/gemini-3.5-flash'])
+    p.refused('gemini/gemma-4-31b-it', http(503, '{"error":{"message":"[gemini/gemma-4-31b-it] [429]: {\\"error\\": '
+                                              '{\\"code\\": 429, \\"message\\": \\"You exceeded your current quota'))
+    wait = p.cool['gemini/gemma-4-31b-it'] - time.time()
+    assert L.until_quota_reset() - 5 <= wait <= L.until_quota_reset() * 1.1 + 5
+    assert p.cool['gemini/gemini-3.5-flash'] == 0
 
 
 def test_claude_never_usable_and_refused():

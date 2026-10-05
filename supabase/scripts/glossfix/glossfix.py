@@ -14,7 +14,7 @@ usage:
   glossfix.py gate --models a,b [--writers N] [--workers N] [--sample NAME] [--blank]
   glossfix.py run [--models a,b] [--workers N] [--phases A,B,C,D,E,F] [--limit N] [--dry-run] [--guard]
   glossfix.py undo --batches 1,2 | --all [--check]
-env: AI_BASE_URL, AI_API_KEY, OMNI_BASE_URL, OMNI_API_KEY (from /opt/zhesen/learner/env.sh)
+env: AI_BASE_URL, OMNI_BASE_URL (from /opt/zhesen/learner/env.sh), BATCH_AI_API_KEY, BATCH_OMNI_API_KEY (from /opt/zhesen/batch.env)
 """
 import argparse, gzip, json, os, random, re, secrets, subprocess, sys, threading, time, unicodedata, urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed

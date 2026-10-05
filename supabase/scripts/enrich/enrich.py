@@ -5,7 +5,7 @@ shows, propose collocations for the lower levels, and a CEFR guess for estimated
 Runs on the database host. State lives in STATE_DIR so a restart resumes.
 
 Usage: enrich.py [--lang en|es|zh] [--limit N] [--entries id,id] [--workers N] [--dry-run]
-env: AI_BASE_URL, AI_API_KEY, OMNI_BASE_URL, OMNI_API_KEY (from /opt/zhesen/learner/env.sh)
+env: AI_BASE_URL, OMNI_BASE_URL (from /opt/zhesen/learner/env.sh), BATCH_AI_API_KEY, BATCH_OMNI_API_KEY (from /opt/zhesen/batch.env)
 """
 import argparse, json, os, re, secrets, subprocess, sys, threading, urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed

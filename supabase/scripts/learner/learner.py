@@ -10,13 +10,14 @@ usage:
   learner.py run [--lang en,es,zh] [--top 3000] [--entries id,id] [--limit N] [--workers N] [--models a,b] [--dry-run]
   learner.py load FILE...     load cached layer files, e.g. a pilot run
   learner.py reapply          re-run lex.learner_apply_fixes over every loaded entry
-env: AI_BASE_URL, AI_API_KEY, OMNI_BASE_URL and OMNI_API_KEY (optional, for OmniRoute),
+env: AI_BASE_URL, OMNI_BASE_URL, and BATCH_AI_API_KEY and BATCH_OMNI_API_KEY (the routers' `zhesen-batch`
+     keys from /opt/zhesen/batch.env; the site's AI_API_KEY and OMNI_API_KEY are never read),
      SUPABASE_URL (the site's /rest/v1 host), SUPABASE_SERVICE_ROLE_KEY, SITE_URL and REVALIDATE_SECRET (optional, to flush the site cache after loading)
 """
 import argparse, json, os, random, re, sys, threading, time, unicodedata, urllib.error, urllib.parse, urllib.request
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from prompts import DOMAINS as DOMAIN_LIST, FIX, LANG_NAME, REGISTERS as REGISTER_LIST, REVIEW, SCHEMA_HINT, SYSTEM, core_range
 
@@ -157,6 +158,11 @@ NO_CREDIT = re.compile(r'\[402\]|insufficient credits|credits exhausted', re.I)
 # A quota that names the account rests every model behind it: omni:agy refused 2,659 calls in a
 # day, nearly all "All antigravity accounts have exhausted their quota".
 ACCOUNT_QUOTA = re.compile(r'all \S+ accounts', re.I)
+# The Gemini API key on 9router is free tier, whose daily quota per model is small: gemini-3.8,
+# 3.7 and 3.6-flash answered "exceeded your current quota" after 28, 20 and 43 calls on
+# 2026-10-05. Such a model rests until the quota reopens at 07:00 UTC.
+DAILY_QUOTA = re.compile(r'exceeded your current quota', re.I)
+QUOTA_RESET_UTC = 7
 DEAD = re.compile(r'\[40[014]\]|no active credentials|not found|not supported|not configured|not installed|ENOENT|'
                   r'invalid token|token included in the request is invalid|authorization failed|egress IP|\[52[0-9]\]|'
                   r'must be an absolute path|Playwright is not', re.I)
@@ -173,10 +179,16 @@ PER_PROVIDER = 4
 # batch leaves their members' quota to readers. The one DeepSeek web login backs the OmniRoute
 # combo and revokes its token past about 6 calls at once, so the batch never calls it.
 PROVIDER_LIMIT = {'omni:ds-web': 0}
-RESERVED = {'ag/gemini-3.8-flash', 'ag/gemini-3.8-flash-low', 'ag/gpt-oss-120b-medium',
-            'orca/deepseek/deepseek-v4-flash-free', 'kr/glm-5',
+# The members of both combos on 2026-10-05 14:52 UTC.
+RESERVED = {'gemini/gemini-3.8-flash', 'gemini/gemini-3.7-flash', 'gemini/gemini-3.6-flash',
+            'ag/gemini-3.8-flash', 'ag/gemini-3.8-flash-low', 'ag/gpt-oss-120b-medium',
             'antigravity/gemini-3.8-flash-tiered', 'antigravity/gemini-3.7-flash-medium',
-            'openrouter/qwen/qwen3.8-27b:free', 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free'}
+            'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free', 'openrouter/qwen/qwen3.8-27b:free',
+            'ds-web/deepseek-v4-pro', 'ds-web/deepseek-v4-flash'}
+# OpenRouter counts free-model calls per account, 50 a day here, and the site's fallback spends
+# them: 54 answered on 2026-10-05, then "free-models-per-day" from 00:35 UTC. A ":free" id, or its
+# OmniRoute variants such as ":free-high", is never the batch's.
+FREE_TIER = re.compile(r':free(-|$)')
 # A member is reserved under every provider that serves it: omni:agy/gemini-3.7-flash-medium is
 # Antigravity's gemini-3.7-flash-medium again.
 RESERVED_NAMES = {r.rsplit('/', 1)[-1] for r in RESERVED}
@@ -196,7 +208,7 @@ def refuse_claude(names):
 
 def usable(name):
     if ('/' not in name or name.rsplit('/', 1)[-1] in RESERVED_NAMES or CLAUDE.search(name)
-            or EXCLUDE.search(name)):
+            or EXCLUDE.search(name) or FREE_TIER.search(name)):
         return False
     # Parameter counts in the name, skipping the active count of a mixture ("120b-a12b").
     sizes = [float(n) for n in re.findall(r'(?<![a-z])e?(\d+(?:\.\d+)?)b(?![a-z])', name.lower())]
@@ -258,6 +270,12 @@ def reset_after(body):
     return int(m.group(1)) * {'m': 60, 'h': 3600}[m.group(2)] if m else None
 
 
+def until_quota_reset(now=None):
+    now = now or datetime.now(timezone.utc)
+    reset = now.replace(hour=QUOTA_RESET_UTC, minute=0, second=0, microsecond=0)
+    return ((reset if reset > now else reset + timedelta(days=1)) - now).total_seconds()
+
+
 def cooldown(wait, cap, fails, rnd=random):
     """Seconds a refused model rests: full jitter over the capped exponential backoff
     (https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/), never shorter than
@@ -272,10 +290,14 @@ class Pool:
     that answered it only 3 answered the next one, so a probe says little about the next call."""
 
     def __init__(self, only=None):
-        self.routers = {'': (os.environ['AI_BASE_URL'], os.environ['AI_API_KEY'])}
-        if os.environ.get('OMNI_API_KEY'):
+        # Each router has a `zhesen-batch` key apart from the site's, so a batch never spends what
+        # the site's key is allowed.
+        if not os.environ.get('BATCH_AI_API_KEY'):
+            raise SystemExit('BATCH_AI_API_KEY is not set: source /opt/zhesen/batch.env')
+        self.routers = {'': (os.environ['AI_BASE_URL'], os.environ['BATCH_AI_API_KEY'])}
+        if os.environ.get('BATCH_OMNI_API_KEY'):
             self.routers['omni:'] = (os.environ.get('OMNI_BASE_URL', 'http://127.0.0.1:20130/v1'),
-                                     os.environ['OMNI_API_KEY'])
+                                     os.environ['BATCH_OMNI_API_KEY'])
         refuse_claude(only or [])
         self.models = [m for m in only or self.discover() if usable(m.removeprefix('omni:'))]
         refuse_claude(self.models)
@@ -411,6 +433,9 @@ class Pool:
             # Credit is the account's and does not come back within the day, so every model behind
             # it waits 6 hours: two OpenRouter models were asked 305 times a day after a 402.
             self.rest_provider(model, 6 * 3600, 6 * 3600)
+        elif DAILY_QUOTA.search(body) and 'PerMinute' not in body:
+            wait = until_quota_reset()
+            self.rest(model, wait, wait)
         elif ACCOUNT_QUOTA.search(body):
             wait = reset_after(body)
             self.rest_provider(model, wait + 2 if wait is not None else 900, 6 * 3600)
