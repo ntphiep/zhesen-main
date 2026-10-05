@@ -4,6 +4,7 @@ import type { DictEntryChip, DictEntryPreview, SuggestionPreview } from './types
 import { entryChipRow, entryIdRow, entryPreviewRow, searchRpcRow, suggestRow, toChip, toPreview, toPreviewFromSearchRow, toSuggestion } from './rows'
 import { azureTranslatorConfig } from '@/lib/translate/config'
 import { translateCached } from '@/lib/translate/azure'
+import { recordUsage } from '@/lib/translate/usage'
 import { isStructuralMatch, isWordMatch } from './detect'
 
 /**
@@ -152,7 +153,7 @@ async function searchTranslation(
   const cfg = await azureTranslatorConfig()
   if (!cfg) return null
   try {
-    const { translations } = await translateCached(cfg, q, 'vi', weak, AbortSignal.timeout(TRANSLATE_TIMEOUT_MS))
+    const { translations, charged } = await translateCached(cfg, q, 'vi', weak, AbortSignal.timeout(TRANSLATE_TIMEOUT_MS))
     const found = await Promise.all(weak.map(async (l) => {
       const text = translations[l]?.trim().replace(/[.。]$/, '')
       if (!text) return null
@@ -163,7 +164,11 @@ async function searchTranslation(
       return hits.length > 0 ? [l, { text, entries: hits }] as const : null
     }))
     const hits = found.filter((f) => f !== null)
-    const lead = await leadGlosses(supabase, hits.flatMap(([, h]) => h.entries.map((e) => e.id)))
+    // The lookup's characters count against the same month as a passage's.
+    const [lead] = await Promise.all([
+      leadGlosses(supabase, hits.flatMap(([, h]) => h.entries.map((e) => e.id))),
+      recordUsage(supabase, charged),
+    ])
     const out: Partial<Record<LangCode, TranslatedHits>> = {}
     for (const [l, h] of hits) out[l] = { ...h, entries: withLead(h.entries, lead) }
     return Object.keys(out).length > 0 ? out : null

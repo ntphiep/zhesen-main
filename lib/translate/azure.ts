@@ -41,6 +41,8 @@ export interface TranslateResult {
    *  project has no code for) when `from` was omitted. */
   from: TranslateLangCode | string
   translations: Partial<Record<TranslateLangCode, string>>
+  /** Characters Azure billed for this call, 0 when every target came from the cache. */
+  charged: number
 }
 
 export async function translateText(
@@ -71,6 +73,11 @@ export async function translateText(
     )
   }
 
+  // "the number of characters for which the user is charged", per the v3 translate
+  // reference. Absent, the documented rule: characters times target languages.
+  const metered = Number.parseInt(res.headers.get('X-metered-usage') ?? '', 10)
+  const charged = Number.isFinite(metered) ? metered : text.length * to.length
+
   const parsed = azureResponseSchema.safeParse(await res.json())
   if (!parsed.success) throw new AzureTranslateError('unreadable response body')
   const [entry] = parsed.data
@@ -82,7 +89,7 @@ export async function translateText(
   }
 
   const detected = entry.detectedLanguage ? fromAzureLang(entry.detectedLanguage.language) : null
-  return { from: detected ?? from ?? entry.detectedLanguage?.language ?? '', translations }
+  return { from: detected ?? from ?? entry.detectedLanguage?.language ?? '', translations, charged }
 }
 
 // Lives inside one serverless instance's memory, not a shared store: it saves the repeat
@@ -122,7 +129,7 @@ export async function translateCached(
     if (hit !== undefined) translations[lang] = hit
     else missing.push(lang)
   }
-  if (missing.length === 0) return { from: from ?? detectedFrom.get(normalized) ?? '', translations }
+  if (missing.length === 0) return { from: from ?? detectedFrom.get(normalized) ?? '', translations, charged: 0 }
 
   const result = await translateText(cfg, normalized, from, missing, signal)
   if (!from) remember(detectedFrom, normalized, result.from)
@@ -130,5 +137,5 @@ export async function translateCached(
     const value = result.translations[lang]
     if (value) remember(cache, `${fromKey}:${lang}:${normalized}`, value)
   }
-  return { from: result.from, translations: { ...translations, ...result.translations } }
+  return { from: result.from, translations: { ...translations, ...result.translations }, charged: result.charged }
 }

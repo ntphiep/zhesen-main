@@ -125,3 +125,14 @@ describe('searchOneDirection, Vietnamese fallback through a translation', () => 
     expect(translateCached).not.toHaveBeenCalled()
   })
 })
+
+// A lookup's fallback spends the same Azure month a passage does.
+describe('searchOneDirection, translation usage', () => {
+  it('adds the characters Azure charged to the month', async () => {
+    translateCached.mockResolvedValue({ from: 'vi', translations: { en: 'nothing here' }, charged: 9 })
+    const { client: c } = client([], {})
+    const usage = vi.fn(async () => ({ data: 9, error: null }))
+    await searchOneDirection(Object.assign(c, { rpc: usage }), 'không có', 'vi', 8, ['en'])
+    expect(usage).toHaveBeenCalledWith('translate_usage', { p_chars: 9 })
+  })
+})
