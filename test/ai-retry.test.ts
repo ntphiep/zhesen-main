@@ -104,8 +104,31 @@ describe('the route logs every failed call', () => {
     expect(line).toContain('"task":"enrich"')
     expect(line).toContain('"router":"nine.test"')
     expect(line).toContain('"status":502')
-    expect(line).toContain('HTTP 402')
+    expect(line).toContain('"error":"http_402"')
+    expect(line).not.toContain('provider out of credits')
     expect(line).not.toContain('serendipity')
     expect(line).not.toContain('sk-secret-must-not-leak')
+  })
+})
+
+// The 30 s deadline can fire while the body is still arriving; that is a timeout (504), not
+// an unreadable answer (502), and no other router is asked after it.
+describe('a deadline while the body arrives', () => {
+  const realFetch = globalThis.fetch
+  afterEach(() => { globalThis.fetch = realFetch })
+
+  it('rejects with the deadline, not as a bad answer', async () => {
+    const f = vi.fn(async (_url: string, init?: RequestInit) => new Response(new ReadableStream({
+      start(controller) {
+        init?.signal?.addEventListener('abort', () => controller.error(init.signal?.reason))
+      },
+    })))
+    globalThis.fetch = f as unknown as typeof fetch
+    const stop = new AbortController()
+    const pending = askJson(both, { system: 's', user: 'u', parse, maxTokens: 10, signal: stop.signal })
+    await vi.waitFor(() => expect(f).toHaveBeenCalledTimes(1))
+    stop.abort(new DOMException('deadline', 'TimeoutError'))
+    await expect(pending).rejects.toMatchObject({ name: 'TimeoutError' })
+    expect(f).toHaveBeenCalledTimes(1)
   })
 })

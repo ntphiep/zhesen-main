@@ -5,7 +5,8 @@ import type { LangCode } from '@/lib/languages'
 import { z } from '@/lib/zod'
 import { createClient } from '@/lib/supabase/server'
 import type { ModelTurn } from './client'
-import { coachGround, readCoach, storeCoach } from './coach'
+import { aiCacheSecret } from './cacheSecret'
+import { coachGround, coachKey, readCoach, storeCoach } from './coach'
 import {
   ERASED_TASKS, chatInput, chatSystem, chatTurns, checkGroundedCoach, coachInput, coachOutput,
   groundedCoachPrompt, suggestOutput, type ChatGround, type SuggestOutput, type TaskName,
@@ -51,26 +52,28 @@ const withForms = (task: 'enrich' | 'coach'): ServerStep => async (input, job) =
 }
 
 /** A word with an entry is coached from the entry's own data, and its checked answer is
- *  stored for every learner. Without one, or when the entry cannot be read, it is coached
- *  from the headword the learner saved. */
+ *  stored for every learner when the cache secret is set. Without an entry, or when it cannot
+ *  be read, it is coached from the headword the learner saved. */
 const coach: ServerStep = async (input, job) => {
   const { entryId } = coachInput.parse(input)
   if (!entryId) return withForms('coach')(input, job)
-  const supabase = await createClient()
-  const cached = await readCoach(supabase, entryId)
-  if (cached) return { ...job, cached }
   const ground = await coachGround(entryId).catch((e: unknown) => {
     console.error('ai coach ground failed', e instanceof Error ? e.message : String(e))
     return null
   })
   if (!ground) return withForms('coach')(input, job)
+  const supabase = await createClient()
+  const key = coachKey(entryId, ground)
+  const cached = await readCoach(supabase, key)
+  if (cached) return { ...job, cached }
   return {
     ...job,
     user: groundedCoachPrompt(ground),
     parse: (value) => checkGroundedCoach(value, ground),
     finish: async (answer, model) => {
       const out = coachOutput.parse(answer)
-      await storeCoach(supabase, entryId, model, out)
+      const secret = await aiCacheSecret()
+      if (secret) await storeCoach(supabase, secret, key, entryId, model, out)
       return out
     },
   }

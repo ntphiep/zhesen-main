@@ -1,4 +1,5 @@
 import 'server-only'
+import { createHash } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from '@/lib/zod'
 import { getCachedCharacters, getCachedEntryDetail, getCachedInflections } from '@/lib/dictionary/cached'
@@ -11,9 +12,9 @@ import { COACH_PROMPT_VERSION, coachOutput, type CoachGround, type CoachOutput }
 /**
  * The word coach's ground and its shared answers. The ground is read from the dictionary's
  * caches by entry id, never taken from the browser: the reviewed learner layer when the entry
- * has one, its Wiktionary senses otherwise. One answer per entry and prompt version is kept in
- * public.ai_coach (supabase/migrations/0181_ai_coach_cache.sql), so every learner reads it and
- * the router is asked once per entry.
+ * has one, its Wiktionary senses otherwise. Answers are kept in public.ai_coach
+ * (supabase/migrations/0181_ai_coach_cache.sql) under `coachKey`, so every learner reads one and
+ * a changed ground misses the cache by construction.
  */
 
 const SENSES = 3
@@ -70,14 +71,17 @@ export async function coachGround(entryId: string): Promise<CoachGround | null> 
   }
 }
 
+/** The sha256 of exactly what the prompt is built from, with the entry and prompt version. */
+export function coachKey(entryId: string, ground: CoachGround): string {
+  return createHash('sha256').update(JSON.stringify({ v: COACH_PROMPT_VERSION, entryId, ground })).digest('hex')
+}
+
 const storedRow = z.object({ answer: z.unknown() })
 
-/** The stored answer for this entry, or null. A row older than the entry's layer is not
- *  visible (the table's policy), so a republished layer is coached again. */
-export async function readCoach(supabase: SupabaseClient, entryId: string): Promise<CoachOutput | null> {
+/** The stored answer for this key, or null. */
+export async function readCoach(supabase: SupabaseClient, key: string): Promise<CoachOutput | null> {
   try {
-    const { data, error } = await supabase.from('ai_coach').select('answer')
-      .eq('entry_id', entryId).eq('prompt_version', COACH_PROMPT_VERSION).maybeSingle()
+    const { data, error } = await supabase.from('ai_coach').select('answer').eq('cache_key', key).maybeSingle()
     if (error) throw new Error(error.message)
     if (!data) return null
     const parsed = coachOutput.safeParse(storedRow.parse(data).answer)
@@ -88,11 +92,15 @@ export async function readCoach(supabase: SupabaseClient, entryId: string): Prom
   }
 }
 
-/** Keeps a checked answer for every learner. A failed write costs the next learner a call. */
-export async function storeCoach(supabase: SupabaseClient, entryId: string, model: string, answer: CoachOutput): Promise<void> {
+/** Keeps a checked answer for every learner; the secret proves the write comes from this
+ *  server. A failed write costs the next learner a call. */
+export async function storeCoach(
+  supabase: SupabaseClient, secret: string, key: string, entryId: string, model: string, answer: CoachOutput,
+): Promise<void> {
   try {
     const { error } = await supabase.rpc('ai_coach_store', {
-      p_entry_id: entryId, p_prompt_version: COACH_PROMPT_VERSION, p_model: model, p_answer: answer,
+      p_secret: secret, p_cache_key: key, p_entry_id: entryId, p_prompt_version: COACH_PROMPT_VERSION,
+      p_model: model, p_answer: answer,
     })
     if (error) throw new Error(error.message)
   } catch (e) {

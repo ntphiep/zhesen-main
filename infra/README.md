@@ -62,7 +62,7 @@ infra/
     sampler/                 sampler.py, host and container counters into Postgres every 5 s
     env.template             .env with ${SSM:/path} placeholders
     volumes/                 Envoy config and Postgres init scripts, copied from upstream
-    bin/                     render-env.sh, backup.sh, migrate.sh, studio-tunnel.ps1
+    bin/                     render-env.sh, backup.sh, migrate.sh, set-ai-cache-secret.sh, studio-tunnel.ps1
     UPSTREAM.md              upstream commit and every deviation from it
 ```
 
@@ -91,6 +91,7 @@ cd /opt/zhesen/supabase
 aws s3 sync s3://zhesen-infra-assets-<account>/supabase . --delete \
   --exclude '.env' --exclude 'volumes/db/data/*'
 bin/render-env.sh   # only when env.template or an SSM parameter changed
+bin/set-ai-cache-secret.sh   # after migration 0181 and after rotating /zhesen/prod/ai_cache_secret
 docker compose -f docker-compose.yml --env-file .env up -d
 ```
 

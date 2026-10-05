@@ -66,14 +66,38 @@ function failure(e: unknown): { error: string; status: number } | null {
   return null
 }
 
+/** What went wrong as a fixed label. The message itself can carry the router's error body,
+ *  which may echo the learner's text. */
+const ERROR_CLASSES: [RegExp, string | ((m: RegExpMatchArray) => string)][] = [
+  [/model returned HTTP (\d+)/, (m) => `http_${m[1]}`],
+  [/no answer within/, 'slow_router'],
+  [/answer cut at max_tokens/, 'cut'],
+  [/malformed JSON|no JSON|unreadable response body/, 'malformed'],
+  [/did not match the task schema/, 'schema'],
+  [/stream ended|error event/, 'stream'],
+]
+
+function errorClass(e: unknown): string {
+  if (e instanceof DOMException) return e.name
+  if (!(e instanceof AiUnavailableError)) return 'unknown'
+  return e.message.split('; fallback: ').map((part) => {
+    for (const [pattern, label] of ERROR_CLASSES) {
+      const m = part.match(pattern)
+      if (m) return typeof label === 'string' ? label : label(m)
+    }
+    return 'unavailable'
+  }).join('+')
+}
+
 /** One line per failed model call, so a dead router shows in the logs. Task, router,
- *  answered status and the error only: never the prompt, the input or the key. */
+ *  answered status and an error class only: never the prompt, the input, the key or the
+ *  router's error body. */
 function logFailure(task: string, e: unknown, status: number): void {
   console.error('ai failed', JSON.stringify({
     task,
     router: e instanceof AiUnavailableError ? e.router ?? null : null,
     status,
-    error: e instanceof Error ? e.message : String(e),
+    error: errorClass(e),
   }))
 }
 
@@ -170,12 +194,8 @@ export async function POST(request: Request) {
 
   const task = envelope.data.task
   const spec = ERASED_TASKS[task]
-  const job = await prepareJob(task, envelope.data.input)
-  if (job === null) {
-    return Response.json({ error: 'Dữ liệu đầu vào không hợp lệ.' }, { status: 400 })
-  }
-  // A stored answer costs no model call, so it spends no budget.
-  if (job.cached !== undefined) return Response.json({ data: job.cached }, { headers: PRIVATE })
+  const invalid = () => Response.json({ error: 'Dữ liệu đầu vào không hợp lệ.' }, { status: 400 })
+  if (spec.promptFor(envelope.data.input) === null) return invalid()
 
   // Budget is spent here, not on arrival. The global bucket is one bucket for
   // everyone, so charging a request that never reaches the model turned it into
@@ -199,6 +219,12 @@ export async function POST(request: Request) {
   if (!(await takeDailyCall())) {
     return Response.json({ error: 'Hết lượt hỏi AI hôm nay. Thử lại vào ngày mai.' }, { status: 429 })
   }
+
+  // After the budgets: the server step reads the dictionary and the learner's own rows, which
+  // a capped account must not cost. A stored answer still spends the call it took.
+  const job = await prepareJob(task, envelope.data.input)
+  if (job === null) return invalid()
+  if (job.cached !== undefined) return Response.json({ data: job.cached }, { headers: PRIVATE })
 
   // The browser leaving, Dừng included, stops the model call as the deadline does.
   const signal = AbortSignal.any([request.signal, AbortSignal.timeout(TIMEOUT_MS)])

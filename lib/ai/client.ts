@@ -156,7 +156,11 @@ async function request(cfg: AiEndpoint, opts: TextOptions, stream: boolean, sign
 }
 
 async function bodyText(res: Response): Promise<{ text: string; cut: boolean }> {
-  const body: unknown = await res.json().catch(() => null)
+  // An abort while the body arrives is the caller's deadline, not an unreadable body.
+  const body: unknown = await res.json().catch((e: unknown) => {
+    if (e instanceof DOMException) throw e
+    return null
+  })
   return messageText(body)
 }
 
@@ -170,6 +174,7 @@ async function readJson<T>(res: Response, from: AiEndpoint, parse: (value: unkno
     if (cut) throw fail('answer cut at max_tokens')
     value = JSON.parse(extractJson(text))
   } catch (e) {
+    if (e instanceof DOMException) throw e
     throw fail(e instanceof AiUnavailableError ? e.message : 'malformed JSON in the response')
   }
   const parsed = parse(value)

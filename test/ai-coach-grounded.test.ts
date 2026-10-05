@@ -15,7 +15,8 @@ vi.mock('@/lib/dictionary/cached', () => ({
 vi.mock('@/lib/dictionary/learnerCached', () => ({ getCachedLearnerLayer: m.layer }))
 
 import { checkGroundedCoach, groundedCoachPrompt, COACH_PROMPT_VERSION, type CoachGround } from '@/lib/ai/tasks'
-import { coachGround } from '@/lib/ai/coach'
+import { coachGround, coachKey } from '@/lib/ai/coach'
+import { resetAiCacheSecret } from '@/lib/ai/cacheSecret'
 import { POST, resetAiBudgets } from '@/app/api/ai/route'
 
 const ground = (over: Partial<CoachGround> = {}): CoachGround => ({
@@ -155,7 +156,7 @@ describe('the coach ground', () => {
 describe('the coach route with an entry', () => {
   const realFetch = globalThis.fetch
   const saved: Record<string, string | undefined> = {}
-  const ENV = ['AI_BASE_URL', 'AI_API_KEY', 'AI_MODEL', 'AI_FALLBACK_BASE_URL', 'AI_FALLBACK_API_KEY'] as const
+  const ENV = ['AI_BASE_URL', 'AI_API_KEY', 'AI_MODEL', 'AI_FALLBACK_BASE_URL', 'AI_FALLBACK_API_KEY', 'AI_CACHE_SECRET'] as const
   const stored = { mnemonic: 'đã lưu', collocations: [], examples: [], confusables: [] }
 
   const coach = (input: Record<string, unknown> = {}) => POST(new Request('http://localhost/api/ai', {
@@ -180,6 +181,8 @@ describe('the coach route with an entry', () => {
     process.env.AI_BASE_URL = 'http://nine.test/v1'
     process.env.AI_API_KEY = 'k1'
     process.env.AI_MODEL = 'm1'
+    process.env.AI_CACHE_SECRET = 'cache-secret'
+    resetAiCacheSecret()
   })
   afterEach(() => {
     for (const k of ENV) {
@@ -190,14 +193,17 @@ describe('the coach route with an entry', () => {
     vi.restoreAllMocks()
   })
 
-  it('answers from the stored answer without asking the model or spending a call', async () => {
+  // The daily cap runs before the entry is read (review of 2026-10-05), so a stored answer
+  // takes a call but never the model.
+  it('answers from the stored answer without asking the model', async () => {
     m.from.mockReturnValue(queryBuilder({ data: { answer: stored }, error: null }))
     const f = vi.fn()
     globalThis.fetch = f
     const res = await coach()
     await expect(res.json()).resolves.toEqual({ data: stored })
     expect(f).not.toHaveBeenCalled()
-    expect(m.rpc).not.toHaveBeenCalled()
+    expect(m.rpc).toHaveBeenCalledWith('ai_take_call')
+    expect(m.rpc).not.toHaveBeenCalledWith('ai_coach_store', expect.anything())
     expect(m.from).toHaveBeenCalledWith('ai_coach')
   })
 
@@ -210,9 +216,25 @@ describe('the coach route with an entry', () => {
     expect(prompt).toContain('take a break')
     expect(prompt).not.toContain('tin từ trình duyệt')
     expect(m.rpc).toHaveBeenCalledWith('ai_coach_store', {
+      p_secret: 'cache-secret', p_cache_key: expect.stringMatching(/^[0-9a-f]{64}$/),
       p_entry_id: 'en:take', p_prompt_version: COACH_PROMPT_VERSION, p_model: 'm1',
       p_answer: { mnemonic: 'take: tay cầm lấy', collocations: [], examples: [], confusables: [] },
     })
+  })
+
+  it('answers but stores nothing without the cache secret', async () => {
+    delete process.env.AI_CACHE_SECRET
+    resetAiCacheSecret()
+    globalThis.fetch = vi.fn(async () => model({ mnemonic: 'take: tay cầm lấy', notes: [] })) as unknown as typeof fetch
+    expect((await coach()).status).toBe(200)
+    expect(m.rpc).not.toHaveBeenCalledWith('ai_coach_store', expect.anything())
+  })
+
+  it('stops a capped account before reading the entry or the cache', async () => {
+    m.rpc.mockResolvedValue({ data: false, error: null })
+    expect((await coach()).status).toBe(429)
+    expect(m.detail).not.toHaveBeenCalled()
+    expect(m.from).not.toHaveBeenCalled()
   })
 
   it('asks the other router when the answer points at a word that was not sent, and stores nothing on failure', async () => {
@@ -233,5 +255,14 @@ describe('the coach route with an entry', () => {
     const prompt = JSON.parse((f.mock.calls[0] as unknown as [string, RequestInit])[1].body as string).messages[0].content as string
     expect(prompt).toContain('tin từ trình duyệt')
     expect(m.rpc).not.toHaveBeenCalledWith('ai_coach_store', expect.anything())
+  })
+})
+
+describe('the coach cache key', () => {
+  it('changes with anything the prompt is built from', () => {
+    const g = ground()
+    expect(coachKey('en:take', g)).toBe(coachKey('en:take', ground()))
+    expect(coachKey('en:take', ground({ gist: ['lấy', 'mang'] }))).not.toBe(coachKey('en:take', g))
+    expect(coachKey('en:taken', g)).not.toBe(coachKey('en:take', g))
   })
 })
