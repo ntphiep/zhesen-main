@@ -3,9 +3,11 @@ import { useEffect, useId, useRef, useState } from 'react'
 import Link from 'next/link'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
+import { holdBack } from '@/components/practice/keys'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
+import { useKeyGate } from '@/lib/hooks/useKeyGate'
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion'
 import { gradeForMode, type PracticeOutcome } from '@/lib/practice/grading'
 import type { Grade, SrsState } from '@/lib/progress/types'
@@ -59,6 +61,7 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
   const revealRef = useRef<HTMLButtonElement>(null)
   const goodRef = useRef<HTMLButtonElement>(null)
   const { logDay, failed } = useGradeSync(supabase)
+  const settled = useKeyGate([turn, open].join(':'))
   const current = queue[0] ?? null
 
   useEffect(() => {
@@ -111,7 +114,7 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
       </div>
       <div className={h.slot} data-empty={current ? undefined : ''}>
         {current ? (
-          <article key={`${current.id}-${turn}`} className={h.rc} data-open={open || undefined} data-anim={anim ?? undefined} aria-label="Từ đang ôn">
+          <article key={`${current.id}-${turn}`} className={h.rc} data-open={open || undefined} data-anim={anim ?? undefined} aria-label="Từ đang ôn" onKeyDownCapture={(e) => holdBack(e, settled)}>
             <div className={h.meta}>
               <span>{NAME[current.lang]}</span>
               <span>{dueNote(current.state.reps, current.state.dueAt, now)}</span>
