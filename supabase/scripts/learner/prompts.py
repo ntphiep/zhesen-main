@@ -1,5 +1,6 @@
-"""Prompts for learner.py. A change to any of them raises PROMPT_VERSION there, so the
-entries written under the old wording are redone."""
+"""Prompts for learner.py. A change to what any of them asks raises PROMPT_VERSION there, so the
+entries written under the old wording are redone; spelling a value list of SCHEMA_HINT as an enum
+asks nothing new."""
 
 LANG_NAME = {'en': 'English', 'es': 'Spanish', 'zh': 'Mandarin Chinese'}
 
@@ -77,12 +78,12 @@ REGISTERS = ['formal', 'informal', 'slang', 'vulgar', 'offensive', 'archaic', 'd
 
 SCHEMA_HINT = {
     'gist_vi': ['1-3 short Vietnamese equivalents for the whole word, most common first'],
-    'level': 'A1..C2, the level of the most common sense',
+    'level': 'one of A1|A2|B1|B2|C1|C2: the level of the most common sense',
     'core_senses': [{
         'source_sense_ids': ['<raw sense id>'], 'pos': 'noun|verb|adjective|adverb|...',
         'vi_terms': ['...'], 'vi_definition': '...', 'en_definition': 'learner-style English, <=120 chars',
-        'domain': 'null or one of ' + ','.join(DOMAINS), 'register': 'null or one of ' + ','.join(REGISTERS),
-        'cefr': 'A1..C2',
+        'domain': 'one of ' + '|'.join(DOMAINS) + ', or JSON null', 'register': 'one of ' + '|'.join(REGISTERS) + ', or JSON null',
+        'cefr': 'one of A1|A2|B1|B2|C1|C2',
         'examples': [{'source_example_id': '<raw example id or null>', 'text': '...', 'reading': 'pinyin or null', 'vi': '...'}],
         'collocations': [{'text': '...', 'pattern': '...', 'vi': '...', 'example': '...', 'example_vi': '...', 'reading': 'pinyin of text or null', 'example_reading': 'pinyin of example or null'}],
         'synonyms': [{'text': '...', 'note_vi': '...'}], 'antonyms': [{'text': '...', 'note_vi': '...'}],

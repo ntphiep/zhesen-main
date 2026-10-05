@@ -13,7 +13,8 @@ usage:
 env: AI_BASE_URL, AI_API_KEY, OMNI_BASE_URL and OMNI_API_KEY (optional, for OmniRoute),
      SUPABASE_URL (the site's /rest/v1 host), SUPABASE_SERVICE_ROLE_KEY, SITE_URL and REVALIDATE_SECRET (optional, to flush the site cache after loading)
 """
-import argparse, json, os, re, sys, threading, time, unicodedata, urllib.error, urllib.parse, urllib.request
+import argparse, json, os, random, re, sys, threading, time, unicodedata, urllib.error, urllib.parse, urllib.request
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
@@ -143,6 +144,19 @@ RANK = [re.compile(p) for p in (
 LIGHT = re.compile(r'(^|[-/_.])(lite|mini|nano|lightning|code)([-/_.:]|$)|(^|/)free$')
 # A refusal that names a quota or an unconfigured provider; 9router wraps both in a 503.
 QUOTA = re.compile(r'\[40[23]\]|\[429\]|quota|exhausted|credits|rate.?limit|high demand|reset after', re.I)
+# Refusals no wait cures, so the whole provider breaks for 12 hours and one call then probes it.
+# gemini-cli answered "[403]: HTTP 403 (reset after 1s)" 8,875 times in a day and never once
+# answered; one of its bodies said "You do not have a valid license". Bedrock's "Invalid API Key
+# format" came 2,010 times.
+PERMANENT = re.compile(r'invalid api key|api key not valid|valid license', re.I)
+BREAK_SECONDS = 12 * 3600
+SHORT_RESET, SHORT_403_TRIPS = 60, 3
+# Credit spent, which rests the provider. OpenRouter's free-model 429 says "Add 10 credits to
+# unlock" and is not one: matching any "credits" rested the provider that answered most.
+NO_CREDIT = re.compile(r'\[402\]|insufficient credits|credits exhausted', re.I)
+# A quota that names the account rests every model behind it: omni:agy refused 2,659 calls in a
+# day, nearly all "All antigravity accounts have exhausted their quota".
+ACCOUNT_QUOTA = re.compile(r'all \S+ accounts', re.I)
 DEAD = re.compile(r'\[40[014]\]|no active credentials|not found|not supported|not configured|not installed|ENOENT|'
                   r'invalid token|token included in the request is invalid|authorization failed|egress IP|\[52[0-9]\]|'
                   r'must be an absolute path|Playwright is not', re.I)
@@ -163,14 +177,26 @@ RESERVED = {'ag/gemini-3.8-flash', 'ag/gemini-3.8-flash-low', 'ag/gpt-oss-120b-m
             'orca/deepseek/deepseek-v4-flash-free', 'kr/glm-5',
             'antigravity/gemini-3.8-flash-tiered', 'antigravity/gemini-3.7-flash-medium',
             'openrouter/qwen/qwen3.8-27b:free', 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free'}
+# A member is reserved under every provider that serves it: omni:agy/gemini-3.7-flash-medium is
+# Antigravity's gemini-3.7-flash-medium again.
+RESERVED_NAMES = {r.rsplit('/', 1)[-1] for r in RESERVED}
 # Both combos lean on Antigravity, whose quota may be the account's rather than each model's,
 # so the batch calls it only from 23:00 to 07:00 in Vietnam, when few readers ask.
 NIGHT_ONLY = {'ag', 'omni:antigravity'}
 NIGHT_UTC = range(16, 24)
 
 
+def refuse_claude(names):
+    """Raises before any call when a name is Claude's: Claude writes this code and never writes
+    or reviews the dictionary (owner, 2026-10-05)."""
+    bad = [n for n in names if CLAUDE.search(n)]
+    if bad:
+        raise SystemExit(f'refusing to call {", ".join(bad[:3])}: Claude never writes product data')
+
+
 def usable(name):
-    if '/' not in name or name in RESERVED or CLAUDE.search(name) or EXCLUDE.search(name):
+    if ('/' not in name or name.rsplit('/', 1)[-1] in RESERVED_NAMES or CLAUDE.search(name)
+            or EXCLUDE.search(name)):
         return False
     # Parameter counts in the name, skipping the active count of a mixture ("120b-a12b").
     sizes = [float(n) for n in re.findall(r'(?<![a-z])e?(\d+(?:\.\d+)?)b(?![a-z])', name.lower())]
@@ -183,8 +209,9 @@ def rank(name):
 
 
 def provider(name):
-    # OmniRoute lists the one DeepSeek web login under two names.
-    return name.split('/')[0].replace('deepseek-web', 'ds-web')
+    # OmniRoute lists the one DeepSeek web login under two names, and Antigravity under two.
+    p = name.split('/')[0].replace('deepseek-web', 'ds-web')
+    return 'omni:antigravity' if p == 'omni:agy' else p
 
 
 def family(name):
@@ -204,6 +231,14 @@ def reset_after(body):
     return int(m.group(1)) * {'m': 60, 'h': 3600}[m.group(2)] if m else None
 
 
+def cooldown(wait, cap, fails, rnd=random):
+    """Seconds a refused model rests: full jitter over the capped exponential backoff
+    (https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/), never shorter than
+    the wait the refusal states, which itself spreads by up to a tenth so twelve workers do not
+    wake together."""
+    return max(wait * rnd.uniform(1, 1.1), rnd.uniform(0, min(cap, 15 * 2 ** fails)))
+
+
 class Pool:
     """Every usable model on 9router and OmniRoute, strongest first, each resting on its own after
     a refusal. There is no up-front probe: one over all 1,137 took 3 minutes, and of the 17 models
@@ -214,12 +249,20 @@ class Pool:
         if os.environ.get('OMNI_API_KEY'):
             self.routers['omni:'] = (os.environ.get('OMNI_BASE_URL', 'http://127.0.0.1:20130/v1'),
                                      os.environ['OMNI_API_KEY'])
+        refuse_claude(only or [])
         self.models = [m for m in only or self.discover() if usable(m.removeprefix('omni:'))]
+        refuse_claude(self.models)
         self.cool = dict.fromkeys(self.models, 0.0)
         self.fails = dict.fromkeys(self.models, 0)
         self.cap = dict.fromkeys(self.models, MAX_TOKENS)
         self.temperature = dict.fromkeys(self.models, True)
         self.busy = dict.fromkeys(self.models, 0)
+        self.tier = {m: rank(m) for m in self.models}
+        # Answered or not, per call, and when last answered: pick() orders by these first.
+        self.hist = {m: deque(maxlen=20) for m in self.models}
+        self.ok_at = dict.fromkeys(self.models, 0.0)
+        # 403s in a row per provider since its last answer.
+        self.forbidden = {}
 
     def discover(self):
         out = []
@@ -237,6 +280,7 @@ class Pool:
         that never answers times out after 5 minutes of silence instead of holding a worker for as
         long as a real reply takes. Any call ends after 20 minutes, so keep-alive lines cannot
         hold a worker either. A router that answers with one JSON body is read as such."""
+        refuse_claude([model])
         prefix = 'omni:' if model.startswith('omni:') else ''
         deadline = time.time() + 1200
         base, key = self.routers[prefix]
@@ -280,11 +324,31 @@ class Pool:
         # Twelve workers re-trip a window that reopens in seconds, so repeated refusals back off.
         with LOCK:
             self.fails[model] += 1
-            self.cool[model] = time.time() + max(wait, min(cap, 15 * 2 ** self.fails[model]))
+            self.cool[model] = time.time() + cooldown(wait, cap, self.fails[model])
 
     def rest_provider(self, model, wait, cap):
         for m in [m for m in self.models if provider(m) == provider(model)]:
             self.rest(m, wait, cap)
+
+    def record(self, model, answered):
+        with LOCK:
+            self.hist[model].append(answered)
+            if answered:
+                self.ok_at[model] = time.time()
+                self.fails[model] = 0
+                self.forbidden[provider(model)] = 0
+
+    def broken(self, model, code, body):
+        """True when the refusal opens the provider's circuit: a key or licence no wait cures, or a
+        third 403 in a row with a reset under a minute, which gemini-cli sends for a missing licence."""
+        if PERMANENT.search(body):
+            return True
+        if code != 403 and '[403]' not in body:
+            return False
+        p, wait = provider(model), reset_after(body)
+        with LOCK:
+            self.forbidden[p] = self.forbidden.get(p, 0) + 1
+            return self.forbidden[p] >= SHORT_403_TRIPS and wait is not None and wait < SHORT_RESET
 
     def refused(self, model, e):
         """Rests the model, or its whole provider, by what the refusal says. An error sent inside
@@ -295,7 +359,9 @@ class Pool:
         else:
             code, body = None, f'{type(e).__name__} {e}'
         stream = isinstance(e, RuntimeError)
-        if (code == 402 or '[402]' in body) and self.cap[model] > 4000 and re.search(r'max_tokens|afford', body):
+        if self.broken(model, code, body):
+            self.rest_provider(model, BREAK_SECONDS, BREAK_SECONDS)
+        elif (code == 402 or '[402]' in body) and self.cap[model] > 4000 and re.search(r'max_tokens|afford', body):
             # OpenRouter refuses a max_tokens the remaining credit cannot cover.
             self.cap[model] //= 2
         elif code == 400 and 'temperature' in body and self.temperature[model]:
@@ -313,9 +379,13 @@ class Pool:
                 self.rest_provider(model, wait, 12 * 3600)
             else:
                 self.rest(model, wait, 12 * 3600)
-        elif code == 402 or re.search(r'\[402\]|credits', body):
-            # Credit is the account's, so every model behind it waits.
-            self.rest_provider(model, 3600, 6 * 3600)
+        elif code == 402 or NO_CREDIT.search(body):
+            # Credit is the account's and does not come back within the day, so every model behind
+            # it waits 6 hours: two OpenRouter models were asked 305 times a day after a 402.
+            self.rest_provider(model, 6 * 3600, 6 * 3600)
+        elif ACCOUNT_QUOTA.search(body):
+            wait = reset_after(body)
+            self.rest_provider(model, wait + 2 if wait is not None else 900, 6 * 3600)
         elif code in (403, 429) or ((code or 500) >= 500 and QUOTA.search(body)):
             wait = reset_after(body)
             self.rest(model, wait + 2 if wait is not None else 300, 120 if wait is not None else 1800)
@@ -325,41 +395,53 @@ class Pool:
             self.rest(model, 60, 900)
         return f'{model} {code or ""} {body[:160]}'
 
+    def standing(self, model, now):
+        """0 when the model answered in the last hour, 2 when none of its last 20 calls was
+        answered, else 1. The tier-0 names belong to gemini-cli, which refused every call of a
+        day, so ordering by name alone walked the dead models whenever the working ones were busy."""
+        if now - self.ok_at[model] < 3600:
+            return 0
+        h = self.hist[model]
+        return 2 if len(h) == h.maxlen and not any(h) else 1
+
     def pick(self, prefer, avoid):
-        """The preferred model when it is ready, else the strongest ready one no other worker is
-        calling, so the workers spread over several models rather than trip one rate limit. A
-        light model is taken only when no stronger one is ready, busy or not. No provider takes
-        more than its PROVIDER_LIMIT, else PER_PROVIDER, calls at once, and no model of a family
-        in `avoid` is taken."""
+        """The preferred model when it is ready, else the best ready one no other worker is
+        calling, so the workers spread over several models rather than trip one rate limit. Best
+        is measured success first (`standing`), then name tier. A light model, or one that has not
+        answered its last 20 calls, is taken only when no better one is ready, busy or not. No
+        provider takes more than its PROVIDER_LIMIT, else PER_PROVIDER, calls at once, and no model
+        of a family in `avoid` is taken."""
         now = time.time()
         night = datetime.now(timezone.utc).hour in NIGHT_UTC
         with LOCK:
             load = {}
             for m, n in self.busy.items():
                 load[provider(m)] = load.get(provider(m), 0) + n
-            ready = [m for m in self.models if self.cool[m] <= now and family(m) not in avoid
-                     and (night or provider(m) not in NIGHT_ONLY)
-                     and load.get(provider(m), 0) < PROVIDER_LIMIT.get(provider(m), PER_PROVIDER)]
+            ready = sorted((m for m in self.models if self.cool[m] <= now and family(m) not in avoid
+                            and (night or provider(m) not in NIGHT_ONLY)
+                            and load.get(provider(m), 0) < PROVIDER_LIMIT.get(provider(m), PER_PROVIDER)),
+                           key=lambda m: (self.standing(m, now), self.tier[m]))
             free = [m for m in ready if not self.busy[m]]
-            if free and ready and rank(free[0]) > len(RANK) >= rank(ready[0]):
+            if free and ready and (self.tier[free[0]] > len(RANK) >= self.tier[ready[0]]
+                                   or self.standing(free[0], now) == 2 > self.standing(ready[0], now)):
                 free = []
             model = prefer if prefer in ready else (free or ready or [None])[0]
             if model:
                 self.busy[model] += 1
             return model
 
-    def ask(self, system, user, prefer=None, avoid=()):
-        """(model, parsed JSON, seconds) from `prefer` when it is ready, else the strongest ready
+    def ask(self, system, user, prefer=None, avoid=(), bad_limit=0):
+        """(model, parsed JSON, seconds) from `prefer` when it is ready, else the best ready
         model whose family is not in `avoid`. A reply cut at the token limit or without JSON rests
-        that model and the call moves on. Waits up to 16 hours for a model, because a daily quota
-        reopens at midnight Pacific."""
+        that model and the call moves on; after `bad_limit` such replies, when set, the call gives
+        up. Waits up to 16 hours for a model, because a daily quota reopens at midnight Pacific."""
         text = system + '\n\n' + user
         avoid = {family(m) for m in avoid}
-        last, deadline = None, time.time() + 16 * 3600
+        last, bad, deadline = None, 0, time.time() + 16 * 3600
         while time.time() < deadline:
             model = self.pick(prefer, avoid)
             if not model:
-                time.sleep(20)
+                time.sleep(random.uniform(5, 20))
                 continue
             t, out = time.time(), ''
             try:
@@ -372,22 +454,25 @@ class Pool:
                     raise ValueError('reply cut at the token limit')
                 answer = parse(out)
             except (ValueError, LookupError) as e:
-                last = f'{model}: {e}: {out[:80]!r}'
+                self.record(model, False)
+                last, bad = f'{model}: {e}: {out[:80]!r}', bad + 1
                 if str(e).startswith('reply cut') and self.cap[model] < 64000:
                     with LOCK:
                         self.cap[model] *= 2
                 elif isinstance(e, ValueError):
                     self.rest(model, 600)
             except Exception as e:
+                self.record(model, False)
                 last = self.refused(model, e)
             else:
-                with LOCK:
-                    self.fails[model] = 0
+                self.record(model, True)
                 return model, answer, round(time.time() - t, 1)
             finally:
                 with LOCK:
                     self.busy[model] -= 1
             log('rest', last[:200])
+            if bad_limit and bad >= bad_limit:
+                break
         raise RuntimeError(last or 'no model answered')
 
 
@@ -395,7 +480,8 @@ def parse(text):
     text = re.sub(r'<think>[\s\S]*?</think>', '', text)
     m = re.search(r'```(?:json)?\s*([\s\S]*?)```', text)
     text = (m.group(1) if m else text).strip()
-    return json.loads(text[text.index('{'):text.rindex('}') + 1])
+    # DeepSeek's web replies can carry a raw newline or tab inside a string.
+    return json.loads(text[text.index('{'):text.rindex('}') + 1], strict=False)
 
 
 # ---------------------------------------------------------------- checks
@@ -493,6 +579,34 @@ def collocation_readings(text, example, reading, example_reading):
     return out, example_reading
 
 
+def cefr_label(v, fallback=None):
+    """A level as CEFR spells it. A range takes its lower bound ("A2.C1" is A2); the schema's own
+    "A1..C2" copied back is no judgement and takes `fallback`. Anything else is returned as given
+    and fails the check."""
+    found = re.findall(r'[ABC][12]', v.upper()) if isinstance(v, str) else []
+    if len(found) > 1 and (found[0], found[-1]) == ('A1', 'C2'):
+        return fallback if fallback in CEFR else v
+    return found[0] if found else v
+
+
+def normalise(layer, raw):
+    """Values a loader can repair in place rather than throw the layer away: 219 cached layers
+    failed on "cefr A1.C2" (48), "register neutral" (24), "register null" (22) and the like."""
+    level = cefr_label(layer.get('level'), raw.get('level'))
+    if level in CEFR:
+        layer['level'] = level
+    for c in layer.get('core_senses') or []:
+        if not isinstance(c, dict):
+            continue
+        c['cefr'] = cefr_label(c.get('cefr'), layer.get('level') if layer.get('level') in CEFR else raw.get('level'))
+        c['domain'] = domain_label(c.get('domain'))
+        c['register'] = register_label(c.get('register'))
+        eq = c.get('equivalents')
+        if isinstance(eq, dict) and isinstance(eq.get('zh'), list):
+            eq['zh'] = [t[:-1] if isinstance(t, str) and len(t) >= 3 and t.endswith('的') else t for t in eq['zh']]
+    return layer
+
+
 def validate(layer, raw, trad):
     """Structural problems; an empty list means the layer can be loaded."""
     ids = {s['id'] for s in raw['senses']}
@@ -588,13 +702,13 @@ def build(entry_id, trad, pool):
     raw = raw_entry(entry_id)
     writer, layer, secs = pool.ask(SYSTEM, write_user(raw))
     rec = {'raw': raw, 'report': {'id': entry_id, 'writer': writer, 'seconds_write': secs}}
-    errs = validate(layer, raw, trad)
+    errs = validate(normalise(layer, raw), raw, trad)
     if errs:
         # One retry with the problems spelled out; the model usually fixes all of them.
         writer, layer, secs = pool.ask(SYSTEM, write_user(raw) + '\n\nYour previous answer had these problems; '
                                        f'return the whole corrected layer:\n{json.dumps(errs)}\n\nPrevious answer:\n'
                                        + json.dumps(layer, ensure_ascii=False), prefer=writer)
-        errs = validate(layer, raw, trad)
+        errs = validate(normalise(layer, raw), raw, trad)
         rec['report'].update(writer=writer, seconds_retry=secs)
     if errs:
         rec['report']['errors'] = errs
@@ -611,7 +725,7 @@ def build(entry_id, trad, pool):
                                            f'\n\nYour layer:\n{json.dumps(layer, ensure_ascii=False)}\n\nReviewer issues:\n'
                                            f'{json.dumps(issues, ensure_ascii=False)}', prefer=writer, avoid={reviewer})
         rec['report'].update(fixer=fixer, seconds_fix=secs)
-        fix_errs = validate(fixed, raw, trad)
+        fix_errs = validate(normalise(fixed, raw), raw, trad)
         if fix_errs:
             # The review was not applied, so no gloss a dictionary wrote is replaced on its word.
             rec['report']['fix_errors'] = fix_errs
@@ -632,13 +746,20 @@ def gloss(text):
     return re.sub(r'\s*[;/]\s*', ', ', text).rstrip('.').strip()
 
 
+# What models write for "no label".
+NO_LABEL = {'null', 'none', 'neutral', 'general', 'standard', 'common', 'n/a', 'na', '-'}
+
+
 def domain_label(v):
-    """A minor sense's field outside the list becomes 'other' rather than failing the entry."""
-    return None if not v else v if v in DOMAINS else 'other'
+    """A field outside the list becomes 'other' rather than failing the entry."""
+    v = v.strip().lower() if isinstance(v, str) else ''
+    if v in NO_LABEL | {''}:
+        return None
+    return v if v in DOMAINS else 'other'
 
 
 def register_label(v):
-    return next((r for r in re.split(r'[/,; ]+', v or '') if r in REGISTERS), None)
+    return next((r for r in re.split(r'[/,; ]+', v.lower() if isinstance(v, str) else '') if r in REGISTERS), None)
 
 
 def as_text(v):
@@ -776,19 +897,31 @@ def cmd_run(a):
 
     # A flush drops every cached dictionary page, so it runs on a clock, not per entry count.
     flushed = time.time()
-    with ThreadPoolExecutor(a.workers) as ex:
-        futs = {ex.submit(one, i): i for i in ids}
-        for n, f in enumerate(as_completed(futs), 1):
-            entry_id = futs[f]
-            try:
-                status, detail = f.result()
-            except Exception as e:
-                status, detail = 'failed', f'{type(e).__name__}: {str(e)[:200]}'
-            totals[status] += 1
-            log(f'{n}/{len(ids)}', status, entry_id, json.dumps(detail, ensure_ascii=False)[:200])
-            if not a.dry_run and status == 'loaded' and time.time() - flushed > FLUSH_EVERY:
-                revalidate()
-                flushed = time.time()
+    # An entry left invalid is built once more before the run ends: a run of 8,599 entries takes
+    # days, and 219 invalid ones otherwise waited for the next run.
+    for attempt in range(2):
+        invalid = []
+        with ThreadPoolExecutor(a.workers) as ex:
+            futs = {ex.submit(one, i): i for i in ids}
+            for n, f in enumerate(as_completed(futs), 1):
+                entry_id = futs[f]
+                try:
+                    status, detail = f.result()
+                except Exception as e:
+                    status, detail = 'failed', f'{type(e).__name__}: {str(e)[:200]}'
+                totals[status] += 1
+                if status == 'invalid':
+                    invalid.append(entry_id)
+                log(f'{n}/{len(ids)}', status, entry_id, json.dumps(detail, ensure_ascii=False)[:200])
+                if not a.dry_run and status == 'loaded' and time.time() - flushed > FLUSH_EVERY:
+                    revalidate()
+                    flushed = time.time()
+        if not invalid:
+            break
+        if attempt == 0:
+            totals['invalid'] -= len(invalid)
+            ids = invalid
+            log(f'building {len(ids)} invalid entries again')
     if not a.dry_run:
         revalidate()
     log('finished', json.dumps(totals))
@@ -799,7 +932,7 @@ def cmd_load(a):
     for path in a.files:
         rec = json.load(open(path))
         errs = rec['report'].get('errors') or ([] if 'layer' in rec else ['no layer'])
-        errs = errs or validate(rec['layer'], rec['raw'], trad)
+        errs = errs or validate(normalise(rec['layer'], rec['raw']), rec['raw'], trad)
         if errs:
             log('skip', path, json.dumps(errs, ensure_ascii=False)[:200])
             continue

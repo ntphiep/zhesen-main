@@ -1,28 +1,25 @@
-"""Vietnamese enrichment of levelled entries through the 9router model router.
+"""Vietnamese enrichment of levelled entries through the 9router and OmniRoute model routers.
 
 Per call: fix or fill machine-translated sense glosses, translate the examples the word page
 shows, propose collocations for the lower levels, and a CEFR guess for estimated levels.
 Runs on the database host. State lives in STATE_DIR so a restart resumes.
 
 Usage: enrich.py [--lang en|es|zh] [--limit N] [--entries id,id] [--workers N] [--dry-run]
+env: AI_BASE_URL, AI_API_KEY, OMNI_BASE_URL, OMNI_API_KEY (from /opt/zhesen/learner/env.sh)
 """
-import argparse, json, os, random, re, secrets, subprocess, sys, threading, time, urllib.error, urllib.request
+import argparse, json, os, re, secrets, subprocess, sys, threading, urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'learner'))
+import learner  # Pool: every usable model, refusal handling, the Claude and RESERVED filters
+
 STATE_DIR = os.environ.get('ENRICH_STATE', '/opt/zhesen/enrich')
-ROUTER = 'http://127.0.0.1:20128/v1/chat/completions'
-# OmniRoute beside 9router; a model named 'omni:<id>' goes there.
-OMNI = 'http://127.0.0.1:20130/v1/chat/completions'
-# In order of preference; each one cools down on its own after a quota or server error.
-# ENRICH_MODELS replaces the list, to compare one model on a dry run.
-# Only accounts the production assistant does not use: its zhesen combos hold ag/antigravity,
-# DeepSeek web, orca and kiro, and a batch on the same account spends the learners' quota.
-MODELS = os.environ['ENRICH_MODELS'].split(',') if os.environ.get('ENRICH_MODELS') else [
-          'gemini/gemini-3.8-flash', 'gemini/gemini-3-flash-preview', 'or/deepseek/deepseek-v4.1-flash',
-          'or/qwen/qwen3.8-flash', 'gemini/gemini-3.5-flash-lite',
-          'gemini/gemini-3.6-flash', 'gemini/gemini-3.7-flash', 'gemini/gemini-3.1-flash-lite-preview',
-          'gemini/gemma-4-31b-it']
+# Every model learner.Pool finds on both routers. A fixed list of nine sent all four workers to
+# its first ready model: two flash-lite models wrote 7,860 of 8,740 glosses in a day.
+# ENRICH_MODELS replaces the pool, to compare one model on a dry run.
+MODELS = os.environ['ENRICH_MODELS'].split(',') if os.environ.get('ENRICH_MODELS') else None
+MAX_TOKENS = 8000
 MAX_SENSES, MAX_EXAMPLES, MAX_ENTRIES = 36, 30, 8
 LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 LOCK = threading.Lock()
@@ -239,71 +236,18 @@ def prompt(call):
             xmap[n_x] = x
             ref = f" (sense S{local[x['sense_id']]})" if x['sense_id'] in local else ''
             lines.append(f"X{n_x}{ref}: {x['text']}")
-    text = rules() + '\n\nNumbers: entries E1.., senses S1.., examples X1.. (put the number only in "n").\n' + '\n'.join(lines)
-    return text, smap, xmap, emap
+    user = 'Numbers: entries E1.., senses S1.., examples X1.. (put the number only in "n").\n' + '\n'.join(lines)
+    return rules(), user, smap, xmap, emap
 
 
 # ---------------------------------------------------------------- model
 
-class Router:
-    def __init__(self, key):
-        self.key = key
-        self.omni_key = ssm('/zhesen/prod/omniroute_api_key') if any(m.startswith('omni:') for m in MODELS) else None
-        self.cool = {m: 0.0 for m in MODELS}
-        self.fails = {m: 0 for m in MODELS}
-
-    def rest(self, model, wait, cap=1800):
-        # Twelve workers re-trip a window that reopens in seconds, so repeated failures back off,
-        # to 2 minutes past a stated reset and to 30 minutes past an exhausted daily quota.
-        with LOCK:
-            self.fails[model] += 1
-            self.cool[model] = time.time() + max(wait, min(cap, 15 * 2 ** self.fails[model]))
-
-    def ask(self, text):
-        # The Gemini API daily quota reopens at midnight Pacific, so a call waits up to 16 hours;
-        # a call that gave up marked its entries failed, and the last pass never retries them.
-        last, deadline = None, time.time() + 16 * 3600
-        while time.time() < deadline:
-            now = time.time()
-            ready = [m for m in MODELS if self.cool[m] <= now]
-            if not ready:
-                time.sleep(min(self.cool.values()) - now + 1)
-                continue
-            model = ready[0]
-            # OpenRouter refuses a request whose max_tokens the remaining credit cannot cover.
-            cap = 3500 if model.startswith('or/') else 8000
-            omni = model.startswith('omni:')
-            body = json.dumps({'model': model[5:] if omni else model, 'max_tokens': cap, 'stream': False,
-                               'temperature': 0.2, 'messages': [{'role': 'user', 'content': text}]}).encode()
-            req = urllib.request.Request(OMNI if omni else ROUTER, body,
-                                         {'Authorization': f'Bearer {self.omni_key if omni else self.key}',
-                                          'Content-Type': 'application/json'})
-            try:
-                with urllib.request.urlopen(req, timeout=240) as r:
-                    d = json.load(r)
-                self.fails[model] = 0
-                return model, d['choices'][0]['message']['content']
-            except urllib.error.HTTPError as e:
-                body = e.read()[:300]
-                last = f'{model} HTTP {e.code} {body[:160]!r}'
-                quota = e.code in (402, 403, 429) or any(k in body for k in (b'429', b'403', b'402', b'quota', b'credits'))
-                # The router says when a window reopens: "reset after 1m 18s".
-                m = re.search(rb'reset after (?:(\d+)m ?)?(\d+)s', body)
-                wait = int(m.group(1) or 0) * 60 + int(m.group(2)) + 2 if m else (300 if quota else 60)
-                self.rest(model, wait, 120 if m else 1800)
-            except Exception as e:
-                last = f'{model} {type(e).__name__} {e}'
-                self.rest(model, 30)
-            log('retry', last)
-        raise RuntimeError(last)
-
-
-def parse(text):
-    t = text.strip()
-    t = re.sub(r'^```(?:json)?\s*|\s*```$', '', t)
-    i, j = t.find('{'), t.rfind('}')
-    # DeepSeek's web replies can carry a raw newline or tab inside a string.
-    return json.loads(t[i:j + 1], strict=False)
+def make_pool():
+    """learner.Pool with replies capped at MAX_TOKENS, which a call of 36 senses and 30 examples fits."""
+    pool = learner.Pool(MODELS)
+    for m in pool.models:
+        pool.cap[m] = MAX_TOKENS
+    return pool
 
 
 def clean(s, cap, quotes=True):
@@ -438,7 +382,7 @@ def main():
       'zhesen AI enrichment', null, 'machine output',  'open',
       'Collocations and Vietnamese glosses written by a language model through the 9router router (Gemini and GPT-OSS). Needs a human pass before it is treated as authoritative.')
       on conflict (id) do nothing;""")
-    router = Router(ssm('/zhesen/prod/ai_api_key'))
+    pool = make_pool()
     q = entry_queue(a.collocation_targets)
     if a.entries:
         want = set(a.entries.split(','))
@@ -454,14 +398,15 @@ def main():
         calls = plan_calls(block, senses, examples)
 
         def ask_once(call):
-            text, smap, xmap, emap = prompt(call)
+            system, user, smap, xmap, emap = prompt(call)
             for attempt in range(3):
-                model, reply = router.ask(text)
+                # Three replies without JSON give up, each resting its model so the next goes elsewhere.
+                model, out, _ = pool.ask(system, user, bad_limit=3)
                 try:
-                    return model, write(call, model, parse(reply), smap, xmap, emap, a.dry_run)
-                except (ValueError, KeyError, TypeError) as e:
-                    log('bad json', model, str(e)[:80], reply[:120].replace('\n', ' '))
-            raise RuntimeError('no parseable reply')
+                    return model, write(call, model, out, smap, xmap, emap, a.dry_run)
+                except (ValueError, KeyError, TypeError, AttributeError) as e:
+                    log('bad reply', model, str(e)[:80])
+            raise RuntimeError('no usable reply')
 
         def run(call):
             try:

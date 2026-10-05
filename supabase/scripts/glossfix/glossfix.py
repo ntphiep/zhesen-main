@@ -3,16 +3,16 @@
 
 A sense is in scope while its gloss is a machine translation no model has reviewed: gloss_vi_is_mt,
 and provenance gloss_vi_source 'mt:google' or no 'ai' key, and no learner fix and no earlier review
-by this job. One model (never Claude, never one the learner batch reserves for the site assistant)
-gets up to CALL_SENSES senses per call, each with headword, part of speech, English definition, one
-example and the current Vietnamese, and returns a concise gloss and a verdict per sense. Checked
+by this job. A model of learner.Pool (never Claude, never one the learner batch reserves for the site
+assistant) gets up to CALL_SENSES senses per call, each with headword, part of speech, English
+definition, one example and the current Vietnamese, and returns a concise gloss and a verdict per sense. Checked
 replies are appended to STATE/results.jsonl; every LOAD_SENSES senses or LOAD_SECONDS they are loaded
 in one short transaction after the old rows are backed up to S3, and the site cache is dropped.
 
 usage:
   glossfix.py probe --models a,b
   glossfix.py gate --models a,b [--writers N] [--workers N] [--sample NAME] [--blank]
-  glossfix.py run --models a,b [--workers N] [--phases A,B,C,D,E,F] [--limit N] [--dry-run] [--guard]
+  glossfix.py run [--models a,b] [--workers N] [--phases A,B,C,D,E,F] [--limit N] [--dry-run] [--guard]
   glossfix.py undo --batches 1,2 | --all [--check]
 env: AI_BASE_URL, AI_API_KEY, OMNI_BASE_URL, OMNI_API_KEY (from /opt/zhesen/learner/env.sh)
 """
@@ -20,7 +20,7 @@ import argparse, gzip, json, os, random, re, secrets, subprocess, sys, threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
-sys.path.insert(0, '/opt/zhesen/learner')
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'learner'))
 try:
     import learner  # Pool: model calls, refusal handling, the Claude and RESERVED filters
 except ImportError:  # read by the local gate scoring, which needs only the text helpers
@@ -267,8 +267,9 @@ def judge_text(items):
 
 
 LEARNER_LOG = '/opt/zhesen/learner/run.log'
-# The learner loaded 26 to 204 entries an hour over the day before this job; below this the job yields.
-LEARNER_MIN_PER_HOUR = 55
+# The learner loaded 7 to 51 entries an hour, 24.5 on average, from 2026-10-04 to 10-05; below half
+# of that the job yields.
+LEARNER_MIN_PER_HOUR = 12
 PAUSE = {'until': 0.0}
 
 
@@ -283,48 +284,46 @@ def learner_running():
     return False
 
 
-def learner_state(models):
-    """(refused, loaded) from the learner batch's log, whose lines start HH:MM:SS in UTC: whether it logged a
-    4xx or 5xx refusal for one of these models in the last 10 minutes, and how many entries it finished in
-    the last 60. Over the 20 hours before this job it logged 1 such refusal for agy gpt-oss."""
+def learner_loaded():
+    """How many entries the learner batch finished in the last 60 minutes, from its log, whose lines
+    start HH:MM:SS in UTC. Both jobs draw on the whole pool, so a refusal of one model in that log
+    says nothing about this job: one model refused in every 10 minutes, and the guard paused 54
+    times in a row on it."""
     try:
         with open(LEARNER_LOG, 'rb') as fh:
             fh.seek(0, 2)
             fh.seek(max(0, fh.tell() - 2_000_000))
             lines = fh.read().decode('utf-8', 'replace').splitlines()[1:]
     except OSError:
-        return False, LEARNER_MIN_PER_HOUR
+        return LEARNER_MIN_PER_HOUR
     now = datetime.now(timezone.utc)
     now_s = now.hour * 3600 + now.minute * 60 + now.second
-    rest = re.compile(r'\d\d:\d\d:\d\d rest (' + '|'.join(re.escape(m) for m in models) + r') [45]\d\d ')
-    refused, loaded = False, 0
+    loaded = 0
     for line in reversed(lines):
         m = re.match(r'(\d\d):(\d\d):(\d\d) ', line)
         if not m:
             continue
-        age = (now_s - (int(m[1]) * 3600 + int(m[2]) * 60 + int(m[3]))) % 86400
-        if age >= 3600:
+        if (now_s - (int(m[1]) * 3600 + int(m[2]) * 60 + int(m[3]))) % 86400 >= 3600:
             break
-        refused = refused or (age < 600 and bool(rest.match(line)))
-        loaded += bool(re.match(r'\d\d:\d\d:\d\d \d+/\d+ ', line))
-    return refused, loaded
+        loaded += bool(re.match(r'\d\d:\d\d:\d\d \d+/\d+ loaded ', line))
+    return loaded
 
 
-def guard(models):
-    """Holds the calling worker for 15 minutes at a time while the learner batch runs and either was refused
-    on a model this job shares or finished fewer than LEARNER_MIN_PER_HOUR entries in the last hour."""
+def guard():
+    """Holds the calling worker for 15 minutes at a time while the learner batch runs and finished
+    fewer than LEARNER_MIN_PER_HOUR entries in the last hour."""
     while True:
         with LOCK:
             now = time.time()
             if now >= PAUSE['until']:
                 if not learner_running():
                     return
-                refused, loaded = learner_state(models)
-                if not refused and loaded >= LEARNER_MIN_PER_HOUR:
+                loaded = learner_loaded()
+                if loaded >= LEARNER_MIN_PER_HOUR:
                     return
                 PAUSE['until'] = now + 900
                 print(datetime.now(timezone.utc).strftime('%m-%d %H:%M:%S'), 'pausing 15 minutes: learner',
-                      'refused on a shared model' if refused else f'loaded {loaded} entries in the last hour', flush=True)
+                      f'loaded {loaded} entries in the last hour', flush=True)
             wait = PAUSE['until'] - now
         time.sleep(wait)
 
@@ -491,7 +490,7 @@ def read_jsonl(path):
 
 def cmd_run(a):
     os.makedirs(STATE, exist_ok=True)
-    pool = Pool(a.models.split(','))
+    pool = Pool(a.models.split(',') if a.models else None)
     log(f'models {pool.models}')
     res_path = os.path.join(STATE, 'results.jsonl')
     done = {r['id'] for r in read_jsonl(res_path)}
@@ -518,7 +517,7 @@ def cmd_run(a):
 
     def one(call):
         if a.guard:
-            guard(pool.models)
+            guard()
         return (call, *review(pool, call))
 
     with ThreadPoolExecutor(a.workers) as ex:
@@ -664,13 +663,13 @@ def main():
     g.add_argument('--blank', action='store_true', help='send every sense without its current gloss')
     g.add_argument('--writers', type=int, default=1, help='how many of --models write; every model may judge')
     r = sub.add_parser('run')
-    r.add_argument('--models', required=True)
+    r.add_argument('--models', default='', help='only these models, instead of every usable one')
     r.add_argument('--workers', type=int, default=6)
     r.add_argument('--phases', default='A,B,C,D,E,F')
     r.add_argument('--limit', type=int, default=0)
     r.add_argument('--dry-run', action='store_true')
     r.add_argument('--guard', action='store_true',
-                   help='pause while the learner batch is refused on a shared model or loads too slowly')
+                   help='pause while the learner batch loads too slowly')
     u = sub.add_parser('undo')
     u.add_argument('--batches', default='')
     u.add_argument('--all', action='store_true')
