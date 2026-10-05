@@ -1,6 +1,7 @@
 'use client'
 import type { z } from 'zod'
 import type { TaskName } from './tasks'
+import { SUPABASE_AUTH_COOKIE } from '@/lib/supabase/env'
 
 // Type-only: a value import pulls all of zod into the chunk every route loads, because
 // AiChatPanel sits in the root layout -- 63.1 kB gzipped on pages with no assistant.
@@ -83,8 +84,17 @@ async function readLines(body: ReadableStream<Uint8Array>, onText?: (text: strin
   }
 }
 
-/** Whether the deployment has the assistant configured at all. */
+/** Whether this browser holds an auth cookie, whole or split into `.0`, `.1` chunks as
+ *  @supabase/ssr writes a long one. Without one the route can only answer false. */
+function hasSessionCookie(): boolean {
+  return document.cookie.split(/;\s*/).some((c) =>
+    c.startsWith(`${SUPABASE_AUTH_COOKIE}=`) || c.startsWith(`${SUPABASE_AUTH_COOKIE}.0=`))
+}
+
+/** Whether the deployment has the assistant configured at all. Asked only with a session:
+ *  every page view of a visitor otherwise paid an uncacheable request for `false`. */
 export async function aiEnabled(signal?: AbortSignal): Promise<boolean> {
+  if (!hasSessionCookie()) return false
   try {
     const res = await fetch('/api/ai', { signal })
     if (!res.ok) return false
