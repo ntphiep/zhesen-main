@@ -68,6 +68,10 @@ export type CoachOutput = z.infer<typeof coachOutput>
 export const suggestInput = z.object({
   /** What the learner typed and the dictionary could not match. */
   query: z.string().trim().min(1).max(120),
+  /** The box it was typed in: 'vi' is Vietnamese looking for a word, 'fw' a foreign word. */
+  direction: z.enum(['vi', 'fw']).optional(),
+  /** The languages that box is set to; the answer stays inside them. */
+  targets: z.array(langCode).min(1).max(3).optional(),
 })
 
 export const suggestOutput = z.object({
@@ -138,14 +142,14 @@ export type ChatOutput = z.infer<typeof chatOutput>
 const JSON_ONLY = 'Bạn trả về DUY NHẤT một object JSON hợp lệ. Không markdown, không rào đón, không giải thích ngoài JSON.'
 
 const TEACHER = [
-  'Bạn là giáo viên ngoại ngữ dạy người Việt, đang soạn thẻ từ vựng cho học viên ôn thi TOEIC.',
+  'Bạn là giáo viên ngoại ngữ dạy người Việt, đang soạn thẻ từ vựng cho học viên.',
   'Mọi phần giải thích viết bằng tiếng Việt tự nhiên, ngắn gọn, đúng chính tả.',
   'Không bịa: không chắc thì để chuỗi rỗng hoặc mảng rỗng thay vì đoán.',
   JSON_ONLY,
 ].join(' ')
 
 const TUTOR = [
-  'Bạn là gia sư ngoại ngữ của một người Việt đang ôn TOEIC, đang trả lời ngay trong ứng dụng từ điển Zhesen.',
+  'Bạn là gia sư ngoại ngữ của một người Việt học tiếng Anh, tiếng Trung hoặc tiếng Tây Ban Nha, đang trả lời ngay trong ứng dụng từ điển Zhesen.',
   'Trả lời bằng tiếng Việt, ngắn gọn, đi thẳng vào câu hỏi, tối đa vài câu.',
   'Ví dụ thì viết nguyên văn ở ngôn ngữ đích rồi kèm bản dịch tiếng Việt.',
   'Không bịa: không chắc thì nói thẳng là không chắc.',
@@ -153,12 +157,24 @@ const TUTOR = [
   'Viết văn bản thường, không markdown.',
 ].join(' ')
 
+const ALL_LANGS: LangCode[] = ['en', 'zh', 'es']
+const langNames = (langs: LangCode[]) => langs.map((l) => LANG_LABELS[l].toLowerCase()).join(', ')
+
+/** The exam a learner of this language prepares for, as one prompt line. Only English
+ *  learners here aim at TOEIC; Chinese and Spanish ones were coached with office English. */
+function examLine(lang: LangCode): string {
+  return lang === 'en' ? 'Học viên ôn thi TOEIC, nên ví dụ ưu tiên ngữ cảnh công sở và thương mại.' : ''
+}
+
 export interface TaskSpec<I, O> {
   input: z.ZodType<I>
   output: z.ZodType<O>
   maxTokens: number
   system: string
   prompt: (input: I) => string
+  /** What the shape cannot say: checks the answer against the input it answers, and
+   *  returns it trimmed to what holds, or null to refuse it whole. */
+  check?: (output: O, input: I) => O | null
   /** Present when the model answers in plain text rather than JSON, which is what lets
    *  the route stream it; turns the whole text into what `output` checks. */
   fromText?: (text: string) => unknown
@@ -182,7 +198,8 @@ export const TASKS = {
         ' "level": bậc CEFR ước lượng, một trong A1 A2 B1 B2 C1 C2;',
         ' "example": một câu ví dụ tự nhiên chứa đúng từ này, độ dài vừa phải;',
         ' "exampleVi": bản dịch tiếng Việt của chính câu ví dụ đó, KHÔNG phải nghĩa của từ}',
-      ].join('\n'),
+        examLine(lang),
+      ].filter(Boolean).join('\n'),
   } satisfies TaskSpec<z.infer<typeof enrichInput>, EnrichOutput>,
 
   coach: {
@@ -197,9 +214,9 @@ export const TASKS = {
         'Trả JSON với đúng các khoá sau:',
         '{"mnemonic": một mẹo nhớ ngắn bằng tiếng Việt, dựa vào gốc từ, hình ảnh hoặc âm thanh;',
         ' "collocations": mảng tối đa 6 cụm từ hay đi kèm, viết nguyên cụm;',
-        ' "examples": mảng 2 phần tử {"text": câu ví dụ, "vi": bản dịch tiếng Việt của câu đó},',
-        '   ưu tiên ngữ cảnh công sở và thương mại vì học viên ôn TOEIC;',
+        ' "examples": mảng 2 phần tử {"text": câu ví dụ chứa đúng từ này, "vi": bản dịch tiếng Việt của câu đó};',
         ' "confusables": mảng tối đa 3 phần tử {"word": từ dễ nhầm, "note": khác nhau chỗ nào}}',
+        examLine(lang),
       ].filter(Boolean).join('\n'),
   } satisfies TaskSpec<z.infer<typeof coachInput>, CoachOutput>,
 
@@ -211,18 +228,21 @@ export const TASKS = {
     output: suggestOutput,
     maxTokens: 700,
     system: TEACHER,
-    prompt: ({ query }) =>
+    prompt: ({ query, direction, targets = ALL_LANGS }) =>
       [
-        `Người học gõ "${query}" vào ô dịch và không có kết quả nào.`,
-        'Đó có thể là tiếng Việt, một mô tả, hoặc một từ viết sai.',
-        'Đề xuất tối đa 6 từ tiếng Anh, tiếng Trung hoặc tiếng Tây Ban Nha sát nghĩa nhất.',
-        'Ưu tiên tiếng Anh và ngữ cảnh công sở vì học viên ôn TOEIC.',
+        direction === 'vi'
+          ? `Người học gõ "${query}" vào ô tra tiếng Việt và không có kết quả nào. Đó có thể là một mô tả hoặc một từ viết sai.`
+          : direction === 'fw'
+            ? `Người học gõ "${query}" vào ô tra từ ${langNames(targets)} và không có kết quả nào. Đó có thể là một từ viết sai hoặc một dạng biến đổi.`
+            : `Người học gõ "${query}" vào ô dịch và không có kết quả nào. Đó có thể là tiếng Việt, một mô tả, hoặc một từ viết sai.`,
+        `Đề xuất tối đa 6 từ sát nghĩa nhất, chỉ bằng ${langNames(targets)}.`,
         'Trả JSON với đúng khoá sau:',
-        '{"words": mảng các phần tử {"lang": "en" hoặc "zh" hoặc "es",',
+        `{"words": mảng các phần tử {"lang": ${targets.map((l) => `"${l}"`).join(' hoặc ')},`,
         '   "headword": chính từ đó, viết đúng chính tả, không kèm giải thích;',
         '   "meaningVi": nghĩa tiếng Việt ngắn gọn}}',
         'Không có từ nào phù hợp thì trả mảng rỗng.',
       ].join('\n'),
+    check: (out, { targets }) => (targets ? { words: out.words.filter((w) => targets.includes(w.lang)) } : out),
   } satisfies TaskSpec<z.infer<typeof suggestInput>, SuggestOutput>,
 
   /** Topic tags for words already saved, so the wordlist's tag filter has something to
@@ -235,7 +255,7 @@ export const TASKS = {
     system: TEACHER,
     prompt: ({ words, existing }) =>
       [
-        'Gắn thẻ chủ đề cho danh sách từ dưới đây, phục vụ ôn thi TOEIC.',
+        'Gắn thẻ chủ đề cho danh sách từ dưới đây.',
         existing.length ? `Thẻ đang dùng, hãy ưu tiên dùng lại: ${existing.join(', ')}.` : '',
         'Mỗi từ tối đa 2 thẻ, mỗi thẻ là một danh từ tiếng Việt ngắn, viết thường.',
         'Thẻ phải nói về chủ đề hoặc tình huống, không phải từ loại.',
@@ -283,6 +303,8 @@ export interface ErasedTask {
   promptFor(input: unknown): string | null
   /** The model's answer, or null when it is not the promised shape. */
   parseOutput(value: unknown): unknown | null
+  /** `parseOutput` plus the task's `check` against this input. */
+  parserFor(input: unknown): (value: unknown) => unknown | null
   /** See `TaskSpec.fromText`. */
   fromText?: (text: string) => unknown
   /** See `TaskSpec.maxChars`. */
@@ -300,6 +322,14 @@ function erase<I, O>(spec: TaskSpec<I, O>): ErasedTask {
     parseOutput(value) {
       const parsed = spec.output.safeParse(value)
       return parsed.success ? parsed.data : null
+    },
+    parserFor(input) {
+      const asked = spec.input.safeParse(input)
+      return (value) => {
+        const parsed = spec.output.safeParse(value)
+        if (!parsed.success) return null
+        return asked.success && spec.check ? spec.check(parsed.data, asked.data) : parsed.data
+      }
     },
     fromText: spec.fromText,
     maxChars: spec.maxChars,

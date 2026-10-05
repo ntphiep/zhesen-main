@@ -203,7 +203,7 @@ export async function POST(request: Request) {
     const data = await askJson(cfg, {
       system: spec.system,
       user: prompt,
-      parse: spec.parseOutput,
+      parse: spec.parserFor(envelope.data.input),
       maxTokens: spec.maxTokens,
       signal,
     })

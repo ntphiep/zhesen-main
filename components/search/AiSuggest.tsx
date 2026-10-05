@@ -6,6 +6,7 @@ import { useAiEnabled } from '@/lib/hooks/useAiEnabled'
 import { searchPath } from '@/lib/dictionary/entryId'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import type { SuggestOutput } from '@/lib/ai/tasks'
+import type { LangCode } from '@/lib/languages'
 import s from './Lookup.module.css'
 import { ErrorLine } from './ErrorLine'
 
@@ -23,7 +24,12 @@ type State =
  * Behind a button, not fired on every empty search: a typo mid-typing empties the
  * search on almost every keystroke, and a model call per keystroke is slow and dear.
  */
-export function AiSuggest({ query }: { query: string }) {
+export function AiSuggest({ query, direction, targets }: {
+  query: string
+  /** The box the query was typed in, so the answer is in the languages that box is set to. */
+  direction?: 'vi' | 'fw'
+  targets?: LangCode[]
+}) {
   const enabled = useAiEnabled()
   const [state, setState] = useState<State>({ kind: 'idle' })
 
@@ -42,7 +48,7 @@ export function AiSuggest({ query }: { query: string }) {
   async function ask() {
     setState({ kind: 'loading' })
     try {
-      const outcome = await callAi('suggest', { query })
+      const outcome = await callAi('suggest', { query, ...(direction && { direction }), ...(targets && { targets }) })
       setState(outcome.status === 'ok'
         ? { kind: 'done', words: outcome.data.words }
         : { kind: 'error', message: outcome.message })

@@ -413,7 +413,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
       )}
       {/* Renders nothing where `aiConfig()` is null, which is every deployment that
           cannot reach the router. */}
-      {showEmpty && <AiSuggest query={trimmed} />}
+      {showEmpty && <AiSuggest query={trimmed} direction={direction} targets={targets} />}
 
       {/* Below the results, because a filter is only worth reading once there is something
           to filter, and the chips depend on what came back. */}
