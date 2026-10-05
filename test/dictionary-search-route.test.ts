@@ -79,6 +79,15 @@ describe('GET /dictionary/search', () => {
     expect(Array.from(argsOf(0)[1] as string)).toHaveLength(64)
   })
 
+  // A lookup missing its machine-translation rows is not the answer to keep for a day.
+  it('keeps a lookup whose translation failed out of every cache', async () => {
+    searchOneDirection.mockResolvedValueOnce({ entries: { en: [], es: [], zh: [] }, suggestions: [], translationFailed: true } as never)
+    const res = await get('q=tr%C6%B0%E1%BB%9Dng&dir=vi')
+    expect(res.headers.get('Cache-Control')).toBe('no-store')
+    expect(res.headers.get('CDN-Cache-Control')).toBeNull()
+    expect(await res.json()).not.toHaveProperty('translationFailed')
+  })
+
   it('tells the browser and the CDN different things about freshness', async () => {
     const res = await get('q=dog')
     expect(res.headers.get('Cache-Control')).toContain('must-revalidate')

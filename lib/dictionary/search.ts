@@ -126,6 +126,9 @@ export interface SearchOneDirection {
   /** `vi` only: what the translation of the query found in a language with few native
    *  hits, never repeating one of them. */
   translated?: Partial<Record<LangCode, TranslatedHits>>
+  /** The translation fallback was due and Azure failed or timed out, so the answer is
+   *  incomplete and no cache may keep it. */
+  translationFailed?: true
 }
 
 /** A Vietnamese lookup with fewer native hits than this in a language is also searched
@@ -138,11 +141,12 @@ const TRANSLATE_BELOW = 3
 const TRANSLATE_TIMEOUT_MS = 3000
 
 /** Search each weak language for the query's machine translation, in one Azure request.
- *  Any failure answers null: the native hits stand on their own. */
+ *  Null when nothing was due or nothing new was found; `failed` when Azure or the search
+ *  behind it failed, and the native hits then stand on their own. */
 async function searchTranslation(
   supabase: SupabaseClient, q: string, native: Record<LangCode, DictEntryPreview[]>,
   perLang: number, langs: readonly LangCode[],
-): Promise<Partial<Record<LangCode, TranslatedHits>> | null> {
+): Promise<Partial<Record<LangCode, TranslatedHits>> | null | 'failed'> {
   const weak = langs.filter((l) => native[l].length < TRANSLATE_BELOW)
   if (weak.length === 0) return null
   const cfg = await azureTranslatorConfig()
@@ -164,7 +168,7 @@ async function searchTranslation(
     for (const [l, h] of hits) out[l] = { ...h, entries: withLead(h.entries, lead) }
     return Object.keys(out).length > 0 ? out : null
   } catch {
-    return null
+    return 'failed'
   }
 }
 
@@ -201,16 +205,18 @@ export async function searchOneDirection(
     for (const l of LANG_CODES) entries[l] = withLead(entries[l], lead)
   }
 
-  const translated = direction === 'vi' ? await searchTranslation(supabase, q, entries, perLang, langs) : null
+  const fallback = direction === 'vi' ? await searchTranslation(supabase, q, entries, perLang, langs) : null
+  const failed = fallback === 'failed' ? { translationFailed: true as const } : {}
+  const translated = fallback === 'failed' ? null : fallback
   if (translated) return { entries, suggestions: [], translated }
-  if (countAll(entries) > 0) return { entries, suggestions: [] }
+  if (countAll(entries) > 0) return { entries, suggestions: [], ...failed }
 
   // Offered only from the side the learner is typing on. A Vietnamese query answered with
   // sagrado, divino and santidad under "Có phải bạn tìm" was the previous behaviour, and
   // those three were in fact the correct answer to "thiêng liêng" all along.
   const want = direction === 'vi' ? 'gloss_vi' : 'headword'
   const suggestions = (await suggestNearby(supabase, q)).filter((s) => s.kind === want)
-  if (direction === 'vi') return { entries, suggestions }
+  if (direction === 'vi') return { entries, suggestions, ...failed }
   // A headword guess arrives with lex.suggest's lowest sense_order.
   const lead = await leadGlosses(supabase, suggestions.map((s) => s.id))
   return {

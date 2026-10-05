@@ -116,8 +116,9 @@ export async function GET(request: Request) {
   if (!cold.allowed) return tooFast(cold.retryAfterSeconds)
 
   try {
-    const data = await getCachedSearch(key, langs, direction)
-    return Response.json(data, { headers: CACHE_HEADERS })
+    const { translationFailed, ...data } = await getCachedSearch(key, langs, direction)
+    // Incomplete, so neither the browser nor the CDN keeps it: the next ask retries Azure.
+    return Response.json(data, { headers: translationFailed ? { 'Cache-Control': 'no-store' } : CACHE_HEADERS })
   } catch (e) {
     if (isStatementTimeout(e)) return tooSlow()
     throw e

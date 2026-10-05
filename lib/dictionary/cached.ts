@@ -18,7 +18,7 @@ import { unstable_cache } from 'next/cache'
 export const LEX_REVALIDATE = 604800
 import { createContentClient } from '@/lib/supabase/content'
 import { getEntryDetail, getCrossLanguage, getCharacters, getInflections, getTermPreviews } from './entryDetail'
-import { getCommonWords, searchOneDirection, type CommonWordsOptions, type Direction } from './search'
+import { getCommonWords, searchOneDirection, type CommonWordsOptions, type Direction, type SearchOneDirection } from './search'
 import { resolveTappableTexts, type ResolvedText } from './tappable'
 import { getEntriesContaining, getPhrasalVerbs } from './containing'
 import { phraseLemmaId } from './resolveTokens'
@@ -33,18 +33,38 @@ import type { LangCode } from '@/lib/languages'
  *  the cache holds the answer, so the two have to forget it at the same moment. */
 export const SEARCH_CACHE_SECONDS = 3600
 
+/** Thrown out of the cached function so `unstable_cache` stores nothing: on a miss it keeps
+ *  only a value the function resolved with. */
+class IncompleteSearch extends Error {
+  constructor(readonly result: SearchOneDirection) { super('translation fallback failed') }
+}
+
 /** One direction of the lookup, as `GET /dictionary/search` and the home page ask it. The
  *  language list and the direction are part of the key, not a filter applied to a cached
  *  answer: each combination asks the database something different. Shared, so the page and
  *  the route read one cache entry for the same arguments. */
 // `unstable_cache` keys on the wrapper's text, not the parsers it calls: a change to one its rows
 // pass through (`cleanGlossVi`, `senseSections`) needs a new version on every key below it feeds.
-export const getCachedSearch = unstable_cache(
-  (q: string, langs: LangCode[], direction: Direction) =>
-    searchOneDirection(createContentClient(), q, direction, 8, langs),
+const cachedSearch = unstable_cache(
+  async (q: string, langs: LangCode[], direction: Direction) => {
+    const found = await searchOneDirection(createContentClient(), q, direction, 8, langs)
+    if (found.translationFailed) throw new IncompleteSearch(found)
+    return found
+  },
   ['dict-search-one-v4'],
   { revalidate: SEARCH_CACHE_SECONDS, tags: ['lex'] },
 )
+
+/** A lookup whose translation fallback failed is answered but never kept: one slow Azure
+ *  answer would otherwise stand as the Vietnamese lookup for the whole window. */
+export async function getCachedSearch(q: string, langs: LangCode[], direction: Direction): Promise<SearchOneDirection> {
+  try {
+    return await cachedSearch(q, langs, direction)
+  } catch (e) {
+    if (e instanceof IncompleteSearch) return e.result
+    throw e
+  }
+}
 
 /** Also memoised per request with React `cache`: `generateMetadata` and the word page both
  *  read it, and on a miss `unstable_cache` ran `getEntryDetail` twice. Next dedupes GET

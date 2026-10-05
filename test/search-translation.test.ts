@@ -99,6 +99,26 @@ describe('searchOneDirection, Vietnamese fallback through a translation', () => 
     expect(res.translated).toBeUndefined()
   })
 
+  // The route keeps such an answer out of every cache, so it has to be told.
+  it('says the translation failed when Azure fails', async () => {
+    translateCached.mockRejectedValue(new DOMException('timed out', 'TimeoutError'))
+    const { client: c } = client([row('en:field', 'field', 3.9)], {})
+
+    const res = await searchOneDirection(c, 'trường', 'vi', 8, ['en'])
+
+    expect(res.translationFailed).toBe(true)
+  })
+
+  it('reports no failure when the translation found nothing new', async () => {
+    translateCached.mockResolvedValue({ from: 'vi', translations: { en: 'field' } })
+    const { client: c } = client([row('en:field', 'field', 3.9)], { field: [row('en:field', 'field', 4)] })
+
+    const res = await searchOneDirection(c, 'trường', 'vi', 8, ['en'])
+
+    expect(res.translated).toBeUndefined()
+    expect(res.translationFailed).toBeUndefined()
+  })
+
   it('never translates in the foreign direction', async () => {
     const { client: c } = client([], { dog: [] })
     await searchOneDirection(c, 'dog', 'fw', 8, ['en'])
