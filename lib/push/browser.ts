@@ -3,12 +3,21 @@ import type { DeviceKeys } from '@/lib/push/reminders'
 /** What this browser can do about a reminder. */
 export type PushSupport = 'ok' | 'install' | 'blocked' | 'none'
 
-/** Browser only. iOS and iPadOS give push only to an app opened from the Home Screen
- *  (https://webkit.org/blog/13878/), and only there is `navigator.standalone` false. */
+/** Browser only. iOS and iPadOS 16.4 and later give push only to an app opened from the Home
+ *  Screen (https://webkit.org/blog/13878/), and only there is `navigator.standalone` false. */
 export function pushSupport(): PushSupport {
   const capable = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
-  if (!capable) return Reflect.get(navigator, 'standalone') === false ? 'install' : 'none'
-  return Notification.permission === 'denied' ? 'blocked' : 'ok'
+  if (capable) return Notification.permission === 'denied' ? 'blocked' : 'ok'
+  const installable = Reflect.get(navigator, 'standalone') === false && !iosBeforePush(navigator.userAgent)
+  return installable ? 'install' : 'none'
+}
+
+/** iPadOS that reports a desktop user agent carries no version, and is treated as recent. */
+function iosBeforePush(userAgent: string): boolean {
+  const version = /(?:iPhone|iPad|iPod).* OS (\d+)_(\d+)/.exec(userAgent)
+  if (!version) return false
+  const [major, minor] = [Number(version[1]), Number(version[2])]
+  return major < 16 || (major === 16 && minor < 4)
 }
 
 /** `updateViaCache: 'none'` so a changed sw.js is picked up on the next visit. */
