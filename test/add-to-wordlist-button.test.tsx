@@ -76,13 +76,13 @@ describe('AddToWordlistButton', () => {
     expect(addWordMock).not.toHaveBeenCalled()
   })
 
-  // A word tapped in a passage comes back to the passage, which `?q=` restores.
-  it('sends a guest who saves from a sentence back to the page they were reading', async () => {
+  // The clicked word's own page finishes the save; the passage page may not hold it.
+  it('sends a guest who saves from a sentence to that word\'s page', async () => {
     window.history.replaceState(null, '', '/dictionary?q=the%20dog')
     client.auth.getSession.mockResolvedValueOnce({ data: { session: null } })
     render(<AddToWordlistButton entry={entry} context={{ text: 'the dog', translationVi: null }} />)
     const link = await screen.findByRole('link', { name: /Thêm vào sổ tay/i })
-    expect(link).toHaveAttribute('href', `/register?next=${encodeURIComponent('/dictionary?q=the%20dog')}`)
+    expect(link).toHaveAttribute('href', '/register?next=%2Fdictionary%2Fen%2Fdog')
     window.history.replaceState(null, '', '/')
   })
 
