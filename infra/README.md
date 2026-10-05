@@ -117,27 +117,38 @@ password in SSM `/zhesen/prod/dashboard_password`. Stop both again afterwards. A
 `docker compose up -d` that names no service, as a deploy runs it, starts them too.
 
 9router: the assistant's model router, container `zhesen-9router`. The app calls
-`https://<cloudfront>/ai/v1/` with a 9router API key held in SSM `/zhesen/prod/ai_api_key`.
-Its dashboard has its own distribution (`terraform output router_url`), guarded only by
-9router's login. `/admin/router` shows that link, the password (SSM
-`/zhesen/prod/router_password`) and the combo the assistant uses. The password reaches 9router
-as `INITIAL_PASSWORD`, and the service's entrypoint drops any password 9router stored itself on
+`https://<cloudfront>/ai/v1/` with a 9router API key held in SSM `/zhesen/prod/ai_api_key`. Its
+dashboard has its own distribution (`terraform output router_url`), guarded only by 9router's
+login. `/admin/router` shows that link, the password (SSM `/zhesen/prod/router_password`) and the
+combo the assistant uses, `zhesen`: Gemini 3.8, 3.7 and 3.6 Flash on Gemini's free tier, then
+Antigravity's Gemini 3.8 Flash and gpt-oss-120b. The password reaches 9router as
+`INITIAL_PASSWORD`, and the service's entrypoint drops any password 9router stored itself on
 every start, so change it on `/admin/secrets`, not in the dashboard. Without the app: `pwsh
 infra/supabase/bin/router-tunnel.ps1`, then `http://localhost:20128/dashboard`. Provider logins
 and keys live in `/opt/zhesen/9router/db/data.sqlite`, which the nightly backup copies to
 `9router/`.
 
-OmniRoute: the second model router, container `zhesen-omniroute`, asked only when 9router
-fails (`lib/ai/client.ts`). The app calls `https://<cloudfront>/omni/v1/` with an OmniRoute API
-key held in SSM `/zhesen/prod/ai_fallback_api_key` and the model `zhesen`, a combo of DeepSeek
-web models. Its dashboard has its own distribution (`terraform output omniroute_url`), guarded
-by OmniRoute's login; the password is SSM `/zhesen/prod/omniroute_password`, applied the same
-way as 9router's. Provider logins live encrypted in `/opt/zhesen/omniroute/data/storage.sqlite`
-under SSM `/zhesen/prod/omniroute_storage_key`, which cannot be rotated without losing them.
-The nightly backup copies that file to `omniroute/`. Table retention is a dashboard setting stored
-in that file (Settings, Database, or `PATCH /api/settings/database`): call logs 2 days, quota
-snapshots and compression analytics 3, usage history 30. OmniRoute's defaults are 90, 90, 30 and
-365, and its cleanup runs every 6 hours with a `VACUUM` after it.
+OmniRoute: the second model router, container `zhesen-omniroute`, asked only when 9router fails
+(`lib/ai/client.ts`). The app calls `https://<cloudfront>/omni/v1/` with an OmniRoute API key
+held in SSM `/zhesen/prod/ai_fallback_api_key` and the model `zhesen`, a combo of Antigravity's
+Gemini Flash, two OpenRouter `:free` models and DeepSeek web. Its dashboard has its own
+distribution (`terraform output omniroute_url`), guarded by OmniRoute's login; the password is
+SSM `/zhesen/prod/omniroute_password`, applied the same way as 9router's. Provider logins live
+encrypted in `/opt/zhesen/omniroute/data/storage.sqlite` under SSM
+`/zhesen/prod/omniroute_storage_key`, which cannot be rotated without losing them. The nightly
+backup copies that file to `omniroute/`. Table retention is a dashboard setting stored in that
+file (Settings, Database, or `PATCH /api/settings/database`): call logs 2 days, quota snapshots
+and compression analytics 3, usage history 30. OmniRoute's defaults are 90, 90, 30 and 365, and
+its cleanup runs every 6 hours with a `VACUUM` after it.
+
+Batch jobs: the learner, enrich and glossfix jobs in `supabase/scripts/` run on the instance as
+the systemd units `zhesen-learner`, `zhesen-learner-redo`, `zhesen-enrich`, `zhesen-glossfix` and
+`zhesen-gate`. They call both routers with a key of their own, named `zhesen-batch` in each
+dashboard and kept in `/opt/zhesen/batch.env` (root, mode 600) as `BATCH_AI_API_KEY` and
+`BATCH_OMNI_API_KEY`. The instance role cannot write SSM, so a rebuild creates both keys again.
+The jobs never call a member of either `zhesen` combo, a `:free` model or a Claude model;
+`RESERVED` in `supabase/scripts/learner/learner.py` lists the combo members, so a change to
+either combo goes there too.
 
 Review reminder (issue #91): `zhesen-push.timer` runs `docker compose run --rm push` every hour.
 `push/sender.mts` asks `admin.reminders_due` who has reached their hour, claims each user for the
