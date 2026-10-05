@@ -46,6 +46,7 @@ export const entryPreviewRow = z.object({
   headword: z.string(),
   traditional: z.string().nullable(),
   level: z.string().nullable(),
+  level_is_estimated: z.boolean().nullable().optional(),
   frequency_rank: z.number().nullable(),
   attributes: z.record(z.string(), z.unknown()).nullable(),
   senses: z.array(senseRow).nullable(),
@@ -99,6 +100,8 @@ export const searchRpcRow = z.object({
   headword: z.string(),
   traditional: z.string().nullable(),
   level: z.string().nullable(),
+  /** Not returned by `lex.search` or `lex.search_vi` yet; read when a migration adds it. */
+  level_is_estimated: z.boolean().nullable().optional(),
   frequency_rank: z.number().nullable(),
   attributes: z.record(z.string(), z.unknown()).nullable(),
   pos: z.string().nullable(),
@@ -241,6 +244,7 @@ export function toPreview(r: EntryPreviewRow): DictEntryPreview {
   const primary = learnerLead(r) ?? pickPrimarySense(senses)
   return {
     id: r.id, lang: r.lang, headword: r.headword, traditional: r.traditional, level: r.level,
+    ...(r.level_is_estimated && r.level ? { levelIsEstimated: true as const } : {}),
     ipa: pickIpa(prons, r.lang),
     // Every part of speech the entry has, not the primary sense's: see 0045.
     pos: joinPos(senses.map((s) => s.pos)),
@@ -261,6 +265,7 @@ export function toChip(r: EntryChipRow): DictEntryChip {
 export function toPreviewFromSearchRow(r: SearchRpcRow): DictEntryPreview {
   return {
     id: r.id, lang: r.lang, headword: r.headword, traditional: r.traditional, level: r.level,
+    ...(r.level_is_estimated && r.level ? { levelIsEstimated: true as const } : {}),
     ipa: r.ipa, pos: r.pos, glossVi: cleanGlossVi(r.gloss_vi), glossEn: r.gloss_en,
     audioUrl: audioMatchesHeadword(r.audio_url, r.headword) ? r.audio_url : null,
     // `lex.entries.attributes->>'pinyin'` covers every Chinese entry including multi-syllable

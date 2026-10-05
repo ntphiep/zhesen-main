@@ -82,6 +82,25 @@ describe('LookupPanel', () => {
     expect(screen.getByRole('link', { name: /dog/ })).toBeInTheDocument()
   })
 
+  // Every Spanish level is estimated (30,616 of 30,616 rows); a plain B1 badge read as CEFR.
+  it('draws an estimated level as an estimate, in its row and in the level filter', async () => {
+    stubFetch({
+      entries: { ...EMPTY, es: [
+        entry({ id: 'es:perro', lang: 'es', headword: 'perro', level: 'A1', levelIsEstimated: true }),
+        entry({ id: 'es:gato', lang: 'es', headword: 'gato', level: 'A2' }),
+      ] },
+      suggestions: [],
+    })
+    render(<LookupPanel direction="fw" label="FW" />)
+    await userEvent.type(screen.getByLabelText('FW'), 'perro')
+    const row = await screen.findByRole('link', { name: /perro/ })
+    expect(row).toHaveTextContent('≈A1')
+    expect(row).toHaveTextContent('ước lượng')
+    expect(screen.getByRole('link', { name: /gato/ })).not.toHaveTextContent('ước lượng')
+    expect(screen.getByRole('button', { name: /A1/ })).toHaveTextContent('≈A1')
+    expect(screen.getByRole('button', { name: /A2/ })).not.toHaveTextContent('≈')
+  })
+
   it('lists what the translation found after the native hits, marked with the translation', async () => {
     stubFetch({
       entries: { ...EMPTY, en: [entry({ id: 'en:field', headword: 'field', glossVi: 'Cánh đồng' })] },

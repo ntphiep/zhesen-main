@@ -78,6 +78,15 @@ describe('searchOneDirection, the lead meaning of each hit', () => {
     expect(res.entries.en[0].glossVi).toBe('Thì, là, ở, đang')
   })
 
+  it('carries an estimated level from the lead read', async () => {
+    const { client: c } = client(
+      { search: [{ ...hit('en:take', 'take', 'cầm, nắm'), level: 'A1' }] },
+      { data: [{ ...take, level: 'A1', level_is_estimated: true }], error: null },
+    )
+    const res = await searchOneDirection(c, 'take', 'fw', 8, ['en'])
+    expect(res.entries.en[0]).toMatchObject({ level: 'A1', levelIsEstimated: true })
+  })
+
   it('gives a headword suggestion the same lead meaning', async () => {
     const { client: c } = client(
       { suggest: [{ id: 'en:were', lang: 'en', headword: 'were', gloss_vi: 'thì, là, ở', kind: 'headword', score: 0.5 }] },

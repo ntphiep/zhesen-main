@@ -1,4 +1,4 @@
-const ENTRY_COLUMNS = 'id, lang, headword, traditional, level, frequency_rank, attributes'
+const ENTRY_COLUMNS = 'id, lang, headword, traditional, level, level_is_estimated, frequency_rank, attributes'
 const PRONUNCIATIONS = 'pronunciations(accent, ipa, audio_url)'
 const LEARNER_LEAD = 'learner_entries(status, learner_senses(sense_order, vi_terms, en_definition))'
 

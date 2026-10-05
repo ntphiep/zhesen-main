@@ -13,6 +13,7 @@ const entryPreview: z.ZodType<DictEntryPreview> = z.object({
   headword: z.string(),
   traditional: z.string().nullable(),
   level: z.string().nullable(),
+  levelIsEstimated: z.literal(true).optional(),
   ipa: z.string().nullable(),
   pos: z.string().nullable(),
   glossVi: z.string().nullable(),

@@ -45,6 +45,9 @@ export interface DictEntryPreview {
   headword: string
   traditional: string | null
   level: string | null
+  /** `lex.entries.level_is_estimated`, present only when true: every Spanish level and the
+   *  frequency-filled English ones are Zhesen's estimate, not a CEFR list. */
+  levelIsEstimated?: true
   ipa: string | null
   pos: string | null
   glossVi: string | null

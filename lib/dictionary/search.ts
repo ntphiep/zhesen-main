@@ -85,7 +85,7 @@ export async function suggestNearby(
   return suggestRow.array().parse(data ?? []).map(toSuggestion)
 }
 
-type LeadGloss = Pick<DictEntryPreview, 'glossVi' | 'glossEn'>
+type LeadGloss = Pick<DictEntryPreview, 'glossVi' | 'glossEn' | 'levelIsEstimated'>
 
 /** The meaning previews and the word page lead with (`toPreview`), by entry id, in one
  *  query. `lex.search` and `lex.suggest` read the lowest sense_order, so take read "Cầm,
@@ -96,7 +96,7 @@ async function leadGlosses(supabase: SupabaseClient, ids: string[]): Promise<Map
     const { data, error } = await supabase.schema('lex').from('entries').select(PREVIEW_SELECT).in('id', [...new Set(ids)])
     if (error) throw error
     return new Map(entryPreviewRow.array().parse(data ?? []).map(toPreview)
-      .map((p): [string, LeadGloss] => [p.id, { glossVi: p.glossVi, glossEn: p.glossEn }]))
+      .map((p): [string, LeadGloss] => [p.id, { glossVi: p.glossVi, glossEn: p.glossEn, ...(p.levelIsEstimated ? { levelIsEstimated: true } : {}) }]))
   } catch {
     return new Map()
   }

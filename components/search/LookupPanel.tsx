@@ -6,6 +6,7 @@ import { entryPath } from '@/lib/dictionary/entryId'
 import { LinkPending } from '@/components/ui/LinkPending'
 import { Ipa } from '@/components/ui/Ipa'
 import { PosTag } from '@/components/ui/PosTag'
+import { LevelBadge } from '@/components/ui/LevelBadge'
 import { detectOrder, isStructuralMatch, orderByBestMatch } from '@/lib/dictionary/detect'
 import { recentEntries, recentQueries } from '@/lib/dictionary/recent'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
@@ -177,6 +178,9 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
     const ordered = LEVEL_ORDER.filter((l) => present.has(l))
     return [...ordered, ...[...present].filter((l) => !LEVEL_ORDER.includes(l)).sort()]
   }, [allShown])
+  // A filter level is an estimate when every row carrying it is one.
+  const estimatedLevels = useMemo(() => new Set(levelOptions.filter((l) =>
+    allShown.every((e) => e.level !== l || e.levelIsEstimated))), [levelOptions, allShown])
   const posOptions = useMemo(() => {
     const byKey = new Map<string, PosGroup>()
     for (const e of allShown) for (const g of posGroups(splitPos(e.pos))) byKey.set(g.key, g)
@@ -248,9 +252,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
           <span data-hw="" lang={e.lang} className="text-[1.1875rem] leading-snug">{e.headword}</span>
           <Ipa value={e.ipa} lang={e.lang} className="text-xs text-(--zs-soft)" />
           {e.level && (
-            <span className="rounded-full border-[1.5px] border-current px-1.5 py-px text-[0.6875rem] font-semibold text-(--zs-soft)">
-              {e.level}
-            </span>
+            <LevelBadge level={e.level} estimated={e.levelIsEstimated} className="px-1.5 py-px text-[0.6875rem] font-semibold text-(--zs-soft)" />
           )}
           <PosTag value={e.pos} className="text-xs text-(--zs-soft)" />
           {e.glossVi && <span className="text-[0.9375rem] font-semibold">{e.glossVi}</span>}
@@ -428,7 +430,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
               onClick={() => setLevelFilter(levelFilter === l ? null : l)}
               className={`${s.chip} px-3 py-1 text-xs ${levelFilter === l ? 'font-bold' : 'font-medium'}`}
             >
-              {l}
+              {estimatedLevels.has(l) ? <>≈{l}<span className="sr-only"> ước lượng</span></> : l}
             </button>
           ))}
           {posOptions.map((g) => (
