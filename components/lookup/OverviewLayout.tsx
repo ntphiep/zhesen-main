@@ -230,7 +230,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
         {/* Out of the balancing: it renders nothing where the assistant is off, which would
             leave its column empty. */}
         <div className="min-w-0 lg:col-span-12">
-          <AiCorner lang={head.lang} headword={head.headword} meaningVi={view.meaningVi} />
+          <AiCorner lang={head.lang} headword={head.headword} meaningVi={view.meaningVi} entryId={head.id} />
         </div>
       </div>
     </>

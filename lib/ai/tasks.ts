@@ -54,6 +54,9 @@ export const coachInput = z.object({
   lang: langCode,
   headword: shortText,
   meaningVi: z.string().trim().max(300).nullable(),
+  /** The entry the word is, when it is one. The route then reads the entry itself and
+   *  ignores the headword and meaning sent with it. */
+  entryId: z.string().min(3).max(200).optional(),
 })
 
 export const coachOutput = z.object({
@@ -72,6 +75,85 @@ export const coachOutput = z.object({
 })
 
 export type CoachOutput = z.infer<typeof coachOutput>
+
+/** Part of the cache key of a stored coach answer: a new prompt asks every entry again. */
+export const COACH_PROMPT_VERSION = 'coach-grounded-v1'
+
+/** What the dictionary holds for one entry, resolved on the server (lib/ai/coach.ts). The
+ *  ids are this request's own, so the answer can only point at what was sent. */
+export interface CoachGround {
+  lang: LangCode
+  headword: string
+  gist: string[]
+  senses: { pos: string | null; vi: string | null; en: string | null }[]
+  /** From the reviewed layer; `note` is the layer's own, null where it has none. */
+  confusables: { id: string; text: string; note: string | null }[]
+  collocations: { id: string; text: string; vi: string | null }[]
+  examples: { id: string; text: string; vi: string }[]
+  /** Chinese only: each character with its Hán-Việt readings. */
+  hanViet: { char: string; readings: string[] }[]
+  /** `lex.inflections` of the entry. */
+  forms: string[]
+}
+
+/** The model's answer to the grounded prompt. Lists the data already has are not asked for,
+ *  so they default to empty. */
+const coachAnswer = z.object({
+  mnemonic: z.string().max(400),
+  notes: z.array(z.object({ linkId: z.string().max(10), note: z.string().max(240) })).max(5).default([]),
+  collocations: z.array(z.string().max(80)).max(6).default([]),
+  examples: z.array(z.object({ text: z.string().max(300), vi: z.string().max(300) })).max(3).default([]),
+})
+
+const hanVietSyllables = (g: CoachGround) => [...new Set(g.hanViet.flatMap((c) => c.readings))]
+
+export function groundedCoachPrompt(g: CoachGround): string {
+  const open = g.confusables.filter((c) => !c.note)
+  const syllables = hanVietSyllables(g)
+  return [
+    `Từ: "${g.headword}" (${LANG_LABELS[g.lang]}).`,
+    'Dữ liệu từ điển đã biên soạn của từ này, là căn cứ duy nhất cho nghĩa:',
+    `<entry>${JSON.stringify({
+      gist: g.gist, senses: g.senses, confusables: g.confusables, collocations: g.collocations,
+      examples: g.examples, hanViet: g.lang === 'zh' ? g.hanViet : undefined,
+    })}</entry>`,
+    'Trả JSON với đúng các khoá sau:',
+    syllables.length > 0
+      ? `{"mnemonic": một mẹo nhớ ngắn bằng tiếng Việt, bắt đầu từ âm Hán-Việt và trích nguyên văn ít nhất một âm trong ${syllables.join(', ')}, bám theo nghĩa trong dữ liệu;`
+      : '{"mnemonic": một mẹo nhớ ngắn bằng tiếng Việt, dựa vào gốc từ, hình ảnh hoặc âm thanh, bám theo nghĩa trong dữ liệu;',
+    open.length > 0
+      ? ` "notes": mảng tối đa ${open.length} phần tử {"linkId": id của một từ trong confusables chưa có note, tức ${open.map((c) => c.id).join(', ')}, "note": khác nhau chỗ nào trong một câu}, không thêm từ nào khác;`
+      : ' "notes": mảng rỗng;',
+    g.collocations.length === 0 ? ' "collocations": mảng tối đa 6 cụm từ hay đi kèm, viết nguyên cụm;' : '',
+    g.examples.length === 0 ? ' "examples": mảng 2 phần tử {"text": câu ví dụ chứa đúng từ này, "vi": bản dịch tiếng Việt của câu đó};' : '',
+    '}',
+    examLine(g.lang),
+  ].filter(Boolean).join('\n')
+}
+
+/** The grounded answer as the page shows it, or null when it points outside what was sent
+ *  or a Chinese mnemonic quotes none of the Hán-Việt readings. Lists the data already has
+ *  stay empty here, so the page never shows them twice. */
+export function checkGroundedCoach(value: unknown, g: CoachGround): CoachOutput | null {
+  const parsed = coachAnswer.safeParse(value)
+  if (!parsed.success) return null
+  const { mnemonic, notes, collocations, examples } = parsed.data
+  const byId = new Map(g.confusables.map((c) => [c.id, c]))
+  if (notes.some((n) => !byId.has(n.linkId))) return null
+  const syllables = hanVietSyllables(g)
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const quotes = (s: string) => new RegExp(`(?<!\\p{L})${escape(s.normalize('NFC'))}(?!\\p{L})`, 'iu').test(mnemonic.normalize('NFC'))
+  if (g.lang === 'zh' && mnemonic && syllables.length > 0 && !syllables.some(quotes)) return null
+  return coachOutput.parse({
+    mnemonic,
+    collocations: g.collocations.length > 0 ? [] : collocations,
+    examples: g.examples.length > 0 ? [] : examples.filter((e) => mentions(e.text, g.headword, g.lang, g.forms)),
+    confusables: notes.flatMap((n) => {
+      const c = byId.get(n.linkId)
+      return c && !c.note && n.note ? [{ word: c.text, note: n.note }] : []
+    }).slice(0, 3),
+  })
+}
 
 // ---------------------------------------------------------------- suggest
 

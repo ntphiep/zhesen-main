@@ -194,7 +194,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
               </section>
             ))}
           </div>
-          <AiCorner lang={lang} headword={head.headword} meaningVi={view.meaningVi} />
+          <AiCorner lang={lang} headword={head.headword} meaningVi={view.meaningVi} entryId={head.id} />
         </div>
       </div>
     </div>

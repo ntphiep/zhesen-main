@@ -586,10 +586,11 @@ export function GrammarList({ points }: { points: GrammarPoint[] }) {
 /** Under the dictionary's own material, never in place of it: what the assistant says is
  *  generated, what is above it is sourced. Hidden while AiCoach renders nothing, which it
  *  does where the assistant is off. */
-export function AiCorner({ lang, headword, meaningVi, className = `${CARD} p-5 sm:p-6` }: {
+export function AiCorner({ lang, headword, meaningVi, entryId, className = `${CARD} p-5 sm:p-6` }: {
   lang: LangCode
   headword: string
   meaningVi: string | null
+  entryId: string
   className?: string
 }) {
   const anchor = useAnchor()
@@ -597,7 +598,7 @@ export function AiCorner({ lang, headword, meaningVi, className = `${CARD} p-5 s
     <section id={anchor('assistant')} className={`flex flex-col gap-2 [&:has(>div:empty)]:hidden ${className}`}>
       <SectionLabel>AI</SectionLabel>
       <div>
-        <AiCoach lang={lang} headword={headword} meaningVi={meaningVi} />
+        <AiCoach lang={lang} headword={headword} meaningVi={meaningVi} entryId={entryId} />
       </div>
     </section>
   )

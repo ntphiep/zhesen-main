@@ -173,6 +173,8 @@ export async function POST(request: Request) {
   if (job === null) {
     return Response.json({ error: 'Dữ liệu đầu vào không hợp lệ.' }, { status: 400 })
   }
+  // A stored answer costs no model call, so it spends no budget.
+  if (job.cached !== undefined) return Response.json({ data: job.cached }, { headers: PRIVATE })
 
   // Budget is spent here, not on arrival. The global bucket is one bucket for
   // everyone, so charging a request that never reaches the model turned it into

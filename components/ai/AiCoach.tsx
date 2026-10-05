@@ -12,19 +12,22 @@ type State =
   | { status: 'error'; message: string }
 
 /**
- * The assistant's panel for one saved word: a memory hook, the phrases the word
- * travels with, two worked examples and the words it is confused with.
+ * The assistant's panel for one word: a memory hook, and what the dictionary lacks of the
+ * phrases the word travels with, worked examples and notes on the words it is confused with.
+ * For an entry the route coaches from the entry's own data and stores the answer, so every
+ * learner reads the same one; the lists the entry already has come back empty.
  *
  * Behind a button: a model call is the most expensive thing a click here can trigger,
  * and an expanded row usually wants the dictionary entry already on screen above.
- * Nothing is cached across mounts; a learner who asks twice wants a second opinion.
  * `children` are other actions drawn in the same row, before the button, and they stay
  * when the assistant is off.
  */
-export function AiCoach({ lang, headword, meaningVi, children }: {
+export function AiCoach({ lang, headword, meaningVi, entryId, children }: {
   lang: LangCode
   headword: string
   meaningVi: string | null
+  /** The entry the word is: the route then coaches from the entry's own data. */
+  entryId?: string | null
   children?: ReactNode
 }) {
   const enabled = useAiEnabled()
@@ -35,7 +38,7 @@ export function AiCoach({ lang, headword, meaningVi, children }: {
   async function ask() {
     setState({ status: 'loading' })
     try {
-      const outcome = await callAi('coach', { lang, headword, meaningVi })
+      const outcome = await callAi('coach', { lang, headword, meaningVi, ...(entryId && { entryId }) })
       setState(outcome.status === 'ok'
         ? { status: 'ok', data: outcome.data }
         : { status: 'error', message: outcome.message })

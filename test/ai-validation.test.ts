@@ -4,6 +4,7 @@ import type { TermPreview } from '@/lib/dictionary/types'
 const { getUser, previews, inflections } = vi.hoisted(() => ({ getUser: vi.fn(), previews: vi.fn(), inflections: vi.fn() }))
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser } }) }))
 vi.mock('@/lib/dictionary/cached', () => ({ getCachedTermPreviews: previews, getCachedInflections: inflections }))
+vi.mock('@/lib/dictionary/learnerCached', () => ({ getCachedLearnerLayer: vi.fn() }))
 
 import { ERASED_TASKS } from '@/lib/ai/tasks'
 import { resolveSuggestions } from '@/lib/ai/jobs'

@@ -2,7 +2,12 @@ import 'server-only'
 import { getCachedInflections, getCachedTermPreviews } from '@/lib/dictionary/cached'
 import type { LangCode } from '@/lib/languages'
 import { z } from '@/lib/zod'
-import { ERASED_TASKS, suggestOutput, type SuggestOutput, type TaskName } from './tasks'
+import { createClient } from '@/lib/supabase/server'
+import { coachGround, readCoach, storeCoach } from './coach'
+import {
+  ERASED_TASKS, checkGroundedCoach, coachInput, coachOutput, groundedCoachPrompt, suggestOutput,
+  type SuggestOutput, type TaskName,
+} from './tasks'
 
 /**
  * One assistant request as the route runs it: the task's prompt and checks from
@@ -16,6 +21,8 @@ export interface Job {
   parse(value: unknown): unknown | null
   /** The checked answer completed from the dictionary, which is what the browser gets. */
   finish?(answer: unknown, model: string): Promise<unknown>
+  /** An answer already stored: the route returns it and asks no model. */
+  cached?: unknown
 }
 
 type ServerStep = (input: unknown, job: Job) => Promise<Job>
@@ -39,9 +46,35 @@ const withForms = (task: 'enrich' | 'coach'): ServerStep => async (input, job) =
   return { ...job, parse: ERASED_TASKS[task].parserFor(input, await formsOf(lang, headword.trim())) }
 }
 
+/** A word with an entry is coached from the entry's own data, and its checked answer is
+ *  stored for every learner. Without one, or when the entry cannot be read, it is coached
+ *  from the headword the learner saved. */
+const coach: ServerStep = async (input, job) => {
+  const { entryId } = coachInput.parse(input)
+  if (!entryId) return withForms('coach')(input, job)
+  const supabase = await createClient()
+  const cached = await readCoach(supabase, entryId)
+  if (cached) return { ...job, cached }
+  const ground = await coachGround(entryId).catch((e: unknown) => {
+    console.error('ai coach ground failed', e instanceof Error ? e.message : String(e))
+    return null
+  })
+  if (!ground) return withForms('coach')(input, job)
+  return {
+    ...job,
+    user: groundedCoachPrompt(ground),
+    parse: (value) => checkGroundedCoach(value, ground),
+    finish: async (answer, model) => {
+      const out = coachOutput.parse(answer)
+      await storeCoach(supabase, entryId, model, out)
+      return out
+    },
+  }
+}
+
 const STEPS: Partial<Record<TaskName, ServerStep>> = {
   enrich: withForms('enrich'),
-  coach: withForms('coach'),
+  coach,
   suggest: async (_input, job) => ({ ...job, finish: async (answer) => resolveSuggestions(suggestOutput.parse(answer)) }),
 }
 

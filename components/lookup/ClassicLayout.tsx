@@ -148,7 +148,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
           </section>
         )}
         <Backlinks view={view} className={`flex flex-col gap-3 ${RAIL_CARD}`} />
-        <AiCorner lang={lang} headword={head.headword} meaningVi={view.meaningVi} className="rounded-[14px] bg-(--tint-2) p-4" />
+        <AiCorner lang={lang} headword={head.headword} meaningVi={view.meaningVi} entryId={head.id} className="rounded-[14px] bg-(--tint-2) p-4" />
       </aside>
     </div>
   )

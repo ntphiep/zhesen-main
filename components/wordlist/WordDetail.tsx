@@ -45,7 +45,7 @@ const FOCUSED_SYNONYMS = 12
  *  assistant. A word typed in by hand has no entry, so it opens the lookup for its headword. */
 export function WordDetail({ word }: { word: UserWord }) {
   const actions = (
-    <AiCoach lang={word.lang} headword={word.headword} meaningVi={word.meaningVi}>
+    <AiCoach lang={word.lang} headword={word.headword} meaningVi={word.meaningVi} entryId={word.entryId}>
       <Link
         href={word.entryId ? entryPath(word.entryId) : searchPath(word.lang, word.headword)}
         prefetch={word.entryId ? undefined : false}
