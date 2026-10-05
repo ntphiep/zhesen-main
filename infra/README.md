@@ -58,8 +58,10 @@ infra/
                              alert channels
   supabase/                  what runs on the instance, synced to /opt/zhesen/supabase
     docker-compose.yml       upstream compose trimmed to db, auth, rest, api-gw, studio, meta,
-                             plus sampler
+                             plus sampler and the push job
     sampler/                 sampler.py, host and container counters into Postgres every 5 s
+    push/                    sender.mts, the hourly review reminder by web push
+    systemd/                 zhesen-push.service and .timer, which run the push job
     env.template             .env with ${SSM:/path} placeholders
     volumes/                 Envoy config and Postgres init scripts, copied from upstream
     bin/                     render-env.sh, backup.sh, migrate.sh, set-ai-cache-secret.sh, studio-tunnel.ps1
@@ -137,6 +139,23 @@ in that file (Settings, Database, or `PATCH /api/settings/database`): call logs 
 snapshots and compression analytics 3, usage history 30. OmniRoute's defaults are 90, 90, 30 and
 365, and its cleanup runs every 6 hours with a `VACUUM` after it.
 
+Review reminder (issue #91): `zhesen-push.timer` runs `docker compose run --rm push` every hour.
+`push/sender.mts` asks `admin.reminders_due` who has reached their hour, sends one web push per
+browser, stamps the users reached and deletes the subscriptions a push service answered 404 or 410
+for. One line per run, plus one per failed push, in `journalctl -u zhesen-push`. The VAPID pair is
+SSM `/zhesen/prod/vapid_public_key` (String) and `/zhesen/prod/vapid_private_key` (SecureString),
+made by hand: a new pair orphans every subscription, and the public half must equal Vercel's
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY`. Run one pass by hand with `systemctl start zhesen-push.service`.
+The units are installed once, after a sync:
+
+```bash
+cd /opt/zhesen/supabase
+bin/render-env.sh
+docker compose --env-file .env pull push
+install -m 0644 systemd/zhesen-push.service systemd/zhesen-push.timer /etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now zhesen-push.timer
+```
+
 Backup: `bin/backup.sh` at 03:30 UTC writes `pg_dump -Fc` plus `pg_dumpall --globals-only`
 to `s3://zhesen-db-backups-<account>/postgres/`, and copies of the 9router and OmniRoute
 databases to `9router/` and `omniroute/`, all kept 30 days; a failure posts to SNS. Only the newest
@@ -175,9 +194,11 @@ cp infra/terraform/terraform.tfvars.example infra/terraform/terraform.tfvars
 terraform -chdir=infra/terraform init && terraform -chdir=infra/terraform apply
 ```
 
-Three SSM parameters are read, not created: `/zhesen/prod/jwt_secret`,
-`/zhesen/prod/anon_key`, `/zhesen/prod/service_role_key`. Rewriting `jwt_secret` would
-invalidate the anon key the app ships, so it stays out of Terraform. If the first apply
+Six SSM parameters are read, not created: `/zhesen/prod/jwt_secret`,
+`/zhesen/prod/anon_key`, `/zhesen/prod/service_role_key`, `/zhesen/prod/omniroute_storage_key`,
+`/zhesen/prod/vapid_public_key` and `/zhesen/prod/vapid_private_key`. Rewriting `jwt_secret` would
+invalidate the anon key the app ships, so it stays out of Terraform; the other three would orphan
+the data encrypted or registered under them. If the first apply
 stops with "no matching EC2 Security Group found", CloudFront had not yet created the VPC
 origin's group: apply again. Cloud-init is done when `/var/lib/cloud/zhesen-ready`
 exists (about 5 minutes, plus up to 20 for the CloudFront URL on a first apply); its log

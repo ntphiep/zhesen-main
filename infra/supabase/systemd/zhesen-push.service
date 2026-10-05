@@ -1,0 +1,13 @@
+# The daily review reminder (issue #91): one pass of push/sender.mts. Started by
+# zhesen-push.timer; logs in `journalctl -u zhesen-push`.
+[Unit]
+Description=Zhesen review reminder push
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/zhesen/supabase
+ExecStart=/usr/bin/docker compose --env-file .env run --rm -T push
+# Ten-second timeouts per push; a pass that runs past this is stuck.
+TimeoutStartSec=20min

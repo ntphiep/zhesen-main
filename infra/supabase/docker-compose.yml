@@ -359,6 +359,30 @@ services:
     environment:
       SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
 
+  # Not upstream: the daily review reminder (issue #91, migrations 0141 and 0142). Not a
+  # resident service: systemd/zhesen-push.timer runs it hourly with `docker compose run`, and
+  # the jobs profile keeps `up -d` from starting it. It posts to PostgREST as service_role.
+  push:
+    image: node:24.21.0-alpine3.24
+    profiles: ["jobs"]
+    init: true
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+    depends_on:
+      rest:
+        condition: service_healthy
+    command: ["node", "/app/sender.mts"]
+    volumes:
+      - ./push:/app:ro
+    environment:
+      SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
+      # RFC 8292 asks for a contact URL; Apple refuses a push without one.
+      VAPID_SUBJECT: ${SITE_URL}
+
   # Not upstream: 9router, the model router behind the assistant (lib/ai/). Envoy serves
   # its /v1/ API at /ai/v1/, where 9router checks its own API key. The dashboard is
   # reached through its own CloudFront distribution, gated by /admin/router; the security

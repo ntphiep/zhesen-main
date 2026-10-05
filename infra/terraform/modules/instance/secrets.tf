@@ -86,3 +86,15 @@ data "aws_ssm_parameter" "omniroute_storage_key" {
   name            = "${var.ssm_prefix}/omniroute_storage_key"
   with_decryption = false
 }
+
+# Also by hand: the review reminder's VAPID pair (issue #91). A new pair orphans every browser
+# subscription, and the public half must equal Vercel's NEXT_PUBLIC_VAPID_PUBLIC_KEY.
+data "aws_ssm_parameter" "vapid_public_key" {
+  name            = "${var.ssm_prefix}/vapid_public_key"
+  with_decryption = false
+}
+
+data "aws_ssm_parameter" "vapid_private_key" {
+  name            = "${var.ssm_prefix}/vapid_private_key"
+  with_decryption = false
+}

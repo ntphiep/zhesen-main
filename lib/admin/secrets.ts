@@ -23,7 +23,8 @@ export const INSTANCE_SERVICES = {
   POSTGRES_PASSWORD: ['studio', 'auth', 'rest', 'meta', 'db'],
   JWT_SECRET: ['studio', 'auth', 'rest'],
   ANON_KEY: ['studio', 'api-gw'],
-  SERVICE_ROLE_KEY: ['studio', 'api-gw', 'sampler'],
+  // push is an hourly job (systemd/zhesen-push.timer); up -d on it runs one reminder pass.
+  SERVICE_ROLE_KEY: ['studio', 'api-gw', 'sampler', 'push'],
   DASHBOARD_PASSWORD: ['api-gw'],
   PG_META_CRYPTO_KEY: ['studio', 'meta'],
   SECRET_KEY_BASE: [],

@@ -1,0 +1,11 @@
+# Hourly, so each learner's local hour is reached within the hour. Persistent catches up a run
+# missed while the instance was down; a oneshot unit never runs twice at once.
+[Unit]
+Description=Run the Zhesen review reminder push every hour
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

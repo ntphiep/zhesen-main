@@ -143,6 +143,12 @@ write_files:
       docker compose -f "$COMPOSE_DIR/docker-compose.yml" \
         --project-directory "$COMPOSE_DIR" --env-file "$COMPOSE_DIR/.env" up -d
 
+      # The review reminder runs hourly from a systemd timer, not as a resident service.
+      install -m 0644 "$COMPOSE_DIR"/systemd/zhesen-push.service "$COMPOSE_DIR"/systemd/zhesen-push.timer \
+        /etc/systemd/system/
+      systemctl daemon-reload
+      systemctl enable --now zhesen-push.timer
+
       touch /var/lib/cloud/zhesen-ready
 
 runcmd:
