@@ -4,6 +4,7 @@ import type { LangCode } from '@/lib/languages'
 import type { Grade, SrsState } from '@/lib/progress/types'
 import { cardStateFromDbValue, cardStateToDbValue, review } from '@/lib/progress/srs'
 import { stripPhraseStop } from '@/lib/dictionary/textQuality'
+import { studyDayEnd } from './activity'
 
 /** A due wordlist entry plus its spaced-repetition state, ready to review. */
 export interface ReviewCard {
@@ -92,7 +93,8 @@ export async function listDueCards(
   supabase: SupabaseClient, now: number, options: DueOptions = {},
 ): Promise<ReviewCard[]> {
   const { limit = SESSION_LIMITS.limit, newLimit = SESSION_LIMITS.newLimit } = options
-  const dueBy = new Date(now).toISOString()
+  // Everything due before the study day ends, so a morning session also gets tonight's cards.
+  const dueBy = new Date(studyDayEnd(now)).toISOString()
 
   const page = (fresh: boolean, take: number) =>
     supabase
@@ -122,7 +124,7 @@ export async function countDueCards(
   supabase: SupabaseClient, now: number = Date.now(), options: DueOptions = {},
 ): Promise<number> {
   const { limit = SESSION_LIMITS.limit, newLimit = SESSION_LIMITS.newLimit } = options
-  const dueBy = new Date(now).toISOString()
+  const dueBy = new Date(studyDayEnd(now)).toISOString()
 
   const countBy = async (fresh: boolean): Promise<number> => {
     const { count, error } = await supabase

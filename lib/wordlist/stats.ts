@@ -1,10 +1,9 @@
 import { z } from '@/lib/zod'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/languages'
-import { computeStreak, getActivityDays, streakState, type Streak } from './activity'
+import { computeStreak, getActivityDays, streakState, studyDay, studyDayEnd, type Streak } from './activity'
 import { SESSION_LIMITS } from './review'
 import type { NotebookState, WordStatus } from './types'
-import { localDay } from '@/lib/wordlist/activity'
 import { fetchAllRows } from '@/lib/supabase/paginate'
 
 export interface StatRow {
@@ -38,10 +37,10 @@ export interface WordlistStats {
 
 const MATURE_DAYS = 21
 
-// Same fixed study timezone as the streak: this is read on the server and the
-// timestamps it compares were written in the reader's browser.
-function sameLocalDay(a: number, b: number): boolean {
-  return localDay(a) === localDay(b)
+// Same study day as the streak: this is read on the server and the timestamps it
+// compares were written in the reader's browser.
+function sameStudyDay(a: number, b: number): boolean {
+  return studyDay(a) === studyDay(b)
 }
 
 export function computeWordlistStats(rows: StatRow[], activityDays: string[], now: number): WordlistStats {
@@ -51,13 +50,14 @@ export function computeWordlistStats(rows: StatRow[], activityDays: string[], no
   const byStatus: Record<WordStatus, number> = { new: 0, learning: 0, known: 0 }
   const byLang: Record<LangCode, number> = { en: 0, es: 0, zh: 0 }
   let dueNew = 0
+  const dueBy = studyDayEnd(now)
   for (const r of rows) {
-    if (Date.parse(r.srsDueAt) <= now) {
+    if (Date.parse(r.srsDueAt) <= dueBy) {
       if (r.srsReps > 0) due++
       else dueNew++
     }
     if (r.srsIntervalDays >= MATURE_DAYS) learned++
-    if (r.srsLastReviewedAt && sameLocalDay(Date.parse(r.srsLastReviewedAt), now)) reviewedToday++
+    if (r.srsLastReviewedAt && sameStudyDay(Date.parse(r.srsLastReviewedAt), now)) reviewedToday++
     byStatus[r.status]++
     byLang[r.lang]++
   }

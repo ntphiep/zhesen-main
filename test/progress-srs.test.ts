@@ -30,7 +30,8 @@ describe('srs (FSRS-6 via ts-fsrs)', () => {
     expect(s.reps).toBe(3)
     expect(s.cardState).toBe('review')
     // Learning steps (owner, 2026-10-05): the first good is a 10-minute step, not 3 days.
-    expect(scheduled).toEqual([0, 2, 12])
+    // The third is fuzzed, seeded with the review time as moved into the study-day frame.
+    expect(scheduled).toEqual([0, 2, 10])
     expect(scheduled[0]).toBeLessThan(scheduled[1])
     expect(scheduled[1]).toBeLessThan(scheduled[2])
   })

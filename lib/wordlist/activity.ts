@@ -23,6 +23,28 @@ export function localDay(ts: number): string {
   return dayFormatter.format(new Date(ts))
 }
 
+/** The study day starts at 04:00 in the study timezone, as Anki's "next day starts at": a
+ *  session past midnight still counts for the evening it continues. */
+export const STUDY_ROLLOVER_HOUR = 4
+/** Vietnam keeps UTC+7 all year, so 04:00 there is 21:00 UTC and +3 h puts each study day on
+ *  one UTC date, which is how ts-fsrs counts elapsed days. */
+export const STUDY_DAY_SHIFT_MS = (7 - STUDY_ROLLOVER_HOUR) * 3_600_000
+
+/** The study day of a timestamp, as 'YYYY-MM-DD'. */
+export function studyDay(ts: number): string {
+  return new Date(ts + STUDY_DAY_SHIFT_MS).toISOString().slice(0, 10)
+}
+
+/** When the study day holding `ts` began. */
+export function studyDayStart(ts: number): number {
+  return Math.floor((ts + STUDY_DAY_SHIFT_MS) / DAY) * DAY - STUDY_DAY_SHIFT_MS
+}
+
+/** The last millisecond of the study day holding `ts`: the due cutoff for that day. */
+export function studyDayEnd(ts: number): number {
+  return studyDayStart(ts) + DAY - 1
+}
+
 /** Consecutive studied days that earn one streak freeze. */
 export const FREEZE_EVERY = 7
 /** Most freezes held at once. */
@@ -41,7 +63,7 @@ export interface Streak {
  *  missed day spends a held freeze, a second missed day in a row breaks the run and drops
  *  the freezes with it, and today stays open until it is over. */
 export function streakState(days: string[], now: number): Streak {
-  const today = localDay(now)
+  const today = studyDay(now)
   // 'YYYY-MM-DD' sorts as dates, and stepping UTC midnights walks calendar days exactly.
   const set = new Set(days.filter((day) => day <= today))
   const out: Streak = { days: 0, freezes: 0, savedYesterday: false }
@@ -82,7 +104,7 @@ export async function logActivityDay(supabase: SupabaseClient, now: number = Dat
   await ensureSession(supabase)
   const { error } = await supabase
     .from('review_log')
-    .upsert({ day: localDay(now) }, { onConflict: 'user_id,day', ignoreDuplicates: true })
+    .upsert({ day: studyDay(now) }, { onConflict: 'user_id,day', ignoreDuplicates: true })
   if (error) throw error
 }
 

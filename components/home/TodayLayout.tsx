@@ -9,7 +9,7 @@ import type { HomeView } from '@/lib/hooks/useHomeData'
 import { useNarrowViewport } from '@/lib/hooks/useNarrowViewport'
 import type { LangCode } from '@/lib/languages'
 import type { SrsState } from '@/lib/progress/types'
-import { localDay } from '@/lib/wordlist/activity'
+import { localDay, studyDayStart } from '@/lib/wordlist/activity'
 import { dayIndex, longDate, mondayIndex } from '@/lib/wordlist/forecast'
 import { DayStats, DueTitle, HomeBar, Hw, LookupAnswers, LookupBox, ModeLinks, NAME, ORDER, SaveSlot, useHomeLookup, type PickerState } from './HomeParts'
 import { HomeReviewDeck } from './HomeReviewDeck'
@@ -121,12 +121,14 @@ function Calendar({ view }: { view: HomeView | null }) {
   const n = narrow ? 17 : 26
   const cells: React.ReactNode[] = []
   let studied = 0
-  // Empty weeks hold the grid's place while the days load.
-  const today = view ? dayIndex(view.now) : 0
-  const start = view ? today - mondayIndex(view.now) - (n - 1) * 7 : 0
+  // Empty weeks hold the grid's place while the days load. Noon of the study day, so a
+  // visit before 04:00 still draws the day it is counted on.
+  const noon = view ? studyDayStart(view.now) + 8 * 3_600_000 : 0
+  const today = view ? dayIndex(noon) : 0
+  const start = view ? today - mondayIndex(noon) - (n - 1) * 7 : 0
   let lastMonth = 0
   for (let c = 0; c < n; c++) {
-    const month = view ? Number(localDay(view.now + (start + c * 7 - today) * DAY).slice(5, 7)) : 0
+    const month = view ? Number(localDay(noon + (start + c * 7 - today) * DAY).slice(5, 7)) : 0
     cells.push(<span key={`m${c}`} className={h.mo} style={{ gridColumn: c + 2 }}>{view && c > 0 && month !== lastMonth ? `Tháng ${month}` : '\u00a0'}</span>)
     lastMonth = month
     for (let r = 0; r < 7; r++) {
@@ -135,7 +137,7 @@ function Calendar({ view }: { view: HomeView | null }) {
         continue
       }
       const d = start + c * 7 + r
-      const ts = view.now + (d - today) * DAY
+      const ts = noon + (d - today) * DAY
       const on = view.days.has(localDay(ts))
       if (on && d <= today) studied++
       cells.push(

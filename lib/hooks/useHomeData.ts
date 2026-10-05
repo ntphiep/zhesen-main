@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { loadSupabaseClient } from '@/lib/supabase/loadClient'
-import { computeStreak, getActivityDays, localDay } from '@/lib/wordlist/activity'
+import { computeStreak, getActivityDays, studyDay, studyDayEnd } from '@/lib/wordlist/activity'
 import { bucketForecast, listUpcoming, type ForecastDay, type ForecastWord } from '@/lib/wordlist/forecast'
 import type { SrsState } from '@/lib/progress/types'
 import type { ReviewCard } from '@/lib/wordlist/review'
@@ -56,15 +56,15 @@ const asForecast = (c: ReviewCard): ForecastWord => ({ id: c.id, lang: c.lang, h
  *  and the first grade makes today a study day. */
 export function summarize(d: Loaded, graded: ReadonlyMap<string, SrsState>, again: readonly string[] = []): HomeView {
   const n = graded.size
-  const today = localDay(d.now)
+  const today = studyDay(d.now)
   const days = n ? [...d.days, today] : d.days
   const cardOf = (id: string) => d.queue.find((c) => c.id === id)
   let left = 0
   let fresh = 0
   for (const [id, next] of graded) {
-    if (localDay(next.dueAt) !== today) left++
+    if (next.dueAt > studyDayEnd(d.now)) left++
     const was = cardOf(id)?.state.lastReviewedAt
-    if (typeof was !== 'number' || localDay(was) !== today) fresh++
+    if (typeof was !== 'number' || studyDay(was) !== today) fresh++
   }
   const back = again.flatMap((id) => {
     const card = cardOf(id)

@@ -1,5 +1,6 @@
 import { fsrs, createEmptyCard, Rating, State, type CardInput, type Grade as FsrsGrade } from 'ts-fsrs'
 import type { CardState, Grade, SrsState } from './types'
+import { STUDY_DAY_SHIFT_MS } from '@/lib/wordlist/activity'
 
 /**
  * FSRS scheduler (ts-fsrs@5.4.2, whose default weights implement FSRS-6 -- its own
@@ -38,9 +39,11 @@ export function cardStateFromDbValue(n: number): CardState {
   return stateToLabel(n as State)
 }
 
+// ts-fsrs counts elapsed days by UTC date; every time it sees is moved into the study-day
+// frame first (`STUDY_DAY_SHIFT_MS`) and moved back after.
 function toCardInput(s: SrsState): CardInput {
   return {
-    due: s.dueAt,
+    due: s.dueAt + STUDY_DAY_SHIFT_MS,
     stability: s.stability,
     difficulty: s.difficulty,
     elapsed_days: s.elapsedDays,
@@ -49,7 +52,7 @@ function toCardInput(s: SrsState): CardInput {
     reps: s.reps,
     lapses: s.lapses,
     state: labelToState(s.cardState),
-    last_review: s.lastReviewedAt,
+    last_review: s.lastReviewedAt === null ? null : s.lastReviewedAt + STUDY_DAY_SHIFT_MS,
   }
 }
 
@@ -100,8 +103,9 @@ export function initialSrsState(vocabId: string, now: number): SrsState {
  */
 export function review(state: SrsState, grade: Grade, now: number): SrsState {
   const at = Math.max(now, state.lastReviewedAt ?? now)
-  const { card } = scheduler.next(toCardInput(state), at, RATING_BY_GRADE[grade])
-  const next = fromCard(state.vocabId, card)
+  const { card } = scheduler.next(toCardInput(state), at + STUDY_DAY_SHIFT_MS, RATING_BY_GRADE[grade])
+  const shifted = fromCard(state.vocabId, card)
+  const next = { ...shifted, dueAt: shifted.dueAt - STUDY_DAY_SHIFT_MS, lastReviewedAt: at }
   const skew = at - now
   if (skew === 0) return next
   return { ...next, dueAt: next.dueAt - skew, lastReviewedAt: now }
