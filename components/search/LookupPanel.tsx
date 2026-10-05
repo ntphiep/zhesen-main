@@ -25,6 +25,8 @@ import s from './Lookup.module.css'
 /** Shorter than the translation's debounce, so the address holds the passage by the time
  *  a word in it can be tapped. */
 const URL_DEBOUNCE_MS = 400
+/** Vercel refuses a request URL over 14 KB, and one Han character is 9 bytes encoded. */
+const MAX_URL_QUERY = 500
 /** One entry per prefix typed, not per word, so the map fills fast. */
 const CACHE_LIMIT = 100
 /** CEFR order. Only en rows carry a level; a value outside this list renders after these. */
@@ -99,12 +101,12 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
 
   // The query lives in `?q=` (and `dir=vi` for this box), so a return from /register or a
   // reload finds the passage again. Replaced, never pushed: a keystroke is not a page. An
-  // empty box clears only its own query.
+  // empty box clears only its own query, and so does a passage too long for an address.
   useEffect(() => {
     const id = setTimeout(() => {
       const url = new URL(window.location.href)
       const mine = (url.searchParams.get('dir') === 'vi') === (direction === 'vi')
-      if (trimmed) {
+      if (trimmed && trimmed.length <= MAX_URL_QUERY) {
         url.searchParams.set('q', trimmed)
         if (direction === 'vi') url.searchParams.set('dir', 'vi')
         else url.searchParams.delete('dir')

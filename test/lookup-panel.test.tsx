@@ -62,6 +62,15 @@ describe('LookupPanel', () => {
     window.history.replaceState(null, '', '/')
   })
 
+  // Vercel refuses a URL over 14 KB.
+  it('keeps a passage over 500 characters out of the address', async () => {
+    window.history.replaceState(null, '', '/dictionary?lang=en&q=old')
+    stubFetch({ entries: EMPTY, suggestions: [] })
+    render(<LookupPanel direction="fw" label="EN" initialQuery={'word '.repeat(101)} />)
+    await vi.waitFor(() => expect(window.location.search).toBe('?lang=en'), { timeout: 2000 })
+    window.history.replaceState(null, '', '/')
+  })
+
   it('the fw panel does not send dir=vi', async () => {
     const fetchMock = stubFetch({ entries: EMPTY, suggestions: [] })
     render(<LookupPanel direction="fw" label="FW" />)
