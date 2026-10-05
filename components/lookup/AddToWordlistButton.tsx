@@ -6,6 +6,7 @@ import { LinkPending } from '@/components/ui/LinkPending'
 import { useAccount } from '@/lib/hooks/useAccount'
 import { rememberPendingSave } from '@/lib/wordlist/pendingSave'
 import type { DictEntryDetail, DictEntryPreview } from '@/lib/dictionary/types'
+import type { SaveContext } from '@/lib/wordlist/types'
 
 // Loaded once an account is known: it reaches supabase-js and zod, which the word page
 // otherwise never needs before it is interactive.
@@ -19,7 +20,12 @@ const SavedButton = dynamic(() => import('./SavedButton').then((m) => m.SavedBut
  * `lg` is the word page's primary action: 44px tall, the height of a touch target.
  * `tone="pane"` draws it in the colours of the landing page's language lanes.
  */
-export function AddToWordlistButton({ entry, size = 'sm', tone }: { entry: DictEntryPreview | DictEntryDetail; size?: 'sm' | 'lg'; tone?: 'pane' }) {
+export function AddToWordlistButton({ entry, size = 'sm', tone, context }: {
+  entry: DictEntryPreview | DictEntryDetail
+  size?: 'sm' | 'lg'
+  tone?: 'pane'
+  context?: SaveContext | null
+}) {
   const { kind } = useAccount()
 
   if (kind === null) return null
@@ -40,5 +46,5 @@ export function AddToWordlistButton({ entry, size = 'sm', tone }: { entry: DictE
       </Link>
     )
   }
-  return <SavedButton entry={entry} size={size} tone={tone} />
+  return <SavedButton entry={entry} size={size} tone={tone} context={context} />
 }

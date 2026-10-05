@@ -226,7 +226,7 @@ export function PassageBlock({ text, direction, targets, known }: {
                       indexed, so that direction stays plain text. */}
                   {l === 'vi' || untouched
                     ? value
-                    : <TappableText text={value} lang={l} />}
+                    : <TappableText text={value} lang={l} translation={trimmed} />}
                 </dd>
                 {l !== 'vi' && found[l]?.text === value && unseen(found[l].entries).length > 0 && (
                   <dd className="m-0 mt-1 flex flex-col gap-0.5">

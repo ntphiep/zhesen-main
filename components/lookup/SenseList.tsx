@@ -40,7 +40,7 @@ function Sense({ s, n, more, lang, examples, byText, glosses, synonyms, mark }: 
         {example && (
           <div className="mt-1.5 flex flex-col border-l-2 border-(--c-l) pl-3.5">
             <span className="flex items-start gap-1">
-              <span data-ex="" lang={lang}><TappableText text={example.text} lang={lang} resolved={byText.get(example.text)} quiet mark={mark} /></span>
+              <span data-ex="" lang={lang}><TappableText text={example.text} lang={lang} resolved={byText.get(example.text)} quiet mark={mark} translation={isSentenceTranslation(example.translationVi, glosses) ? example.translationVi : null} /></span>
               <AudioButton text={example.text} lang={lang} />
             </span>
             {isSentenceTranslation(example.translationVi, glosses) && <span data-ex-vi="">{example.translationVi}</span>}

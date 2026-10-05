@@ -74,11 +74,11 @@ export function Mention({ link, className = '' }: { link: Pick<LearnerLink, 'tex
 
 /** A sentence with the headword and its forms in bold, every known word opening the word
  *  popover when the page resolved the sentence, as it does for every sentence of the layer. */
-export function Sentence({ text, view }: { text: string; view: WordView }) {
+export function Sentence({ text, view, translation = null }: { text: string; view: WordView; translation?: string | null }) {
   const parts = markHeadword(text, view.head.headword, view.head.lang, headwordForms(view))
   const resolved = view.resolved.find((r) => r.text === text)
   if (resolved) {
-    return <TappableText text={text} lang={view.head.lang} resolved={resolved} quiet marks={markedRanges(parts)} />
+    return <TappableText text={text} lang={view.head.lang} resolved={resolved} quiet marks={markedRanges(parts)} translation={translation} />
   }
   return <>{parts.map((p, i) => (p.mark ? <b key={i} className="font-bold text-(--zs-pen)">{p.text}</b> : p.text))}</>
 }
@@ -86,7 +86,7 @@ export function Sentence({ text, view }: { text: string; view: WordView }) {
 export function ExampleCard({ example, view }: { example: LearnerExample; view: WordView }) {
   return (
     <li className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-2.5 rounded-r-xl border-l-2 border-(--c-l) bg-(--tint-2) py-3 pr-3 pl-3.5">
-      <span data-ex="" lang={view.head.lang}><Sentence text={example.text} view={view} /></span>
+      <span data-ex="" lang={view.head.lang}><Sentence text={example.text} view={view} translation={example.vi} /></span>
       <span className="-my-1"><AudioButton text={example.text} lang={view.head.lang} /></span>
       {example.reading && <span className="col-start-1 text-[13px] text-(--zs-soft)">{example.reading}</span>}
       <span data-ex-vi="" className="col-start-1">{example.vi}</span>
@@ -107,7 +107,7 @@ export function CollocationGloss({ link, view }: { link: LearnerLink; view: Word
   return (
     <>
       {link.vi && <span className="block text-[13.5px] font-semibold text-(--zs-ink) sm:text-sm">{link.vi}</span>}
-      {link.example && <span data-ex="sm" lang={view.head.lang} className="mt-1 block"><Sentence text={link.example} view={view} /></span>}
+      {link.example && <span data-ex="sm" lang={view.head.lang} className="mt-1 block"><Sentence text={link.example} view={view} translation={link.exampleVi} /></span>}
       {link.exampleReading && <span className="block text-xs text-(--zs-soft)">{link.exampleReading}</span>}
       {link.exampleVi && <span data-ex-vi="plain">{link.exampleVi}</span>}
     </>

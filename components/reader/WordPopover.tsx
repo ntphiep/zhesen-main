@@ -5,6 +5,7 @@ import { PosTag } from '@/components/ui/PosTag'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { LinkPending } from '@/components/ui/LinkPending'
 import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
+import type { SaveContext } from '@/lib/wordlist/types'
 import r from './Reader.module.css'
 
 // Loaded with the popover rather than the page: it reaches supabase-js and zod, and it
@@ -18,7 +19,7 @@ const AddToWordlistButton = dynamic(() =>
 const CARD = `${r.pop} block w-72 max-w-[calc(100vw-2rem)] rounded-[14px] border border-(--edge) bg-(--zs-bg) p-4 text-left font-ui `
   + 'text-sm font-normal not-italic tracking-normal text-(--zs-ink) leading-normal'
 
-export function WordPopover({ entry, charInfo }: { entry?: DictEntryPreview; charInfo?: CharInfo }) {
+export function WordPopover({ entry, charInfo, context }: { entry?: DictEntryPreview; charInfo?: CharInfo; context?: SaveContext | null }) {
   if (entry) {
     return (
       <span className={CARD}>
@@ -33,7 +34,7 @@ export function WordPopover({ entry, charInfo }: { entry?: DictEntryPreview; cha
             Xem chi tiết
             <LinkPending />
           </Link>
-          <AddToWordlistButton entry={entry} />
+          <AddToWordlistButton entry={entry} context={context} />
         </span>
       </span>
     )

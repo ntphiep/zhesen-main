@@ -52,6 +52,13 @@ export interface UserWord {
   aiFields?: AiField[]
 }
 
+/** The sentence a word was tapped in, kept as the card's example when it is saved. */
+export interface SaveContext {
+  text: string
+  /** Its Vietnamese, when the page knows it for this sentence alone. */
+  translationVi: string | null
+}
+
 /** Fields the user supplies when creating/editing a word (excludes id/timestamps/user_id). */
 export interface WordDraft {
   lang: LangCode

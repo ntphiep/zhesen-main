@@ -6,6 +6,7 @@ import type { ResolvedText } from '@/lib/dictionary/tappable'
 import type { DictEntryPreview, CharInfo } from '@/lib/dictionary/types'
 import type { LangCode } from '@/lib/languages'
 import { loadSupabaseClient } from '@/lib/supabase/loadClient'
+import { sentenceAt } from '@/lib/reader/sentence'
 import r from './Reader.module.css'
 
 /** A pseudo-element 24 px tall that reaches half a space to each side, so a tap between
@@ -61,7 +62,7 @@ function placePopover(anchor: HTMLElement, word: HTMLElement) {
  * public (anon) client, and a failure degrades to plain text.
  */
 export function TappableText({
-  text, lang, resolved, quiet = false, mark = [], marks = [],
+  text, lang, resolved, quiet = false, mark = [], marks = [], translation = null,
 }: {
   text: string
   lang: LangCode
@@ -76,6 +77,9 @@ export function TappableText({
   /** Character ranges `[start, end)` of `text` set in bold, for a mark that is not one whole
    *  token: 学 inside 学校, or "take off" across two. */
   marks?: [number, number][]
+  /** The Vietnamese of the whole text. A saved word keeps its sentence as the example, and
+   *  this translation only when that sentence is the whole text. */
+  translation?: string | null
 }) {
   // Tokenised up front, not left empty until the effect below answers: the words are on
   // screen from the first paint and only become tappable once the entries arrive. Starting
@@ -189,6 +193,10 @@ export function TappableText({
   }, [text, lang, resolved])
 
   const offsets = segments.reduce<number[]>((acc, seg) => [...acc, acc[acc.length - 1] + seg.text.length], [0])
+  function contextAt(from: number, to: number) {
+    const sentence = sentenceAt(text, from, to)
+    return sentence ? { text: sentence, translationVi: sentence === text.trim() ? translation : null } : null
+  }
   // The punctuation opening the segment after each word, drawn with that word.
   const glued = segments.map((seg, i) => {
     const next = segments[i + 1]
@@ -240,7 +248,7 @@ export function TappableText({
             {tail}
             {on && (
               <span ref={anchor} id={`${id}-pop`} className={`${r.anchor} whitespace-normal`}>
-                <WordPopover entry={entry} charInfo={charInfo} />
+                <WordPopover entry={entry} charInfo={charInfo} context={contextAt(offsets[i], offsets[i + 1])} />
               </span>
             )}
           </span>

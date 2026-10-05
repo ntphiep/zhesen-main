@@ -551,7 +551,7 @@ export function ExampleRows({ examples, lang, resolved, glosses, mark, shown = 3
               : 'flex flex-col border-l-2 border-(--c-l) pl-3.5'}
           >
             <span className={`flex items-start gap-2 ${variant === 'rows' ? 'justify-between' : ''}`}>
-              <span data-ex="" lang={lang}><TappableText text={e.text} lang={lang} resolved={byText.get(e.text)} quiet mark={mark} /></span>
+              <span data-ex="" lang={lang}><TappableText text={e.text} lang={lang} resolved={byText.get(e.text)} quiet mark={mark} translation={isSentenceTranslation(e.translationVi, glosses) ? e.translationVi : null} /></span>
               <span className="-my-1"><AudioButton text={e.text} lang={lang} /></span>
             </span>
             {isSentenceTranslation(e.translationVi, glosses) && <span data-ex-vi="">{e.translationVi}</span>}

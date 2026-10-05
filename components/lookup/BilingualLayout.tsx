@@ -246,7 +246,7 @@ function exampleCells(e: DictExample, lang: LangCode, byText: Map<string, Resolv
   return {
     left: (
       <span className="flex items-start gap-1.5">
-        <span data-ex="" lang={lang}><TappableText text={e.text} lang={lang} resolved={byText.get(e.text)} quiet mark={mark} /></span>
+        <span data-ex="" lang={lang}><TappableText text={e.text} lang={lang} resolved={byText.get(e.text)} quiet mark={mark} translation={isSentenceTranslation(e.translationVi, glosses) ? e.translationVi : null} /></span>
         <AudioButton text={e.text} lang={lang} />
       </span>
     ),

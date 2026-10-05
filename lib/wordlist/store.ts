@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { DictEntryDetail, DictEntryPreview, DictExample } from '@/lib/dictionary/types'
 import { isCleanExample, stripPhraseStop } from '@/lib/dictionary/textQuality'
 import type { LangCode } from '@/lib/languages'
-import { AI_FIELDS, userWordRow, type AiField, type UserWord, type WordDraft, type WordStatus } from './types'
+import { AI_FIELDS, userWordRow, type AiField, type SaveContext, type UserWord, type WordDraft, type WordStatus } from './types'
 import { z } from '@/lib/zod'
 import { fetchAllRows } from '@/lib/supabase/paginate'
 import { ensureSession } from '@/lib/supabase/session'
@@ -48,10 +48,11 @@ function readingFrom(attributes: Record<string, unknown> | undefined, ipa: strin
 }
 
 /** Build a wordlist draft from a dictionary entry. A full entry also yields an example
- *  sentence and, for Chinese, the reading; a preview carries neither. */
-export function draftFromDictEntry(e: DictEntryPreview | DictEntryDetail): WordDraft {
+ *  sentence and, for Chinese, the reading. A preview carries neither, so the sentence the
+ *  word was tapped in becomes its example: 433 of 488 saved words had none. */
+export function draftFromDictEntry(e: DictEntryPreview | DictEntryDetail, context?: SaveContext | null): WordDraft {
   const detail = 'examples' in e ? e : null
-  const example = detail ? pickExample(detail.examples) : null
+  const example = detail ? pickExample(detail.examples) : context ? { text: context.text, translationVi: context.translationVi } : null
   return {
     lang: e.lang, entryId: e.id, headword: e.headword,
     reading: detail ? readingFrom(detail.attributes, e.ipa) : null,

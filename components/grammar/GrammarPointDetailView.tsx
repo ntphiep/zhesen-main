@@ -62,7 +62,7 @@ export function GrammarPointDetailView({ point, resolved = [] }: {
                 <li key={i} className={s.example}>
                   {e.reading && <p className={`ipa ${s.reading}`}>{e.reading}</p>}
                   <div className="flex items-center gap-2">
-                    <span className={s.src} lang={point.lang}><TappableText text={e.text} lang={point.lang} resolved={byText.get(e.text)} /></span>
+                    <span className={s.src} lang={point.lang}><TappableText text={e.text} lang={point.lang} resolved={byText.get(e.text)} translation={e.translationVi} /></span>
                     <AudioButton text={e.text} lang={point.lang} />
                   </div>
                   <p className={s.vi}>{e.translationVi}</p>
