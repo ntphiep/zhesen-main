@@ -38,7 +38,7 @@ def test_reserved_under_every_alias():
     for name in ('gemini/gemini-3.8-flash', 'gemini/gemini-3.7-flash', 'gemini/gemini-3.6-flash',
                  'ds-web/deepseek-v4-pro', 'deepseek-web/deepseek-v4-flash', 'ag/gpt-oss-120b-medium'):
         assert not L.usable(name), name
-    assert L.usable('agy/gemini-3.7-flash-low')
+    assert not L.usable('agy/gemini-3.7-flash-low')
     assert L.usable('orca/deepseek/deepseek-v4-flash-free') and L.usable('kr/glm-5')
 
 
@@ -232,10 +232,10 @@ def test_independent_reviewer():
 
 def test_review_pick_avoids_vendor_and_weaker_models():
     p = pool(['gemini/gemma-4-31b-it', 'gemini/gemini-3.5-flash-lite', 'omni:ddgw/gpt-5.4-nano',
-              'omni:ddgw/tinfoil/gpt-oss-120b'])
+              'omni:ddgw/qwen3-235b-a22b'])
     shut = {L.family('omni:agy/gemini-3.7-flash-low'), L.vendor('omni:agy/gemini-3.7-flash-low')}
-    assert p.pick(None, shut, L.rank('omni:openrouter/stealth/space-bunny-alpha')) == 'omni:ddgw/tinfoil/gpt-oss-120b'
-    assert p.pick(None, shut, L.rank('omni:openrouter/stealth/space-bunny-alpha')) == 'omni:ddgw/tinfoil/gpt-oss-120b'
+    assert p.pick(None, shut, L.rank('omni:openrouter/stealth/space-bunny-alpha')) == 'omni:ddgw/qwen3-235b-a22b'
+    assert p.pick(None, shut, L.rank('omni:openrouter/stealth/space-bunny-alpha')) == 'omni:ddgw/qwen3-235b-a22b'
     assert p.pick(None, shut, 0) is None
 
 
@@ -362,6 +362,22 @@ def test_redo_queue_selects_by_kind():
         assert dep['en:c']['prompt_version'] == 'v5'
     finally:
         L.rest_all = real
+
+
+def test_effort_variants_of_a_reserved_model_are_reserved():
+    for name in ('ag/gemini-3.8-flash-high', 'omni:agy/gemini-3.8-flash-extra-low', 'gc/gemini-3.7-flash-tiered'):
+        assert not L.usable(name), name
+
+
+def test_redo_with_nothing_left_never_falls_through_to_the_queue():
+    import argparse
+    real, real_queue = L.rest_all, L.queue
+    try:
+        stub_rest_all({})
+        L.queue = lambda *a: (_ for _ in ()).throw(AssertionError('queue reached'))
+        L.cmd_run(argparse.Namespace(redo='claude', entries='', lang='en', top=3000, skip_forms=False, limit=0))
+    finally:
+        L.rest_all, L.queue = real, real_queue
 
 
 def test_enrich_redo_reaches_collocation_senses_and_keeps_the_old_gloss():

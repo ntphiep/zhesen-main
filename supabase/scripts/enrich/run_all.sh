@@ -19,6 +19,7 @@ docker exec -i supabase-db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1
 update lex.entries set level = provenance->>'ai_level',
   provenance = provenance || '{"level": "zhesen-ai"}'::jsonb
 where lang = 'en' and level_is_estimated and form_of is null and provenance->>'ai_level' in ('A1','A2','B1','B2','C1','C2')
+  and coalesce(provenance->>'ai', '') !~* 'claude|anthropic|opus|sonnet|haiku|fable'
   and level is distinct from provenance->>'ai_level';
 SQL
 python3 -c "import enrich; enrich.revalidate()"

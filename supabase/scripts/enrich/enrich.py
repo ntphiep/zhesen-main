@@ -26,6 +26,8 @@ LOCK = threading.Lock()
 # With --redo-models, only the senses those models wrote are rewritten, and no entry is
 # asked for collocations or a level.
 REDO = []
+# Example sources that carry no Vietnamese: every translation_vi on them was written by a model.
+MACHINE_X = "('wiktionary-en', 'wiktionary-es')"
 
 # Per language: level order, the levels that get collocations, the CEFR reference (None
 # when the levels are not CEFR), and the shape a collocation may take.
@@ -101,9 +103,11 @@ def entry_queue(targets=False):
           order by e.id""")
     if REDO:
         return rows(f"""
-          select e.id, e.headword, e.entry_type, e.level, false as est, e.form_of
-          from lex.entries e where e.lang = '{LANG}' and exists (
+          select e.id, e.headword, e.entry_type, e.level, e.form_of,
+                 (e.provenance ? 'ai_level' and e.provenance->>'ai' = any ({arr_lit(REDO)})) as est
+          from lex.entries e where e.lang = '{LANG}' and (exists (
             select 1 from lex.senses s where s.entry_id = e.id and s.provenance->>'ai' = any ({arr_lit(REDO)}))
+            or (e.provenance ? 'ai_level' and e.provenance->>'ai' = any ({arr_lit(REDO)})))
           order by e.frequency_rank nulls last, e.id""")
     order = ','.join(f"'{v}'" for v in L['levels'])
     # An inflected form takes its level and its collocations from its lemma.
@@ -135,18 +139,21 @@ def load_material(ids):
       from lex.senses s where s.entry_id in (select jsonb_array_elements_text({arr}))
         and ((s.gloss_en is not null and length(s.gloss_en) between 2 and 400 and s.gloss_en !~ '^CL:') {phrase})
       order by s.entry_id, s.sense_order""")
+    # Examples from a source with no Vietnamese got theirs from a model, so a redo translates them again;
+    # which model wrote one is not recorded. The deploy backs up the translations it replaces.
+    machine_x = f"or x.source_id in {MACHINE_X}" if REDO else ''
     # The page shows per sense the first two by (translation first, id), and the unlinked
     # rows translated first; translating these puts a translation on screen.
     examples = rows(f"""
       with x as (
-        select x.id, x.entry_id, x.sense_id, x.text, x.translation_vi,
+        select x.id, x.entry_id, x.sense_id, x.text, x.translation_vi, x.source_id,
                row_number() over (partition by x.entry_id, x.sense_id
                                   order by x.translation_vi nulls last,
                                            case when x.sense_id is null then length(x.text) end, x.id) as rn
         from lex.examples x where x.entry_id in (select jsonb_array_elements_text({arr}))
           and length(x.text) between 8 and 300)
       select id, entry_id, sense_id, text from x
-      where translation_vi is null and rn <= case when sense_id is null then 6 else 2 end
+      where (translation_vi is null {machine_x}) and rn <= case when sense_id is null then 6 else 2 end
       order by entry_id, sense_id nulls last, id""")
     return senses, examples
 
@@ -315,6 +322,7 @@ def write(call, model, out, smap, xmap, emap, dry):
                         'heads': [(e['id'], e['level'], e['entry_type'], e['est']) for e in emap.values()]}
     prov = lit({'ai': model, 'ai_at': datetime.now(timezone.utc).date().isoformat()})
     redone = f"or s.provenance->>'ai' = any ({arr_lit(REDO)})" if REDO else ''
+    machine_x = f"or x.source_id in {MACHINE_X}" if REDO else ''
     sql = ['begin;']
     if s_rows:
         sql.append(f"""update lex.senses s set gloss_vi = p.vi, gloss_vi_is_mt = true,
@@ -328,7 +336,7 @@ def write(call, model, out, smap, xmap, emap, dry):
     if x_rows:
         sql.append(f"""update lex.examples x set translation_vi = p.vi
           from jsonb_to_recordset({lit(x_rows)}) p(id bigint, vi text)
-          where x.id = p.id and x.translation_vi is null;""")
+          where x.id = p.id and (x.translation_vi is null {machine_x});""")
     if lv_rows:
         sql.append(f"""update lex.entries e set provenance = e.provenance || jsonb_build_object('ai_level', p.level) || {prov}
           from jsonb_to_recordset({lit(lv_rows)}) p(id text, level text) where e.id = p.id;""")

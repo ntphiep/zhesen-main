@@ -221,7 +221,15 @@ RESERVED = {'gemini/gemini-3.8-flash', 'gemini/gemini-3.7-flash', 'gemini/gemini
 FREE_TIER = re.compile(r':free(-|$)')
 # A member is reserved under every provider that serves it: omni:agy/gemini-3.7-flash-medium is
 # Antigravity's gemini-3.7-flash-medium again.
-RESERVED_NAMES = {r.rsplit('/', 1)[-1] for r in RESERVED}
+# Effort variants are the same model: ag/gemini-3.8-flash-high is reserved like ag/gemini-3.8-flash.
+EFFORT = re.compile(r'-(extra-low|high|medium|low|tiered)$')
+
+
+def base_name(name):
+    return EFFORT.sub('', name.rsplit('/', 1)[-1])
+
+
+RESERVED_NAMES = {base_name(r) for r in RESERVED}
 # Both combos lean on Antigravity, whose quota may be the account's rather than each model's,
 # so the batch calls it only from 23:00 to 07:00 in Vietnam, when few readers ask.
 NIGHT_ONLY = {'ag', 'omni:antigravity'}
@@ -237,7 +245,7 @@ def refuse_claude(names):
 
 
 def usable(name):
-    if ('/' not in name or name.rsplit('/', 1)[-1] in RESERVED_NAMES or CLAUDE.search(name)
+    if ('/' not in name or base_name(name) in RESERVED_NAMES or CLAUDE.search(name)
             or EXCLUDE.search(name) or FREE_TIER.search(name)):
         return False
     # Parameter counts in the name, skipping the active count of a mixture ("120b-a12b").
@@ -1048,6 +1056,10 @@ def revalidate():
 def cmd_run(a):
     trad = traditional_only()
     redo = redo_queue(a.redo) if a.redo else {}
+    if a.redo and not redo:
+        # Falling through to the queue would build what the main learner run is building.
+        log(f'redo {a.redo}: nothing left')
+        return
     if redo:
         ids = [i for i in (a.entries.split(',') if a.entries else sorted(redo)) if i in redo]
     else:
@@ -1102,16 +1114,17 @@ def cmd_run(a):
             return 'invalid', rec['report']['errors'][:3]
         if a.dry_run:
             return 'loaded', 'dry run'
-        result = load(rec, PROMPT_VERSION)
-        if redone:
-            # learner_load keeps the status (owner, 2026-10-05): a re-review whose corrections failed the
-            # checks hides the layer until it is rewritten; a Claude layer, hidden by hand, is published
-            # once its rewrite has passed a review.
+        # learner_load keeps the status (owner, 2026-10-05). A failed re-review is hidden before it loads,
+        # so a failed backup leaves the old row, which the next --redo run selects again. A Claude layer,
+        # hidden by hand, is published only once its rewrite has passed a review.
+        failed_review = redone and bool(rec['report'].get('fix_errors'))
+        if failed_review:
             import gate
-            if rec['report'].get('fix_errors'):
-                gate.hide([entry_id], f'failed re-review ({a.redo})')
-            elif a.redo == 'claude':
-                gate.set_status([entry_id], 'published', 'rewritten and reviewed without Claude')
+            gate.hide([entry_id], f'failed re-review ({a.redo})')
+        result = load(rec, PROMPT_VERSION)
+        if redone and a.redo == 'claude' and not failed_review:
+            import gate
+            gate.set_status([entry_id], 'published', 'rewritten and reviewed without Claude')
         return 'loaded', result
 
     # A flush drops every cached dictionary page, so it runs on a clock, not per entry count.
