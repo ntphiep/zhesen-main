@@ -65,13 +65,24 @@ function failure(e: unknown): { error: string; status: number } | null {
   return null
 }
 
+/** One line per failed model call, so a dead router shows in the logs. Task, router,
+ *  answered status and the error only: never the prompt, the input or the key. */
+function logFailure(task: string, e: unknown, status: number): void {
+  console.error('ai failed', JSON.stringify({
+    task,
+    router: e instanceof AiUnavailableError ? e.router ?? null : null,
+    status,
+    error: e instanceof Error ? e.message : String(e),
+  }))
+}
+
 /**
  * A plain-text task, answered as NDJSON: `{"text"}` per piece as the model writes it,
  * then one `{"data"}` checked against the task's output schema, or one `{"error"}`.
  * The status is already 200 by the time the model can fail, hence the error line.
  */
 async function streamed(
-  cfg: AiConfig, spec: ErasedTask, fromText: (text: string) => unknown, user: string,
+  task: string, cfg: AiConfig, spec: ErasedTask, fromText: (text: string) => unknown, user: string,
   signal: AbortSignal,
 ): Promise<Response> {
   // The browser going away cancels the body; that has to stop the model call too.
@@ -97,11 +108,13 @@ async function streamed(
           gone.abort()
         }
         const data = spec.parseOutput(fromText(whole))
+        if (data === null) logFailure(task, new Error('reply did not match the task schema'), 200)
         controller.enqueue(line(data === null ? { error: UNAVAILABLE } : { data }))
       } catch (e) {
         if (gone.signal.aborted) return
         const f = failure(e)
         if (!f) throw e
+        logFailure(task, e, 200)
         controller.enqueue(line({ error: f.error }))
       }
       controller.close()
@@ -139,7 +152,8 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Không có tác vụ này.' }, { status: 400 })
   }
 
-  const spec = ERASED_TASKS[envelope.data.task]
+  const task = envelope.data.task
+  const spec = ERASED_TASKS[task]
   const prompt = spec.promptFor(envelope.data.input)
   if (prompt === null) {
     return Response.json({ error: 'Dữ liệu đầu vào không hợp lệ.' }, { status: 400 })
@@ -168,7 +182,7 @@ export async function POST(request: Request) {
   // The browser leaving, Dừng included, stops the model call as the deadline does.
   const signal = AbortSignal.any([request.signal, AbortSignal.timeout(TIMEOUT_MS)])
   try {
-    if (spec.fromText) return await streamed(cfg, spec, spec.fromText, prompt, signal)
+    if (spec.fromText) return await streamed(task, cfg, spec, spec.fromText, prompt, signal)
     const data = await askJson(cfg, {
       system: spec.system,
       user: prompt,
@@ -182,6 +196,7 @@ export async function POST(request: Request) {
     if (request.signal.aborted) return new Response(null, { status: 499 })
     const f = failure(e)
     if (!f) throw e
+    logFailure(task, e, f.status)
     return Response.json({ error: f.error }, { status: f.status })
   }
 }
