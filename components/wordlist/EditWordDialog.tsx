@@ -83,6 +83,10 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
 
     if (JSON.stringify(tags) !== JSON.stringify(word.tags)) patch.tags = tags
 
+    // A field the learner rewrote is no longer the assistant's.
+    const kept = word.aiFields?.filter((f) => !(f in patch))
+    if (kept && kept.length !== word.aiFields?.length) patch.aiFields = kept
+
     // An empty PATCH either fails with "Chưa lưu được" for a save with
     // nothing to save, or succeeds and lets the updated_at trigger record when the
     // word was last read rather than last edited.

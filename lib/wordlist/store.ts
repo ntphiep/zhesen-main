@@ -2,21 +2,31 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { DictEntryDetail, DictEntryPreview, DictExample } from '@/lib/dictionary/types'
 import { isCleanExample, stripPhraseStop } from '@/lib/dictionary/textQuality'
 import type { LangCode } from '@/lib/languages'
-import { userWordRow, type UserWord, type WordDraft, type WordStatus } from './types'
+import { AI_FIELDS, userWordRow, type AiField, type UserWord, type WordDraft, type WordStatus } from './types'
 import { z } from '@/lib/zod'
 import { fetchAllRows } from '@/lib/supabase/paginate'
 import { ensureSession } from '@/lib/supabase/session'
 
 export * from './types'
 
+/** The column each AI-filled field is stored as in `user_words.ai_fields`. */
+const AI_COLUMNS = {
+  meaningVi: 'meaning_vi', ipa: 'ipa', pos: 'pos', level: 'level', example: 'example',
+  exampleTranslation: 'example_translation',
+} satisfies Record<AiField, string>
+
+const aiFieldsToRow = (fields: AiField[]): string[] => fields.map((f) => AI_COLUMNS[f])
+
 export function parseUserWordRow(r: unknown): UserWord {
   const x = userWordRow.parse(r)
+  const aiFields = AI_FIELDS.filter((f) => x.ai_fields?.includes(AI_COLUMNS[f]))
   return {
     id: x.id, lang: x.lang, entryId: x.entry_id, headword: x.headword, reading: x.reading,
     ipa: x.ipa, pos: x.pos, meaningVi: x.meaning_vi && stripPhraseStop(x.meaning_vi), meaningEn: x.meaning_en, level: x.level,
     example: x.example, exampleTranslation: x.example_translation, audioUrl: x.audio_url,
     notes: x.notes, status: x.status, tags: x.tags, createdAt: x.created_at, updatedAt: x.updated_at,
     fsrsDueAt: x.fsrs_due_at, fsrsLapses: x.fsrs_lapses,
+    ...(aiFields.length > 0 && { aiFields }),
   }
 }
 
@@ -58,6 +68,7 @@ function draftToRow(d: WordDraft): Record<string, unknown> {
     lang: d.lang, entry_id: d.entryId, headword: d.headword, reading: d.reading, ipa: d.ipa, pos: d.pos,
     meaning_vi: d.meaningVi, meaning_en: d.meaningEn, level: d.level, example: d.example,
     example_translation: d.exampleTranslation, audio_url: d.audioUrl, notes: d.notes, status: d.status, tags: d.tags,
+    ...(d.aiFields?.length && { ai_fields: aiFieldsToRow(d.aiFields) }),
   }
 }
 
@@ -66,9 +77,12 @@ function patchToRow(p: Partial<WordDraft>): Record<string, unknown> {
     lang: 'lang', entryId: 'entry_id', headword: 'headword', reading: 'reading', ipa: 'ipa', pos: 'pos',
     meaningVi: 'meaning_vi', meaningEn: 'meaning_en', level: 'level', example: 'example',
     exampleTranslation: 'example_translation', audioUrl: 'audio_url', notes: 'notes', status: 'status', tags: 'tags',
-  } satisfies Record<keyof WordDraft, string>
+  } satisfies Record<Exclude<keyof WordDraft, 'aiFields'>, string>
   const out: Record<string, unknown> = {}
-  for (const k of Object.keys(p) as (keyof WordDraft)[]) out[map[k]] = p[k]
+  for (const k of Object.keys(p) as (keyof WordDraft)[]) {
+    if (k === 'aiFields') out.ai_fields = aiFieldsToRow(p.aiFields ?? [])
+    else out[map[k]] = p[k]
+  }
   return out
 }
 

@@ -7,7 +7,7 @@ import { draftFromDictEntry } from '@/lib/wordlist/store'
 import { callAi } from '@/lib/ai/browser'
 import { useAiEnabled } from '@/lib/hooks/useAiEnabled'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
-import { STATUS_OPTIONS, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
+import { STATUS_OPTIONS, type AiField, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
 import { LANGUAGES, type LangCode } from '@/lib/languages'
 import { Ipa } from '@/components/ui/Ipa'
 import s from './Wordlist.module.css'
@@ -51,6 +51,14 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
   const aiOn = useAiEnabled()
   const [filling, setFilling] = useState(false)
   const [fillError, setFillError] = useState<string | null>(null)
+  /** Fields the assistant filled and the learner has not edited since. */
+  const [aiFilled, setAiFilled] = useState<AiField[]>([])
+  const [aiLevel, setAiLevel] = useState<string | null>(null)
+  const unmark = (f: AiField) => setAiFilled((xs) => xs.filter((x) => x !== f))
+  // The entry the headword typed by hand already is: saving it keeps the senses and audio.
+  const [match, setMatch] = useState<DictEntryPreview | null>(null)
+  const offer = match && match.lang === manualLang && match.headword.toLowerCase() === headword.trim().toLowerCase()
+    ? match : null
 
   // Adjust state during render, not in an effect: react.dev/learn/you-might-not-need-an-effect.
   const [prevQuery, setPrevQuery] = useState(query)
@@ -123,6 +131,21 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
     return () => { clearTimeout(id); ctrl.abort() }
   }, [query, lang])
 
+  useEffect(() => {
+    const word = headword.trim()
+    if (tab !== 'manual' || !word) return
+    const ctrl = new AbortController()
+    const id = setTimeout(async () => {
+      try {
+        const o = await fetchSearch(word, ctrl.signal, { langs: [manualLang] })
+        if (o.status === 'ok') setMatch(o.data.entries[manualLang].find((e) => e.headword.toLowerCase() === word.toLowerCase()) ?? null)
+      } catch {
+        // The offer is a shortcut; the form works without it.
+      }
+    }, 400)
+    return () => { clearTimeout(id); ctrl.abort() }
+  }, [headword, manualLang, tab])
+
   async function handleDictAdd(entry: DictEntryPreview) {
     await onAdd(draftFromDictEntry(entry))
     setQuery('')
@@ -140,17 +163,27 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
       pos: parsePos(pos),
       meaningVi: meaningVi.trim() || null,
       meaningEn: meaningEn.trim() || null,
-      level: null,
+      level: aiLevel,
       example: example.trim() || null,
       exampleTranslation: exampleVi.trim() || null,
       audioUrl: null,
       notes: null,
       status,
       tags: [],
+      ...(aiFilled.length > 0 && { aiFields: aiFilled }),
     }
     await onAdd(draft)
+    resetManual()
+  }
+
+  async function handleOfferAdd(entry: DictEntryPreview) {
+    await onAdd(draftFromDictEntry(entry))
+    resetManual()
+  }
+
+  function resetManual() {
     setHeadword(''); setMeaningVi(''); setMeaningEn(''); setIpa(''); setPos(''); setExample(''); setExampleVi(''); setStatus('new')
-    setFillError(null)
+    setFillError(null); setAiFilled([]); setAiLevel(null); setMatch(null)
   }
 
   // Empty fields only: anything already typed is the learner's own wording and
@@ -164,6 +197,15 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
       const outcome = await callAi('enrich', { lang: manualLang, headword: word })
       if (outcome.status === 'ok') {
         const d = outcome.data
+        const filled: AiField[] = d.level ? ['level'] : []
+        const took = (f: AiField, current: string, value: string) => { if (!current && value) filled.push(f) }
+        took('meaningVi', meaningVi, d.meaningVi)
+        took('ipa', ipa, d.ipa)
+        took('pos', pos, formatPos(d.pos))
+        took('example', example, d.example)
+        took('exampleTranslation', exampleVi, d.exampleVi)
+        setAiFilled((xs) => [...new Set([...xs, ...filled])])
+        setAiLevel(d.level)
         setMeaningVi((v) => v || d.meaningVi)
         setIpa((v) => v || d.ipa)
         setPos((v) => v || formatPos(d.pos))
@@ -292,6 +334,21 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                 />
               </label>
             </div>
+            {offer && (
+              <div className={`${s.alert} flex flex-wrap items-center justify-between gap-2`}>
+                <span className="min-w-0">
+                  Từ điển có <span className={s.hw} data-l={offer.lang} lang={offer.lang}>{offer.headword}</span>
+                  {offer.glossVi && <span className={`ml-2 ${s.note}`}>{offer.glossVi}</span>}
+                </span>
+                {savedEntryIds?.has(offer.id) ? (
+                  <span className={s.note}>Đã có</span>
+                ) : (
+                  <button type="button" className={`${s.btn} ${s.sm}`} onClick={() => handleOfferAdd(offer)}>
+                    Thêm từ từ điển
+                  </button>
+                )}
+              </div>
+            )}
             <div className="flex gap-2">
               <label className="flex flex-col gap-1 flex-1 min-w-0">
                 <span className={s.label}>IPA</span>
@@ -299,7 +356,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                   type="text"
                   placeholder="/dɔːɡ/"
                   value={ipa}
-                  onChange={(e) => setIpa(e.target.value)}
+                  onChange={(e) => { setIpa(e.target.value); unmark('ipa') }}
                   className={s.field}
                 />
               </label>
@@ -309,7 +366,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                   type="text"
                   placeholder="noun, verb..."
                   value={pos}
-                  onChange={(e) => setPos(e.target.value)}
+                  onChange={(e) => { setPos(e.target.value); unmark('pos') }}
                   className={s.field}
                 />
               </label>
@@ -336,7 +393,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                 type="text"
                 placeholder="con chó"
                 value={meaningVi}
-                onChange={(e) => setMeaningVi(e.target.value)}
+                onChange={(e) => { setMeaningVi(e.target.value); unmark('meaningVi') }}
                 className={s.field}
               />
             </label>
@@ -356,7 +413,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                 type="text"
                 placeholder="The dog barked."
                 value={example}
-                onChange={(e) => setExample(e.target.value)}
+                onChange={(e) => { setExample(e.target.value); unmark('example') }}
                 className={s.field}
               />
             </label>

@@ -10,7 +10,7 @@ import { isSentenceTranslation } from '@/lib/dictionary/textQuality'
 import { entryGlosses, mainSenses, planExamples, senseSections } from '@/lib/dictionary/wordPage'
 import { EnglishMark, PivotMark, SectionLabel } from '@/components/lookup/WordParts'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
-import type { UserWord } from '@/lib/wordlist/types'
+import type { AiField, UserWord } from '@/lib/wordlist/types'
 import { PosTag } from '@/components/ui/PosTag'
 import st from './Wordlist.module.css'
 
@@ -92,6 +92,16 @@ function Frame({ left, right, actions }: { left: ReactNode; right?: ReactNode; a
   )
 }
 
+/** Beside a field "Điền bằng AI" wrote and the learner has not edited since. */
+function AiMark({ word, field }: { word: UserWord; field: AiField }) {
+  if (!word.aiFields?.includes(field)) return null
+  return (
+    <span title="AI điền" className="ml-1.5 rounded-full bg-(--tint-2) px-1.5 py-px align-middle text-[10px] font-semibold not-italic text-(--zs-soft)">
+      AI
+    </span>
+  )
+}
+
 function DetailBody({ word, actions }: { word: UserWord; actions: ReactNode }) {
   const [state, setState] = useState<DetailState>(() => {
     const id = word.entryId
@@ -127,8 +137,8 @@ function DetailBody({ word, actions }: { word: UserWord; actions: ReactNode }) {
         actions={actions}
         left={
           <div className="flex flex-col gap-3">
-            {word.meaningVi && <p>{word.meaningVi}</p>}
-            {word.example && <p className={`italic ${st.pron}`}>{word.example}</p>}
+            {word.meaningVi && <p>{word.meaningVi}<AiMark word={word} field="meaningVi" /></p>}
+            {word.example && <p className={`italic ${st.pron}`}>{word.example}<AiMark word={word} field="example" /></p>}
             {word.notes && <p className={st.pron}>{word.notes}</p>}
           </div>
         }
