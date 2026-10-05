@@ -1083,7 +1083,8 @@ def cmd_run(a):
             rec = json.load(open(path))
         except (OSError, ValueError):
             rec = None
-        if entry_id in redo:
+        redone = entry_id in redo
+        if redone:
             rec = again(entry_id)
             with open(path + '.tmp', 'w') as fh:
                 json.dump(rec, fh, ensure_ascii=False, indent=1)
@@ -1093,6 +1094,7 @@ def cmd_run(a):
             rec = build(entry_id, trad, pool, draft=rec if rec and rec.get('draft') else None)
             if replaced:
                 rec['replaced'] = replaced
+                redone = bool(a.redo)
             with open(path + '.tmp', 'w') as fh:
                 json.dump(rec, fh, ensure_ascii=False, indent=1)
             os.replace(path + '.tmp', path)
@@ -1101,6 +1103,15 @@ def cmd_run(a):
         if a.dry_run:
             return 'loaded', 'dry run'
         result = load(rec, PROMPT_VERSION)
+        if redone:
+            # learner_load keeps the status (owner, 2026-10-05): a re-review whose corrections failed the
+            # checks hides the layer until it is rewritten; a Claude layer, hidden by hand, is published
+            # once its rewrite has passed a review.
+            import gate
+            if rec['report'].get('fix_errors'):
+                gate.hide([entry_id], f'failed re-review ({a.redo})')
+            elif a.redo == 'claude':
+                gate.set_status([entry_id], 'published', 'rewritten and reviewed without Claude')
         return 'loaded', result
 
     # A flush drops every cached dictionary page, so it runs on a clock, not per entry count.

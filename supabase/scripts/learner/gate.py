@@ -113,17 +113,22 @@ def backup(entry_ids, tag):
 
 
 def hide(entry_ids, reason):
-    """Back up, then hide through admin.learner_set_status, acting as the site's admin so the console's
-    audit log records each change."""
-    where = backup(entry_ids, 'hide')
+    return set_status(entry_ids, 'hidden', reason)
+
+
+def set_status(entry_ids, status, reason):
+    """Back up, then set the status through admin.learner_set_status, acting as the site's admin so the
+    console's audit log records each change."""
+    assert status in ('hidden', 'published')
+    where = backup(entry_ids, 'hide' if status == 'hidden' else status)
     out = psql(f"""begin;
       select set_config('request.jwt.claims', json_build_object('sub',
         (select id from public.profiles where role = 'admin' order by id limit 1), 'role', 'authenticated')::text, true);
-      select count(*) from (select admin.learner_set_status(e, 'hidden')
+      select count(*) from (select admin.learner_set_status(e, '{status}')
                             from jsonb_array_elements_text({lit(sorted(entry_ids))}) e) t;
       commit;""")
     n = int(out.strip().splitlines()[-1])
-    L.log(f'hid {n} layers ({reason}); backup {where}')
+    L.log(f'{status} {n} layers ({reason}); backup {where}')
     return n, where
 
 
