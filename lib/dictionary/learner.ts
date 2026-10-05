@@ -3,6 +3,7 @@ import { z } from '@/lib/zod'
 import { isLangCode, type LangCode } from '@/lib/languages'
 import { splitEntryId } from './entryId'
 import { isOpenLicence } from './licence'
+import type { LearnerDistractors } from '@/lib/practice/quiz'
 
 /**
  * The learner layer of one entry (supabase/migrations/0076_learner_layer.sql): the senses a
@@ -418,5 +419,41 @@ export function markHeadword(text: string, headword: string, lang: LangCode, for
     last = at + m[0].length
   }
   if (last < text.length) out.push({ text: text.slice(last), mark: false })
+  return out
+}
+
+const distractorLinkRow = z.object({
+  entry_id: z.string(),
+  kind: z.enum(['confusable', 'synonym']),
+  target_entry_id: z.string(),
+})
+const gistRow = z.object({ entry_id: z.string(), gist_vi: z.array(z.string()) })
+
+/** Each entry's confusables and synonyms as their first published Vietnamese gist, for quiz
+ *  distractors. Two reads: those links carry no `vi` of their own. */
+export async function listLearnerDistractors(
+  supabase: SupabaseClient, entryIds: string[],
+): Promise<Map<string, LearnerDistractors>> {
+  if (entryIds.length === 0) return new Map()
+  const lex = supabase.schema('lex')
+  const { data, error } = await lex.from('learner_links').select('entry_id, kind, target_entry_id')
+    .in('entry_id', entryIds).in('kind', ['confusable', 'synonym']).not('target_entry_id', 'is', null)
+    .order('link_order')
+  if (error) throw error
+  const links = distractorLinkRow.array().parse(data ?? [])
+  if (links.length === 0) return new Map()
+  const { data: gists, error: gistError } = await lex.from('learner_entries').select('entry_id, gist_vi')
+    .in('entry_id', [...new Set(links.map((l) => l.target_entry_id))]).eq('status', 'published')
+  if (gistError) throw gistError
+  const gist = new Map(gistRow.array().parse(gists ?? [])
+    .flatMap((g): [string, string][] => (g.gist_vi[0] ? [[g.entry_id, g.gist_vi[0]]] : [])))
+  const out = new Map<string, LearnerDistractors>()
+  for (const l of links) {
+    const text = gist.get(l.target_entry_id)
+    if (!text) continue
+    const d = out.get(l.entry_id) ?? { confusable: [], synonym: [] }
+    d[l.kind].push(text)
+    out.set(l.entry_id, d)
+  }
   return out
 }

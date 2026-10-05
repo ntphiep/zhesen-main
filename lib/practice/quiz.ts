@@ -7,6 +7,14 @@ export interface QuizWord {
   ipa: string | null
   lang: LangCode
   meaningVi: string | null
+  pos?: string | null
+  entryId?: string | null
+}
+
+/** Vietnamese gists of the entries a learner confuses with this one, and of its synonyms. */
+export interface LearnerDistractors {
+  confusable: string[]
+  synonym: string[]
 }
 
 export interface QuizQuestion {
@@ -39,18 +47,32 @@ export interface QuizQuestion {
 const MIN_DISTINCT_MEANINGS = 2
 
 /** "Nước", "Nước." and "nước" are one answer: trailing punctuation and case are dropped. */
-const meaningKey = (m: string) => m.trim().replace(/[\s\p{P}]+$/u, '').toLocaleLowerCase('vi')
+export const meaningKey = (m: string) => m.trim().replace(/[\s\p{P}]+$/u, '').toLocaleLowerCase('vi')
 
-export function buildQuiz(words: QuizWord[], count: number, rand: Rand = Math.random): QuizQuestion[] {
+const terms = (m: string) => m.split(/[,;/]/).map(meaningKey).filter(Boolean)
+
+/** Distractors in order: same language and part of speech, the learner layer's confusables,
+ *  synonyms sharing no Vietnamese term with the answer, same language, then the rest. */
+export function buildQuiz(
+  words: QuizWord[], count: number, rand: Rand = Math.random, learner: Map<string, LearnerDistractors> = new Map(),
+): QuizQuestion[] {
   const usable = words.filter((x): x is QuizWord & { meaningVi: string } => Boolean(x.meaningVi && x.meaningVi.trim()))
   if (new Set(usable.map((x) => meaningKey(x.meaningVi))).size < MIN_DISTINCT_MEANINGS) return []
   const targets = shuffle(usable, rand).slice(0, count)
   return targets.map((t) => {
-    const distractors = shuffle(
-      usable.filter((x) => x.id !== t.id && meaningKey(x.meaningVi) !== meaningKey(t.meaningVi)),
-      rand,
-    )
-      .map((x) => x.meaningVi.trim())
+    const others = shuffle(usable.filter((x) => x.id !== t.id), rand)
+    const sameLang = others.filter((x) => x.lang === t.lang)
+    const extra = (t.entryId && learner.get(t.entryId)) || { confusable: [], synonym: [] }
+    const answerTerms = new Set(terms(t.meaningVi))
+    const distractors = [
+      ...sameLang.filter((x) => t.pos && x.pos === t.pos).map((x) => x.meaningVi),
+      ...extra.confusable,
+      ...extra.synonym.filter((m) => !terms(m).some((k) => answerTerms.has(k))),
+      ...sameLang.map((x) => x.meaningVi),
+      ...others.map((x) => x.meaningVi),
+    ]
+      .map((m) => m.trim())
+      .filter((m) => m && meaningKey(m) !== meaningKey(t.meaningVi))
       .filter((m, i, arr) => arr.findIndex((o) => meaningKey(o) === meaningKey(m)) === i) // distinct distractor texts
       .slice(0, 3)
     return {

@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { listPracticeWords } from '@/lib/wordlist/store'
+import { listPracticeWords, listWordEntries } from '@/lib/wordlist/store'
+import { listLearnerDistractors } from '@/lib/dictionary/learner'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { gradeForMode } from '@/lib/practice/grading'
 import { buildQuiz, type QuizQuestion } from '@/lib/practice/quiz'
@@ -23,11 +24,20 @@ export function QuizClient() {
   useEffect(() => {
     let active = true
     listPracticeWords(supabase, { needsMeaning: true })
-      .then((words) => {
+      .then(async (words) => {
+        // Without these reads the distractors are drawn by language only.
+        const entries = await listWordEntries(supabase, words.map((x) => x.id)).catch(() => new Map<string, { entryId: string | null; pos: string | null }>())
+        const entryIds = [...entries.values()].flatMap((e) => (e.entryId ? [e.entryId] : []))
+        const learner = await listLearnerDistractors(supabase, entryIds).catch(() => undefined)
         if (!active) return
         const qs = buildQuiz(
-          words.map((x) => ({ id: x.id, headword: x.headword, ipa: x.ipa, lang: x.lang, meaningVi: x.meaningVi })),
+          words.map((x) => ({
+            id: x.id, headword: x.headword, ipa: x.ipa, lang: x.lang, meaningVi: x.meaningVi,
+            entryId: entries.get(x.id)?.entryId ?? null, pos: entries.get(x.id)?.pos ?? null,
+          })),
           QUIZ_SIZE,
+          Math.random,
+          learner,
         )
         setQuestions(qs)
         setIndex(0)

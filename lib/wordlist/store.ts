@@ -184,6 +184,18 @@ export async function listPracticeWords(
   }))
 }
 
+const wordPosRow = z.object({ id: z.string(), entry_id: z.string().nullable(), pos: z.string().nullable() })
+
+/** Each saved word's dictionary entry and part of speech, keyed by word id. */
+export async function listWordEntries(
+  supabase: SupabaseClient, ids: string[],
+): Promise<Map<string, { entryId: string | null; pos: string | null }>> {
+  if (ids.length === 0) return new Map()
+  const { data, error } = await supabase.from('user_words').select('id, entry_id, pos').in('id', ids)
+  if (error) throw error
+  return new Map(wordPosRow.array().parse(data ?? []).map((r) => [r.id, { entryId: r.entry_id, pos: r.pos }]))
+}
+
 const wordEntryRow = z.object({ id: z.string(), entry_id: z.string() })
 const traditionalRow = z.object({ id: z.string(), traditional: z.string() })
 

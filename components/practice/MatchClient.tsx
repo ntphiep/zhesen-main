@@ -57,7 +57,6 @@ export function MatchClient() {
 
   function clickTile(tile: MatchTile) {
     if (wrong.length > 0 || matched.has(tile.key)) return
-    if (!logged.current) { logged.current = true; logDay() }
     if (selected === null) { setSelected(tile.key); return }
     if (selected === tile.key) { setSelected(null); return }
     // A round can advance while a click is in flight, leaving `selected` naming a
@@ -68,6 +67,8 @@ export function MatchClient() {
       setMatched((m) => new Set(m).add(first.key).add(tile.key))
       setSelected(null)
       recordGrade(tile.wordId, 'match', gradeForMode('match', { correct: true, nearly: stumbled.current.has(tile.wordId) }))
+      // A click alone is not practice: the day counts once a pair is graded.
+      if (!logged.current) { logged.current = true; logDay() }
     } else {
       stumbled.current.add(first.wordId).add(tile.wordId)
       setWrong([first.key, tile.key])

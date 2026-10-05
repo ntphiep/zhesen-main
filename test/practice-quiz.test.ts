@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { buildQuiz, type QuizWord } from '@/lib/practice/quiz'
+import { listLearnerDistractors } from '@/lib/dictionary/learner'
+import { queryBuilder } from './helpers/supabase'
 
 const w = (id: string, headword: string, meaningVi: string | null): QuizWord =>
   ({ id, headword, ipa: null, lang: 'en', meaningVi })
@@ -57,5 +60,58 @@ describe('buildQuiz', () => {
   it('gives no quiz when every meaning collapses to one after that normalisation', () => {
     const words = [w('1', 'water', 'Nước'), w('2', 'agua', 'Nước.'), w('3', '水', 'nước ')]
     expect(buildQuiz(words, 3, () => 0)).toEqual([])
+  })
+})
+
+const word = (id: string, meaningVi: string, lang: QuizWord['lang'], pos: string | null): QuizWord =>
+  ({ id, headword: id, ipa: null, lang, meaningVi, pos, entryId: `${lang}:${id}` })
+
+// Distractors that share the answer's language and part of speech, or that a learner
+// confuses with it, test the meaning rather than the word class.
+describe('buildQuiz distractor order', () => {
+  const pool = [
+    word('dog', 'con chó', 'en', 'noun'), word('cat', 'con mèo', 'en', 'noun'),
+    word('run', 'chạy', 'en', 'verb'), word('eat', 'ăn', 'en', 'verb'),
+    word('perro', 'con chó sói', 'es', 'noun'),
+  ]
+  const only = (id: string) => (q: { id: string }) => q.id === id
+
+  it('offers the same part of speech first, then confusables, then synonyms', () => {
+    const learner = new Map([['en:dog', { confusable: ['con sói'], synonym: ['con chó, chó nhà', 'cún con'] }]])
+    const q = buildQuiz(pool, 5, () => 0, learner).find(only('dog'))!
+    expect(q.options.filter((o) => o !== q.answer).sort()).toEqual(['con mèo', 'con sói', 'cún con'].sort())
+  })
+
+  it('never offers a synonym that shares a Vietnamese term with the answer', () => {
+    const learner = new Map([['en:dog', { confusable: [], synonym: ['chó nhà, con chó'] }]])
+    const q = buildQuiz(pool, 5, () => 0, learner).find(only('dog'))!
+    expect(q.options).not.toContain('chó nhà, con chó')
+  })
+
+  it('falls back to the same language before other languages', () => {
+    const q = buildQuiz(pool, 5, () => 0).find(only('dog'))!
+    const distractors = q.options.filter((o) => o !== q.answer)
+    expect(distractors).toHaveLength(3)
+    expect(distractors).not.toContain('con chó sói')
+  })
+})
+
+// Confusable and synonym links carry no Vietnamese text, so the gist comes from the target.
+describe('listLearnerDistractors', () => {
+  it('reads each link target\'s first published gist', async () => {
+    const links = queryBuilder({ data: [
+      { entry_id: 'en:dog', kind: 'confusable', target_entry_id: 'en:wolf' },
+      { entry_id: 'en:dog', kind: 'synonym', target_entry_id: 'en:hound' },
+      { entry_id: 'en:dog', kind: 'synonym', target_entry_id: 'en:hidden' },
+    ], error: null })
+    const gists = queryBuilder({ data: [
+      { entry_id: 'en:wolf', gist_vi: ['con sói', 'chó sói'] },
+      { entry_id: 'en:hound', gist_vi: ['chó săn'] },
+    ], error: null })
+    const from = vi.fn((table: string) => (table === 'learner_links' ? links : gists))
+    const client = { schema: vi.fn(() => ({ from })) } as unknown as SupabaseClient
+    const out = await listLearnerDistractors(client, ['en:dog'])
+    expect(out.get('en:dog')).toEqual({ confusable: ['con sói'], synonym: ['chó săn'] })
+    expect(gists.eq).toHaveBeenCalledWith('status', 'published')
   })
 })

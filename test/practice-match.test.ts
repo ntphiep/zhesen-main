@@ -31,3 +31,13 @@ describe('buildMatchTiles', () => {
     expect(tiles.some((t) => t.wordId === '6')).toBe(false)
   })
 })
+
+// Two tiles reading "nước" leave the pairing to chance.
+describe('buildMatchTiles with repeated meanings', () => {
+  it('keeps one word per meaning in a round', () => {
+    const tiles = buildMatchTiles([...words, w('6', 'agua', 'Nước.'), w('7', 'shui', 'nước')], 99, () => 0)
+    const meanings = tiles.filter((t) => t.kind === 'meaning').map((t) => t.text.replace(/\.$/, '').toLowerCase())
+    expect(meanings).toHaveLength(5)
+    expect(new Set(meanings).size).toBe(5)
+  })
+})
