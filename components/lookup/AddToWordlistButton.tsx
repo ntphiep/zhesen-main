@@ -30,9 +30,12 @@ export function AddToWordlistButton({ entry, size = 'sm', tone, context }: {
 
   if (kind === null) return null
   if (kind !== 'permanent') {
+    // A word tapped in a sentence returns to that page, whose `?q=` keeps the passage. Read
+    // in render: this branch never renders on the server, where the account is unknown.
+    const back = context ? `${window.location.pathname}${window.location.search}` : entryPath(entry.id)
     return (
       <Link
-        href={`/register?next=${encodeURIComponent(entryPath(entry.id))}`}
+        href={`/register?next=${encodeURIComponent(back)}`}
         prefetch={false}
         onClick={() => rememberPendingSave(entry.id)}
         className={tone === 'pane'

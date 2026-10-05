@@ -214,6 +214,42 @@ describe('PassageBlock word list language (fw direction)', () => {
   })
 })
 
+describe('PassageBlock source passage (fw direction)', () => {
+  const dogEntry = () => wordEntry({ glossVi: 'Con chó' })
+  const answer = (words: { text: string; entry: DictEntryPreview | null }[], text: string) => ({
+    lang: 'en', words, phrases: [],
+    segments: [...text.matchAll(/\p{L}+|[^\p{L}]+/gu)].map((m) => ({ text: m[0], word: /\p{L}/u.test(m[0]) })),
+  })
+
+  // A pasted English passage was readable only in the textarea; its words sat in a list.
+  it('draws the passage itself with every known word tappable', async () => {
+    const text = 'The dog barks'
+    stubRoutes(
+      { enabled: true, from: 'en', translations: { vi: 'Con chó sủa.' } },
+      answer([{ text: 'The', entry: null }, { text: 'dog', entry: dogEntry() }, { text: 'barks', entry: null }], text),
+    )
+    render(<PassageBlock text={text} direction="fw" targets={['en']} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'dog' }, { timeout: 3000 }))
+    expect(screen.getByRole('link', { name: /Xem chi tiết/ })).toHaveAttribute('href', '/dictionary/en/dog')
+  })
+
+  // "the" ten times was ten rows.
+  it('lists each entry once, however often the passage repeats it', async () => {
+    const text = 'the dog and the dog'
+    stubRoutes(
+      { enabled: true, from: 'en', translations: { vi: 'x' } },
+      answer([
+        { text: 'the', entry: null }, { text: 'dog', entry: dogEntry() }, { text: 'and', entry: null },
+        { text: 'the', entry: null }, { text: 'dog', entry: dogEntry() },
+      ], text),
+    )
+    render(<PassageBlock text={text} direction="fw" targets={['en']} />)
+    await screen.findByText('Từng từ trong đoạn', {}, { timeout: 3000 })
+    expect(screen.getAllByRole('link', { name: /dog/ })).toHaveLength(1)
+    expect(screen.getAllByText('Không có trong từ điển')).toHaveLength(2)
+  })
+})
+
 describe('PassageBlock word list past its ceiling (fw direction)', () => {
   // Translation takes 5,000 characters and the word list 1,000; between the two the list
   // used to vanish without a word.

@@ -22,6 +22,9 @@ import { ErrorLine } from './ErrorLine'
 import { AiSuggest } from './AiSuggest'
 import s from './Lookup.module.css'
 
+/** Shorter than the translation's debounce, so the address holds the passage by the time
+ *  a word in it can be tapped. */
+const URL_DEBOUNCE_MS = 400
 /** One entry per prefix typed, not per word, so the map fills fast. */
 const CACHE_LIMIT = 100
 /** CEFR order. Only en rows carry a level; a value outside this list renders after these. */
@@ -93,6 +96,26 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
 
   const trimmed = query.trim()
   const isPassage = trimmed.length > 0 && looksLikeAPassage(trimmed, direction)
+
+  // The query lives in `?q=` (and `dir=vi` for this box), so a return from /register or a
+  // reload finds the passage again. Replaced, never pushed: a keystroke is not a page. An
+  // empty box clears only its own query.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const url = new URL(window.location.href)
+      const mine = (url.searchParams.get('dir') === 'vi') === (direction === 'vi')
+      if (trimmed) {
+        url.searchParams.set('q', trimmed)
+        if (direction === 'vi') url.searchParams.set('dir', 'vi')
+        else url.searchParams.delete('dir')
+      } else if (mine) {
+        url.searchParams.delete('q')
+        url.searchParams.delete('dir')
+      }
+      if (url.href !== window.location.href) window.history.replaceState(null, '', url)
+    }, URL_DEBOUNCE_MS)
+    return () => clearTimeout(id)
+  }, [trimmed, direction])
   // Searched as well as translated: "give up" is an entry, not give and up.
   const isPhrase = isPassage && looksLikeAPhrase(trimmed, direction)
   const searches = trimmed.length > 0 && (!isPassage || isPhrase)

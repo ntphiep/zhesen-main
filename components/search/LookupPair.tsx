@@ -36,9 +36,11 @@ function withTransition(run: () => void): void {
   doc.startViewTransition(() => flushSync(run))
 }
 
-export function LookupPair({ lang, initialQuery = '', autoFocus = false }: {
+export function LookupPair({ lang, initialQuery = '', initialDir = 'fw', autoFocus = false }: {
   lang?: LangCode
   initialQuery?: string
+  /** Which box `initialQuery` was typed in, from `?dir=` (LookupPanel mirrors both). */
+  initialDir?: 'vi' | 'fw'
   autoFocus?: boolean
 }) {
   const { mode, swapped } = useSyncExternalStore(
@@ -62,7 +64,8 @@ export function LookupPair({ lang, initialQuery = '', autoFocus = false }: {
         direction="vi"
         lang={lang}
         label={`Tiếng Việt sang ${other}`}
-        autoFocus={autoFocus && !initialQuery}
+        initialQuery={initialDir === 'vi' ? initialQuery : ''}
+        autoFocus={autoFocus && (initialDir === 'vi' || !initialQuery)}
       />
     ),
     fw: (
@@ -70,8 +73,8 @@ export function LookupPair({ lang, initialQuery = '', autoFocus = false }: {
         direction="fw"
         lang={lang}
         label={`${other} sang tiếng Việt`}
-        initialQuery={initialQuery}
-        autoFocus={autoFocus && !!initialQuery}
+        initialQuery={initialDir === 'vi' ? '' : initialQuery}
+        autoFocus={autoFocus && initialDir !== 'vi' && !!initialQuery}
       />
     ),
   }

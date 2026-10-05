@@ -3,8 +3,8 @@ import { detectOrder } from './detect'
 import { resolveTappableTexts } from './tappable'
 import { resolveTokens } from './resolveTokens'
 import { phraseCandidates, pickPhrases, type FoundPhrase } from './phrases'
-import { tokenize } from '@/lib/reader/tokenize'
-import type { DictEntryPreview } from './types'
+import { tokenize, type Segment } from '@/lib/reader/tokenize'
+import type { CharInfo, DictEntryPreview } from './types'
 import type { LangCode } from '@/lib/languages'
 
 /**
@@ -28,6 +28,11 @@ export interface TextLookup {
   words: LookedUpWord[]
   /** English and Spanish multi-word entries in the passage, in reading order; see ./phrases. */
   phrases: FoundPhrase[]
+  /** The passage as TappableText draws it, so the page renders it tappable with no second
+   *  resolution from the browser. */
+  segments: Segment[]
+  /** Chinese single characters with no entry, for the character card. */
+  chars: [string, CharInfo][]
 }
 
 /** `lang` is the language Azure detected or the learner selected. Without it the letter
@@ -36,7 +41,7 @@ export async function lookUpText(supabase: SupabaseClient, text: string, given?:
   const lang = given ?? detectOrder(text)[0]
   if (lang === 'zh') {
     const [resolved] = await resolveTappableTexts(supabase, lang, [text])
-    if (!resolved) return { lang, words: [], phrases: [] }
+    if (!resolved) return { lang, words: [], phrases: [], segments: [], chars: [] }
     const byToken = new Map(resolved.entries)
     return {
       lang,
@@ -44,18 +49,22 @@ export async function lookUpText(supabase: SupabaseClient, text: string, given?:
         .filter((s) => s.word)
         .map((s) => ({ text: s.text, entry: byToken.get(s.text.toLowerCase()) ?? null })),
       phrases: [],
+      segments: resolved.segments,
+      chars: resolved.chars,
     }
   }
 
   // The words and the phrase candidates go to the dictionary in one call.
   const segments = tokenize(lang, text)
   const words = segments.filter((s) => s.word)
-  if (words.length === 0) return { lang, words: [], phrases: [] }
+  if (words.length === 0) return { lang, words: [], phrases: [], segments, chars: [] }
   const candidates = phraseCandidates(segments, lang)
   const found = await resolveTokens(supabase, lang, [...words.map((w) => w.text), ...candidates.map((c) => c.key)])
   return {
     lang,
     words: words.map((s) => ({ text: s.text, entry: found.get(s.text.toLowerCase()) ?? null })),
     phrases: pickPhrases(candidates, found),
+    segments,
+    chars: [],
   }
 }

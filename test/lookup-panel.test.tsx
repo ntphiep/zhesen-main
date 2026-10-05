@@ -50,6 +50,18 @@ describe('LookupPanel', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('dir=vi')
   })
 
+  // Back from /register the page reads `?q=`, so the passage is still there.
+  it('mirrors the query into the address, with the direction', async () => {
+    window.history.replaceState(null, '', '/dictionary?lang=en')
+    stubFetch({ entries: EMPTY, suggestions: [] })
+    render(<LookupPanel direction="vi" label="VN" />)
+    await userEvent.type(screen.getByLabelText('VN'), 'cho')
+    await vi.waitFor(() => expect(window.location.search).toBe('?lang=en&q=cho&dir=vi'), { timeout: 2000 })
+    await userEvent.clear(screen.getByLabelText('VN'))
+    await vi.waitFor(() => expect(window.location.search).toBe('?lang=en'), { timeout: 2000 })
+    window.history.replaceState(null, '', '/')
+  })
+
   it('the fw panel does not send dir=vi', async () => {
     const fetchMock = stubFetch({ entries: EMPTY, suggestions: [] })
     render(<LookupPanel direction="fw" label="FW" />)

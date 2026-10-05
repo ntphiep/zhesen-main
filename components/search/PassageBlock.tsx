@@ -8,7 +8,8 @@ import { LinkPending } from '@/components/ui/LinkPending'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import { TappableText } from '@/components/reader/TappableText'
 import { fetchTextLookup } from '@/lib/dictionary/textLookupClient'
-import type { TextLookup } from '@/lib/dictionary/textLookup'
+import type { LookedUpWord, TextLookup } from '@/lib/dictionary/textLookup'
+import type { ResolvedText } from '@/lib/dictionary/tappable'
 import { fetchTranslation } from '@/lib/translate/client'
 import { fetchSearch } from '@/lib/dictionary/searchClient'
 import { isWordMatch } from '@/lib/dictionary/detect'
@@ -74,6 +75,17 @@ const TRANSLATE_DEBOUNCE_MS = 900
  *  dictionary is searched for it: "người tham dự" comes back as "Attendees", and attendee
  *  has no Vietnamese meaning the Vietnamese lookup could match. */
 const MAX_LOOKUP_WORDS = 3
+
+/** Each entry once, and each unknown word once: "the" ten times was ten rows. */
+function distinctWords(words: LookedUpWord[]): LookedUpWord[] {
+  const seen = new Set<string>()
+  return words.filter((w) => {
+    const key = w.entry?.id ?? `?${w.text.toLowerCase()}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
 
 /** A word row on the block's pastel ground. */
 const ROW = 'flex flex-wrap items-baseline gap-2 rounded-xl px-2 py-1.5 transition-colors duration-150 ease-std hover:bg-(--zs-bg)'
@@ -165,6 +177,18 @@ export function PassageBlock({ text, direction, targets, known }: {
     return () => { clearTimeout(id); ctrl.abort() }
   }, [direction, listed, settled, tooLong, wordLang])
 
+  // The word list's own segmentation, so the passage renders tappable without the browser
+  // resolving it a second time. Only while that list answers this very text.
+  const source = useMemo((): ResolvedText | null => {
+    if (!words || words.segments.length === 0 || words.segments.map((x) => x.text).join('') !== listed) return null
+    return {
+      text: listed,
+      segments: words.segments,
+      entries: words.words.flatMap((w): [string, DictEntryPreview][] => (w.entry ? [[w.text.toLowerCase(), w.entry]] : [])),
+      chars: words.chars,
+    }
+  }, [words, listed])
+
   // Reuses the translation this block already holds: no second Azure request, and each
   // search goes through the cached route.
   useEffect(() => {
@@ -187,6 +211,7 @@ export function PassageBlock({ text, direction, targets, known }: {
 
   if (!trimmed) return null
   const unseen = (list: DictEntryPreview[]) => (known ? list.filter((e) => !known.has(e.id)) : list)
+  const viText = state.kind === 'done' && state.text === trimmed ? state.translations.vi ?? null : null
   // "give up" typed alone is already the panel's own top hit.
   const phrases = (words?.phrases ?? []).filter((p) => !known?.has(p.entry.id))
 
@@ -204,6 +229,18 @@ export function PassageBlock({ text, direction, targets, known }: {
         <p className="text-sm text-(--zs-soft)">Chưa hỗ trợ dịch cả đoạn.</p>
       )}
       {state.kind === 'error' && <ErrorLine>{state.message}</ErrorLine>}
+
+      {direction === 'fw' && source && words && (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">{LANG_LABELS[words.lang]}</span>
+          {/* The passage is the reading surface: every word the dictionary holds opens the
+              popover, and a save keeps its sentence. Past the word-list ceiling it is plain. */}
+          <p lang={words.lang} className="m-0 whitespace-pre-wrap text-[1.0625rem] text-(--zs-ink)">
+            <TappableText text={listed} lang={words.lang} resolved={source} translation={viText} />
+            {trimmed.slice(listed.length)}
+          </p>
+        </div>
+      )}
 
       {state.kind === 'done' && (
         <dl className="flex flex-col gap-2">
@@ -286,7 +323,7 @@ export function PassageBlock({ text, direction, targets, known }: {
         <details>
           <summary className="cursor-pointer rounded-md text-sm font-semibold text-(--zs-ink)">Từng từ trong đoạn</summary>
           <ul className="mt-2 flex flex-col gap-0.5">
-            {words.words.map((w, i) => (
+            {distinctWords(words.words).map((w, i) => (
               <li key={`${i}-${w.text}`}>
                 {w.entry
                   ? (

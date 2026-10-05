@@ -7,8 +7,8 @@ import { lookupLayout } from '@/lib/dictionary/lookupLayout'
 // The panels do the searching and have their own file; here only which of them is on
 // screen, and in which order, is under test.
 vi.mock('@/components/search/LookupPanel', () => ({
-  LookupPanel: ({ direction, label }: { direction: string; label: string }) =>
-    <div data-testid={`panel-${direction}`}>{label}</div>,
+  LookupPanel: ({ direction, label, initialQuery }: { direction: string; label: string; initialQuery?: string }) =>
+    <div data-testid={`panel-${direction}`} data-q={initialQuery}>{label}</div>,
 }))
 
 beforeEach(() => {
@@ -22,6 +22,12 @@ function order(): string[] {
 }
 
 describe('LookupPair', () => {
+  it('gives the restored query to the box it was typed in', () => {
+    render(<LookupPair initialQuery="con chó" initialDir="vi" />)
+    expect(screen.getByTestId('panel-vi')).toHaveAttribute('data-q', 'con chó')
+    expect(screen.getByTestId('panel-fw')).not.toHaveAttribute('data-q', 'con chó')
+  })
+
   it('shows both directions by default, Vietnamese first', () => {
     render(<LookupPair />)
     expect(order()).toEqual(['panel-vi', 'panel-fw'])

@@ -24,10 +24,21 @@ const entryPreview = z.object({
   matchScore: z.number().nullable().optional(),
 })
 
+const charInfo = z.object({
+  char: z.string(),
+  radical: z.string().nullable(),
+  strokeCount: z.number().nullable(),
+  hanViet: z.string().array(),
+  pinyin: z.string().array(),
+  gloss: z.string().nullable(),
+})
+
 export const textLookupResponse = z.object({
   lang: langCode,
   words: z.object({ text: z.string(), entry: entryPreview.nullable() }).array(),
   phrases: z.object({ text: z.string(), entry: entryPreview }).array().default([]),
+  segments: z.object({ text: z.string(), word: z.boolean() }).array().default([]),
+  chars: z.tuple([z.string(), charInfo]).array().default([]),
 })
 
 export type TextLookupOutcome =

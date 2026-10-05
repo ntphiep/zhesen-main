@@ -19,7 +19,7 @@ export const metadata = pageMetadata({
  * answered with ca, can and called, and it cost a second database call every time it was
  * unsure. Which box the learner types in is the answer.
  */
-export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string; lang?: string }> }) {
+export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string; lang?: string; dir?: string }> }) {
   const sp = await searchParams
   // `searchPath` (lib/dictionary/entryId.ts) appends the language, because a chip for a
   // related word or an inflected form already knows which language it came from.
@@ -29,7 +29,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
       <div className="mx-auto max-w-page px-6 pt-8 pb-16">
         <h1 className="text-[2.34375rem] leading-tight font-extrabold tracking-[-0.03em] text-(--zs-ink)">Dịch</h1>
         <div className="mt-6">
-          <LookupPair lang={lang} initialQuery={sp.q ?? ''} autoFocus />
+          <LookupPair lang={lang} initialQuery={sp.q ?? ''} initialDir={sp.dir === 'vi' ? 'vi' : 'fw'} autoFocus />
         </div>
         <DiscoveryStrip />
       </div>
