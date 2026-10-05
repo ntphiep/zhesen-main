@@ -51,7 +51,7 @@ const cachedSearch = unstable_cache(
     if (found.translationFailed) throw new IncompleteSearch(found)
     return found
   },
-  ['dict-search-one-v4'],
+  ['dict-search-one-v5'],
   { revalidate: SEARCH_CACHE_SECONDS, tags: ['lex'] },
 )
 
