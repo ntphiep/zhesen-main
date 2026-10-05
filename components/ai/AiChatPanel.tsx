@@ -18,6 +18,17 @@ function pageContext(path: string, title: string): string {
   return name && name !== 'Zhesen' ? `${name} (${path})` : path
 }
 
+/** The entry a word page shows, so the route can read its gist and senses itself. */
+function pageEntry(path: string): string | null {
+  const m = path.match(/^\/dictionary\/(en|zh|es)\/([^/]+)$/)
+  if (!m) return null
+  try {
+    return `${m[1]}:${decodeURIComponent(m[2])}`
+  } catch {
+    return null
+  }
+}
+
 /**
  * The assistant on every page, for questions no fixed per-word task covers. Closed
  * by default, and silent when the deployment has no model, so the button never
@@ -56,9 +67,11 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
     const stop = new AbortController()
     stopRef.current = stop
 
+    const entryId = pageEntry(path)
     try {
       const outcome = await callAi('chat', {
         context: pageContext(path, typeof document === 'undefined' ? '' : document.title),
+        ...(entryId && { entryId }),
         messages: next.slice(-HISTORY),
       }, stop.signal, (text) => {
         setPartial(text)

@@ -89,7 +89,8 @@ async function streamed(
   // The browser going away cancels the body; that has to stop the model call too.
   const gone = new AbortController()
   const pieces = await streamText(cfg, {
-    system: job.system, user: job.user, maxTokens: spec.maxTokens, signal: AbortSignal.any([signal, gone.signal]),
+    system: job.system, user: job.user, messages: job.messages, maxTokens: spec.maxTokens,
+    signal: AbortSignal.any([signal, gone.signal]),
   })
   const encoder = new TextEncoder()
   const line = (value: unknown) => encoder.encode(`${JSON.stringify(value)}\n`)
@@ -206,6 +207,7 @@ export async function POST(request: Request) {
     const { value, model } = await askJsonFrom(cfg, {
       system: job.system,
       user: job.user,
+      messages: job.messages,
       parse: job.parse,
       maxTokens: spec.maxTokens,
       signal,

@@ -1,12 +1,14 @@
 import 'server-only'
 import { getCachedInflections, getCachedTermPreviews } from '@/lib/dictionary/cached'
+import { countDueCards } from '@/lib/wordlist/review'
 import type { LangCode } from '@/lib/languages'
 import { z } from '@/lib/zod'
 import { createClient } from '@/lib/supabase/server'
+import type { ModelTurn } from './client'
 import { coachGround, readCoach, storeCoach } from './coach'
 import {
-  ERASED_TASKS, checkGroundedCoach, coachInput, coachOutput, groundedCoachPrompt, suggestOutput,
-  type SuggestOutput, type TaskName,
+  ERASED_TASKS, chatInput, chatSystem, chatTurns, checkGroundedCoach, coachInput, coachOutput,
+  groundedCoachPrompt, suggestOutput, type ChatGround, type SuggestOutput, type TaskName,
 } from './tasks'
 
 /**
@@ -17,6 +19,8 @@ import {
 export interface Job {
   system: string
   user: string
+  /** The conversation as turns; sent in place of `user`. */
+  messages?: ModelTurn[]
   /** The model's JSON, checked; null asks the other router once, then fails. */
   parse(value: unknown): unknown | null
   /** The checked answer completed from the dictionary, which is what the browser gets. */
@@ -72,9 +76,45 @@ const coach: ServerStep = async (input, job) => {
   }
 }
 
+/** The chat as role-tagged turns, with the entry on screen and the learner's queue read
+ *  here. Either read failing leaves the tutor without it rather than failing the question. */
+const chat: ServerStep = async (input, job) => {
+  const { context, entryId, messages } = chatInput.parse(input)
+  const [ground, study] = await Promise.all([
+    entryId ? coachGround(entryId).catch(logged('ai chat entry failed', null)) : null,
+    studyOf().catch(logged('ai chat study failed', null)),
+  ])
+  return { ...job, system: chatSystem(context, { entry: ground, study }), messages: chatTurns(messages) }
+}
+
+const logged = <T>(what: string, fallback: T) => (e: unknown): T => {
+  console.error(what, e instanceof Error ? e.message : String(e))
+  return fallback
+}
+
+const WEAKEST = 10
+const weakRow = z.object({
+  lang: z.enum(['en', 'zh', 'es']), headword: z.string(), meaning_vi: z.string().nullable(),
+})
+
+/** The due count the review button shows and the reviewed words of least stability; RLS
+ *  scopes both to the signed-in learner. */
+async function studyOf(): Promise<ChatGround['study']> {
+  const supabase = await createClient()
+  const weak = async () => {
+    const { data, error } = await supabase.from('user_words').select('lang, headword, meaning_vi')
+      .gt('fsrs_reps', 0).order('fsrs_stability', { ascending: true }).limit(WEAKEST)
+    if (error) throw error
+    return z.array(weakRow).parse(data ?? []).map((r) => ({ lang: r.lang, headword: r.headword, meaningVi: r.meaning_vi }))
+  }
+  const [due, weakest] = await Promise.all([countDueCards(supabase), weak()])
+  return { due, weakest }
+}
+
 const STEPS: Partial<Record<TaskName, ServerStep>> = {
   enrich: withForms('enrich'),
   coach,
+  chat,
   suggest: async (_input, job) => ({ ...job, finish: async (answer) => resolveSuggestions(suggestOutput.parse(answer)) }),
 }
 

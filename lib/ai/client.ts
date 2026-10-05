@@ -67,9 +67,19 @@ export function extractJson(text: string): string {
   return body.slice(start, end + 1)
 }
 
+/** One turn as the model receives it. */
+export interface ModelTurn {
+  role: 'user' | 'assistant'
+  content: string
+}
+
 export interface TextOptions {
   system: string
+  /** The question, sent as the only user turn when `messages` is absent. */
   user: string
+  /** The conversation, oldest first and ending on a user turn; replaces `user`. The same
+   *  request shape reaches both response shapes. */
+  messages?: ModelTurn[]
   maxTokens: number
   /** Aborts the request; the caller owns the deadline. */
   signal?: AbortSignal
@@ -132,7 +142,7 @@ async function request(cfg: AiEndpoint, opts: TextOptions, stream: boolean, sign
       max_tokens: opts.maxTokens,
       stream,
       system: opts.system,
-      messages: [{ role: 'user', content: opts.user }],
+      messages: opts.messages ?? [{ role: 'user', content: opts.user }],
     }),
     signal,
   })
