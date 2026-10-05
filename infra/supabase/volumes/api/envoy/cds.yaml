@@ -49,13 +49,14 @@ resources:
                   socket_address:
                     address: rest
                     port_value: 3000
+    # Not upstream: an HTTP check on / made PostgREST build its OpenAPI document as anon
+    # every 5 s, 70% of anon's database time. `postgrest --ready` still guards the container.
     health_checks:
       - timeout: 2s
         interval: 5s
         unhealthy_threshold: 3
         healthy_threshold: 2
-        http_health_check:
-          path: /
+        tcp_health_check: {}
     circuit_breakers:
       thresholds:
         - priority: DEFAULT

@@ -220,6 +220,8 @@ services:
       PGRST_DB_MAX_ROWS: ${PGRST_DB_MAX_ROWS:-1000}
       PGRST_DB_EXTRA_SEARCH_PATH: ${PGRST_DB_EXTRA_SEARCH_PATH:-public}
       PGRST_DB_ANON_ROLE: anon
+      # Default 30 s: a fresh backend added 20 to 23 ms to the first lookup after a quiet spell.
+      PGRST_DB_POOL_MAX_IDLETIME: "300"
 
       PGRST_ADMIN_SERVER_PORT: 3001
       PGRST_ADMIN_SERVER_HOST: localhost
@@ -442,6 +444,12 @@ services:
       OMNIROUTE_MEMORY_MB: "768"
       NODE_OPTIONS: --max-old-space-size=768
       AUTH_COOKIE_SECURE: "true"
+      # The batch jobs write 50 to 85 MB of call logs a day. Per-table retention lives in the
+      # dashboard's database settings (infra/README.md); these cap the log files and two tables.
+      APP_LOG_RETENTION_DAYS: "3"
+      APP_LOG_MAX_FILES: "5"
+      CALL_LOGS_TABLE_MAX_ROWS: "20000"
+      PROXY_LOGS_TABLE_MAX_ROWS: "20000"
 
 volumes:
   db-config:

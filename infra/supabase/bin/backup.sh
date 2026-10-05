@@ -6,7 +6,6 @@ set -euo pipefail
 umask 077
 
 LOCAL_DIR="/var/backups/zhesen"
-KEEP_LOCAL_DAYS=2
 CONTAINER="supabase-db"
 
 TOKEN="$(curl -fsS -X PUT http://169.254.169.254/latest/api/token \
@@ -63,7 +62,8 @@ aws s3 cp "$ROUTER" "s3://$BUCKET/9router/" --region "$REGION"
 snapshot /opt/zhesen/omniroute/data/storage.sqlite "$OMNI"
 aws s3 cp "$OMNI" "s3://$BUCKET/omniroute/" --region "$REGION"
 
-find "$LOCAL_DIR" -type f -mtime "+$KEEP_LOCAL_DAYS" -delete
+# Only the newest set stays on the disk, for the fastest restore; S3 keeps 30 days.
+find "$LOCAL_DIR" -type f ! -name "*-$STAMP.*" -delete
 
 echo "backup: $STAMP -> s3://$BUCKET/postgres/, 9router/ and omniroute/"
 du -h "$DUMP" "$GLOBALS" "$ROUTER" "$OMNI"

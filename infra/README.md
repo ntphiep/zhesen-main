@@ -131,11 +131,15 @@ web models. Its dashboard has its own distribution (`terraform output omniroute_
 by OmniRoute's login; the password is SSM `/zhesen/prod/omniroute_password`, applied the same
 way as 9router's. Provider logins live encrypted in `/opt/zhesen/omniroute/data/storage.sqlite`
 under SSM `/zhesen/prod/omniroute_storage_key`, which cannot be rotated without losing them.
-The nightly backup copies that file to `omniroute/`.
+The nightly backup copies that file to `omniroute/`. Table retention is a dashboard setting stored
+in that file (Settings, Database, or `PATCH /api/settings/database`): call logs 2 days, quota
+snapshots and compression analytics 3, usage history 30. OmniRoute's defaults are 90, 90, 30 and
+365, and its cleanup runs every 6 hours with a `VACUUM` after it.
 
 Backup: `bin/backup.sh` at 03:30 UTC writes `pg_dump -Fc` plus `pg_dumpall --globals-only`
 to `s3://zhesen-db-backups-<account>/postgres/`, and copies of the 9router and OmniRoute
-databases to `9router/` and `omniroute/`, all kept 30 days; a failure posts to SNS. Restore 9router by stopping
+databases to `9router/` and `omniroute/`, all kept 30 days; a failure posts to SNS. Only the newest
+set stays in `/var/backups/zhesen`. Restore 9router by stopping
 `zhesen-9router` and putting the file back as `/opt/zhesen/9router/db/data.sqlite`.
 The root volume outlives the instance (`delete_on_termination = false`), so a dead host
 is rebuilt around the same volume; there is no volume snapshot.
