@@ -7,6 +7,7 @@ const { azureTranslatorConfig, translateCached } = vi.hoisted(() => ({
 }))
 vi.mock('@/lib/translate/config', () => ({ azureTranslatorConfig }))
 vi.mock('@/lib/translate/azure', () => ({ translateCached }))
+vi.mock('@/lib/ai/cacheSecret', () => ({ aiCacheSecret: async () => 's3cret' }))
 
 import { searchOneDirection } from '@/lib/dictionary/search'
 
@@ -133,6 +134,6 @@ describe('searchOneDirection, translation usage', () => {
     const { client: c } = client([], {})
     const usage = vi.fn(async () => ({ data: 9, error: null }))
     await searchOneDirection(Object.assign(c, { rpc: usage }), 'không có', 'vi', 8, ['en'])
-    expect(usage).toHaveBeenCalledWith('translate_usage', { p_chars: 9 })
+    expect(usage).toHaveBeenCalledWith('translate_usage', { p_secret: 's3cret', p_chars: 9 })
   })
 })

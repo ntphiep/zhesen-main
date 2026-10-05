@@ -1,9 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from '@/lib/zod'
+import { aiCacheSecret } from '@/lib/ai/cacheSecret'
 
 /**
  * The month's Azure Translator characters, counted per UTC day in admin.translate_usage
- * (supabase/migrations/0170_translate_usage.sql) through `public.translate_usage`.
+ * (supabase/migrations/0170_translate_usage.sql) through `public.translate_usage`, which asks
+ * for the server secret. With no secret configured nothing is counted and nothing refused.
  */
 
 /** The F0 allowance: "2 million characters ... free per month" on Azure's Translator
@@ -21,7 +23,9 @@ let known: { at: number; chars: number } | null = null
  *  own quota still stands behind it. */
 async function call(supabase: SupabaseClient, chars: number, now: number): Promise<number | null> {
   try {
-    const { data, error } = await supabase.rpc('translate_usage', { p_chars: chars })
+    const secret = await aiCacheSecret()
+    if (!secret) return null
+    const { data, error } = await supabase.rpc('translate_usage', { p_secret: secret, p_chars: chars })
     if (error) throw new Error(error.message)
     const n = total.parse(data)
     known = { at: now, chars: n }

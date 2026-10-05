@@ -2,14 +2,13 @@
 -- Azure Translator characters per UTC day, so POST /dictionary/translate can refuse a
 -- passage once the month has spent lib/translate/usage.ts MONTHLY_BUDGET.
 --
--- The app holds no service_role key, so the counter is written by the anon or the signed-in
--- caller through a security definer function. Anyone holding the public anon key can raise
--- it; the worst that does is stop passage translations until the month ends, which the
--- route's own rate limit already allows (30 requests of 5,000 characters a minute). Each
--- call adds at most 50,000, Azure's per-request ceiling. RLS is on and no policy exists, so
--- the table itself is readable by no API role.
+-- The function asks for the server-only secret at SSM /zhesen/prod/ai_cache_secret, the one
+-- public.ai_coach_store asks for: its sha256 sits in private.ai_cache_secret (0181), which no
+-- API role can read, so the anon key alone neither reads nor raises the count. Each call adds
+-- at most 50,000, Azure's per-request ceiling. RLS is on and no policy exists, so the table
+-- itself is readable by no API role.
 --
--- TO ROLL BACK: `drop function public.translate_usage(integer);` then
+-- TO ROLL BACK: `drop function public.translate_usage(text, integer);` then
 -- `drop table admin.translate_usage;` and `notify pgrst, 'reload schema';`.
 
 set lock_timeout = '5s';
@@ -22,8 +21,17 @@ create table if not exists admin.translate_usage (
 alter table admin.translate_usage enable row level security;
 revoke all on admin.translate_usage from public, anon, authenticated;
 
+-- As 0181 creates them; repeated because this file replays first.
+create schema if not exists private;
+revoke all on schema private from public, anon, authenticated, service_role;
+create table if not exists private.ai_cache_secret (
+  id boolean primary key default true check (id),
+  hash bytea not null check (length(hash) = 32)
+);
+revoke all on private.ai_cache_secret from public, anon, authenticated, service_role;
+
 -- Adds p_chars to today (0 adds nothing) and answers the month so far.
-create or replace function public.translate_usage(p_chars integer default 0)
+create or replace function public.translate_usage(p_secret text, p_chars integer default 0)
 returns bigint
 language plpgsql
 security definer
@@ -32,6 +40,10 @@ as $$
 declare
   v_today date := (now() at time zone 'utc')::date;
 begin
+  if p_secret is null
+     or not exists (select 1 from private.ai_cache_secret s where s.hash = sha256(convert_to(p_secret, 'UTF8'))) then
+    raise exception 'bad_secret' using errcode = '42501';
+  end if;
   if p_chars is null or p_chars < 0 or p_chars > 50000 then
     raise exception 'p_chars out of range' using errcode = '22023';
   end if;
@@ -46,8 +58,8 @@ begin
 end;
 $$;
 
-revoke all on function public.translate_usage(integer) from public;
-grant execute on function public.translate_usage(integer) to anon, authenticated;
+revoke all on function public.translate_usage(text, integer) from public, service_role;
+grant execute on function public.translate_usage(text, integer) to anon, authenticated;
 
 notify pgrst, 'reload schema';
 

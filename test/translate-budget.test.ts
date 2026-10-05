@@ -4,6 +4,8 @@ const { rpc, permanentUser } = vi.hoisted(() => ({ rpc: vi.fn(), permanentUser: 
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ rpc }) }))
 vi.mock('@/lib/auth/guard', () => ({ permanentUser }))
 vi.mock('next/server', () => ({ after: (fn: () => unknown) => { void fn() } }))
+const { aiCacheSecret } = vi.hoisted(() => ({ aiCacheSecret: vi.fn() }))
+vi.mock('@/lib/ai/cacheSecret', () => ({ aiCacheSecret }))
 
 import { POST } from '@/app/dictionary/translate/route'
 import { resetUsage } from '@/lib/translate/usage'
@@ -34,6 +36,7 @@ describe('POST /dictionary/translate budget', () => {
     resetUsage()
     rpc.mockReset()
     rpc.mockResolvedValue({ data: 0, error: null })
+    aiCacheSecret.mockReset().mockResolvedValue('s3cret')
     permanentUser.mockReset()
     permanentUser.mockResolvedValue(null)
   })
@@ -71,7 +74,16 @@ describe('POST /dictionary/translate budget', () => {
   it('adds what Azure charged to the day', async () => {
     globalThis.fetch = azure('42')
     expect((await post(fresh(21))).status).toBe(200)
-    await vi.waitFor(() => expect(rpc).toHaveBeenCalledWith('translate_usage', { p_chars: 42 }))
+    await vi.waitFor(() => expect(rpc).toHaveBeenCalledWith('translate_usage', { p_secret: 's3cret', p_chars: 42 }))
+  })
+
+  // The meter needs the server secret; without one it neither counts nor refuses.
+  it('translates and counts nothing when no secret is configured', async () => {
+    aiCacheSecret.mockResolvedValue(null)
+    rpc.mockResolvedValue({ data: 1_999_990, error: null })
+    globalThis.fetch = azure('20')
+    expect((await post(fresh(20))).status).toBe(200)
+    expect(rpc).not.toHaveBeenCalled()
   })
 
   // Azure's own quota still stands behind the counter, so an unreadable count must not
