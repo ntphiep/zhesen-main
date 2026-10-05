@@ -126,11 +126,14 @@ def fix_expr():
 
 def load_material(ids):
     arr = lit(ids)
+    # A collocation entry's one sense has no English definition: its phrase stands in for one.
+    phrase = f"or (s.gloss_en is null and s.provenance->>'ai' = any ({arr_lit(REDO)}))" if REDO else ''
     senses = rows(f"""
-      select s.id, s.entry_id, s.pos, s.sense_order, s.gloss_en, s.gloss_vi,
-             {fix_expr()} as fix
+      select s.id, s.entry_id, s.pos, s.sense_order,
+             coalesce(s.gloss_en, (select 'the phrase "' || e.headword || '"' from lex.entries e where e.id = s.entry_id)) as gloss_en,
+             s.gloss_vi, {fix_expr()} as fix
       from lex.senses s where s.entry_id in (select jsonb_array_elements_text({arr}))
-        and s.gloss_en is not null and length(s.gloss_en) between 2 and 400 and s.gloss_en !~ '^CL:'
+        and ((s.gloss_en is not null and length(s.gloss_en) between 2 and 400 and s.gloss_en !~ '^CL:') {phrase})
       order by s.entry_id, s.sense_order""")
     # The page shows per sense the first two by (translation first, id), and the unlinked
     # rows translated first; translating these puts a translation on screen.
@@ -283,7 +286,8 @@ def write(call, model, out, smap, xmap, emap, dry):
     for it in out.get('s') or []:
         s = smap.get(it.get('n')) if isinstance(it, dict) else None
         vi = clean(it.get('vi'), 60) if s else None
-        if s and s['fix'] and vi and vi.lower() != (s['gloss_vi'] or '').lower():
+        # A redo rewrites the sense's provenance even when the new model agrees with the old one.
+        if s and s['fix'] and vi and (REDO or vi.lower() != (s['gloss_vi'] or '').lower()):
             s_rows.append({'id': s['id'], 'vi': vi})
     for it in out.get('x') or []:
         x = xmap.get(it.get('n')) if isinstance(it, dict) else None
@@ -310,13 +314,17 @@ def write(call, model, out, smap, xmap, emap, dry):
         return counts, {'s': s_rows, 'x': x_rows, 'c': c_rows, 'l': lv_rows, 'w_raw': out.get('w'),
                         'heads': [(e['id'], e['level'], e['entry_type'], e['est']) for e in emap.values()]}
     prov = lit({'ai': model, 'ai_at': datetime.now(timezone.utc).date().isoformat()})
+    redone = f"or s.provenance->>'ai' = any ({arr_lit(REDO)})" if REDO else ''
     sql = ['begin;']
     if s_rows:
         sql.append(f"""update lex.senses s set gloss_vi = p.vi, gloss_vi_is_mt = true,
           provenance = s.provenance || {prov}
             || jsonb_build_object('gloss_vi_before', coalesce(s.provenance->'gloss_vi_before', to_jsonb(s.gloss_vi)))
+            || case when s.provenance ? 'ai' then jsonb_build_object('replaced', jsonb_build_object(
+                 'ai', s.provenance->'ai', 'ai_at', s.provenance->'ai_at', 'gloss_vi', s.gloss_vi)) else '{{}}' end
           from jsonb_to_recordset({lit(s_rows)}) p(id text, vi text)
-          where s.id = p.id and (s.gloss_vi is null or s.gloss_vi_is_mt) and lower(coalesce(s.gloss_vi, '')) <> lower(p.vi);""")
+          where s.id = p.id and (s.gloss_vi is null or s.gloss_vi_is_mt)
+            and (lower(coalesce(s.gloss_vi, '')) <> lower(p.vi) {redone});""")
     if x_rows:
         sql.append(f"""update lex.examples x set translation_vi = p.vi
           from jsonb_to_recordset({lit(x_rows)}) p(id bigint, vi text)

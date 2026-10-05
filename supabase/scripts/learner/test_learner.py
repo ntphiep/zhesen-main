@@ -311,6 +311,83 @@ def test_gate_lots_sample_and_decision():
     assert gate.decide(50, 5) == (0.1, False) and gate.decide(50, 6)[1]
 
 
+# ---------------------------------------------------------------- queues and redo
+
+def stub_rest_all(answers):
+    """L.rest_all answering by the first path fragment found in `answers`; returns the paths asked."""
+    asked = []
+
+    def fake(path):
+        asked.append(path)
+        return next((v for k, v in answers.items() if k in path), [])
+    L.rest_all = fake
+    return asked
+
+
+def test_queue_adds_phrasal_verbs_and_skips_forms_only_on_request():
+    real = L.rest_all
+    try:
+        asked = stub_rest_all({
+            'frequency_rank=lte': [{'id': 'en:take', 'frequency_rank': 50}, {'id': 'en:apple', 'frequency_rank': 40},
+                                   {'id': 'en:done', 'frequency_rank': 10}],
+            'headword=match': [{'id': 'en:take off', 'headword': 'take off', 'frequency_rank': None},
+                               {'id': 'en:zonk out', 'headword': 'zonk out', 'frequency_rank': None},
+                               {'id': 'en:take', 'headword': 'take', 'frequency_rank': 50}],
+            'learner_entries': [{'entry_id': 'en:done'}]})
+        assert L.queue(['en'], 3000) == ['en:apple', 'en:take', 'en:take off']
+        assert not any('form_of' in p for p in asked)
+        asked.clear()
+        L.queue(['en'], 3000, skip_forms=True)
+        assert '&form_of=is.null' in asked[0]
+        assert L.re.match(L.PHRASAL, 'take off') and not L.re.match(L.PHRASAL, 'take')
+    finally:
+        L.rest_all = real
+
+
+def test_redo_queue_selects_by_kind():
+    rows = [{'entry_id': 'en:a', 'model': 'ag/claude-opus-4-6-thinking', 'reviewer': 'x/gpt-5', 'prompt_version': 'v4'},
+            {'entry_id': 'en:b', 'model': 'x/gpt-5', 'reviewer': 'omni:kr/claude-sonnet-4-6', 'prompt_version': 'v5'},
+            {'entry_id': 'en:c', 'model': 'omni:antigravity/gemini-3.8-flash-tiered', 'reviewer': 'ag/gemini-3.8-flash',
+             'prompt_version': 'v5'},
+            {'entry_id': 'en:d', 'model': 'x/gpt-5', 'reviewer': 'y/gpt-oss-120b', 'prompt_version': 'v5'},
+            {'entry_id': 'en:e', 'model': 'x/gpt-5', 'reviewer': 'y/deepseek-v4', 'prompt_version': 'v5'},
+            {'entry_id': 'en:f', 'model': 'x/gpt-5', 'reviewer': None, 'prompt_version': 'v5'}]
+    real = L.rest_all
+    try:
+        stub_rest_all({'learner_entries': rows})
+        assert sorted(L.redo_queue('claude')) == ['en:a', 'en:b']
+        assert sorted(L.redo_queue('same-family')) == ['en:c']
+        dep = L.redo_queue('dependent')
+        assert 'en:c' in dep and 'en:d' in dep and 'en:e' not in dep and 'en:f' not in dep
+        assert dep['en:c']['prompt_version'] == 'v5'
+    finally:
+        L.rest_all = real
+
+
+def test_enrich_redo_reaches_collocation_senses_and_keeps_the_old_gloss():
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'enrich'))
+    import enrich
+    sent = []
+    real_psql, real_redo = enrich.psql, enrich.REDO
+    enrich.psql = lambda sql: sent.append(sql) or '[]'
+    try:
+        enrich.REDO = ['ag/claude-opus-4-6-thinking']
+        enrich.load_material(['en:make a decision'])
+        assert "s.gloss_en is null and s.provenance->>'ai' = any" in sent[0]
+        s = {'id': 'en:make a decision#ai1', 'gloss_vi': 'ra quyết định', 'fix': True}
+        counts, _ = enrich.write([], 'x/gpt-5', {'s': [{'n': 1, 'vi': 'ra quyết định'}]}, {1: s}, {}, {}, False)
+        assert counts['senses'] == 1
+        assert "'replaced'" in sent[-1] and "or s.provenance->>'ai' = any" in sent[-1]
+        sent.clear()
+        enrich.REDO = []
+        enrich.load_material(['en:x'])
+        assert 'gloss_en is null' not in sent[0]
+        counts, _ = enrich.write([], 'x/gpt-5', {'s': [{'n': 1, 'vi': 'ra quyết định'}]}, {1: s}, {}, {}, False)
+        assert counts['senses'] == 0
+    finally:
+        enrich.psql, enrich.REDO = real_psql, real_redo
+
+
 # ---------------------------------------------------------------- glossfix guard
 
 def test_glossfix_guard_counts_only_loads():

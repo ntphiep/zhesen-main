@@ -4,6 +4,10 @@ cd /opt/zhesen/enrich
 # The router URLs, then the routers' zhesen-batch keys that learner.Pool reads.
 . /opt/zhesen/learner/env.sh
 set -a; . /opt/zhesen/batch.env; set +a
+# Claude writes no product data: every sense it wrote, collocation senses included, is rewritten first.
+for lang in en es zh; do
+  ENRICH_STATE=/opt/zhesen/enrich/state_redo_claude python3 enrich.py --workers 4 --lang $lang --redo-models ag/claude-opus-4-6-thinking || exit 1
+done
 python3 enrich.py --workers 4 || exit 1
 python3 enrich.py --workers 4 || exit 1
 # Senses first written by a weaker model or a Claude model are rewritten by the current chain.

@@ -75,16 +75,46 @@ def q(v):
     return urllib.parse.quote(v, safe='')
 
 
-def queue(langs, top):
+# Phrasal verbs of 40 common verbs: 383 entries, none levelled or ranked, so no queue reached them.
+PHRASAL = (r'^(take|get|go|put|come|look|give|make|turn|set|run|bring|break|keep|pick|cut|fall|hold|carry|work|find|'
+           r'call|check|fill|figure|show|sit|stand|throw|wake|grow|hang|let|pass|pay|pull|shut|sort|switch|try) '
+           r'(up|down|in|out|on|off|over|away|back|through|around|about|along|after|for|into|by)$')
+
+
+def queue(langs, top, skip_forms=False):
+    """Entries ranked within `top`, interleaved by rank so all three languages fill in from their most
+    common words, then English phrasal verbs at their base verb's rank. `skip_forms` leaves out
+    inflected forms; it waits for the form_of fix, because form_of now also marks para and pero."""
+    forms = '&form_of=is.null' if skip_forms else ''
     entries = []
     for lang in langs:
-        entries += rest_all(f'entries?lang=eq.{lang}&frequency_rank=lte.{top}&select=id,frequency_rank'
+        entries += rest_all(f'entries?lang=eq.{lang}&frequency_rank=lte.{top}{forms}&select=id,frequency_rank'
                             f'&order=frequency_rank,id')
+    if 'en' in langs:
+        rank_of = {e['id']: e['frequency_rank'] for e in entries}
+        for e in rest_all(f'entries?lang=eq.en&entry_type=in.(phrase,idiom,word)&headword=match.{q(PHRASAL)}'
+                          f'&select=id,headword,frequency_rank&order=id'):
+            base = rank_of.get('en:' + e['headword'].split(' ')[0])
+            if e['id'] not in rank_of and (base or e['frequency_rank']):
+                entries.append({'id': e['id'], 'frequency_rank': min(r for r in (base, e['frequency_rank']) if r)})
     done = {r['entry_id'] for r in rest_all(f'learner_entries?prompt_version=in.({",".join(DONE_VERSIONS)})'
                                             '&select=entry_id&order=entry_id')}
-    # Interleaved by rank, so all three languages fill in from their most common words.
     entries.sort(key=lambda e: (e['frequency_rank'], e['id']))
     return [e['id'] for e in entries if e['id'] not in done]
+
+
+def redo_queue(kind):
+    """Loaded layers to redo: `claude`, written or reviewed by Claude, are written again from the raw
+    entry; `same-family`, reviewed inside the writer's model family, and `dependent`, reviewed by a
+    model that is not independent of the writer, are reviewed again. {entry id: learner_entries row}."""
+    rows = rest_all('learner_entries?select=entry_id,model,reviewer,prompt_version&order=entry_id')
+    if kind == 'claude':
+        keep = lambda r: CLAUDE.search(r['model'] or '') or CLAUDE.search(r['reviewer'] or '')
+    elif kind == 'same-family':
+        keep = lambda r: r['reviewer'] and family(r['model']) == family(r['reviewer'])
+    else:
+        keep = lambda r: r['reviewer'] and not independent(r['reviewer'], r['model'])
+    return {r['entry_id']: r for r in rows if keep(r)}
 
 
 def traditional_only():
@@ -992,9 +1022,9 @@ def load(rec, version):
     return rest('rpc/learner_load', {'p': payload(rec, version)})
 
 
-def cache_path(entry_id):
+def cache_path(entry_id, version=PROMPT_VERSION):
     lang, _, head = entry_id.partition(':')
-    d = os.path.join(CACHE_DIR, PROMPT_VERSION)
+    d = os.path.join(CACHE_DIR, version)
     os.makedirs(d, exist_ok=True)
     return os.path.join(d, f'{lang}_{head.replace("/", "_")}.json')
 
@@ -1015,12 +1045,35 @@ def revalidate():
 
 def cmd_run(a):
     trad = traditional_only()
-    ids = a.entries.split(',') if a.entries else queue(a.lang.split(','), a.top)
+    redo = redo_queue(a.redo) if a.redo else {}
+    if redo:
+        ids = [i for i in (a.entries.split(',') if a.entries else sorted(redo)) if i in redo]
+    else:
+        ids = a.entries.split(',') if a.entries else queue(a.lang.split(','), a.top, a.skip_forms)
     if a.limit:
         ids = ids[:a.limit]
     pool = Pool(a.models.split(',') if a.models else None)
-    log(f'{len(ids)} entries, {len(pool.models)} models, prompt {PROMPT_VERSION}')
+    log(f'{len(ids)} entries, {len(pool.models)} models, prompt {PROMPT_VERSION}' + (f', redo {a.redo}' if redo else ''))
     totals = {'loaded': 0, 'invalid': 0, 'failed': 0}
+
+    def again(entry_id):
+        """A new cache record for a loaded layer that --redo names, keeping the one it replaces. Until
+        the new record loads, the old layer stays on the site."""
+        row = redo.pop(entry_id)
+        try:
+            old = json.load(open(cache_path(entry_id, row['prompt_version'])))
+        except (OSError, ValueError):
+            old = None
+        draft = None
+        if a.redo != 'claude' and not CLAUDE.search(row['model'] or '') and old and old.get('layer'):
+            if not validate(normalise(old['layer'], old['raw']), old['raw'], trad, old.get('forms') or forms_of(old['raw'])):
+                draft = {'raw': old['raw'], 'draft': old['layer'], 'forms': old.get('forms'),
+                         'report': {'id': entry_id, 'writer': row['model']}}
+        rec = build(entry_id, trad, pool, draft=draft, avoid={row['reviewer']} if draft else ())
+        if old:
+            rec['replaced'] = {'report': old.get('report'), 'layer': old.get('layer'), 'model': row['model'],
+                               'reviewer': row['reviewer']}
+        return rec
 
     def one(entry_id):
         path = cache_path(entry_id)
@@ -1028,8 +1081,16 @@ def cmd_run(a):
             rec = json.load(open(path))
         except (OSError, ValueError):
             rec = None
-        if not rec or rec['report'].get('errors'):
+        if entry_id in redo:
+            rec = again(entry_id)
+            with open(path + '.tmp', 'w') as fh:
+                json.dump(rec, fh, ensure_ascii=False, indent=1)
+            os.replace(path + '.tmp', path)
+        elif not rec or rec['report'].get('errors'):
+            replaced = rec and rec.get('replaced')
             rec = build(entry_id, trad, pool, draft=rec if rec and rec.get('draft') else None)
+            if replaced:
+                rec['replaced'] = replaced
             with open(path + '.tmp', 'w') as fh:
                 json.dump(rec, fh, ensure_ascii=False, indent=1)
             os.replace(path + '.tmp', path)
@@ -1103,6 +1164,10 @@ def main():
     r.add_argument('--workers', type=int, default=12)
     r.add_argument('--models', default='', help='only these models, instead of every usable one')
     r.add_argument('--dry-run', action='store_true')
+    r.add_argument('--redo', choices=('claude', 'same-family', 'dependent'),
+                   help='write again the layers Claude touched, or review again the ones reviewed by a related model')
+    r.add_argument('--skip-forms', action='store_true',
+                   help='leave inflected forms out of the queue; only once form_of no longer marks para or pero')
     ld = sub.add_parser('load')
     ld.add_argument('files', nargs='+')
     ld.add_argument('--version', default='pilot-v1')
