@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { listDueCards, gradeCard, type ReviewCard } from '@/lib/wordlist/review'
 import type { Grade, SrsState } from '@/lib/progress/types'
+import { onStep } from '@/lib/progress/srs'
 import { WordReviewCard } from '@/components/practice/WordReviewCard'
 import { GradeSyncWarning } from '@/components/practice/GradeSyncWarning'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
@@ -63,9 +64,9 @@ export function WordlistReview() {
     setReviewed((n) => n + 1)
     setQueue((q) => {
       const rest = (q as ReviewCard[]).slice(1)
-      // A card graded "again" must come back carrying the schedule it just earned;
-      // re-queueing `current` untouched grades the next answer from before the lapse.
-      return g === 'again' ? [...rest, { ...current, state: next }] : rest
+      // A card graded "again" or left on a minute step must come back carrying the schedule
+      // it just earned; re-queueing `current` untouched grades the next answer from before.
+      return g === 'again' || onStep(next) ? [...rest, { ...current, state: next }] : rest
     })
   }
 

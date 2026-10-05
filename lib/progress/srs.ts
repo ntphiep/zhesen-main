@@ -3,10 +3,11 @@ import type { CardState, Grade, SrsState } from './types'
 
 /**
  * FSRS scheduler (ts-fsrs@5.4.2, whose default weights implement FSRS-6 -- its own
- * `FSRSVersion` reads "v5.4.2 using FSRS-6.0"). `enable_short_term: false` drops
- * Anki-style minute-scale steps: the wordlist reviews once per session, not hourly.
+ * `FSRSVersion` reads "v5.4.2 using FSRS-6.0"). Minute steps keep a new or failed word in the
+ * session until it is answered after a gap; without them `again` then `good` two minutes
+ * later scheduled 3 days at 66% predicted recall. Fuzz spreads cards graded together.
  */
-const scheduler = fsrs({ enable_short_term: false })
+const scheduler = fsrs({ enable_short_term: true, learning_steps: ['1m', '10m'], relearning_steps: ['10m'], enable_fuzz: true })
 
 const RATING_BY_GRADE: Record<Grade, FsrsGrade> = {
   again: Rating.Again,
@@ -79,6 +80,11 @@ function fromCard(vocabId: string, card: FsrsCardLike): SrsState {
     dueAt: card.due.getTime(),
     lastReviewedAt: card.last_review ? card.last_review.getTime() : null,
   }
+}
+
+/** Whether a card is on a minute step, so the session must show it again before it ends. */
+export function onStep(s: SrsState): boolean {
+  return s.cardState === 'learning' || s.cardState === 'relearning'
 }
 
 /** A brand-new card, due immediately (ts-fsrs's `createEmptyCard`). */

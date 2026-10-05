@@ -57,4 +57,27 @@ describe('WordlistReview', () => {
     await waitFor(() => expect(screen.getByText('B')).toBeInTheDocument())
     expect(screen.queryByText(/Hết từ cần ôn/)).toBeNull()
   })
+
+  // A new word answered Tốt sits on a ten-minute learning step and must be seen again in the
+  // session before it graduates to review.
+  it('brings back a word left on a learning step, then lets it go once it graduates', async () => {
+    vi.mocked(listDueCards).mockResolvedValue([card('A'), card('B')])
+    const seen: string[] = []
+    vi.mocked(gradeCard).mockImplementation(async (_c, cardArg) => {
+      seen.push(cardArg.id)
+      const first = seen.filter((id) => id === cardArg.id).length === 1
+      return { ...state(cardArg.id), cardState: first && cardArg.id === 'A' ? 'learning' : 'review' }
+    })
+    render(<WordlistReview />)
+
+    for (const next of ['B', 'A']) {
+      fireEvent.click(await screen.findByRole('button', { name: /Hiện nghĩa/i }))
+      fireEvent.click(screen.getByRole('button', { name: 'Tốt' }))
+      await waitFor(() => expect(screen.getByText(next)).toBeInTheDocument())
+    }
+    fireEvent.click(await screen.findByRole('button', { name: /Hiện nghĩa/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tốt' }))
+    expect(await screen.findByText('Hết từ cần ôn.')).toBeInTheDocument()
+    expect(seen).toEqual(['A', 'B', 'A'])
+  })
 })

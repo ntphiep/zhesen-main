@@ -28,6 +28,9 @@ const NAME = byLang((l) => l.name.replace('Tiếng', 'tiếng'))
 const SHORT: Record<LangCode, string> = { en: 'Anh', zh: 'Trung', es: 'Tây Ban Nha' }
 const ORDER: LangCode[] = ['en', 'zh', 'es']
 const fmt = (t: number) => { const d = new Date(t); return `${d.getDate()}/${d.getMonth() + 1}` }
+/** How long until a card is back: a learning step is minutes, not "0 ngày". */
+const after = (next: SrsState, from: number) => next.scheduledDays > 0
+  ? `${next.scheduledDays} ngày` : `${Math.max(1, Math.round((next.dueAt - from) / 60_000))} phút`
 
 const MIC_PATHS = <><rect x="7" y="2.5" width="6" height="10" rx="3" /><path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5" /></>
 const MIC = <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{MIC_PATHS}</svg>
@@ -108,9 +111,9 @@ function Stage({ word, words, mode }: { word: SeenWord; words: readonly SeenWord
     const next = review(base.state, g, base.clock)
     setSched({ state: next, clock: next.dueAt, history: [...base.history, { at: base.clock, grade: g, why }] })
   }
-  function peek(): Record<Grade, number> {
+  function peek(): Record<Grade, string> {
     const base = sched ?? freshSchedule()
-    return { again: 0, hard: 0, good: 0, easy: 0, ...Object.fromEntries(GRADES.map((g) => [g, review(base.state, g, base.clock).scheduledDays])) }
+    return { again: '', hard: '', good: '', easy: '', ...Object.fromEntries(GRADES.map((g) => [g, after(review(base.state, g, base.clock), base.clock)])) }
   }
 
   const last = sched?.history.at(-1)
@@ -124,7 +127,7 @@ function Stage({ word, words, mode }: { word: SeenWord; words: readonly SeenWord
         <div className={s.lbl}>Lịch ôn của từ này</div>
         <p className={s.when}>
           {sched && last
-            ? `${LABEL[last.grade]}. Từ này quay lại sau ${sched.state.scheduledDays} ngày, vào ngày ${fmt(sched.state.dueAt)}.`
+            ? `${LABEL[last.grade]}. Từ này quay lại sau ${after(sched.state, last.at)}, vào ngày ${fmt(sched.state.dueAt)}.`
             : 'Luyện một phiên, lịch ôn của từ này hiện ở đây.'}
         </p>
         <ol className={s.log}>
@@ -161,7 +164,7 @@ interface PlayProps {
   word: SeenWord
   words: readonly SeenWord[]
   onGrade: (g: Grade | null, why: string | null) => void
-  peek: () => Record<Grade, number>
+  peek: () => Record<Grade, string>
 }
 
 function Play(props: PlayProps) {
@@ -179,7 +182,7 @@ function Big({ text, lang }: { text: string; lang: string }) {
 }
 
 function CardPlay({ word, onGrade, peek }: PlayProps) {
-  const [days, setDays] = useState<Record<Grade, number> | null>(null)
+  const [days, setDays] = useState<Record<Grade, string> | null>(null)
   const flip = useRef<HTMLButtonElement>(null)
   const good = useRef<HTMLButtonElement>(null)
   const e = word.entry
@@ -207,7 +210,7 @@ function CardPlay({ word, onGrade, peek }: PlayProps) {
             disabled={days === null}
             onClick={() => { onGrade(g, null); setDays(null); requestAnimationFrame(() => flip.current?.focus()) }}
           >
-            {LABEL[g]}<small>{days ? `${days[g]} ngày` : ''}</small>
+            {LABEL[g]}<small>{days ? days[g] : ''}</small>
           </button>
         ))}
       </div>

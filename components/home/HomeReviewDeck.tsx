@@ -11,6 +11,7 @@ import { useKeyGate } from '@/lib/hooks/useKeyGate'
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion'
 import { gradeForMode, type PracticeOutcome } from '@/lib/practice/grading'
 import type { Grade, SrsState } from '@/lib/progress/types'
+import { onStep } from '@/lib/progress/srs'
 import { dueNote, whenLabel } from '@/lib/wordlist/forecast'
 import { gradeWordById, type ReviewCard } from '@/lib/wordlist/review'
 import { Hw, NAME, Pron } from './HomeParts'
@@ -26,14 +27,14 @@ const GRADES: { grade: Grade; label: string; outcome: PracticeOutcome }[] = [
 /** How long the graded card takes to leave, matching `cardOut` in Home.module.css. */
 const OUT_MS = 190
 
-interface Last { card: ReviewCard; again: boolean; dueAt: number }
+interface Last { card: ReviewCard; back: boolean; dueAt: number }
 
 /**
  * Today's session on the home page: reveal, then grade yourself. Each grade goes through
  * `gradeForMode('review', ...)` and `gradeWordById`, like every practice mode, and waits for
  * the write before moving on, so a lost write shows here rather than in a count that lies.
- * A card graded Lại comes back at the end carrying the schedule it just earned; `onGraded`
- * says so, so `cards` holds it too when the deck mounts again after a layout switch.
+ * A card graded Lại or left on a minute step comes back at the end carrying the schedule it
+ * just earned; `onGraded` says so, so `cards` holds it too when the deck mounts again after a layout switch.
  */
 export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
   cards: ReviewCard[]
@@ -85,14 +86,14 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
       return
     }
     if (!logged.current) { logged.current = true; logDay() }
-    const again = g.grade === 'again'
-    if (next) onGraded(current.id, next, again)
-    setLast(next ? { card: current, again, dueAt: next.dueAt } : null)
+    const back = next !== null && (g.grade === 'again' || onStep(next))
+    if (next) onGraded(current.id, next, back)
+    setLast(next ? { card: current, back, dueAt: next.dueAt } : null)
     setReviewed((n) => n + 1)
     const advance = () => {
       setQueue((q) => {
         const rest = q.slice(1)
-        return again && next ? [...rest, { ...q[0], state: next }] : rest
+        return back && next ? [...rest, { ...q[0], state: next }] : rest
       })
       setOpen(false)
       setTurn((t) => t + 1)
@@ -162,7 +163,7 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
         )}
       </div>
       <p className={h.after} aria-live="polite">
-        {last && <><Hw lang={last.card.lang} text={last.card.headword} /> {last.again ? 'quay lại cuối phiên này.' : `quay lại ${when(last.dueAt, now)}.`}</>}
+        {last && <><Hw lang={last.card.lang} text={last.card.headword} /> {last.back ? 'quay lại cuối phiên này.' : `quay lại ${when(last.dueAt, now)}.`}</>}
       </p>
       <GradeSyncWarning failed={failed} />
     </section>

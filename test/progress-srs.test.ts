@@ -29,7 +29,8 @@ describe('srs (FSRS-6 via ts-fsrs)', () => {
     }
     expect(s.reps).toBe(3)
     expect(s.cardState).toBe('review')
-    expect(scheduled).toEqual([3, 14, 57])
+    // Learning steps (owner, 2026-10-05): the first good is a 10-minute step, not 3 days.
+    expect(scheduled).toEqual([0, 2, 12])
     expect(scheduled[0]).toBeLessThan(scheduled[1])
     expect(scheduled[1]).toBeLessThan(scheduled[2])
   })
@@ -60,7 +61,8 @@ describe('srs (FSRS-6 via ts-fsrs)', () => {
       expect(s.stability).toBeGreaterThanOrEqual(0)
       prevStability = s.stability
     }
-    expect(s.lapses).toBe(5)
+    // A lapse is a failure in Review state only (owner, 2026-10-05); these stay in learning.
+    expect(s.lapses).toBe(0)
   })
 
   it('"easy" schedules further out than "good" from a new card', () => {
@@ -72,7 +74,8 @@ describe('srs (FSRS-6 via ts-fsrs)', () => {
   it('"hard" schedules sooner than "good" from a new card', () => {
     const hard = review(initialSrsState('v1', T0), 'hard', T0)
     const good = review(initialSrsState('v2', T0), 'good', T0)
-    expect(hard.scheduledDays).toBeLessThan(good.scheduledDays)
+    // Both are minute steps now (owner, 2026-10-05), 6 and 10 minutes, so compare due times.
+    expect(hard.dueAt).toBeLessThan(good.dueAt)
     expect(hard.lapses).toBe(0)
   })
 })
