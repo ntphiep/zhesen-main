@@ -259,21 +259,30 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     }
   }
 
-  async function handleSave(id: string, patch: Partial<WordDraft>) {
+  /** False when the change did not reach the database; the learner is told here. */
+  async function handleSave(id: string, patch: Partial<WordDraft>): Promise<boolean> {
     const original = words.find((w) => w.id === id)
-    if (!original) return
+    if (!original) return false
     setEditWord(null)
     // The dialog reports only changed fields, so an untouched save sends an empty
     // patch, and PostgREST refuses an empty update.
-    if (Object.keys(patch).length === 0) return
+    if (Object.keys(patch).length === 0) return true
     setWords((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)))
     try {
       const updated = await updateWord(supabase, id, patch)
       setWords((prev) => prev.map((w) => (w.id === id ? updated : w)))
+      return true
     } catch {
       setWords((prev) => prev.map((w) => (w.id === id ? original : w)))
       notify('Chưa lưu được. Thử lại.')
+      return false
     }
+  }
+
+  /** The assistant's mnemonic appended to the word's own notes, once. */
+  async function handleSaveNote(w: UserWord, note: string): Promise<boolean> {
+    if (w.notes?.includes(note)) return true
+    return handleSave(w.id, { notes: w.notes ? `${w.notes}\n${note}` : note })
   }
 
   function handleExportCsv() {
@@ -358,6 +367,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
           onToggleSelect={toggleSelect}
           expandedId={expandedId}
           onToggleDetail={(id) => setExpandedId(expandedId === id ? null : id)}
+          onSaveNote={handleSaveNote}
           onEdit={setEditWord}
           onDelete={handleDelete}
         />
@@ -414,7 +424,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
 
                 {expandedId === w.id && (
                   <div className={s.cardDetail}>
-                    <WordDetail word={w} />
+                    <WordDetail word={w} onSaveNote={(note) => handleSaveNote(w, note)} />
                   </div>
                 )}
               </li>
@@ -447,7 +457,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         word={editWord}
         open={editWord !== null}
         onClose={() => setEditWord(null)}
-        onSave={handleSave}
+        onSave={async (id, patch) => { await handleSave(id, patch) }}
       />
 
       <ImportCsvDialog

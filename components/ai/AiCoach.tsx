@@ -22,16 +22,19 @@ type State =
  * `children` are other actions drawn in the same row, before the button, and they stay
  * when the assistant is off.
  */
-export function AiCoach({ lang, headword, meaningVi, entryId, children }: {
+export function AiCoach({ lang, headword, meaningVi, entryId, onSaveNote, children }: {
   lang: LangCode
   headword: string
   meaningVi: string | null
   /** The entry the word is: the route then coaches from the entry's own data. */
   entryId?: string | null
+  /** Keeps the mnemonic in the saved word's notes; false when it was not saved. */
+  onSaveNote?: (note: string) => Promise<boolean>
   children?: ReactNode
 }) {
   const enabled = useAiEnabled()
   const [state, setState] = useState<State>({ status: 'idle' })
+  const [note, setNote] = useState<'idle' | 'saving' | 'saved'>('idle')
 
   if (!enabled) return children ? <div className="flex flex-wrap items-center gap-2">{children}</div> : null
 
@@ -125,6 +128,22 @@ export function AiCoach({ lang, headword, meaningVi, entryId, children }: {
         {!mnemonic && collocations.length === 0 && examples.length === 0 && confusables.length === 0 && (
           <p className="text-xs text-black/55">AI không có gì thêm cho từ này.</p>
         )}
+
+        {mnemonic && onSaveNote && (note === 'saved'
+          ? <p className="text-xs text-black/55">Đã lưu vào ghi chú.</p>
+          : (
+            <button
+              type="button"
+              disabled={note === 'saving'}
+              onClick={async () => {
+                setNote('saving')
+                setNote((await onSaveNote(mnemonic).catch(() => false)) ? 'saved' : 'idle')
+              }}
+              className="self-start rounded-lg border border-black/15 px-3 py-1.5 text-xs font-medium text-black/70 hover:bg-black/5"
+            >
+              {note === 'saving' ? 'Đang lưu…' : 'Lưu vào ghi chú'}
+            </button>
+          ))}
       </div>
     </div>
   )

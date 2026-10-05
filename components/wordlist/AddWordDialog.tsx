@@ -172,6 +172,9 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
       } else {
         setFillError(outcome.message)
       }
+    } catch {
+      // `callAi` handles fetch failures; its task-module import can still reject after a redeploy.
+      setFillError('Chưa điền được. Thử lại.')
     } finally {
       // Without this the button sticks on "Đang điền…" for the life of the dialog
       // whenever anything throws.

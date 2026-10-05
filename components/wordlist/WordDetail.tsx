@@ -8,7 +8,7 @@ import { Pronunciation } from '@/components/lookup/Pronunciation'
 import { classifyRelations, RELATION_SECTIONS, type ClassifiedRelations } from '@/lib/dictionary/relations'
 import { isSentenceTranslation } from '@/lib/dictionary/textQuality'
 import { entryGlosses, mainSenses, planExamples, senseSections } from '@/lib/dictionary/wordPage'
-import { EnglishMark, PivotMark } from '@/components/lookup/WordParts'
+import { EnglishMark, PivotMark, SectionLabel } from '@/components/lookup/WordParts'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 import type { UserWord } from '@/lib/wordlist/types'
 import { PosTag } from '@/components/ui/PosTag'
@@ -41,19 +41,36 @@ const GIST_RELATION_CAP = 6
 /** A longer synonym list mixes every sense: take's 249 opened with exterminate and shag. */
 const FOCUSED_SYNONYMS = 12
 
-/** The expanded row: the gist of the entry, then the way to the word's own page beside the
- *  assistant. A word typed in by hand has no entry, so it opens the lookup for its headword. */
-export function WordDetail({ word }: { word: UserWord }) {
+/** The expanded row: the gist of the entry, the way to the word's own page, then the
+ *  assistant in the labelled block the word page uses. A word typed in by hand has no
+ *  entry, so it opens the lookup for its headword. */
+export function WordDetail({ word, onSaveNote }: {
+  word: UserWord
+  /** Keeps the assistant's mnemonic in the word's notes. */
+  onSaveNote?: (note: string) => Promise<boolean>
+}) {
   const actions = (
-    <AiCoach lang={word.lang} headword={word.headword} meaningVi={word.meaningVi} entryId={word.entryId}>
-      <Link
-        href={word.entryId ? entryPath(word.entryId) : searchPath(word.lang, word.headword)}
-        prefetch={word.entryId ? undefined : false}
-        className={`${st.ghost} ${st.sm}`}
-      >
-        {word.entryId ? 'Chi tiết' : 'Tra từ này'}
-      </Link>
-    </AiCoach>
+    <div className="flex flex-col gap-3">
+      <div>
+        <Link
+          href={word.entryId ? entryPath(word.entryId) : searchPath(word.lang, word.headword)}
+          prefetch={word.entryId ? undefined : false}
+          className={`${st.ghost} ${st.sm}`}
+        >
+          {word.entryId ? 'Chi tiết' : 'Tra từ này'}
+        </Link>
+      </div>
+      {/* Hidden while AiCoach renders nothing, which it does where the assistant is off. */}
+      <section className="flex flex-col gap-2 [&:has(>div:empty)]:hidden">
+        <SectionLabel as="h3">AI</SectionLabel>
+        <div>
+          <AiCoach
+            lang={word.lang} headword={word.headword} meaningVi={word.meaningVi} entryId={word.entryId}
+            onSaveNote={onSaveNote}
+          />
+        </div>
+      </section>
+    </div>
   )
   return <DetailBody word={word} actions={actions} />
 }

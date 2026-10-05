@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { callAi } from '@/lib/ai/browser'
 import { useAiEnabled } from '@/lib/hooks/useAiEnabled'
 import type { UserWord } from '@/lib/wordlist/types'
@@ -22,6 +22,9 @@ const MAX_EXISTING = 40
  *
  * Rows are matched by headword, not position, and requests are grouped by language:
  * English "no" and Spanish "no" would otherwise share one answer.
+ *
+ * Dừng ends the run after the round in flight, whose answer is kept like every earlier one;
+ * words left without a tag are counted once the run ends.
  */
 export function AiTagButton({
   words,
@@ -38,12 +41,18 @@ export function AiTagButton({
   const enabled = useAiEnabled()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [done, setDone] = useState(0)
+  const [missed, setMissed] = useState(0)
+  const stopRef = useRef(false)
 
   if (!enabled || words.length === 0) return null
 
   async function run() {
     setBusy(true)
     setError(null)
+    setMissed(0)
+    setDone(0)
+    stopRef.current = false
     const byKey = new Map<string, string[]>()
     const known = new Set(existingTags)
 
@@ -57,6 +66,7 @@ export function AiTagButton({
     try {
       rounds: for (const [lang, group] of byLang) {
         for (let i = 0; i < group.length; i += BATCH) {
+          if (stopRef.current) break rounds
           const batch = group.slice(i, i + BATCH)
           const outcome = await callAi('tags', {
             words: batch.map((w) => ({ headword: w.headword, meaningVi: w.meaningVi })),
@@ -72,15 +82,23 @@ export function AiTagButton({
             break rounds
           }
           for (const row of outcome.data.tags) {
-            if (!batch.some((w) => w.headword === row.headword)) continue
+            if (!batch.some((w) => w.headword === row.headword) || row.tags.length === 0) continue
             byKey.set(`${lang}:${row.headword}`, row.tags)
             for (const tag of row.tags) known.add(tag)
           }
+          setDone((n) => n + batch.length)
         }
       }
-
+    } catch {
+      // `callAi` handles fetch failures; its task-module import can still reject after a redeploy.
+      setError('Chưa gắn được thẻ. Thử lại.')
+    }
+    try {
       if (byKey.size > 0) await onTagged(byKey)
+    } catch {
+      setError('Chưa lưu được thẻ. Thử lại.')
     } finally {
+      setMissed(words.length - byKey.size)
       setBusy(false)
     }
   }
@@ -93,9 +111,15 @@ export function AiTagButton({
         onClick={run}
         className={s.ghost}
       >
-        {busy ? 'Đang gắn thẻ…' : 'Gắn thẻ bằng AI'}
+        {busy ? `Đang gắn thẻ ${done}/${words.length}` : 'Gắn thẻ bằng AI'}
       </button>
+      {busy && (
+        <button type="button" onClick={() => { stopRef.current = true }} className={s.ghost}>
+          Dừng
+        </button>
+      )}
       {error && <span className={s.fail}>{error}</span>}
+      {!busy && missed > 0 && <span className={s.note}>{missed} từ chưa có thẻ.</span>}
     </>
   )
 }

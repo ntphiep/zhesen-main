@@ -49,12 +49,13 @@ interface Props {
   onToggleDetail: (id: string) => void
   onEdit: (w: UserWord) => void
   onDelete: (id: string, headword: string) => void
+  onSaveNote?: (w: UserWord, note: string) => Promise<boolean>
 }
 
 export function WordTable({
   words, columns, pinned, widths = {}, onResizeColumn, onMoveColumn, sortKey, sortDir, onToggleSort,
   selected, allSelected, onToggleSelectAll, onToggleSelect,
-  expandedId, onToggleDetail, onEdit, onDelete,
+  expandedId, onToggleDetail, onEdit, onDelete, onSaveNote,
 }: Props) {
   const narrow = useNarrowViewport()
   const pinWidth = narrow ? NARROW_PIN_WIDTH : PIN_WIDTH
@@ -267,7 +268,7 @@ export function WordTable({
               {expandedId === w.id && (
                 <tr className={s.detail}>
                   <td colSpan={columns.length + 2} className="px-4 py-4">
-                    <WordDetail word={w} />
+                    <WordDetail word={w} onSaveNote={onSaveNote && ((note) => onSaveNote(w, note))} />
                   </td>
                 </tr>
               )}
