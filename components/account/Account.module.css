@@ -130,6 +130,7 @@ select.field { padding-right: 0.5rem; cursor: pointer; }
 .meter > [data-l="zh"] { background: var(--l-zh); }
 .meter > [data-l="es"] { background: var(--l-es); }
 @keyframes grow { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.skills { margin-top: 1.1rem; }
 .split { margin: 0.5rem 0 0; font-size: 0.875rem; font-weight: 600; color: var(--zs-ink); }
 .empty { margin: 0.8rem 0 0; font-size: 1rem; font-weight: 700; color: var(--zs-ink); }
 

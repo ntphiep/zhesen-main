@@ -9,6 +9,7 @@ import { wordsToCsv, wordsToAnkiTsv } from '@/lib/wordlist/csv'
 import { downloadTextFile } from '@/lib/wordlist/download'
 import { formatWordDate } from '@/lib/wordlist/format'
 import { WordlistStats } from '@/components/wordlist/WordlistStats'
+import { SkillMeters } from '@/components/wordlist/SkillMeters'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { STATUS_OPTIONS } from '@/lib/wordlist/types'
 import { LANGUAGES } from '@/lib/languages'
@@ -163,6 +164,9 @@ export function AccountSettings({
               </p>
             </div>
           </div>
+        )}
+        {stats.total > 0 && stats.skills && (
+          <div className={s.skills}><SkillMeters skills={stats.skills} /></div>
         )}
       </section>
 

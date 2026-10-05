@@ -5,7 +5,7 @@ import type { Grade, SrsState } from '@/lib/progress/types'
 import { cardStateFromDbValue, cardStateToDbValue, review } from '@/lib/progress/srs'
 import { appliesToSchedule, MODE_SKILL, type PracticeMode, type Skill } from '@/lib/practice/grading'
 import { stripPhraseStop } from '@/lib/dictionary/textQuality'
-import { studyDayEnd } from './activity'
+import { countNewToday, studyDayEnd } from './activity'
 
 /** A due wordlist entry plus its spaced-repetition state, ready to review. */
 export interface ReviewCard {
@@ -92,8 +92,10 @@ export function rowToCard(r: CardRow): ReviewCard {
 export interface DueOptions {
   /** Most cards in one session. */
   limit?: number
-  /** Most never-seen cards in one session. */
+  /** Most never-seen cards in one study day. */
   newLimit?: number
+  /** Cards first graded today, spent from `newLimit`. Read from the answer log when absent. */
+  newToday?: number
 }
 
 /** The session size. One constant, because `countDueCards` promises what
@@ -103,7 +105,8 @@ export const SESSION_LIMITS = { limit: 50, newLimit: 20 } as const
 /** The session queue: due cards already being learned, then a bounded number never seen.
  *  The two must stay split -- a new card is due the moment it is saved, so 404 of one
  *  account's 407 cards were due at once and one flat query buried the real reviews.
- *  Twenty new cards is Anki's default daily allowance. */
+ *  Twenty new cards a study day is Anki's default allowance. A word marked "Đã biết" is
+ *  suspended. */
 export async function listDueCards(
   supabase: SupabaseClient, now: number, options: DueOptions = {},
 ): Promise<ReviewCard[]> {
@@ -115,16 +118,19 @@ export async function listDueCards(
     supabase
       .from('user_words')
       .select(CARD_SELECT)
+      .neq('status', 'known')
       .lte('fsrs_due_at', dueBy)
       .filter('fsrs_reps', fresh ? 'eq' : 'gt', 0)
       .order('fsrs_due_at', { ascending: true })
       .limit(take)
 
-  const { data: reviews, error: reviewError } = await page(false, limit)
+  const [{ data: reviews, error: reviewError }, newToday] = await Promise.all([
+    page(false, limit), options.newToday ?? countNewToday(supabase, now),
+  ])
   if (reviewError) throw reviewError
   const learned = z.array(cardRowSchema).parse(reviews ?? []).map(rowToCard)
 
-  const room = Math.min(newLimit, limit - learned.length)
+  const room = Math.min(newLimit - newToday, limit - learned.length)
   if (room <= 0) return learned
 
   const { data: fresh, error: freshError } = await page(true, room)
@@ -145,6 +151,7 @@ export async function countDueCards(
     const { count, error } = await supabase
       .from('user_words')
       .select('*', { count: 'exact', head: true })
+      .neq('status', 'known')
       .lte('fsrs_due_at', dueBy)
       .filter('fsrs_reps', fresh ? 'eq' : 'gt', 0)
     if (error) throw error
@@ -153,9 +160,11 @@ export async function countDueCards(
 
   // Both at once: in sequence this puts a second round trip to Seoul on the critical path
   // of /wordlist and /practice, neither of which can be cached at all.
-  const [reviewDue, freshDue] = await Promise.all([countBy(false), countBy(true)])
+  const [reviewDue, freshDue, newToday] = await Promise.all([
+    countBy(false), countBy(true), options.newToday ?? countNewToday(supabase, now),
+  ])
   const learned = Math.min(reviewDue, limit)
-  const room = Math.min(newLimit, limit - learned)
+  const room = Math.min(newLimit - newToday, limit - learned)
   if (room <= 0) return learned
   return learned + Math.min(room, freshDue)
 }

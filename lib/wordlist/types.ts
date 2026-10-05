@@ -12,8 +12,12 @@ export const STATUS_LABELS: Record<WordStatus, string> = {
 }
 
 /** A word missed this often needs a different approach, not more repetitions. Anki's leech
- *  threshold is eight; this list is reviewed far less often, so three is already the signal. */
-export const LEECH_LAPSES = 3
+ *  threshold, now that a lapse counts only a failure in Review state, not in-session repeats. */
+export const LEECH_LAPSES = 8
+
+/** Shown wherever a learner can set "Đã biết": the word is suspended from every queue,
+ *  count and forecast until its status changes. */
+export const KNOWN_HINT = 'Bỏ khỏi mọi phiên ôn và luyện tập. Chọn trạng thái khác để ôn lại.'
 
 /** Entries of STATUS_LABELS with the key still typed, for rendering option lists. */
 export const STATUS_OPTIONS = Object.entries(STATUS_LABELS) as [WordStatus, string][]

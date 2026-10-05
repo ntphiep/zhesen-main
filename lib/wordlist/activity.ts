@@ -108,6 +108,42 @@ export async function logActivityDay(supabase: SupabaseClient, now: number = Dat
   if (error) throw error
 }
 
+const eventRow = z.object({
+  word_id: z.string(),
+  skill: z.enum(['recall', 'recognition']),
+  state_before: z.number(),
+  applied: z.boolean(),
+})
+
+/** What the answer log says about the current study day. */
+export interface TodayEvents {
+  /** Words first graded for recall today: what the daily new-card allowance has spent. */
+  newToday: number
+  /** Distinct words answered today in any mode, applied or only logged. */
+  reviewedToday: number
+}
+
+/** Today's answers, read once. RLS scopes the read. */
+export async function getTodayEvents(supabase: SupabaseClient, now: number = Date.now()): Promise<TodayEvents> {
+  const since = new Date(studyDayStart(now)).toISOString()
+  const rows = eventRow.array().parse(await fetchAllRows((from, to) =>
+    supabase.from('review_events').select('word_id, skill, state_before, applied')
+      .gte('reviewed_at', since).order('id').range(from, to)))
+  const fresh = rows.filter((r) => r.skill === 'recall' && r.state_before === 0 && r.applied)
+  return { newToday: new Set(fresh.map((r) => r.word_id)).size, reviewedToday: new Set(rows.map((r) => r.word_id)).size }
+}
+
+/** How many words were first graded for recall today, as one head-only COUNT. A New card
+ *  always applies and leaves state 0, so each such row is a distinct word. */
+export async function countNewToday(supabase: SupabaseClient, now: number = Date.now()): Promise<number> {
+  const { count, error } = await supabase.from('review_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('skill', 'recall').eq('state_before', 0).eq('applied', true)
+    .gte('reviewed_at', new Date(studyDayStart(now)).toISOString())
+  if (error) throw error
+  return count ?? 0
+}
+
 const activityRow = z.object({ day: z.string() })
 
 /** Distinct activity days for the current user. RLS scopes the read. */

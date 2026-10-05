@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { parseTagsInput } from '@/lib/wordlist/tags'
 import { AiTagButton } from '@/components/wordlist/AiTagButton'
-import { STATUS_OPTIONS, type UserWord, type WordStatus } from '@/lib/wordlist/types'
+import { KNOWN_HINT, STATUS_OPTIONS, type UserWord, type WordStatus } from '@/lib/wordlist/types'
 import s from './Wordlist.module.css'
 
 interface Props {
@@ -74,6 +74,7 @@ export function BulkActionBar({ selectedWords, allTags, onBulkTag, onAiTag, onBu
       >
         Đổi trạng thái
       </button>
+      {bulkStatus === 'known' && <span className={s.note}>{KNOWN_HINT}</span>}
 
       <button
         type="button"

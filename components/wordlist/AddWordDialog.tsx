@@ -7,7 +7,7 @@ import { draftFromDictEntry } from '@/lib/wordlist/store'
 import { callAi } from '@/lib/ai/browser'
 import { useAiEnabled } from '@/lib/hooks/useAiEnabled'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
-import { STATUS_OPTIONS, type AiField, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
+import { KNOWN_HINT, STATUS_OPTIONS, type AiField, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
 import { LANGUAGES, type LangCode } from '@/lib/languages'
 import { Ipa } from '@/components/ui/Ipa'
 import s from './Wordlist.module.css'
@@ -435,6 +435,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
+              {status === 'known' && <span className={s.note}>{KNOWN_HINT}</span>}
             </label>
             <button
               className={`${s.btn} mt-1 self-end`}

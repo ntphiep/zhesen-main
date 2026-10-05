@@ -88,7 +88,7 @@ export function useWordlistFilters(words: UserWord[]) {
       // Matches on any of the word's parts of speech: a word that is both a noun and a
       // verb belongs in both filters.
       if (posFilter && !posGroups(splitPos(w.pos)).some((g) => g.key === posFilter)) return false
-      if (reviewFilter === 'due' && !isDueAt(w.fsrsDueAt)) return false
+      if (reviewFilter === 'due' && (w.status === 'known' || !isDueAt(w.fsrsDueAt))) return false
       if (reviewFilter === 'leech' && w.fsrsLapses < LEECH_LAPSES) return false
       return true
     })

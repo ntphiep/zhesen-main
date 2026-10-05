@@ -26,10 +26,12 @@ const upcomingRow = z.object({
   fsrs_due_at: z.string(),
 })
 
-/** Words due after `now` and within the next `days` days, soonest first. RLS scopes the read. */
+/** Words due after `now` and within the next `days` days, soonest first, less those marked
+ *  "Đã biết". RLS scopes the read. */
 export async function listUpcoming(supabase: SupabaseClient, now: number, days: number): Promise<ForecastWord[]> {
   const { data, error } = await supabase.from('user_words')
     .select('id, lang, headword, fsrs_due_at')
+    .neq('status', 'known')
     .gt('fsrs_due_at', new Date(now).toISOString())
     .lt('fsrs_due_at', new Date(now + days * DAY).toISOString())
     .order('fsrs_due_at', { ascending: true })

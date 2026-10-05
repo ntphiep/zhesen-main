@@ -1,6 +1,7 @@
 import type { WordlistStats } from '@/lib/wordlist/stats'
 import { STATUS_OPTIONS } from '@/lib/wordlist/types'
 import { LANGUAGES } from '@/lib/languages'
+import { SkillMeters } from './SkillMeters'
 import s from './Progress.module.css'
 
 function Bar({ label, count, total, tone }: { label: string; count: number; total: number; tone: string }) {
@@ -16,7 +17,7 @@ function Bar({ label, count, total, tone }: { label: string; count: number; tota
   )
 }
 
-/** Word-count distribution by learning status and by target language. */
+/** Word-count distribution by learning status, by target language and by skill. */
 export function WordlistDistribution({ stats }: { stats: WordlistStats }) {
   if (stats.total === 0) return null
   return (
@@ -33,6 +34,12 @@ export function WordlistDistribution({ stats }: { stats: WordlistStats }) {
           <Bar key={l.code} label={l.name} count={stats.byLang[l.code]} total={stats.total} tone={l.code} />
         ))}
       </div>
+      {stats.skills && (
+        <div className={s.panel} data-span="">
+          <h2>Theo kỹ năng</h2>
+          <SkillMeters skills={stats.skills} />
+        </div>
+      )}
     </div>
   )
 }

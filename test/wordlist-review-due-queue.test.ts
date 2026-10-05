@@ -10,16 +10,28 @@ const card = (id: string, reps: number) => ({
   fsrs_due_at: '2026-09-12T00:00:00Z', fsrs_last_review_at: null,
 })
 
+/** The answer log's count of new cards graded today: none. */
+function noneToday() {
+  const chain = {
+    select: () => chain,
+    eq: () => chain,
+    gte: () => Promise.resolve({ count: 0, error: null }),
+  }
+  return chain
+}
+
 /**
  * Records the two queries the session makes. `filter('fsrs_reps', 'eq'|'gt', 0)`
  * is what separates cards never seen from cards already being learned.
  */
 function mockClient({ learned = 0, fresh = 0 }: { learned?: number; fresh?: number }) {
   const asked: { kind: string; take: number }[] = []
-  const from = vi.fn(() => {
+  const from = vi.fn((table: string) => {
+    if (table === 'review_events') return noneToday()
     let kind = ''
     const chain = {
       select: () => chain,
+      neq: () => chain,
       lte: () => chain,
       filter: (_col: string, op: string) => { kind = op; return chain },
       order: () => chain,
@@ -85,10 +97,12 @@ describe('listDueCards', () => {
 
 /** Head-only COUNTs: no rows come back, only the total per (fresh?) bucket. */
 function mockCounter({ learned = 0, fresh = 0 }: { learned?: number; fresh?: number }) {
-  const from = vi.fn(() => {
+  const from = vi.fn((table: string) => {
+    if (table === 'review_events') return noneToday()
     let kind = ''
     const chain = {
       select: () => chain,
+      neq: () => chain,
       lte: () => chain,
       filter: (_col: string, op: string) => {
         kind = op

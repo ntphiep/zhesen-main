@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { loadSupabaseClient } from '@/lib/supabase/loadClient'
-import { computeStreak, getActivityDays, studyDay, studyDayEnd } from '@/lib/wordlist/activity'
+import { computeStreak, getActivityDays, getTodayEvents, studyDay, studyDayEnd } from '@/lib/wordlist/activity'
 import { bucketForecast, listUpcoming, type ForecastDay, type ForecastWord } from '@/lib/wordlist/forecast'
 import type { SrsState } from '@/lib/progress/types'
 import type { ReviewCard } from '@/lib/wordlist/review'
@@ -151,17 +151,20 @@ export function useHomeData(enabled: boolean): {
           })
           stop = () => { off(); clearTimeout(timer) }
         })
-        const [rows, days, queue, leeches, upcoming] = await Promise.race([Promise.all([
+        // Today's answers are read once and feed both the queue's new-card allowance and the stats.
+        const todayRead = getTodayEvents(supabase, now)
+        const [rows, days, today, queue, leeches, upcoming] = await Promise.race([Promise.all([
           stats.fetchStatRows(supabase),
           getActivityDays(supabase),
-          review.listDueCards(supabase, now, review.SESSION_LIMITS),
+          todayRead,
+          todayRead.then((t) => review.listDueCards(supabase, now, { ...review.SESSION_LIMITS, newToday: t.newToday })),
           store.listLeeches(supabase, store.LEECH_LAPSES, 6),
           listUpcoming(supabase, now, FORECAST_DAYS),
         ]), failing]).finally(() => stop())
         if (!live) return
         const data: Loaded = {
           now, rows, days, queue, leeches, upcoming,
-          stats: stats.computeWordlistStats(rows, days, now),
+          stats: stats.computeWordlistStats(rows, days, now, today),
           progress: stats.computeLangProgress(rows),
         }
         setLoaded({ data, supabase })

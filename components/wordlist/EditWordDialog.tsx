@@ -4,7 +4,7 @@ import { Modal } from '@/components/ui/Modal'
 import { TagEditor } from './TagEditor'
 import s from './Wordlist.module.css'
 import { formatPos, parsePos } from '@/lib/dictionary/pos'
-import { STATUS_OPTIONS, type UserWord, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
+import { KNOWN_HINT, STATUS_OPTIONS, type UserWord, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
 
 interface Props {
   word: UserWord | null
@@ -185,6 +185,7 @@ export function EditWordDialog({ word, open, onClose, onSave }: Props) {
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
+            {status === 'known' && <span className={s.note}>{KNOWN_HINT}</span>}
           </label>
           <label className="flex flex-col gap-1">
             <span className={s.label}>Thẻ</span>

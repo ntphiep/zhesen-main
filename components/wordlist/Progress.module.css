@@ -22,6 +22,7 @@
 
 .dist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin-top: 0.75rem; }
 .panel { display: flex; flex-direction: column; gap: 0.6rem; padding: 1.1rem 1.2rem 1.2rem; border-radius: 18px; background: var(--tint-2); }
+.panel[data-span] { grid-column: 1 / -1; }
 .panel h2 { margin: 0 0 0.2rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em; color: var(--zs-soft); }
 .row { display: grid; grid-template-columns: minmax(6.5rem, 9rem) minmax(0, 1fr) 2.5rem; align-items: center; gap: 0.75rem; font-size: 0.875rem; }
 .row > span:first-child { font-weight: 600; color: var(--zs-ink); white-space: nowrap; }
@@ -35,6 +36,11 @@
 :global(:root[data-theme="dark"]) .track { background: var(--zs-chip); }
 :global(:root[data-theme="dark"]) .track i[data-c="learning"] { --c: var(--sea-600); }
 :global(:root[data-theme="dark"]) .track i[data-c="known"] { --c: var(--sea-300); }
+/* The skill meters: one stacked track per skill, its parts in the home meter's tones. */
+.skills { display: flex; flex-direction: column; gap: 0.6rem; }
+.stack { display: flex; gap: 2px; }
+.stack i { min-width: 0; border-radius: 0; }
+.note { margin: 0.25rem 0 0; font-size: 0.8125rem; font-weight: 600; color: var(--zs-soft); }
 .track i[data-c="en"] { --c: var(--l-en); }
 .track i[data-c="zh"] { --c: var(--l-zh); }
 .track i[data-c="es"] { --c: var(--l-es); }

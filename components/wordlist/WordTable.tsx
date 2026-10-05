@@ -297,7 +297,7 @@ function Cell({ word: w, column }: { word: UserWord; column: ColumnKey }) {
     case 'fsrsDueAt':
       return (
         <span className={`whitespace-nowrap ${s.pron}`}>
-          {isDueAt(w.fsrsDueAt) ? DUE_LABEL : formatWordDate(w.fsrsDueAt)}
+          {w.status !== 'known' && isDueAt(w.fsrsDueAt) ? DUE_LABEL : formatWordDate(w.fsrsDueAt)}
         </span>
       )
     case 'fsrsLapses': return <span className={s.pron}>{w.fsrsLapses}</span>

@@ -376,7 +376,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
       {view === 'card' && shown.length > 0 && (
         <ul className={s.cards}>
           {shown.map((w) => {
-            const due = isDueAt(w.fsrsDueAt)
+            const due = w.status !== 'known' && isDueAt(w.fsrsDueAt)
             return (
               <li key={w.id} className={s.card} data-l={w.lang} data-on={selected.has(w.id) || undefined}>
                 <div className={s.meta}>
