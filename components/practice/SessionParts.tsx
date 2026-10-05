@@ -44,7 +44,7 @@ export function SessionBar({ label, done, total }: { label: string; done: number
 export function Verdict({ result, children }: { result: TypedResult; children: ReactNode }) {
   return (
     <p className={p.verdict} data-v={result}>
-      {result === 'correct' ? CHECK : result === 'close' ? NEAR : CROSS}
+      {result === 'correct' ? CHECK : result === 'wrong' ? CROSS : NEAR}
       <span>{children}</span>
     </p>
   )

@@ -151,7 +151,7 @@
 .input:focus-visible { border-color: var(--sea-700); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sea-400) 30%, transparent); outline: none; }
 .input:disabled { background: var(--tint-1); }
 .input[data-state="correct"] { border: 2px solid var(--zs-btn); }
-.input[data-state="close"] { border: 2px dashed var(--sea-500); }
+.input[data-state="close"], .input[data-state="accent"] { border: 2px dashed var(--sea-500); }
 .input[data-state="wrong"] { border: 2px solid var(--ink); text-decoration: line-through; }
 .play { margin-top: 1rem; display: inline-flex; padding: 0.8rem; border-radius: 999px; background: var(--sea-50); color: var(--sea-700); }
 .play button { width: 2.5rem; height: 2.5rem; }

@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { listPracticeWords } from '@/lib/wordlist/store'
+import { listPracticeWords, listTraditionalForms } from '@/lib/wordlist/store'
 import { shuffle } from '@/lib/practice/shuffle'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { gradeForMode } from '@/lib/practice/grading'
@@ -25,12 +25,17 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
   useEffect(() => {
     let active = true
     listPracticeWords(supabase, { needsMeaning: mode === 'write' })
-      .then((words) => {
+      .then(async (words) => {
+        const round = shuffle(words.filter((w) => w.headword && (mode === 'dictation' || (w.meaningVi && w.meaningVi.trim())))).slice(0, SIZE)
+        const zh = round.filter((w) => w.lang === 'zh').map((w) => w.id)
+        // Without the traditional forms only the simplified form and pinyin are accepted.
+        const traditional = zh.length ? await listTraditionalForms(supabase, zh).catch(() => new Map<string, string>()) : new Map<string, string>()
         if (!active) return
-        const usable = words
-          .filter((w) => w.headword && (mode === 'dictation' || (w.meaningVi && w.meaningVi.trim())))
-          .map((w): TypingPrompt => ({ id: w.id, headword: w.headword, meaningVi: w.meaningVi, ipa: w.ipa, audioUrl: w.audioUrl, lang: w.lang }))
-        setQueue(shuffle(usable).slice(0, SIZE))
+        // A Chinese word's `ipa` holds its pinyin.
+        setQueue(round.map((w): TypingPrompt => ({
+          id: w.id, headword: w.headword, meaningVi: w.meaningVi, ipa: w.ipa, audioUrl: w.audioUrl, lang: w.lang,
+          accepted: w.lang === 'zh' ? [w.ipa, traditional.get(w.id)].filter((v): v is string => Boolean(v)) : [],
+        })))
         setIndex(0); setValue(''); setResult(null); setScore(0)
       })
       .catch(() => active && setQueue([]))
@@ -52,12 +57,12 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
 
   function submit() {
     if (result !== null || !value.trim()) return
-    const r = checkTypedAnswer(value, current.headword)
+    const r = checkTypedAnswer(value, current.headword, { lang: current.lang, accepted: current.accepted })
     setResult(r)
     if (r !== 'wrong') setScore((s) => s + 1)
-    // A one-character typo counts as a hard recall, not a clean one: the learner
-    // produced the word, which is more than the quiz can tell.
-    recordGrade(current.id, mode, gradeForMode(mode, { correct: r !== 'wrong', nearly: r === 'close' }))
+    // A one-character typo or a missed accent counts as a hard recall, not a clean one:
+    // the learner produced the word, which is more than the quiz can tell.
+    recordGrade(current.id, mode, gradeForMode(mode, { correct: r !== 'wrong', nearly: r === 'close' || r === 'accent' }))
     if (!logged.current) { logged.current = true; logDay() }
   }
   function next() {

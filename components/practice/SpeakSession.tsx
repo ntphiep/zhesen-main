@@ -81,7 +81,7 @@ export function SpeakSession() {
     r.maxAlternatives = 1
     r.onresult = (e) => {
       const transcript = e.results[0]?.[0]?.transcript ?? ''
-      const verdict = checkTypedAnswer(transcript, current.headword)
+      const verdict = checkTypedAnswer(transcript, current.headword, { lang: current.lang, foldAccents: true })
       setHeard(transcript)
       setResult(verdict)
       // Successes count towards the schedule, failures do not: the recogniser mishears

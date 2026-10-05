@@ -184,6 +184,28 @@ export async function listPracticeWords(
   }))
 }
 
+const wordEntryRow = z.object({ id: z.string(), entry_id: z.string() })
+const traditionalRow = z.object({ id: z.string(), traditional: z.string() })
+
+/** The traditional form of each saved word whose entry has one, keyed by word id. Two
+ *  reads, because the entry lives in the `lex` schema. */
+export async function listTraditionalForms(supabase: SupabaseClient, ids: string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map()
+  const { data, error } = await supabase.from('user_words').select('id, entry_id')
+    .in('id', ids).not('entry_id', 'is', null)
+  if (error) throw error
+  const words = wordEntryRow.array().parse(data ?? [])
+  if (words.length === 0) return new Map()
+  const { data: rows, error: entryError } = await supabase.schema('lex').from('entries').select('id, traditional')
+    .in('id', [...new Set(words.map((w) => w.entry_id))]).not('traditional', 'is', null)
+  if (entryError) throw entryError
+  const byEntry = new Map(traditionalRow.array().parse(rows ?? []).map((r) => [r.id, r.traditional]))
+  return new Map(words.flatMap((w): [string, string][] => {
+    const t = byEntry.get(w.entry_id)
+    return t ? [[w.id, t]] : []
+  }))
+}
+
 /** Entry ids already saved for a language (RLS scopes this to the current user).
  * Used to dedupe a bulk "add whole level" import against the existing wordlist. */
 const savedEntryIdRow = z.object({ entry_id: z.string() })

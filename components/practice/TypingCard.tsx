@@ -16,6 +16,8 @@ export interface TypingPrompt {
   ipa: string | null
   audioUrl: string | null
   lang: LangCode
+  /** Other spellings that count: pinyin and the traditional form for Chinese. */
+  accepted?: string[]
 }
 
 /** One typed-answer question. `write` prompts with the meaning; `dictation` prompts
@@ -92,6 +94,7 @@ export function TypingCard({
       {answered && (
         <div role="status" aria-live="polite">
           {result === 'correct' && <Verdict result="correct">Đúng</Verdict>}
+          {result === 'accent' && <Verdict result="accent">Gần đúng, chú ý dấu. Đáp án: <b data-hw="" lang={word.lang}>{word.lang === 'zh' && word.ipa ? `${word.headword} ${word.ipa}` : word.headword}</b></Verdict>}
           {result === 'close' && <Verdict result="close">Gần đúng. Đáp án: <b data-hw="" lang={word.lang}>{word.headword}</b></Verdict>}
           {result === 'wrong' && <Verdict result="wrong">Sai. Đáp án: <b data-hw="" lang={word.lang}>{word.headword}</b></Verdict>}
           {mode === 'dictation' && word.meaningVi && <p className={p.heard}>{word.meaningVi}</p>}
