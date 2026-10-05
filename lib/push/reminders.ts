@@ -76,10 +76,17 @@ export async function turnOnReminder(
   return { ok: true }
 }
 
-/** Store this browser's keys again: a browser may rotate them without telling the page. */
+/** Store this browser's keys again, which a browser may rotate without telling the page.
+ *  Touches the caller's own row only, so a visit never moves a browser between accounts:
+ *  false when the row is missing or another account's. */
 export async function refreshDevice(supabase: SupabaseClient, device: DeviceKeys): Promise<boolean> {
   if (!device.endpoint.startsWith('https://')) return false
-  return !(await registerDevice(supabase, device))
+  const { data, error } = await supabase
+    .from('push_subscriptions')
+    .update({ p256dh: device.p256dh, auth: device.auth })
+    .eq('endpoint', device.endpoint)
+    .select('id')
+  return !error && Array.isArray(data) && data.length === 1
 }
 
 export async function setReminderHour(

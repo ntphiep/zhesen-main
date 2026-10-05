@@ -175,6 +175,14 @@ describe('ReminderPanel', () => {
     expect(screen.getByRole('button', { name: 'Tắt nhắc' })).toBeInTheDocument()
   })
 
+  it('offers this browser, without taking it, when another account holds its subscription', async () => {
+    vi.mocked(refreshDevice).mockResolvedValue(false)
+    worker(true)
+    show({ hour: 21, timeZone: 'Asia/Ho_Chi_Minh' })
+    expect(await ready('Bật trên thiết bị này')).toBeInTheDocument()
+    expect(turnOnReminder).not.toHaveBeenCalled()
+  })
+
   it('saves a new hour while on', async () => {
     worker(true)
     show({ hour: 20, timeZone: 'Asia/Ho_Chi_Minh' })

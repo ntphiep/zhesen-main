@@ -50,9 +50,9 @@ export function ReminderPanel({ publicKey, userId, current }: {
       .then(async (reg) => {
         registration.current = reg
         const existing = await reg.pushManager.getSubscription()
-        // Picks up keys the browser rotated since the last visit.
-        if (existing && wasOn) void refreshDevice(supabase, deviceKeys(existing))
-        if (live) setDevice(existing ? 'here' : 'missing')
+        // Picks up rotated keys; a subscription another account holds counts as missing here.
+        const mine = existing !== null && wasOn && await refreshDevice(supabase, deviceKeys(existing))
+        if (live) setDevice(mine ? 'here' : 'missing')
       })
       .catch(() => { if (live) setDevice('missing') })
     return () => { live = false }

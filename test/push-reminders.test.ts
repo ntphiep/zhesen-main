@@ -98,10 +98,30 @@ describe('turnOnReminder', () => {
 })
 
 describe('refreshDevice', () => {
-  it('registers the keys again', async () => {
-    const { supabase, rpc } = client()
+  /** A client whose update on push_subscriptions returns `rows`, recording the call. */
+  function updating(rows: unknown, error: unknown = null) {
+    const builder = queryBuilder({ data: rows, error })
+    const update = vi.fn(() => builder)
+    const from = vi.fn(() => ({ update }))
+    const rpc = vi.fn()
+    return { supabase: { from, rpc } as unknown as SupabaseClient, from, update, builder, rpc }
+  }
+
+  it('updates the keys on the caller\'s own row, and never moves the browser', async () => {
+    const { supabase, from, update, builder, rpc } = updating([{ id: 's1' }])
     expect(await refreshDevice(supabase, device)).toBe(true)
-    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(from).toHaveBeenCalledWith('push_subscriptions')
+    expect(update).toHaveBeenCalledWith({ p256dh: device.p256dh, auth: device.auth })
+    expect(builder.eq).toHaveBeenCalledWith('endpoint', device.endpoint)
+    expect(rpc).not.toHaveBeenCalled()
+  })
+
+  it('is false when RLS hides the row, because another account holds this browser', async () => {
+    expect(await refreshDevice(updating([]).supabase, device)).toBe(false)
+  })
+
+  it('is false when the update fails', async () => {
+    expect(await refreshDevice(updating(null, { code: '42501' }).supabase, device)).toBe(false)
   })
 
   it('refuses an endpoint that is not https', async () => {
