@@ -56,6 +56,8 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
   const [turn, setTurn] = useState(0)
   const [last, setLast] = useState<Last | null>(null)
   const [error, setError] = useState(false)
+  // The schedule saved but its log row did not: the same warning as a lost practice write.
+  const [lost, setLost] = useState(false)
   // The click handler runs twice before `grading` re-renders on a double tap; a ref does not.
   const busy = useRef(false)
   const logged = useRef(false)
@@ -78,7 +80,9 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
     setError(false)
     let next: SrsState | null
     try {
-      next = await gradeWordById(supabase, current.id, grade)
+      const result = await gradeWordById(supabase, current.id, 'review', grade)
+      next = result?.next ?? null
+      if (result && !result.logged) setLost(true)
     } catch {
       setError(true)
       busy.current = false
@@ -165,7 +169,7 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
       <p className={h.after} aria-live="polite">
         {last && <><Hw lang={last.card.lang} text={last.card.headword} /> {last.back ? 'quay lại cuối phiên này.' : `quay lại ${when(last.dueAt, now)}.`}</>}
       </p>
-      <GradeSyncWarning failed={failed} />
+      <GradeSyncWarning failed={failed || lost} />
     </section>
   )
 }

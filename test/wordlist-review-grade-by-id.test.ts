@@ -20,10 +20,12 @@ function mockClient({ row = cardRow as unknown }: { row?: unknown } = {}) {
   )
   const maybeSingle = vi.fn(async () => ({ data: row, error: null }))
   const upsert = vi.fn(() => ({ error: null }))
+  const insert = vi.fn(async () => ({ error: null }))
   const from = vi.fn(() => ({
     select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle })) })),
     update,
     upsert,
+    insert,
   }))
   const { auth } = authStub({ user: { id: 'u1' } })
   return { client: { from, auth } as unknown as SupabaseClient, update }
@@ -36,7 +38,7 @@ describe('gradeWordById', () => {
     // Five of the six practice modes recorded nothing, so an evening of quiz and
     // typing left the review queue exactly as it was the day before.
     const { client, update } = mockClient()
-    await gradeWordById(client, 'w1', 'good', now)
+    await gradeWordById(client, 'w1', 'review', 'good', now)
     expect(update).toHaveBeenCalledTimes(1)
     const [written] = update.mock.calls[0]
     expect(written.fsrs_reps).toBe(3)
@@ -45,26 +47,26 @@ describe('gradeWordById', () => {
 
   it('counts a wrong answer as a lapse', async () => {
     const { client, update } = mockClient()
-    await gradeWordById(client, 'w1', 'again', now)
+    await gradeWordById(client, 'w1', 'review', 'again', now)
     expect(update.mock.calls[0][0].fsrs_lapses).toBe(1)
   })
 
   it('returns the state it wrote, so a caller can show it', async () => {
     const { client } = mockClient()
-    const next = await gradeWordById(client, 'w1', 'good', now)
-    expect(next?.vocabId).toBe('w1')
+    const result = await gradeWordById(client, 'w1', 'review', 'good', now)
+    expect(result?.next.vocabId).toBe('w1')
   })
 
   it('does nothing for a word deleted in another tab', async () => {
     // A practice session open while the word is removed from the wordlist should
     // finish the round, not throw at the learner.
     const { client, update } = mockClient({ row: null })
-    await expect(gradeWordById(client, 'gone', 'good', now)).resolves.toBeNull()
+    await expect(gradeWordById(client, 'gone', 'review', 'good', now)).resolves.toBeNull()
     expect(update).not.toHaveBeenCalled()
   })
 
   it('rejects a row whose shape does not match instead of writing nonsense', async () => {
     const { client } = mockClient({ row: { id: 'w1', headword: 'dog' } })
-    await expect(gradeWordById(client, 'w1', 'good', now)).rejects.toThrow()
+    await expect(gradeWordById(client, 'w1', 'review', 'good', now)).rejects.toThrow()
   })
 })

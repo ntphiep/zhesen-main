@@ -148,12 +148,16 @@ header to it by string equality. The auth cookie name is pinned in `lib/supabase
 
 ## Product invariants
 
-- Every practice mode must write to the FSRS schedule: call `gradeForMode`
-  (`lib/practice/grading.ts`) then `gradeWordById` (`lib/wordlist/review.ts`). Speaking
+- Every saved word has two FSRS skills: recognition (`fsrs_recog_*`), graded by quiz and
+  match, and recall (`fsrs_*`), graded by review, write, dictation and speak. Each mode
+  grades only its skill through `gradeForMode` then `gradeWordById`
+  (`lib/wordlist/review.ts`), which logs every answer to `review_events`. A success on a
+  Review card not due by the end of the study day (04:00 Asia/Ho_Chi_Minh) is logged but
+  does not move the schedule. Speaking
   practice deliberately never reports a failure, because speech recognition misfires on
   noise and microphones and recording `again` would erase real progress over a hardware
   fault. `review_log` holds one row per user per day, not one per grade, so prove a grade
-  landed by reading `user_words.fsrs_last_review_at` and `fsrs_reps`. A practice keyboard
+  landed by the skill's `last_review_at` and `reps` and its `review_events` row. A practice keyboard
   shortcut goes through `useKeyGate` (`lib/hooks/useKeyGate.ts`): a held Enter once graded
   every due card unseen.
 - An anonymous account lives in one browser's cookie, so clearing browsing data loses it:

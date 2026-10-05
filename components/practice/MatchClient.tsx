@@ -67,7 +67,7 @@ export function MatchClient() {
     if (first.wordId === tile.wordId && first.kind !== tile.kind) {
       setMatched((m) => new Set(m).add(first.key).add(tile.key))
       setSelected(null)
-      recordGrade(tile.wordId, gradeForMode('match', { correct: true, nearly: stumbled.current.has(tile.wordId) }))
+      recordGrade(tile.wordId, 'match', gradeForMode('match', { correct: true, nearly: stumbled.current.has(tile.wordId) }))
     } else {
       stumbled.current.add(first.wordId).add(tile.wordId)
       setWrong([first.key, tile.key])

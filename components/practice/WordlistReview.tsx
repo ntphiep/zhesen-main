@@ -25,6 +25,7 @@ export function WordlistReview() {
   // this a second tap regrades the same card and drops one off the front of the queue.
   const [grading, setGrading] = useState(false)
   const { notice, notify, dismiss } = useNotice()
+  const [lost, setLost] = useState(false)
 
   useEffect(() => {
     listDueCards(supabase, Date.now()).then(setQueue).catch(() => setQueue([]))
@@ -38,7 +39,7 @@ export function WordlistReview() {
         <div className={`${p.card} ${p.end}`}>
           <h1>Hết từ cần ôn.</h1>
           {reviewed > 0 && <p>Đã ôn {reviewed} từ trong phiên này.</p>}
-          <GradeSyncWarning failed={syncFailed} />
+          <GradeSyncWarning failed={syncFailed || lost} />
           <div className={p.row}><Link href="/practice" className={p.btn}>Về luyện tập</Link></div>
         </div>
       </Stage>
@@ -52,7 +53,9 @@ export function WordlistReview() {
     setGrading(true)
     let next: SrsState
     try {
-      next = await gradeCard(supabase, current, g, Date.now())
+      const result = await gradeCard(supabase, current, 'review', g, Date.now())
+      next = result.next
+      if (!result.logged) setLost(true)
     } catch {
       notify('Chưa lưu được kết quả. Thử lại.')
       return

@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LangCode } from '@/lib/languages'
 import type { Grade, SrsState } from '@/lib/progress/types'
 import { cardStateFromDbValue, cardStateToDbValue, review } from '@/lib/progress/srs'
+import { appliesToSchedule, MODE_SKILL, type PracticeMode, type Skill } from '@/lib/practice/grading'
 import { stripPhraseStop } from '@/lib/dictionary/textQuality'
 import { studyDayEnd } from './activity'
 
@@ -48,10 +49,24 @@ const cardRowSchema = z.object({
 })
 type CardRow = z.infer<typeof cardRowSchema>
 
-const CARD_SELECT =
-  'id, lang, headword, reading, ipa, meaning_vi, meaning_en, example, example_translation, audio_url, entry_id, ' +
-  'fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_learning_steps, fsrs_reps, ' +
-  'fsrs_lapses, fsrs_state, fsrs_due_at, fsrs_last_review_at'
+const STATE_COLUMNS = [
+  'stability', 'difficulty', 'elapsed_days', 'scheduled_days', 'learning_steps', 'reps', 'lapses', 'state',
+  'due_at', 'last_review_at',
+] as const
+
+/** Where each skill's FSRS state lives on `user_words` (0160). */
+export const SKILL_COLUMNS: Record<Skill, string> = { recall: 'fsrs_', recognition: 'fsrs_recog_' }
+
+/** The card columns with the skill's state read under the recall names, through PostgREST
+ *  aliases, so one row schema parses both skills. */
+export function cardSelect(skill: Skill): string {
+  const prefix = SKILL_COLUMNS[skill]
+  const state = STATE_COLUMNS.map((c) => (skill === 'recall' ? `fsrs_${c}` : `fsrs_${c}:${prefix}${c}`))
+  return 'id, lang, headword, reading, ipa, meaning_vi, meaning_en, example, example_translation, audio_url, entry_id, ' +
+    state.join(', ')
+}
+
+const CARD_SELECT = cardSelect('recall')
 
 export function rowToCard(r: CardRow): ReviewCard {
   return {
@@ -145,33 +160,68 @@ export async function countDueCards(
   return learned + Math.min(room, freshDue)
 }
 
-/** Grade a card with FSRS and persist the new schedule. */
-export async function gradeCard(supabase: SupabaseClient, card: ReviewCard, grade: Grade, now: number): Promise<SrsState> {
-  const next = review(card.state, grade, now)
-  const { error } = await supabase.from('user_words').update({
-    fsrs_stability: next.stability,
-    fsrs_difficulty: next.difficulty,
-    fsrs_elapsed_days: next.elapsedDays,
-    fsrs_scheduled_days: next.scheduledDays,
-    fsrs_learning_steps: next.learningSteps,
-    fsrs_reps: next.reps,
-    fsrs_lapses: next.lapses,
-    fsrs_state: cardStateToDbValue(next.cardState),
-    fsrs_due_at: new Date(next.dueAt).toISOString(),
-    fsrs_last_review_at: next.lastReviewedAt ? new Date(next.lastReviewedAt).toISOString() : null,
-  }).eq('id', card.id)
-  if (error) throw error
-  return next
+/** What a graded answer did: the schedule the word now has for the skill, whether the answer
+ *  moved it, and whether its `review_events` row was saved. */
+export interface GradeResult {
+  next: SrsState
+  applied: boolean
+  logged: boolean
 }
 
-/** Grade a saved word by id, reading its schedule first. The practice modes work from
+const RATING: Record<Grade, number> = { again: 1, hard: 2, good: 3, easy: 4 }
+
+/** Grade a card on the mode's skill, persist the schedule when the answer applies, then log the
+ *  answer. A lost log row does not undo a saved schedule, so it is reported, not thrown. */
+export async function gradeCard(
+  supabase: SupabaseClient, card: ReviewCard, mode: PracticeMode, grade: Grade, now: number,
+): Promise<GradeResult> {
+  const skill = MODE_SKILL[mode]
+  const before = card.state
+  const scheduled = review(before, grade, now)
+  const applied = appliesToSchedule(before, grade, now)
+  if (applied) {
+    const p = SKILL_COLUMNS[skill]
+    const { error } = await supabase.from('user_words').update({
+      [`${p}stability`]: scheduled.stability,
+      [`${p}difficulty`]: scheduled.difficulty,
+      [`${p}elapsed_days`]: scheduled.elapsedDays,
+      [`${p}scheduled_days`]: scheduled.scheduledDays,
+      [`${p}learning_steps`]: scheduled.learningSteps,
+      [`${p}reps`]: scheduled.reps,
+      [`${p}lapses`]: scheduled.lapses,
+      [`${p}state`]: cardStateToDbValue(scheduled.cardState),
+      [`${p}due_at`]: new Date(scheduled.dueAt).toISOString(),
+      [`${p}last_review_at`]: scheduled.lastReviewedAt ? new Date(scheduled.lastReviewedAt).toISOString() : null,
+    }).eq('id', card.id)
+    if (error) throw error
+  }
+  const { error: logError } = await supabase.from('review_events').insert({
+    word_id: card.id,
+    skill,
+    mode,
+    rating: RATING[grade],
+    applied,
+    state_before: cardStateToDbValue(before.cardState),
+    state_after: cardStateToDbValue(scheduled.cardState),
+    stability_before: before.stability,
+    stability_after: scheduled.stability,
+    difficulty_before: before.difficulty,
+    difficulty_after: scheduled.difficulty,
+    elapsed_days: scheduled.elapsedDays,
+    scheduled_days: scheduled.scheduledDays,
+    reviewed_at: new Date(now).toISOString(),
+  })
+  return { next: applied ? scheduled : before, applied, logged: !logError }
+}
+
+/** Grade a saved word by id, reading the mode's skill first. The practice modes work from
  *  `listWords`, which carries no scheduling state, so they cannot call `gradeCard`.
  *  Returns null when the row is gone -- deleted in another tab is not an error. */
 export async function gradeWordById(
-  supabase: SupabaseClient, id: string, grade: Grade, now: number = Date.now(),
-): Promise<SrsState | null> {
-  const { data, error } = await supabase.from('user_words').select(CARD_SELECT).eq('id', id).maybeSingle()
+  supabase: SupabaseClient, id: string, mode: PracticeMode, grade: Grade, now: number = Date.now(),
+): Promise<GradeResult | null> {
+  const { data, error } = await supabase.from('user_words').select(cardSelect(MODE_SKILL[mode])).eq('id', id).maybeSingle()
   if (error) throw error
   if (!data) return null
-  return gradeCard(supabase, rowToCard(cardRowSchema.parse(data)), grade, now)
+  return gradeCard(supabase, rowToCard(cardRowSchema.parse(data)), mode, grade, now)
 }

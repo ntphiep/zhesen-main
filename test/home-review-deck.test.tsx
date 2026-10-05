@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { ReviewCard } from '@/lib/wordlist/review'
+import type { GradeResult, ReviewCard } from '@/lib/wordlist/review'
 import type { Grade, SrsState } from '@/lib/progress/types'
 import { SETTLE_MS } from '@/lib/hooks/useKeyGate'
 
@@ -41,8 +41,8 @@ const onTop = () => screen.getByRole('article', { name: 'Từ đang ôn' }).quer
 beforeEach(() => {
   m.gradeWordById.mockReset()
   m.logDay.mockReset()
-  m.gradeWordById.mockImplementation(async (_s: unknown, id: string, grade: Grade) =>
-    state(id, { reps: 1, dueAt: NOW + (grade === 'easy' ? 8 : 1) * DAY }))
+  m.gradeWordById.mockImplementation(async (_s: unknown, id: string, _mode: string, grade: Grade) =>
+    ({ next: state(id, { reps: 1, dueAt: NOW + (grade === 'easy' ? 8 : 1) * DAY }), applied: true, logged: true }))
 })
 
 describe('HomeReviewDeck', () => {
@@ -50,7 +50,7 @@ describe('HomeReviewDeck', () => {
     const onGraded = renderDeck([card('dog'), card('cat')])
     await reveal()
     await userEvent.click(screen.getByRole('button', { name: 'Dễ' }))
-    expect(m.gradeWordById).toHaveBeenCalledWith(supabase, 'dog', 'easy')
+    expect(m.gradeWordById).toHaveBeenCalledWith(supabase, 'dog', 'review', 'easy')
     await waitFor(() => expect(onTop()).toBe('cat'))
     expect(onGraded).toHaveBeenCalledWith('dog', expect.objectContaining({ reps: 1, dueAt: NOW + 8 * DAY }), false)
   })
@@ -59,7 +59,7 @@ describe('HomeReviewDeck', () => {
     const onGraded = renderDeck([card('dog'), card('cat')])
     await reveal()
     await userEvent.click(screen.getByRole('button', { name: 'Lại' }))
-    expect(m.gradeWordById).toHaveBeenCalledWith(supabase, 'dog', 'again')
+    expect(m.gradeWordById).toHaveBeenCalledWith(supabase, 'dog', 'review', 'again')
     // Said to the page too, so the deck holds it again after a layout switch remounts it.
     await waitFor(() => expect(onGraded).toHaveBeenCalledWith('dog', expect.objectContaining({ reps: 1 }), true))
     await waitFor(() => expect(onTop()).toBe('cat'))
@@ -69,13 +69,13 @@ describe('HomeReviewDeck', () => {
   })
 
   it('grades once when the button is pressed twice in a row', async () => {
-    let finish: (s: SrsState) => void = () => {}
-    m.gradeWordById.mockImplementation(() => new Promise<SrsState>((ok) => { finish = ok }))
+    let finish: (s: GradeResult) => void = () => {}
+    m.gradeWordById.mockImplementation(() => new Promise<GradeResult>((ok) => { finish = ok }))
     renderDeck([card('dog'), card('cat')])
     await reveal()
     const good = screen.getByRole('button', { name: 'Tốt' })
     await userEvent.dblClick(good)
-    finish(state('dog', { reps: 1, dueAt: NOW + DAY }))
+    finish({ next: state('dog', { reps: 1, dueAt: NOW + DAY }), applied: true, logged: true })
     await waitFor(() => expect(onTop()).toBe('cat'))
     expect(m.gradeWordById).toHaveBeenCalledTimes(1)
   })

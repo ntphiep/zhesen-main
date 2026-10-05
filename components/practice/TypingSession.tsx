@@ -57,7 +57,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
     if (r !== 'wrong') setScore((s) => s + 1)
     // A one-character typo counts as a hard recall, not a clean one: the learner
     // produced the word, which is more than the quiz can tell.
-    recordGrade(current.id, gradeForMode(mode, { correct: r !== 'wrong', nearly: r === 'close' }))
+    recordGrade(current.id, mode, gradeForMode(mode, { correct: r !== 'wrong', nearly: r === 'close' }))
     if (!logged.current) { logged.current = true; logDay() }
   }
   function next() {

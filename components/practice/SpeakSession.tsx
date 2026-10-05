@@ -84,7 +84,7 @@ export function SpeakSession() {
       if (verdict !== 'wrong') setScore((s) => s + 1)
       // Successes count towards the schedule, failures do not: the recogniser mishears
       // for reasons that are not the learner's, so `gradeForMode` returns null there.
-      recordGrade(current.id, gradeForMode('speak', { correct: verdict !== 'wrong', nearly: verdict === 'close' }))
+      recordGrade(current.id, 'speak', gradeForMode('speak', { correct: verdict !== 'wrong', nearly: verdict === 'close' }))
       if (!logged.current) { logged.current = true; logDay() }
     }
     // Without a message the button flips straight back to "Nói" and a blocked

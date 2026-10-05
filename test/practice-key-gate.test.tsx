@@ -38,7 +38,7 @@ beforeEach(() => {
 describe('review under a held Enter', () => {
   it('grades the card on screen once and leaves the next one unrevealed', async () => {
     vi.mocked(listDueCards).mockResolvedValue([card('A'), card('B'), card('C')])
-    vi.mocked(gradeCard).mockImplementation(async (_s, c) => state(c.id))
+    vi.mocked(gradeCard).mockImplementation(async (_s, c) => ({ next: state(c.id), applied: true, logged: true }))
     const user = userEvent.setup()
     render(<WordlistReview />)
     await user.click(await screen.findByRole('button', { name: 'Hiện nghĩa' }))

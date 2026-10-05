@@ -4,9 +4,10 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { gradeWordById } from '@/lib/wordlist/review'
 import { logActivityDay } from '@/lib/wordlist/activity'
 import type { Grade } from '@/lib/progress/types'
+import type { PracticeMode } from '@/lib/practice/grading'
 
 /**
- * Write a practice answer into the card's schedule, and remember if it failed.
+ * Write a practice answer into the mode's skill and its log, and remember if either failed.
  *
  * The write stays unawaited so a slow round trip does not hold up the next
  * question. `failed` is sticky for the session: one lost write makes the
@@ -16,9 +17,11 @@ import type { Grade } from '@/lib/progress/types'
 export function useGradeSync(supabase: SupabaseClient) {
   const [failed, setFailed] = useState(false)
 
-  const record = useCallback((wordId: string, grade: Grade | null) => {
+  const record = useCallback((wordId: string, mode: PracticeMode, grade: Grade | null) => {
     if (!grade) return
-    void gradeWordById(supabase, wordId, grade).catch(() => setFailed(true))
+    void gradeWordById(supabase, wordId, mode, grade)
+      .then((r) => { if (r && !r.logged) setFailed(true) })
+      .catch(() => setFailed(true))
   }, [supabase])
 
   /**

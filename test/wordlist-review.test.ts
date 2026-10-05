@@ -13,7 +13,10 @@ const row = {
 function updateSpy() {
   let payload: Record<string, unknown> | undefined
   const supabase = {
-    from: () => ({ update: (p: Record<string, unknown>) => { payload = p; return { eq: () => Promise.resolve({ error: null }) } } }),
+    from: () => ({
+      update: (p: Record<string, unknown>) => { payload = p; return { eq: () => Promise.resolve({ error: null }) } },
+      insert: () => Promise.resolve({ error: null }),
+    }),
   } as unknown as import('@supabase/supabase-js').SupabaseClient
   return { supabase, get: () => payload }
 }
@@ -35,7 +38,7 @@ describe('gradeCard', () => {
 
   it('writes the next FSRS-6 schedule and pushes the due date forward on "good"', async () => {
     const { supabase, get } = updateSpy()
-    const next = await gradeCard(supabase, rowToCard(row), 'good', now)
+    const { next } = await gradeCard(supabase, rowToCard(row), 'review', 'good', now)
     expect(next.reps).toBe(3)
     expect(next.cardState).toBe('review')
     expect(get()!.fsrs_reps).toBe(3)
@@ -46,7 +49,7 @@ describe('gradeCard', () => {
 
   it('shortens the interval and counts a lapse on "again"', async () => {
     const { supabase, get } = updateSpy()
-    const next = await gradeCard(supabase, rowToCard(row), 'again', now)
+    const { next } = await gradeCard(supabase, rowToCard(row), 'review', 'again', now)
     expect(next.lapses).toBe(1)
     expect(get()!.fsrs_lapses).toBe(1)
     expect(get()!.fsrs_scheduled_days).toBeLessThan(row.fsrs_scheduled_days)

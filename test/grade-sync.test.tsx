@@ -17,8 +17,8 @@ describe('useGradeSync', () => {
   it('writes the grade without making the caller wait', async () => {
     vi.mocked(gradeWordById).mockResolvedValue(undefined as never)
     const { result } = renderHook(() => useGradeSync(supabase))
-    await act(async () => { result.current.record('w1', 'good') })
-    expect(gradeWordById).toHaveBeenCalledWith(supabase, 'w1', 'good')
+    await act(async () => { result.current.record('w1', 'quiz', 'good') })
+    expect(gradeWordById).toHaveBeenCalledWith(supabase, 'w1', 'quiz', 'good')
     expect(result.current.failed).toBe(false)
   })
 
@@ -27,7 +27,7 @@ describe('useGradeSync', () => {
   // and nothing should be written or reported.
   it('writes nothing when the mode declined to grade', async () => {
     const { result } = renderHook(() => useGradeSync(supabase))
-    await act(async () => { result.current.record('w1', null) })
+    await act(async () => { result.current.record('w1', 'speak', null) })
     expect(gradeWordById).not.toHaveBeenCalled()
     expect(result.current.failed).toBe(false)
   })
@@ -38,15 +38,22 @@ describe('useGradeSync', () => {
   it('remembers a failed write', async () => {
     vi.mocked(gradeWordById).mockRejectedValue(new Error('offline'))
     const { result } = renderHook(() => useGradeSync(supabase))
-    await act(async () => { result.current.record('w1', 'good') })
+    await act(async () => { result.current.record('w1', 'quiz', 'good') })
     expect(result.current.failed).toBe(true)
   })
 
   it('stays failed after a later answer saves, because the session is already short', async () => {
     vi.mocked(gradeWordById).mockRejectedValueOnce(new Error('offline')).mockResolvedValue(undefined as never)
     const { result } = renderHook(() => useGradeSync(supabase))
-    await act(async () => { result.current.record('w1', 'good') })
-    await act(async () => { result.current.record('w2', 'good') })
+    await act(async () => { result.current.record('w1', 'quiz', 'good') })
+    await act(async () => { result.current.record('w2', 'quiz', 'good') })
+    expect(result.current.failed).toBe(true)
+  })
+
+  it('warns when the answer saved but its log row did not', async () => {
+    vi.mocked(gradeWordById).mockResolvedValue({ next: {} as never, applied: true, logged: false })
+    const { result } = renderHook(() => useGradeSync(supabase))
+    await act(async () => { result.current.record('w1', 'quiz', 'good') })
     expect(result.current.failed).toBe(true)
   })
 

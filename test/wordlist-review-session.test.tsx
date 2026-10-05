@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { fireEvent } from '@testing-library/react'
 import { WordlistReview } from '@/components/practice/WordlistReview'
-import { listDueCards, gradeCard, type ReviewCard } from '@/lib/wordlist/review'
+import { listDueCards, gradeCard, type GradeResult, type ReviewCard } from '@/lib/wordlist/review'
 import type { SrsState } from '@/lib/progress/types'
 
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }))
@@ -27,7 +27,7 @@ beforeEach(() => {
 describe('WordlistReview', () => {
   it('walks the queue one card at a time', async () => {
     vi.mocked(listDueCards).mockResolvedValue([card('A'), card('B')])
-    vi.mocked(gradeCard).mockImplementation(async (_c, cardArg) => state(cardArg.id))
+    vi.mocked(gradeCard).mockImplementation(async (_c, cardArg) => ({ next: state(cardArg.id), applied: true, logged: true }))
     render(<WordlistReview />)
 
     fireEvent.click(await screen.findByRole('button', { name: /Hiện nghĩa/i }))
@@ -41,9 +41,9 @@ describe('WordlistReview', () => {
   // connection: card B is never shown, and A's schedule is written twice.
   it('grades once and skips nothing when the button is tapped twice', async () => {
     vi.mocked(listDueCards).mockResolvedValue([card('A'), card('B')])
-    let release!: (s: SrsState) => void
+    let release!: (s: GradeResult) => void
     vi.mocked(gradeCard).mockImplementation(
-      () => new Promise<SrsState>((resolve) => { release = resolve }),
+      () => new Promise<GradeResult>((resolve) => { release = resolve }),
     )
     render(<WordlistReview />)
 
@@ -53,7 +53,7 @@ describe('WordlistReview', () => {
     fireEvent.click(good)
 
     expect(gradeCard).toHaveBeenCalledTimes(1)
-    release(state('A'))
+    release({ next: state('A'), applied: true, logged: true })
     await waitFor(() => expect(screen.getByText('B')).toBeInTheDocument())
     expect(screen.queryByText(/Hết từ cần ôn/)).toBeNull()
   })
@@ -66,7 +66,7 @@ describe('WordlistReview', () => {
     vi.mocked(gradeCard).mockImplementation(async (_c, cardArg) => {
       seen.push(cardArg.id)
       const first = seen.filter((id) => id === cardArg.id).length === 1
-      return { ...state(cardArg.id), cardState: first && cardArg.id === 'A' ? 'learning' : 'review' }
+      return { next: { ...state(cardArg.id), cardState: first && cardArg.id === 'A' ? 'learning' : 'review' }, applied: true, logged: true }
     })
     render(<WordlistReview />)
 
