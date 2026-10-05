@@ -14,7 +14,7 @@ import type { DictSense } from './types'
  * run (rin) at sense 118; the eighth is bit (bite).
  */
 const LAST_POINTER_SENSE = 15
-/** Also spelled out in `lex.pointer_lemma` (supabase/migrations/0080_entries_form_of.sql),
+/** Also spelled out in `lex.pointer_lemma` (supabase/migrations/0190_form_of_lead_part_of_speech.sql),
  *  which hides forms from the level lists; test/dictionary-lemma-sql.test.ts keeps both equal. */
 export const POINTER_WORDS = [
   'simple', 'past', 'present', 'future', 'participle', 'gerund', 'comparative', 'superlative',

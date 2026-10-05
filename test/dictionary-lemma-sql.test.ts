@@ -1,11 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { POINTER_WORDS, INFLECTION_WORDS } from '@/lib/dictionary/lemma'
 
 // lex.pointer_lemma repeats lemmaFromSenses in SQL so the level lists can leave forms out.
 // A word added on one side only makes the word page and the level list disagree.
-const sql = readFileSync(join(__dirname, '..', 'supabase', 'migrations', '0080_entries_form_of.sql'), 'utf8')
+// The latest migration that defines it is the one production runs.
+const dir = join(__dirname, '..', 'supabase', 'migrations')
+const latest = readdirSync(dir).filter((f) => f.endsWith('.sql')).sort()
+  .filter((f) => readFileSync(join(dir, f), 'utf8').includes('function lex.pointer_lemma')).at(-1)
+const sql = readFileSync(join(dir, latest ?? ''), 'utf8')
 // Adjacent string literals separated by a newline are one literal in Postgres.
 const joined = sql.replace(/'\s*\n\s*'/g, '')
 
