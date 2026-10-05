@@ -71,7 +71,7 @@ export async function getCachedSearch(q: string, langs: LangCode[], direction: D
  *  fetches only, so the POST `relation_senses` RPC went out twice per cold page. */
 export const getCachedEntryDetail = cache(unstable_cache(
   (entryId: string): Promise<DictEntryDetail | null> => getEntryDetail(createContentClient(), entryId),
-  ['dict-entry-detail-v8'],
+  ['dict-entry-detail-v9'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 ))
 

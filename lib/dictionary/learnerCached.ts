@@ -12,7 +12,7 @@ import { getLearnerBacklinks, getLearnerLayer, type LearnerBacklink, type Learne
 // a change to what `parseLearnerLayer` returns bumps the version.
 const cachedLayer = unstable_cache(
   (entryId: string): Promise<LearnerLayer | null> => getLearnerLayer(createContentClient(), entryId),
-  ['dict-learner-layer-v5'],
+  ['dict-learner-layer-v6'],
   { revalidate: LEX_REVALIDATE, tags: ['lex'] },
 )
 

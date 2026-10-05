@@ -6,6 +6,7 @@ import { entryPivots, cleanGlossTerm } from './crosslang'
 import { DETAIL_SELECT } from './entrySelect'
 import { searchAllLanguagesVi } from './search'
 import { LANG_CODES, type LangCode } from '@/lib/languages'
+import { isOpenLicence } from './licence'
 
 /** Everything the entry detail page needs beyond the preview: senses, pronunciations,
  *  examples, relations, cross-language siblings, inflections and Han character info. */
@@ -60,7 +61,7 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
     supabase
       .schema('lex')
       .from('examples')
-      .select('text, reading, translation_vi, translation_en, sense_id, source_id')
+      .select('text, reading, translation_vi, translation_en, sense_id, source_id, sources(license)')
       .eq('entry_id', entryId)
       .order('sense_id', { nullsFirst: false })
       .order('translation_vi', { nullsFirst: false })
@@ -73,7 +74,10 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
   if (ex.error) throw ex.error
   const r = entryDetailRow.parse(entry.data)
   const preview = toPreview(r)
-  const examples: DictExample[] = capExamples(exampleRow.array().parse(ex.data ?? []).map((e) => ({
+  // Only sources with an open licence (./licence). Filtered here rather than in PostgREST:
+  // no entry holds more than 297 rows, so the cap above never spends a slot on one dropped.
+  const shown = exampleRow.array().parse(ex.data ?? []).filter((e) => !e.sources || isOpenLicence(e.sources.license))
+  const examples: DictExample[] = capExamples(shown.map((e) => ({
     text: e.text, reading: e.reading, translationVi: e.translation_vi, translationEn: e.translation_en, senseId: e.sense_id,
     sourceId: e.source_id ?? null,
   })))

@@ -440,7 +440,7 @@ export function PhraseTable({ view }: { view: WordView }) {
 
 /** The datasets a derived layer's examples come from, by `lex.sources.id`. */
 const EXAMPLE_SOURCES: Record<string, string> = {
-  'wiktionary-en': 'Wiktionary', 'wiktionary-es': 'Wiktionary', tatoeba: 'Tatoeba', cambridge: 'Cambridge', oewn: 'WordNet',
+  'wiktionary-en': 'Wiktionary', 'wiktionary-es': 'Wiktionary', tatoeba: 'Tatoeba', oewn: 'WordNet',
 }
 
 /** "A", "A và B", "A, B và C". */

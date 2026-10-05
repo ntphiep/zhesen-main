@@ -79,6 +79,7 @@ export const exampleRow = z.object({
   translation_en: z.string().nullable(),
   sense_id: z.string().nullable(),
   source_id: z.string().nullable().optional(),
+  sources: z.object({ license: z.string().nullable() }).nullable().optional(),
 })
 
 export const relationRow = z.object({

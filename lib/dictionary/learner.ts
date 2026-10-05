@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from '@/lib/zod'
 import { isLangCode, type LangCode } from '@/lib/languages'
 import { splitEntryId } from './entryId'
+import { isOpenLicence } from './licence'
 
 /**
  * The learner layer of one entry (supabase/migrations/0076_learner_layer.sql): the senses a
@@ -137,6 +138,8 @@ const layerRow = z.object({
       reading: z.string().nullable(),
       vi: z.string(),
       source_example_id: z.number().nullable(),
+      /** The `lex.examples` row it was copied from, with its source's licence. */
+      examples: z.object({ sources: z.object({ license: z.string().nullable() }).nullable() }).nullable().optional(),
     })),
   })),
   learner_links: z.array(linkRow),
@@ -165,7 +168,7 @@ const LINK_COLUMNS = 'sense_order, kind, link_order, text, lang, target_entry_id
 export const LEARNER_SELECT =
   'entry_id, gist_vi, level, usage_note_vi, status, ' +
   'learner_senses(sense_order, pos, vi_terms, vi_definition, en_definition, domain, register, cefr, source_sense_ids, ' +
-  'learner_examples(example_order, text, reading, vi, source_example_id)), ' +
+  'learner_examples(example_order, text, reading, vi, source_example_id, examples(sources(license)))), ' +
   `learner_links(${LINK_COLUMNS}), ` +
   'sense_labels(sense_id, core_sense_order, vi_terms, domain, register, is_inflection, lemma, lemma_entry_id)'
 
@@ -228,7 +231,9 @@ export function parseLearnerLayer(raw: unknown): LearnerLayer {
       register: s.register,
       cefr: cefr(s.cefr),
       sourceSenseIds: s.source_sense_ids,
-      examples: [...s.learner_examples].sort((a, b) => a.example_order - b.example_order).map((x) => ({
+      // A sentence copied verbatim from a source without an open licence is not shown.
+      examples: s.learner_examples.filter((x) => !x.examples?.sources || isOpenLicence(x.examples.sources.license))
+        .sort((a, b) => a.example_order - b.example_order).map((x) => ({
         text: x.text, reading: x.reading, vi: x.vi, sourceExampleId: x.source_example_id,
         byModel: x.source_example_id === null, sourceId: null,
       })),
