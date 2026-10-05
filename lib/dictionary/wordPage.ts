@@ -14,7 +14,6 @@ import type { LangCode } from '@/lib/languages'
  */
 
 export const SHOWN_SENSES = 5
-export const SHOWN_EXAMPLES = 3
 /** Sentences "Ví dụ khác" can list after expanding. */
 export const MAX_OTHER_EXAMPLES = 6
 /** Words a related-words list carries. take has 249 synonyms, and every item is
