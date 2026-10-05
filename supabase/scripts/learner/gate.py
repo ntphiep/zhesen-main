@@ -7,7 +7,7 @@ three judges, of three families and vendors disjoint from each other and from th
 reviewer, reads each sampled layer beside its raw entry; a layer two judges reject is a defect
 (https://arxiv.org/abs/2404.18796). A lot whose defect rate exceeds DEFECT_THRESHOLD is hidden through
 admin.learner_set_status, after its rows are backed up to S3. Each lot writes a report to
-GATE_DIR/<lang>_<week>_<writer>.json, which also names HUMAN_SAMPLE layers for a person to read.
+GATE_DIR/<lang>_<week>_<writer>.json (GATE_DIR/dry/ on a dry run), which also names HUMAN_SAMPLE layers for a person to read.
 
 usage:
   gate.py run [--lang en,es,zh] [--weeks 2026-W40,...] [--workers N] [--dry-run]
@@ -162,8 +162,10 @@ def cmd_run(a):
     version = {r['entry_id']: r['prompt_version'] for r in rows}
     langs = set(a.lang.split(','))
     todo = {k: v for k, v in lots(rows, set(a.weeks.split(',')) if a.weeks else None).items() if k[1] in langs}
-    os.makedirs(GATE_DIR, exist_ok=True)
-    todo = {k: v for k, v in todo.items() if not os.path.exists(os.path.join(GATE_DIR, report_name(k)))}
+    # A dry run's reports stay apart, so they never stand in for a lot's real decision.
+    reports = os.path.join(GATE_DIR, 'dry') if a.dry_run else GATE_DIR
+    os.makedirs(reports, exist_ok=True)
+    todo = {k: v for k, v in todo.items() if not os.path.exists(os.path.join(reports, report_name(k)))}
     L.log(f'{len(todo)} lots to judge')
     pool = L.Pool(a.models.split(',') if a.models else None)
     for key, ids in sorted(todo.items(), key=lambda kv: -len(kv[1])):
@@ -188,7 +190,7 @@ def cmd_run(a):
         if fail and not a.dry_run:
             out['hidden'], out['backup'] = hide(ids, f'gate {"/".join(key)}: {len(defects)} of {len(judged)} defective')
         if judged:
-            with open(os.path.join(GATE_DIR, report_name(key)), 'w') as fh:
+            with open(os.path.join(reports, report_name(key)), 'w') as fh:
                 json.dump(out, fh, ensure_ascii=False, indent=1)
         L.log('lot', '/'.join(key), f'{len(defects)}/{len(judged)} defective', decision)
     if not a.dry_run:

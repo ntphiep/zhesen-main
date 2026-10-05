@@ -553,6 +553,8 @@ class Pool:
                 last = self.refused(model, e)
             else:
                 self.record(model, True)
+                # With the rest lines, the answer rate per provider that the deploy check reads.
+                log('answer', model)
                 return model, answer, round(time.time() - t, 1)
             finally:
                 with LOCK:
