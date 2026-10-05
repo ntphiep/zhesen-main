@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { callAi } from '@/lib/ai/browser'
 import { useAiEnabled } from '@/lib/hooks/useAiEnabled'
-import { searchPath } from '@/lib/dictionary/entryId'
+import { entryPath, searchPath } from '@/lib/dictionary/entryId'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import type { SuggestOutput } from '@/lib/ai/tasks'
 import type { LangCode } from '@/lib/languages'
@@ -78,16 +78,19 @@ export function AiSuggest({ query, direction, targets }: {
     return <p className="text-sm text-(--zs-soft)">AI cũng không nghĩ ra từ nào.</p>
   }
 
+  // The route keeps only words the dictionary has, with its gloss; without the lookup the
+  // words are the model's alone.
+  const checked = state.words.every((w) => w.entryId)
   return (
     <div className={`${s.rise} flex flex-col gap-2 rounded-[18px] bg-(--tint-2) p-3`}>
       <span className="px-2 text-xs font-bold tracking-[0.02em] text-(--zs-soft)">
-        AI gợi ý, chưa qua từ điển
+        {checked ? 'AI gợi ý, nghĩa theo từ điển' : 'AI gợi ý, chưa qua từ điển'}
       </span>
       <ul className="flex flex-col gap-1">
         {state.words.map((w) => (
           <li key={`${w.lang}:${w.headword}`}>
             <Link
-              href={searchPath(w.lang, w.headword)}
+              href={w.entryId ? entryPath(w.entryId) : searchPath(w.lang, w.headword)}
               prefetch={false}
               className="group flex flex-wrap items-baseline gap-2 rounded-xl px-2 py-1 transition-colors duration-150 ease-std hover:bg-(--zs-bg)"
             >

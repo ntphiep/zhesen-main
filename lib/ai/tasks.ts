@@ -1,6 +1,7 @@
 import { z } from '@/lib/zod'
 import { isLangCode, type LangCode } from '@/lib/languages'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
+import { markHeadword } from '@/lib/dictionary/learner'
 
 /**
  * The assistant's whole surface: one task per row, each a schema in and out. Both
@@ -11,6 +12,14 @@ import { LANG_LABELS } from '@/lib/dictionary/labels'
 /** Trim and cap free text arriving from the browser; a wordlist word is short. */
 const shortText = z.string().trim().min(1).max(120)
 const langCode = z.string().refine(isLangCode, 'unsupported language code').transform((v) => v as LangCode)
+
+const CEFR = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const
+
+/** Whether a sentence uses the word: the headword, a listed form, or for English and
+ *  Spanish a regular ending on its stem, as the word page sets them in bold. */
+export function mentions(text: string, headword: string, lang: LangCode, forms: string[] = []): boolean {
+  return markHeadword(text, headword, lang, forms).some((p) => p.mark)
+}
 
 // ---------------------------------------------------------------- enrich
 
@@ -23,7 +32,8 @@ export const enrichOutput = z.object({
   meaningVi: z.string().max(300),
   ipa: z.string().max(120),
   pos: z.string().max(60),
-  level: z.string().max(10),
+  /** Anything outside the six is no level at all, not a failed answer. */
+  level: z.enum(CEFR).nullable().catch(null),
   example: z.string().max(400),
   exampleVi: z.string().max(400),
 })
@@ -79,6 +89,8 @@ export const suggestOutput = z.object({
     lang: langCode,
     headword: z.string().max(80),
     meaningVi: z.string().max(200),
+    /** Set by the route once the dictionary has the word; `meaningVi` is then its gloss. */
+    entryId: z.string().max(200).optional(),
   })).max(6).transform((xs) => uniqueBy(xs, (w) => `${w.lang}:${w.headword}`)),
 })
 
@@ -172,9 +184,10 @@ export interface TaskSpec<I, O> {
   maxTokens: number
   system: string
   prompt: (input: I) => string
-  /** What the shape cannot say: checks the answer against the input it answers, and
-   *  returns it trimmed to what holds, or null to refuse it whole. */
-  check?: (output: O, input: I) => O | null
+  /** What the shape cannot say: checks the answer against the input it answers and the
+   *  headword's inflected forms the route found, and returns it trimmed to what holds, or
+   *  null to refuse it whole. */
+  check?: (output: O, input: I, forms: string[]) => O | null
   /** Present when the model answers in plain text rather than JSON, which is what lets
    *  the route stream it; turns the whole text into what `output` checks. */
   fromText?: (text: string) => unknown
@@ -200,6 +213,13 @@ export const TASKS = {
         ' "exampleVi": bản dịch tiếng Việt của chính câu ví dụ đó, KHÔNG phải nghĩa của từ}',
         examLine(lang),
       ].filter(Boolean).join('\n'),
+    // An example without the word teaches nothing about it, and its translation goes with it.
+    // Chinese is levelled by HSK, so a CEFR guess for it is dropped, as the learner layer does.
+    check: (out, { lang, headword }, forms) => {
+      const levelled = lang === 'zh' ? { ...out, level: null } : out
+      return levelled.example && !mentions(levelled.example, headword, lang, forms)
+        ? { ...levelled, example: '', exampleVi: '' } : levelled
+    },
   } satisfies TaskSpec<z.infer<typeof enrichInput>, EnrichOutput>,
 
   coach: {
@@ -218,6 +238,8 @@ export const TASKS = {
         ' "confusables": mảng tối đa 3 phần tử {"word": từ dễ nhầm, "note": khác nhau chỗ nào}}',
         examLine(lang),
       ].filter(Boolean).join('\n'),
+    check: (out, { lang, headword }, forms) =>
+      ({ ...out, examples: out.examples.filter((e) => mentions(e.text, headword, lang, forms)) }),
   } satisfies TaskSpec<z.infer<typeof coachInput>, CoachOutput>,
 
   /** The way out of an empty search: the dictionary matches text, so a learner who knows
@@ -303,8 +325,8 @@ export interface ErasedTask {
   promptFor(input: unknown): string | null
   /** The model's answer, or null when it is not the promised shape. */
   parseOutput(value: unknown): unknown | null
-  /** `parseOutput` plus the task's `check` against this input. */
-  parserFor(input: unknown): (value: unknown) => unknown | null
+  /** `parseOutput` plus the task's `check` against this input and these forms. */
+  parserFor(input: unknown, forms?: string[]): (value: unknown) => unknown | null
   /** See `TaskSpec.fromText`. */
   fromText?: (text: string) => unknown
   /** See `TaskSpec.maxChars`. */
@@ -323,12 +345,12 @@ function erase<I, O>(spec: TaskSpec<I, O>): ErasedTask {
       const parsed = spec.output.safeParse(value)
       return parsed.success ? parsed.data : null
     },
-    parserFor(input) {
+    parserFor(input, forms = []) {
       const asked = spec.input.safeParse(input)
       return (value) => {
         const parsed = spec.output.safeParse(value)
         if (!parsed.success) return null
-        return asked.success && spec.check ? spec.check(parsed.data, asked.data) : parsed.data
+        return asked.success && spec.check ? spec.check(parsed.data, asked.data, forms) : parsed.data
       }
     },
     fromText: spec.fromText,

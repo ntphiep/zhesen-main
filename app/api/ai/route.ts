@@ -1,6 +1,7 @@
 import { aiConfig } from '@/lib/ai/config'
 import type { AiConfig } from '@/lib/ai/config'
-import { askJson, streamText, AiUnavailableError } from '@/lib/ai/client'
+import { askJsonFrom, streamText, AiUnavailableError } from '@/lib/ai/client'
+import { prepareJob, type Job } from '@/lib/ai/jobs'
 import { ERASED_TASKS, isTaskName, type ErasedTask } from '@/lib/ai/tasks'
 import { z } from '@/lib/zod'
 import { clientKey, createRateLimiter } from '@/lib/http/rateLimit'
@@ -82,13 +83,13 @@ function logFailure(task: string, e: unknown, status: number): void {
  * The status is already 200 by the time the model can fail, hence the error line.
  */
 async function streamed(
-  task: string, cfg: AiConfig, spec: ErasedTask, fromText: (text: string) => unknown, user: string,
+  task: string, cfg: AiConfig, spec: ErasedTask, fromText: (text: string) => unknown, job: Job,
   signal: AbortSignal,
 ): Promise<Response> {
   // The browser going away cancels the body; that has to stop the model call too.
   const gone = new AbortController()
   const pieces = await streamText(cfg, {
-    system: spec.system, user, maxTokens: spec.maxTokens, signal: AbortSignal.any([signal, gone.signal]),
+    system: job.system, user: job.user, maxTokens: spec.maxTokens, signal: AbortSignal.any([signal, gone.signal]),
   })
   const encoder = new TextEncoder()
   const line = (value: unknown) => encoder.encode(`${JSON.stringify(value)}\n`)
@@ -168,8 +169,8 @@ export async function POST(request: Request) {
 
   const task = envelope.data.task
   const spec = ERASED_TASKS[task]
-  const prompt = spec.promptFor(envelope.data.input)
-  if (prompt === null) {
+  const job = await prepareJob(task, envelope.data.input)
+  if (job === null) {
     return Response.json({ error: 'Dữ liệu đầu vào không hợp lệ.' }, { status: 400 })
   }
 
@@ -199,15 +200,15 @@ export async function POST(request: Request) {
   // The browser leaving, Dừng included, stops the model call as the deadline does.
   const signal = AbortSignal.any([request.signal, AbortSignal.timeout(TIMEOUT_MS)])
   try {
-    if (spec.fromText) return await streamed(task, cfg, spec, spec.fromText, prompt, signal)
-    const data = await askJson(cfg, {
-      system: spec.system,
-      user: prompt,
-      parse: spec.parserFor(envelope.data.input),
+    if (spec.fromText) return await streamed(task, cfg, spec, spec.fromText, job, signal)
+    const { value, model } = await askJsonFrom(cfg, {
+      system: job.system,
+      user: job.user,
+      parse: job.parse,
       maxTokens: spec.maxTokens,
       signal,
     })
-    return Response.json({ data })
+    return Response.json({ data: job.finish ? await job.finish(value, model) : value })
   } catch (e) {
     // Next aborts request.signal with ResponseAborted once the tab is gone: nobody to answer.
     if (request.signal.aborted) return new Response(null, { status: 499 })

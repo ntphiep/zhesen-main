@@ -21,3 +21,13 @@ describe('AiSuggest in a lookup box', () => {
     expect(callAi).toHaveBeenCalledWith('suggest', { query: 'cơm', direction: 'vi', targets: ['zh'] })
   })
 })
+
+describe('AiSuggest with checked words', () => {
+  it('links a word the dictionary has to its entry and says the meaning is the dictionary one', async () => {
+    vi.mocked(callAi).mockResolvedValue({ status: 'ok', data: { words: [{ lang: 'zh', headword: '饭', meaningVi: 'cơm', entryId: 'zh:饭' }] } })
+    render(<AiSuggest query="cơm" direction="vi" targets={['zh']} />)
+    await userEvent.click(await screen.findByRole('button', { name: /Hỏi AI/i }))
+    expect(await screen.findByRole('link', { name: /饭/ })).toHaveAttribute('href', `/dictionary/zh/${encodeURIComponent('饭')}`)
+    expect(screen.getByText('AI gợi ý, nghĩa theo từ điển')).toBeInTheDocument()
+  })
+})
