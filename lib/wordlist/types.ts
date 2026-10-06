@@ -15,9 +15,9 @@ export const STATUS_LABELS: Record<WordStatus, string> = {
  *  threshold, now that a lapse counts only a failure in Review state, not in-session repeats. */
 export const LEECH_LAPSES = 8
 
-/** Shown wherever a learner can set "Đã biết": the word is suspended from every queue,
- *  count and forecast until its status changes. */
-export const KNOWN_HINT = 'Bỏ khỏi mọi phiên ôn và luyện tập. Chọn trạng thái khác để ôn lại.'
+/** Shown wherever a learner can set "Đã biết": the word leaves the review queue, its counts and
+ *  the forecast until its status changes. Quiz, match, typing and speaking still use it (owner). */
+export const KNOWN_HINT = 'Bỏ khỏi phiên ôn. Chọn trạng thái khác để ôn lại.'
 
 /** Entries of STATUS_LABELS with the key still typed, for rendering option lists. */
 export const STATUS_OPTIONS = Object.entries(STATUS_LABELS) as [WordStatus, string][]
