@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react'
 import type { LangCode } from '@/lib/languages'
 import { isDueAt } from '@/lib/wordlist/format'
-import { LEECH_LAPSES, type UserWord, type WordStatus } from '@/lib/wordlist/types'
+import { KIND_LABEL, LEECH_LAPSES, WORD_KINDS, wordKind, type UserWord, type WordKind, type WordStatus } from '@/lib/wordlist/types'
 import { posGroups, splitPos, type PosGroup } from '@/lib/dictionary/pos'
 import { columnValue, type SortKey } from '@/lib/wordlist/columns'
 import { useStoredView, type ViewMode } from './useStoredView'
@@ -72,6 +72,8 @@ export function useWordlistFilters(words: UserWord[]) {
   // CEFR or HSK band, and part of speech.
   const [levelFilter, setLevelFilter] = useState('')
   const [posFilter, setPosFilter] = useState('')
+  // A word, a phrasal verb, an idiom, a collocation or another phrase.
+  const [kindFilter, setKindFilter] = useState<WordKind | ''>('')
   const [sortKey, setSortKey] = useState<SortKey>('createdAt')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [view, toggleView] = useStoredView()
@@ -88,6 +90,7 @@ export function useWordlistFilters(words: UserWord[]) {
       // Matches on any of the word's parts of speech: a word that is both a noun and a
       // verb belongs in both filters.
       if (posFilter && !posGroups(splitPos(w.pos)).some((g) => g.key === posFilter)) return false
+      if (kindFilter && wordKind(w) !== kindFilter) return false
       if (reviewFilter === 'due' && (w.status === 'known' || !isDueAt(w.fsrsDueAt))) return false
       if (reviewFilter === 'leech' && w.fsrsLapses < LEECH_LAPSES) return false
       return true
@@ -102,7 +105,7 @@ export function useWordlistFilters(words: UserWord[]) {
     })
 
     return list
-  }, [words, query, langFilter, statusFilter, tagFilter, reviewFilter, levelFilter, posFilter, sortKey, sortDir])
+  }, [words, query, langFilter, statusFilter, tagFilter, reviewFilter, levelFilter, posFilter, kindFilter, sortKey, sortDir])
 
   // The options offered are the values the list actually holds: a wordlist with no Spanish
   // verbs must not offer to filter for them.
@@ -114,6 +117,11 @@ export function useWordlistFilters(words: UserWord[]) {
     const byKey = new Map<string, PosGroup>()
     for (const w of words) for (const g of posGroups(splitPos(w.pos))) byKey.set(g.key, g)
     return [...byKey.values()].sort((a, b) => a.labelVi.localeCompare(b.labelVi, 'vi'))
+  }, [words])
+
+  const kindOptions = useMemo(() => {
+    const held = new Set(words.map(wordKind))
+    return WORD_KINDS.filter((k) => held.has(k)).map((k) => ({ key: k, label: KIND_LABEL[k] }))
   }, [words])
 
   function toggleSort(key: SortKey) {
@@ -140,6 +148,7 @@ export function useWordlistFilters(words: UserWord[]) {
     reviewFilter, setReviewFilter,
     levelFilter, setLevelFilter, levelOptions,
     posFilter, setPosFilter, posOptions,
+    kindFilter, setKindFilter, kindOptions,
     tagFilter, toggleTagFilter,
     sortKey, sortDir, toggleSort,
     view, toggleView,

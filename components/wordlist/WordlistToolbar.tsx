@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { LANGUAGES, type LangCode } from '@/lib/languages'
 import type { ReviewFilter, ViewMode } from '@/lib/hooks/useWordlistFilters'
-import { STATUS_OPTIONS, type WordStatus } from '@/lib/wordlist/types'
+import { STATUS_OPTIONS, type WordKind, type WordStatus } from '@/lib/wordlist/types'
 import type { PosGroup } from '@/lib/dictionary/pos'
 import s from './Wordlist.module.css'
 
@@ -21,6 +21,9 @@ interface Props {
   posFilter: string
   onPosFilterChange: (p: string) => void
   posOptions: PosGroup[]
+  kindFilter: WordKind | ''
+  onKindFilterChange: (k: WordKind | '') => void
+  kindOptions: { key: WordKind; label: string }[]
   view: ViewMode
   onViewChange: (v: ViewMode) => void
   onAddClick: () => void
@@ -35,7 +38,8 @@ interface Props {
 export function WordlistToolbar({
   query, onQueryChange, langFilter, onLangFilterChange, statusFilter, onStatusFilterChange,
   reviewFilter, onReviewFilterChange,
-  levelFilter, onLevelFilterChange, levelOptions, posFilter, onPosFilterChange, posOptions, view, onViewChange, onAddClick, onExportCsv, onExportAnki, onImportClick,
+  levelFilter, onLevelFilterChange, levelOptions, posFilter, onPosFilterChange, posOptions,
+  kindFilter, onKindFilterChange, kindOptions, view, onViewChange, onAddClick, onExportCsv, onExportAnki, onImportClick,
   columnControls,
 }: Props) {
   const [exportOpen, setExportOpen] = useState(false)
@@ -103,6 +107,19 @@ export function WordlistToolbar({
         >
           <option value="">Tất cả trình độ</option>
           {levelOptions.map((l) => <option key={l} value={l}>{l}</option>)}
+        </select>
+      )}
+
+      {/* Phrasal verbs, idioms and collocations are saved beside words. */}
+      {kindOptions.length > 1 && (
+        <select
+          value={kindFilter}
+          onChange={(e) => onKindFilterChange(kindOptions.find((o) => o.key === e.target.value)?.key ?? '')}
+          className={s.field}
+          aria-label="Lọc loại mục"
+        >
+          <option value="">Từ và cụm từ</option>
+          {kindOptions.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
         </select>
       )}
 

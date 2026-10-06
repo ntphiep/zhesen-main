@@ -27,6 +27,7 @@ export function parseUserWordRow(r: unknown): UserWord {
     notes: x.notes, status: x.status, tags: x.tags, createdAt: x.created_at, updatedAt: x.updated_at,
     fsrsDueAt: x.fsrs_due_at, fsrsLapses: x.fsrs_lapses,
     ...(aiFields.length > 0 && { aiFields }),
+    ...(x.kind && { kind: x.kind }),
   }
 }
 

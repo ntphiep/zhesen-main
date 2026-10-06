@@ -21,8 +21,8 @@ import { EditWordDialog } from '@/components/wordlist/EditWordDialog'
 import { ImportCsvDialog } from '@/components/wordlist/ImportCsvDialog'
 import { WordDetail } from '@/components/wordlist/WordDetail'
 import { TagChips, WordRowActions } from '@/components/wordlist/WordRowActions'
-import { AudioButton, SourceLink } from '@/components/ui/AudioButton'
-import { STATUS_LABELS, type UserWord, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
+import { AudioButton } from '@/components/ui/AudioButton'
+import { KIND_LABEL, STATUS_LABELS, wordKind, type UserWord, type WordDraft, type WordStatus } from '@/lib/wordlist/types'
 import { Ipa } from '@/components/ui/Ipa'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { NoticeBar, useNotice } from '@/components/ui/Notice'
@@ -51,6 +51,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
     query, setQuery, langFilter, setLangFilter, statusFilter, setStatusFilter,
     reviewFilter, setReviewFilter, tagFilter, toggleTagFilter,
     levelFilter, setLevelFilter, levelOptions, posFilter, setPosFilter, posOptions,
+    kindFilter, setKindFilter, kindOptions,
     sortKey, sortDir, toggleSort, view, toggleView, visible,
   } = useWordlistFilters(words)
 
@@ -63,7 +64,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
   // for every combination, so the reader would stay on page 7 of a filter that now
   // returns one page.
   const filterSignature =
-    `${query}|${langFilter}|${statusFilter}|${reviewFilter}|${levelFilter}|${posFilter}|${[...tagFilter].join(',')}|${sortKey}|${sortDir}`
+    `${query}|${langFilter}|${statusFilter}|${reviewFilter}|${levelFilter}|${posFilter}|${kindFilter}|${[...tagFilter].join(',')}|${sortKey}|${sortDir}`
   // 400+ rows for a real learner, each mounting an audio button and a row-actions group.
   // Selection and export still use the full filtered set, not the page on screen.
   const paged = usePagedList(visible, filterSignature)
@@ -312,6 +313,9 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         posFilter={posFilter}
         onPosFilterChange={setPosFilter}
         posOptions={posOptions}
+        kindFilter={kindFilter}
+        onKindFilterChange={setKindFilter}
+        kindOptions={kindOptions}
         view={view}
         onViewChange={toggleView}
         onAddClick={() => setAddOpen(true)}
@@ -392,7 +396,6 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                   <span className="inline-flex items-center gap-1">
                     {w.level && <span className={s.level}>{w.level}</span>}
                     <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
-                    <SourceLink url={w.audioUrl} />
                   </span>
                 </div>
 
@@ -400,6 +403,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
                 <div className={s.line}>
                   {/* Chinese keeps its pinyin in `ipa` unless the entry gave a separate reading. */}
                   <Ipa value={w.reading || w.ipa} lang={w.lang} />
+                  {wordKind(w) !== 'word' && <span className={s.pron}>{KIND_LABEL[wordKind(w)]}</span>}
                   <PosTag value={w.pos} />
                 </div>
                 {w.meaningVi && <p className={s.mean}>{w.meaningVi}</p>}

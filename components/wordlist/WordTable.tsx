@@ -2,12 +2,12 @@
 import { Fragment, useRef, useState } from 'react'
 import { PosTag } from '@/components/ui/PosTag'
 import { Ipa } from '@/components/ui/Ipa'
-import { AudioButton, SourceLink } from '@/components/ui/AudioButton'
+import { AudioButton } from '@/components/ui/AudioButton'
 import { TagChips, WordRowActions } from '@/components/wordlist/WordRowActions'
 import { WordDetail } from '@/components/wordlist/WordDetail'
 import { formatWordDate, isDueAt, DUE_LABEL } from '@/lib/wordlist/format'
 import { LANGUAGES } from '@/lib/languages'
-import { STATUS_LABELS, type UserWord } from '@/lib/wordlist/types'
+import { KIND_LABEL, STATUS_LABELS, wordKind, type UserWord } from '@/lib/wordlist/types'
 import { clampWidth, MAX_COLUMN_WIDTH, MAX_PINNED_WIDTH, MIN_COLUMN_WIDTH, type ColumnDef, type ColumnKey } from '@/lib/wordlist/columns'
 import { useNarrowViewport } from '@/lib/hooks/useNarrowViewport'
 import type { SortDir, SortKey } from '@/lib/hooks/useWordlistFilters'
@@ -285,7 +285,15 @@ function Cell({ word: w, column }: { word: UserWord; column: ColumnKey }) {
     case 'headword': return <span className={s.hw} data-l={w.lang} lang={w.lang}>{w.headword}</span>
     case 'lang': return <span className={s.lang} data-l={w.lang}>{LANG_NAME.get(w.lang) ?? w.lang}</span>
     case 'ipa': return <Ipa value={w.ipa} lang={w.lang} className={s.pron} />
-    case 'pos': return <PosTag value={w.pos} className={s.pron} />
+    case 'pos': {
+      const kind = wordKind(w)
+      return (
+        <span className={`inline-flex flex-wrap items-baseline gap-x-1.5 ${s.pron}`}>
+          {kind !== 'word' && <span className="whitespace-nowrap">{KIND_LABEL[kind]}</span>}
+          <PosTag value={w.pos} />
+        </span>
+      )
+    }
     case 'meaningVi': return <span className="font-semibold">{w.meaningVi ?? ''}</span>
     case 'meaningEn': return <span className={s.pron}>{w.meaningEn ?? ''}</span>
     case 'level': return w.level ? <span className={s.level}>{w.level}</span> : null
@@ -302,11 +310,6 @@ function Cell({ word: w, column }: { word: UserWord; column: ColumnKey }) {
       )
     case 'fsrsLapses': return <span className={s.pron}>{w.fsrsLapses}</span>
     case 'audio':
-      return (
-        <span className="inline-flex items-center gap-1 whitespace-nowrap">
-          <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
-          <SourceLink url={w.audioUrl} />
-        </span>
-      )
+      return <AudioButton text={w.headword} lang={w.lang} audioUrl={w.audioUrl} />
   }
 }

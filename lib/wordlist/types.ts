@@ -27,6 +27,23 @@ export const STATUS_OPTIONS = Object.entries(STATUS_LABELS) as [WordStatus, stri
 export const AI_FIELDS = ['meaningVi', 'ipa', 'pos', 'level', 'example', 'exampleTranslation'] as const
 export type AiField = (typeof AI_FIELDS)[number]
 
+/** What a saved item is, set by the database from its headword and entry (migration 0195). */
+export const WORD_KINDS = ['word', 'phrasal_verb', 'idiom', 'collocation', 'phrase'] as const
+export type WordKind = (typeof WORD_KINDS)[number]
+
+export const KIND_LABEL: Record<WordKind, string> = {
+  word: 'Từ',
+  phrasal_verb: 'Cụm động từ',
+  idiom: 'Thành ngữ',
+  collocation: 'Kết hợp từ',
+  phrase: 'Cụm từ',
+}
+
+/** A row read before migration 0195 has no kind: a headword with a space is a phrase. */
+export function wordKind(w: Pick<UserWord, 'kind' | 'headword'>): WordKind {
+  return w.kind ?? (w.headword.trim().includes(' ') ? 'phrase' : 'word')
+}
+
 export interface UserWord {
   id: string
   lang: LangCode
@@ -54,6 +71,7 @@ export interface UserWord {
   fsrsLapses: number
   /** Absent when no field came from the assistant. */
   aiFields?: AiField[]
+  kind?: WordKind
 }
 
 /** Where a dictionary entry stands in the reader's notebook: saved and still being learnt,
@@ -116,4 +134,5 @@ export const userWordRow = z.object({
   fsrs_lapses: z.number(),
   /** Column names; absent before migration 0182. */
   ai_fields: z.array(z.string()).nullish(),
+  kind: z.enum(WORD_KINDS).nullish(),
 })

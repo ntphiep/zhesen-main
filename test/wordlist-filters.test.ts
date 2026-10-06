@@ -139,6 +139,23 @@ describe('useWordlistFilters', () => {
   })
 
   // A word the pipeline never graded is not "before A1"; it belongs last either way.
+  it('filters by kind, reading a missing kind from the headword', () => {
+    const words = [
+      mk('give up', { kind: 'phrasal_verb' }),
+      mk('on the spot', { kind: 'idiom' }),
+      mk('spot'),
+      mk('heavy rain'),
+    ]
+    const { result } = renderHook(() => useWordlistFilters(words))
+    expect(result.current.kindOptions.map((o) => o.label)).toEqual(['Từ', 'Cụm động từ', 'Thành ngữ', 'Cụm từ'])
+
+    act(() => result.current.setKindFilter('idiom'))
+    expect(result.current.visible.map((w) => w.id)).toEqual(['on the spot'])
+
+    act(() => result.current.setKindFilter('phrase'))
+    expect(result.current.visible.map((w) => w.id)).toEqual(['heavy rain'])
+  })
+
   it('sorts by level and keeps ungraded words at the end', () => {
     const words = [mk('none', { level: null }), mk('b1', { level: 'B1' }), mk('a1', { level: 'A1' })]
     const { result } = renderHook(() => useWordlistFilters(words))
