@@ -141,7 +141,7 @@ file (Settings, Database, or `PATCH /api/settings/database`): call logs 2 days, 
 and compression analytics 3, usage history 30. OmniRoute's defaults are 90, 90, 30 and 365, and
 its cleanup runs every 6 hours with a `VACUUM` after it. OmniRoute answers every call 503
 ("resource pressure") once its cgroup passes 92% of the 1,400 MB limit, and the cgroup counts
-page cache, so `zhesen-omni-reclaim.timer` runs `bin/omni-reclaim.sh` every 2 minutes to reclaim
+page cache, so `zhesen-omni-reclaim.timer` runs `bin/omni-reclaim.sh` every minute to reclaim
 it. Install it like the reminder units below, with `zhesen-omni-reclaim.service` and `.timer`.
 
 Batch jobs: the learner, enrich and glossfix jobs in `supabase/scripts/` run on the instance as

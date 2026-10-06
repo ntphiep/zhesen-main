@@ -1,11 +1,11 @@
-# Every 2 minutes: under the batch jobs the cache grew 43 MB a minute (2026-10-06), and the
-# guard trips at 1,288 MB of the 1,400 MB limit with 600 to 900 MB of it anon memory.
+# Every minute: under the batch jobs the cgroup climbed from 764 MB to 1,251 MB between two runs
+# 2 minutes apart (2026-10-06), and the guard trips at 1,288 MB of the 1,400 MB limit.
 [Unit]
-Description=Reclaim OmniRoute page cache every 2 minutes
+Description=Reclaim OmniRoute page cache every minute
 
 [Timer]
-OnCalendar=*:0/2
-AccuracySec=15s
+OnCalendar=minutely
+AccuracySec=5s
 
 [Install]
 WantedBy=timers.target
