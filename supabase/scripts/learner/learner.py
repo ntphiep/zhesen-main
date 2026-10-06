@@ -209,14 +209,14 @@ PER_PROVIDER = 4
 # batch leaves their members' quota to readers. The one DeepSeek web login backs the OmniRoute
 # combo and revokes its token past about 6 calls at once, so the batch never calls it.
 PROVIDER_LIMIT = {'omni:ds-web': 0}
-# The members of both combos on 2026-10-05 14:52 UTC.
+# The members of both combos on 2026-10-06 04:21 UTC.
 RESERVED = {'gemini/gemini-3.8-flash', 'gemini/gemini-3.7-flash', 'gemini/gemini-3.6-flash',
             'ag/gemini-3.8-flash', 'ag/gemini-3.8-flash-low', 'ag/gpt-oss-120b-medium',
+            'opencode/space-bunny-free', 'opencode-zen/space-bunny-free',
             'antigravity/gemini-3.8-flash-tiered', 'antigravity/gemini-3.7-flash-medium',
-            'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free', 'openrouter/qwen/qwen3.8-27b:free',
             'ds-web/deepseek-v4-pro', 'ds-web/deepseek-v4-flash'}
-# OpenRouter counts free-model calls per account, 50 a day here, and the site's fallback spends
-# them: 54 answered on 2026-10-05, then "free-models-per-day" from 00:35 UTC. A ":free" id, or its
+# OpenRouter counts free-model calls per account, 50 a day here: 54 answered on 2026-10-05,
+# then "free-models-per-day" from 00:35 UTC. A ":free" id, or its
 # OmniRoute variants such as ":free-high", is never the batch's.
 FREE_TIER = re.compile(r':free(-|$)')
 # A member is reserved under every provider that serves it: omni:agy/gemini-3.7-flash-medium is

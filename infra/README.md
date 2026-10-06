@@ -130,8 +130,8 @@ and keys live in `/opt/zhesen/9router/db/data.sqlite`, which the nightly backup 
 
 OmniRoute: the second model router, container `zhesen-omniroute`, asked only when 9router fails
 (`lib/ai/client.ts`). The app calls `https://<cloudfront>/omni/v1/` with an OmniRoute API key
-held in SSM `/zhesen/prod/ai_fallback_api_key` and the model `zhesen`, a combo of Antigravity's
-Gemini Flash, two OpenRouter `:free` models and DeepSeek web. Its dashboard has its own
+held in SSM `/zhesen/prod/ai_fallback_api_key` and the model `zhesen`, a combo of OpenCode's free
+`space-bunny-free`, Antigravity's Gemini Flash and DeepSeek web. Its dashboard has its own
 distribution (`terraform output omniroute_url`), guarded by OmniRoute's login; the password is
 SSM `/zhesen/prod/omniroute_password`, applied the same way as 9router's. Provider logins live
 encrypted in `/opt/zhesen/omniroute/data/storage.sqlite` under SSM
