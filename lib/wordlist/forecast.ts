@@ -103,6 +103,12 @@ export function whenLabel(ts: number, now: number): string {
   return shortDate(ts)
 }
 
+/** How long until a card on a minute step comes due, rounded up. */
+export function waitLabel(ms: number): string {
+  const min = Math.max(1, Math.ceil(ms / 60_000))
+  return min < 60 ? `${min} phút` : `${Math.ceil(min / 60)} giờ`
+}
+
 /** Where a due card stands: never graded, overdue by some days, or due today. */
 export function dueNote(reps: number, dueAt: number, now: number): string {
   if (reps === 0) return 'mới lưu, chưa ôn'

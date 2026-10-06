@@ -11,8 +11,8 @@ import { useKeyGate } from '@/lib/hooks/useKeyGate'
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion'
 import { gradeForMode, type PracticeOutcome } from '@/lib/practice/grading'
 import type { Grade, SrsState } from '@/lib/progress/types'
-import { onStep } from '@/lib/progress/srs'
-import { dueNote, whenLabel } from '@/lib/wordlist/forecast'
+import { nextShown, onStep } from '@/lib/progress/srs'
+import { dueNote, waitLabel, whenLabel } from '@/lib/wordlist/forecast'
 import { gradeWordById, type ReviewCard } from '@/lib/wordlist/review'
 import { cardBack } from '@/lib/practice/cardBack'
 import { Hw, NAME, Pron } from './HomeParts'
@@ -35,7 +35,7 @@ interface Last { card: ReviewCard; back: boolean; dueAt: number }
  * `gradeForMode('review', ...)` and `gradeWordById`, like every practice mode, and waits for
  * the write before moving on, so a lost write shows here rather than in a count that lies.
  * A card graded Lại or left on a minute step comes back at the end carrying the schedule it
- * just earned; `onGraded` says so, so `cards` holds it too when the deck mounts again after a layout switch.
+ * just earned, once its step is up; `onGraded` says so, so `cards` holds it too when the deck mounts again after a layout switch.
  */
 export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
   cards: ReviewCard[]
@@ -66,12 +66,25 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
   const goodRef = useRef<HTMLButtonElement>(null)
   const { logDay, failed } = useGradeSync(supabase)
   const settled = useKeyGate([turn, open].join(':'))
-  const current = queue[0] ?? null
+  const [clock, setClock] = useState(now)
+  // The learner chose to see a card before its minute step is up.
+  const [ahead, setAhead] = useState(false)
+  const ready = nextShown(queue, clock)
+  const soonest = queue.reduce((m, c, i) => (c.state.dueAt < queue[m].state.dueAt ? i : m), 0)
+  const wakeAt = queue.length > 0 && ready === -1 ? queue[soonest].state.dueAt : null
+  const at = ready !== -1 ? ready : ahead ? soonest : -1
+  const current = queue[at] ?? null
   const face = current ? cardBack(current) : null
 
   useEffect(() => {
     if (open) goodRef.current?.focus({ preventScroll: true })
   }, [open])
+
+  useEffect(() => {
+    if (wakeAt === null) return
+    const t = window.setTimeout(() => setClock(Date.now()), Math.max(0, wakeAt - Date.now()) + 50)
+    return () => window.clearTimeout(t)
+  }, [wakeAt])
 
   async function grade(g: (typeof GRADES)[number]) {
     if (!current || busy.current) return
@@ -96,11 +109,14 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
     if (next) onGraded(current.id, next, back)
     setLast(next ? { card: current, back, dueAt: next.dueAt } : null)
     setReviewed((n) => n + 1)
+    const idx = at
     const advance = () => {
       setQueue((q) => {
-        const rest = q.slice(1)
-        return back && next ? [...rest, { ...q[0], state: next }] : rest
+        const rest = q.filter((_, i) => i !== idx)
+        return back && next ? [...rest, { ...q[idx], state: next }] : rest
       })
+      setAhead(false)
+      setClock(Date.now())
       setOpen(false)
       setTurn((t) => t + 1)
       setAnim(reduced ? null : 'in')
@@ -165,6 +181,12 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
               </div>
             </div>
           </article>
+        ) : wakeAt !== null ? (
+          <div className={`${h.rc} ${h.done}`} data-anim={anim && reviewed ? 'in' : undefined}>
+            <b>Từ tiếp theo đến hạn sau {waitLabel(wakeAt - clock)}.</b>
+            <p>{reviewed > 0 && `Đã ôn ${reviewed} từ trong phiên này.`}</p>
+            <button type="button" className={h.btn} onClick={() => setAhead(true)}>Ôn ngay</button>
+          </div>
         ) : (
           <div className={`${h.rc} ${h.done}`} data-anim={anim && reviewed ? 'in' : undefined}>
             <b>{reviewed ? 'Hết từ cần ôn.' : total ? 'Chưa có từ đến hạn ôn hôm nay.' : 'Chưa có từ. Tra một từ để lưu.'}</b>

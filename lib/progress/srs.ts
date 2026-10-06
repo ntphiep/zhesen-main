@@ -90,6 +90,13 @@ export function onStep(s: SrsState): boolean {
   return s.cardState === 'learning' || s.cardState === 'relearning'
 }
 
+/** The queue index of the next card to show: the first not waiting out a minute step. Shown
+ *  early, again, good, good within seconds graduates a new card to a 1-day interval. -1 when
+ *  every card left is waiting. */
+export function nextShown(queue: readonly { state: SrsState }[], now: number): number {
+  return queue.findIndex((c) => !(onStep(c.state) && c.state.dueAt > now))
+}
+
 /** A brand-new card, due immediately (ts-fsrs's `createEmptyCard`). */
 export function initialSrsState(vocabId: string, now: number): SrsState {
   return fromCard(vocabId, createEmptyCard(now))
