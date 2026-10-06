@@ -1,4 +1,24 @@
 import type { LangCode } from '@/lib/languages'
+import type { ClozeGap } from './cloze'
+
+/** One typed-answer question, in any of the typing modes. */
+export interface TypingPrompt {
+  /** The saved word's id, so an answer can be recorded against its schedule. */
+  id: string
+  headword: string
+  meaningVi: string | null
+  ipa: string | null
+  audioUrl: string | null
+  lang: LangCode
+  /** Other spellings that count: pinyin and the traditional form for Chinese. */
+  accepted?: string[]
+  /** What counts as right when it is not the headword: "gave up" in a sentence, "went". */
+  answer?: string
+  /** cloze: the sentence around the gap. */
+  gap?: ClozeGap
+  /** forms: the form to type, "quá khứ đơn". */
+  cue?: string
+}
 
 /** `accent`: right letters, missing or wrong accent (Spanish) or tone (pinyin). */
 export type TypedResult = 'correct' | 'accent' | 'close' | 'wrong'

@@ -29,10 +29,10 @@ const review = (over: Partial<SrsState> = {}): SrsState => ({
 })
 
 describe('two skills', () => {
-  it('maps quiz and match to recognition, the rest to recall', () => {
+  it('maps the choice modes to recognition, the rest to recall', () => {
     expect(MODE_SKILL).toEqual({
-      quiz: 'recognition', match: 'recognition',
-      review: 'recall', write: 'recall', dictation: 'recall', speak: 'recall',
+      quiz: 'recognition', match: 'recognition', listen: 'recognition', phrase: 'recognition',
+      review: 'recall', write: 'recall', dictation: 'recall', speak: 'recall', cloze: 'recall', ipa: 'recall', forms: 'recall',
     })
   })
 

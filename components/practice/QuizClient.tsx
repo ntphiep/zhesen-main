@@ -1,17 +1,20 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { listPracticeWords, listWordEntries } from '@/lib/wordlist/store'
-import { listLearnerDistractors } from '@/lib/dictionary/learner'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { gradeForMode } from '@/lib/practice/grading'
-import { buildQuiz, type QuizQuestion } from '@/lib/practice/quiz'
+import { choiceRound, type ChoiceMode } from '@/lib/practice/rounds'
+import type { QuizQuestion } from '@/lib/practice/quiz'
 import { QuizCard } from '@/components/practice/QuizCard'
 import { Empty, Loading, Result, SessionBar, Stage } from '@/components/practice/SessionParts'
 
-const QUIZ_SIZE = 10
+const EMPTY: Record<ChoiceMode, { title: string; note: string }> = {
+  quiz: { title: 'Chưa đủ từ để kiểm tra', note: 'Lưu thêm vài từ có nghĩa tiếng Việt.' },
+  listen: { title: 'Chưa đủ từ để luyện nghe', note: 'Lưu thêm vài từ tiếng Anh hoặc tiếng Tây Ban Nha có nghĩa tiếng Việt.' },
+  phrase: { title: 'Chưa có cụm từ để luyện', note: 'Lưu thêm cụm động từ, thành ngữ hoặc kết hợp từ tiếng Anh.' },
+}
 
-export function QuizClient() {
+export function QuizClient({ mode = 'quiz' }: { mode?: ChoiceMode }) {
   const supabase = useMemo(() => createClient(), [])
   const { record: recordGrade, logDay, failed: syncFailed } = useGradeSync(supabase)
   const [questions, setQuestions] = useState<QuizQuestion[] | null>(null)
@@ -23,22 +26,9 @@ export function QuizClient() {
 
   useEffect(() => {
     let active = true
-    listPracticeWords(supabase, { needsMeaning: true })
-      .then(async (words) => {
-        // Without these reads the distractors are drawn by language only.
-        const entries = await listWordEntries(supabase, words.map((x) => x.id)).catch(() => new Map<string, { entryId: string | null; pos: string | null }>())
-        const entryIds = [...entries.values()].flatMap((e) => (e.entryId ? [e.entryId] : []))
-        const learner = await listLearnerDistractors(supabase, entryIds).catch(() => undefined)
+    choiceRound(supabase, mode)
+      .then((qs) => {
         if (!active) return
-        const qs = buildQuiz(
-          words.map((x) => ({
-            id: x.id, headword: x.headword, ipa: x.ipa, lang: x.lang, meaningVi: x.meaningVi,
-            entryId: entries.get(x.id)?.entryId ?? null, pos: entries.get(x.id)?.pos ?? null,
-          })),
-          QUIZ_SIZE,
-          Math.random,
-          learner,
-        )
         setQuestions(qs)
         setIndex(0)
         setSelected(null)
@@ -46,11 +36,11 @@ export function QuizClient() {
       })
       .catch(() => active && setQuestions([]))
     return () => { active = false }
-  }, [supabase, round])
+  }, [supabase, mode, round])
 
   if (questions === null) return <Loading />
 
-  if (questions.length === 0) return <Empty title="Chưa đủ từ để kiểm tra" note="Lưu thêm vài từ có nghĩa tiếng Việt." />
+  if (questions.length === 0) return <Empty title={EMPTY[mode].title} note={EMPTY[mode].note} />
 
   const finished = index >= questions.length
   if (finished) {
@@ -74,7 +64,7 @@ export function QuizClient() {
     if (correct) setScore((s) => s + 1)
     // The answer counts towards the word's schedule, but is not awaited: a slow write
     // must not hold up the next question, and the flashcard review stays the authority.
-    recordGrade(current.id, 'quiz', gradeForMode('quiz', { correct }))
+    recordGrade(current.id, mode, gradeForMode(mode, { correct }))
     if (!logged.current) { logged.current = true; logDay() }
   }
   function next() {
@@ -85,7 +75,7 @@ export function QuizClient() {
   return (
     <Stage>
       <SessionBar label={`Câu ${index + 1}/${questions.length} · Đúng ${score}`} done={index + (selected === null ? 0 : 1)} total={questions.length} />
-      <QuizCard key={index} question={current} selected={selected} onSelect={select} onNext={next} />
+      <QuizCard key={index} question={current} listen={mode === 'listen'} selected={selected} onSelect={select} onNext={next} />
     </Stage>
   )
 }

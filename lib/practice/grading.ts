@@ -33,9 +33,14 @@ export const REPORTS_FAILURES: Record<PracticeMode, boolean> = {
   match: true,
   speak: false,
   review: true,
+  cloze: true,
+  ipa: true,
+  listen: true,
+  forms: true,
+  phrase: true,
 }
 
-export type PracticeMode = 'quiz' | 'write' | 'dictation' | 'match' | 'speak' | 'review'
+export type PracticeMode = 'quiz' | 'write' | 'dictation' | 'match' | 'speak' | 'review' | 'cloze' | 'ipa' | 'listen' | 'forms' | 'phrase'
 
 /** The grade a mode should record, or null when it should record nothing. */
 export function gradeForMode(mode: PracticeMode, outcome: PracticeOutcome): Grade | null {
@@ -43,8 +48,9 @@ export function gradeForMode(mode: PracticeMode, outcome: PracticeOutcome): Grad
   return gradeFromOutcome(outcome)
 }
 
-/** Each saved word has two FSRS states. Picking a meaning or a pair shows the answer among
- *  options, which is recognition; producing the word from its meaning or sound is recall. */
+/** Each saved word has two FSRS states. Picking a meaning, a pair or a missing word shows the
+ *  answer among options, which is recognition; producing the word, from its meaning, its sound,
+ *  its IPA, a sentence or another of its forms, is recall. */
 export type Skill = 'recall' | 'recognition'
 
 export const MODE_SKILL: Record<PracticeMode, Skill> = {
@@ -54,6 +60,11 @@ export const MODE_SKILL: Record<PracticeMode, Skill> = {
   write: 'recall',
   dictation: 'recall',
   speak: 'recall',
+  cloze: 'recall',
+  ipa: 'recall',
+  listen: 'recognition',
+  forms: 'recall',
+  phrase: 'recognition',
 }
 
 /** Whether an answer moves the schedule. A success on a Review card not due by the end of the

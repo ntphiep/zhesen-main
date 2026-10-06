@@ -35,6 +35,10 @@
 
 /* The six modes */
 .modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+/* The hub groups the modes by the skill they train. */
+.groups { display: grid; gap: 1.4rem; margin-top: 1.25rem; }
+.groups .modes { margin-top: 0; }
+.group { margin: 0 0 0.6rem; font-size: 0.8125rem; font-weight: 800; letter-spacing: 0.02em; color: var(--zs-soft); }
 .mode { position: relative; display: grid; grid-template-columns: 2.6rem 1fr; column-gap: 0.85rem; align-items: center; padding: 1rem 1.1rem; border: 1px solid transparent; border-radius: 18px; background: var(--zs-field); box-shadow: 0 0 0 1.5px var(--edge); color: var(--zs-ink); text-decoration: none; transition: box-shadow 160ms var(--ease-std), translate 230ms var(--ease-spring), background-color 160ms var(--ease-std); animation: rise 320ms var(--ease-enter) both; }
 .mode:hover { box-shadow: 0 0 0 1.5px var(--sea-300), var(--lift); translate: 0 -2px; }
 .mode b { font-size: 1rem; font-weight: 800; }
@@ -71,6 +75,11 @@
 .mid { font-size: 1.75rem; line-height: 1.2; font-weight: 800; letter-spacing: -0.02em; color: var(--zs-ink); overflow-wrap: anywhere; }
 .pron { display: block; margin-top: 0.35rem; font-size: 1rem; color: var(--zs-soft); }
 .ask { margin: 0.9rem 0 0; font-size: 0.875rem; font-weight: 600; color: var(--zs-soft); }
+.ask b { color: var(--zs-ink); }
+/* A sentence or phrase with a word cut out: the gap is a line as wide as a short word. */
+.sentence { margin: 0.8rem 0 0; font-size: 1.25rem; line-height: 1.55; font-weight: 600; color: var(--zs-ink); overflow-wrap: anywhere; }
+.sentence b { color: var(--zs-pen); }
+.blank { display: inline-block; width: 4.5em; height: 1.1em; margin: 0 0.15em; vertical-align: -0.2em; border-bottom: 2px solid var(--sea-400); }
 .src a { color: var(--zs-pen); }
 
 /* The meaning turns down into view, like the back of a card. */

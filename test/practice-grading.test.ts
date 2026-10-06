@@ -52,6 +52,6 @@ describe('gradeForMode', () => {
   })
 
   it('lists every mode, so a new one cannot silently default to trusting itself', () => {
-    expect(Object.keys(REPORTS_FAILURES).sort()).toEqual(['dictation', 'match', 'quiz', 'review', 'speak', 'write'])
+    expect(Object.keys(REPORTS_FAILURES).sort()).toEqual(['cloze', 'dictation', 'forms', 'ipa', 'listen', 'match', 'phrase', 'quiz', 'review', 'speak', 'write'])
   })
 })

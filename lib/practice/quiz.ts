@@ -9,6 +9,7 @@ export interface QuizWord {
   meaningVi: string | null
   pos?: string | null
   entryId?: string | null
+  audioUrl?: string | null
 }
 
 /** Vietnamese gists of the entries a learner confuses with this one, and of its synonyms. */
@@ -24,6 +25,9 @@ export interface QuizQuestion {
   lang: LangCode
   options: string[]
   answer: string
+  audioUrl?: string | null
+  /** A phrase with the word to choose cut out, and the phrase's meaning. */
+  gap?: { before: string; after: string; meaningVi: string | null }
 }
 
 
@@ -82,6 +86,7 @@ export function buildQuiz(
       lang: t.lang,
       options: shuffle([t.meaningVi, ...distractors], rand),
       answer: t.meaningVi,
+      audioUrl: t.audioUrl ?? null,
     }
   })
 }

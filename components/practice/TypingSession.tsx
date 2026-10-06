@@ -1,17 +1,37 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { listPracticeWords, listTraditionalForms } from '@/lib/wordlist/store'
-import { shuffle } from '@/lib/practice/shuffle'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { gradeForMode } from '@/lib/practice/grading'
-import { checkTypedAnswer, type TypedResult } from '@/lib/practice/typing'
-import { TypingCard, type TypingPrompt } from '@/components/practice/TypingCard'
+import { typingRound, type TypingMode } from '@/lib/practice/rounds'
+import { checkTypedAnswer, type TypedResult, type TypingPrompt } from '@/lib/practice/typing'
+import { TypingCard } from '@/components/practice/TypingCard'
 import { Empty, Loading, Result, SessionBar, Stage } from '@/components/practice/SessionParts'
 
-const SIZE = 10
+const TITLE: Record<TypingMode, string> = {
+  write: 'Viết từ',
+  dictation: 'Nghe và chép',
+  ipa: 'Đọc phiên âm',
+  cloze: 'Điền vào câu',
+  forms: 'Dạng từ',
+}
 
-export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
+const EMPTY: Record<TypingMode, string> = {
+  write: 'Lưu thêm vài từ có nghĩa tiếng Việt.',
+  dictation: 'Lưu thêm vài từ vào sổ tay.',
+  ipa: 'Lưu thêm vài từ tiếng Anh hoặc tiếng Tây Ban Nha có phiên âm.',
+  cloze: 'Lưu thêm vài từ có câu ví dụ.',
+  forms: 'Lưu thêm vài động từ, danh từ hoặc tính từ tiếng Anh.',
+}
+
+/** Right word, wrong form: "give up" typed where the sentence says "gave up". */
+function grade(value: string, q: TypingPrompt): TypedResult {
+  const r = checkTypedAnswer(value, q.answer ?? q.headword, { lang: q.lang, accepted: q.accepted })
+  if (r === 'wrong' && q.answer && checkTypedAnswer(value, q.headword, { lang: q.lang }) === 'correct') return 'close'
+  return r
+}
+
+export function TypingSession({ mode }: { mode: TypingMode }) {
   const supabase = useMemo(() => createClient(), [])
   const { record: recordGrade, logDay, failed: syncFailed } = useGradeSync(supabase)
   const [queue, setQueue] = useState<TypingPrompt[] | null>(null)
@@ -24,18 +44,10 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
 
   useEffect(() => {
     let active = true
-    listPracticeWords(supabase, { needsMeaning: mode === 'write' })
-      .then(async (words) => {
-        const round = shuffle(words.filter((w) => w.headword && (mode === 'dictation' || (w.meaningVi && w.meaningVi.trim())))).slice(0, SIZE)
-        const zh = round.filter((w) => w.lang === 'zh').map((w) => w.id)
-        // Without the traditional forms only the simplified form and pinyin are accepted.
-        const traditional = zh.length ? await listTraditionalForms(supabase, zh).catch(() => new Map<string, string>()) : new Map<string, string>()
+    typingRound(supabase, mode)
+      .then((prompts) => {
         if (!active) return
-        // A Chinese word's `ipa` holds its pinyin.
-        setQueue(round.map((w): TypingPrompt => ({
-          id: w.id, headword: w.headword, meaningVi: w.meaningVi, ipa: w.ipa, audioUrl: w.audioUrl, lang: w.lang,
-          accepted: w.lang === 'zh' ? [w.ipa, traditional.get(w.id)].filter((v): v is string => Boolean(v)) : [],
-        })))
+        setQueue(prompts)
         setIndex(0); setValue(''); setResult(null); setScore(0)
       })
       .catch(() => active && setQueue([]))
@@ -44,24 +56,22 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
 
   if (queue === null) return <Loading />
 
-  if (queue.length === 0) {
-    return <Empty title="Chưa đủ từ để luyện" note={mode === 'write' ? 'Lưu thêm vài từ có nghĩa tiếng Việt.' : 'Lưu thêm vài từ vào sổ tay.'} />
-  }
+  if (queue.length === 0) return <Empty title="Chưa đủ từ để luyện" note={EMPTY[mode]} />
 
   if (index >= queue.length) {
     return <Result score={score} total={queue.length} failed={syncFailed} onAgain={() => setRound((r) => r + 1)} />
   }
 
   const current = queue[index]
-  const title = mode === 'write' ? 'Viết từ' : 'Nghe và chép'
 
   function submit() {
     if (result !== null || !value.trim()) return
-    const r = checkTypedAnswer(value, current.headword, { lang: current.lang, accepted: current.accepted })
+    const r = grade(value, current)
     setResult(r)
     if (r !== 'wrong') setScore((s) => s + 1)
-    // A one-character typo or a missed accent counts as a hard recall, not a clean one:
-    // the learner produced the word, which is more than the quiz can tell.
+    // A one-character typo, a missed accent or the right word in the wrong form counts as a
+    // hard recall, not a clean one: the learner produced the word, which is more than the
+    // quiz can tell.
     recordGrade(current.id, mode, gradeForMode(mode, { correct: r !== 'wrong', nearly: r === 'close' || r === 'accent' }))
     if (!logged.current) { logged.current = true; logDay() }
   }
@@ -71,7 +81,7 @@ export function TypingSession({ mode }: { mode: 'write' | 'dictation' }) {
 
   return (
     <Stage>
-      <SessionBar label={`${title} · ${index + 1}/${queue.length} · Đúng ${score}`} done={index + (result === null ? 0 : 1)} total={queue.length} />
+      <SessionBar label={`${TITLE[mode]} · ${index + 1}/${queue.length} · Đúng ${score}`} done={index + (result === null ? 0 : 1)} total={queue.length} />
       <TypingCard
         key={index}
         mode={mode}
