@@ -277,7 +277,8 @@ export function relatedTabs({ lang, headword, lemma, relations, containing, kin,
   const candidates: RelatedTab[] = [
     { key: 'collocations', label: 'Kết hợp từ', items: fromText(c.collocations.filter((t) => !phrasal.has(t.toLowerCase()))) },
     { key: 'compounds', label: 'Cụm từ', items: [...phrasalVerbs.map(fromEntry), ...containing.map(fromEntry), ...kinItems.filter((i) => isPhrase(i.text)), ...fromText(c.compounds)] },
-    { key: 'derived', label: 'Phái sinh', items: [...kinItems.filter((i) => !isPhrase(i.text)), ...fromText(c.derived.filter((t) => isPlausibleDerived(t, lemma ?? headword)))] },
+    // WordNet's family first (decision, decisive for decide), then the stem's own spellings.
+    { key: 'derived', label: 'Phái sinh', items: [...fromText(c.family), ...kinItems.filter((i) => !isPhrase(i.text)), ...fromText(c.derived.filter((t) => isPlausibleDerived(t, lemma ?? headword)))] },
     { key: 'synonyms', label: 'Cận nghĩa', items: fromText(c.synonyms) },
     { key: 'antonyms', label: 'Trái nghĩa', items: fromText(c.antonyms) },
     { key: 'related', label: 'Từ liên quan', items: fromText(c.related) },

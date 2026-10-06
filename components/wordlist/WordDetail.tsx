@@ -36,7 +36,7 @@ const SHOWN_SENSES = 3
 const SHOWN_EXAMPLES = 2
 /** take's first example was 131 characters of 17th-century verse. */
 const MAX_EXAMPLE_LENGTH = 100
-const GIST_RELATIONS: (keyof ClassifiedRelations)[] = ['collocations', 'synonyms']
+const GIST_RELATIONS: (keyof ClassifiedRelations)[] = ['collocations', 'family', 'synonyms']
 const GIST_RELATION_CAP = 6
 /** A longer synonym list mixes every sense: take's 249 opened with exterminate and shag. */
 const FOCUSED_SYNONYMS = 12

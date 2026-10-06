@@ -2,6 +2,7 @@ import type { DictRelation } from './types'
 
 export interface ClassifiedRelations {
   collocations: string[]
+  family: string[]
   synonyms: string[]
   antonyms: string[]
   derived: string[]
@@ -15,6 +16,7 @@ export interface ClassifiedRelations {
 /** The Vietnamese name and hint of each bucket, in reading order. */
 export const RELATION_SECTIONS: { key: keyof ClassifiedRelations; label: string; hint: string }[] = [
   { key: 'collocations', label: 'Kết hợp từ', hint: 'Cụm thường dùng với từ này' },
+  { key: 'family', label: 'Họ từ', hint: 'Cùng gốc, khác từ loại' },
   { key: 'synonyms', label: 'Cận nghĩa', hint: 'Dùng thay được trong một số ngữ cảnh' },
   { key: 'antonyms', label: 'Trái nghĩa', hint: 'Nghĩa ngược lại' },
   { key: 'derived', label: 'Phái sinh', hint: 'Từ tạo ra từ gốc này' },
@@ -47,7 +49,7 @@ const WIKTIONARY_NOTE =
  */
 export function classifyRelations(relations: DictRelation[]): ClassifiedRelations {
   const out: ClassifiedRelations = {
-    collocations: [], synonyms: [], antonyms: [], derived: [], compounds: [], related: [],
+    collocations: [], family: [], synonyms: [], antonyms: [], derived: [], compounds: [], related: [],
     broader: [], narrower: [], sameKind: [],
   }
   for (const r of relations) {
@@ -55,6 +57,7 @@ export function classifyRelations(relations: DictRelation[]): ClassifiedRelation
     if (!text || WIKTIONARY_NOTE.test(text)) continue
     switch (r.relationType) {
       case 'collocation': out.collocations.push(text); break
+      case 'family': out.family.push(text); break
       case 'synonym': out.synonyms.push(text); break
       case 'antonym': out.antonyms.push(text); break
       case 'related': out.related.push(text); break
@@ -65,7 +68,7 @@ export function classifyRelations(relations: DictRelation[]): ClassifiedRelation
     }
   }
   return {
-    collocations: uniq(out.collocations), synonyms: uniq(out.synonyms), antonyms: uniq(out.antonyms), derived: uniq(out.derived),
+    collocations: uniq(out.collocations), family: uniq(out.family), synonyms: uniq(out.synonyms), antonyms: uniq(out.antonyms), derived: uniq(out.derived),
     compounds: uniq(out.compounds), related: uniq(out.related),
     broader: uniq(out.broader), narrower: uniq(out.narrower), sameKind: uniq(out.sameKind),
   }

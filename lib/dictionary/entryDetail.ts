@@ -57,6 +57,8 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
       .from('entries')
       .select(`${DETAIL_SELECT}, lex_relations!lex_relations_entry_id_fkey(relation_type, related_text, related_entry_id)`)
       .eq('id', entryId)
+      // Ids follow the order a loader wrote: a word family is nearest member first.
+      .order('id', { referencedTable: 'lex_relations' })
       .maybeSingle(),
     supabase
       .schema('lex')
