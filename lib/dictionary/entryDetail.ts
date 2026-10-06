@@ -33,6 +33,18 @@ export function capExamples<T extends { senseId?: string | null }>(rows: T[]): T
   })
 }
 
+/** Sense links in the order the relations were read, which is their rank: relation_senses
+ *  groups by text, so big's first sense listed chunky and fat ahead of great and large. */
+export function byRelationOrder(links: SenseLink[], relations: DictRelation[]): SenseLink[] {
+  const at = new Map<string, number>()
+  relations.forEach((r, i) => {
+    const k = r.relatedText?.toLowerCase()
+    if (k && !at.has(k)) at.set(k, i)
+  })
+  const of = (l: SenseLink) => at.get(l.text.toLowerCase()) ?? relations.length
+  return [...links].sort((a, b) => of(a) - of(b))
+}
+
 /** Which sense each synonym belongs to. A failure leaves the synonyms unsorted rather than
  *  failing the page: the call is an extra, and en:head alone carries 1,569 relations. */
 async function getSenseLinks(supabase: SupabaseClient, entryId: string): Promise<SenseLink[]> {
@@ -57,7 +69,9 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
       .from('entries')
       .select(`${DETAIL_SELECT}, lex_relations!lex_relations_entry_id_fkey(relation_type, related_text, related_entry_id)`)
       .eq('id', entryId)
-      // Ids follow the order a loader wrote: a word family is nearest member first.
+      // Synonyms and antonyms by rank (0197), WordNet's first; the rest in the order a loader
+      // wrote them, so a word family is nearest member first.
+      .order('rank', { referencedTable: 'lex_relations', nullsFirst: false })
       .order('id', { referencedTable: 'lex_relations' })
       .maybeSingle(),
     supabase
@@ -93,7 +107,7 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
     ...preview,
     senses,
     pronunciations: toProns(r.pronunciations),
-    examples, relations, senseLinks,
+    examples, relations, senseLinks: byRelationOrder(senseLinks, relations),
     attributes: r.attributes ?? {},
   }
 }

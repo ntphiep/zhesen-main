@@ -3,6 +3,7 @@ import { pickSenses, isCleanExample, isClassifierGloss, parseClassifiers, fillPi
 import { tokenize } from '@/lib/reader/tokenize'
 import { classifyRelations, previewedRelationTexts, RELATION_CAP } from '@/lib/dictionary/relations'
 import { groupWordForms } from '@/lib/dictionary/family'
+import { byRelationOrder } from '@/lib/dictionary/entryDetail'
 import type { DictSense, DictRelation } from '@/lib/dictionary/types'
 
 const sense = (senseOrder: number, glossVi: string | null, pos = 'noun'): DictSense =>
@@ -360,5 +361,14 @@ describe('WordNet relations', () => {
     const rels: DictRelation[] = Array.from({ length: 20 }, (_, i) => (
       { relationType: 'synonym', relatedText: `w${i}`, relatedEntryId: null }))
     expect(previewedRelationTexts(rels)).toHaveLength(RELATION_CAP)
+  })
+})
+
+describe('byRelationOrder', () => {
+  it('lists the synonyms of a sense in relation rank order, not by text', () => {
+    const relations: DictRelation[] = ['great', 'large', 'chunky', 'fat'].map((t) => (
+      { relationType: 'synonym', relatedText: t, relatedEntryId: null }))
+    const links = ['chunky', 'fat', 'great', 'large', 'unranked'].map((text) => ({ text, senseOrder: 1, targetId: `en:${text}` }))
+    expect(byRelationOrder(links, relations).map((l) => l.text)).toEqual(['great', 'large', 'chunky', 'fat', 'unranked'])
   })
 })
