@@ -44,7 +44,7 @@ const AUXILIARIES = new Set([
  *  idiomatically: see play, in." */
 const SUM_OF_PARTS = /^used other than figuratively or idiomatically/i
 
-const PARTICLES = new Set([
+export const PARTICLES = new Set([
   'up', 'down', 'in', 'out', 'on', 'off', 'over', 'away', 'back', 'about', 'along', 'around', 'round', 'aside',
   'through', 'by', 'apart', 'together', 'forward',
 ])
