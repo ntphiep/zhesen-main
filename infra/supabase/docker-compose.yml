@@ -472,6 +472,8 @@ services:
       # dashboard's database settings (infra/README.md); these cap the log files and two tables.
       APP_LOG_RETENTION_DAYS: "3"
       APP_LOG_MAX_FILES: "5"
+      # Info lines were 174,823 of 185,229 in app.log on 2026-10-06, when the logs grew 211 MB in 22 hours.
+      APP_LOG_LEVEL: warn
       CALL_LOGS_TABLE_MAX_ROWS: "20000"
       PROXY_LOGS_TABLE_MAX_ROWS: "20000"
 
