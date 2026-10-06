@@ -88,6 +88,22 @@ describe('buildQuiz distractor order', () => {
     expect(q.options).not.toContain('chó nhà, con chó')
   })
 
+  it('never offers any distractor that shares a Vietnamese term with the answer', () => {
+    const kids = [word('child', 'Trẻ em, đứa trẻ', 'en', 'noun'), word('take', 'cầm, lấy', 'en', 'verb')]
+    const learner = new Map([['en:child', { confusable: ['trẻ em'], synonym: [] }]])
+    const q = buildQuiz(kids, 2, () => 0, learner).find(only('child'))!
+    expect(q.options).toEqual(expect.arrayContaining(['Trẻ em, đứa trẻ', 'cầm, lấy']))
+    expect(q.options).not.toContain('trẻ em')
+  })
+
+  it('reads a shorter term inside an answer term as the same answer, by whole syllables', () => {
+    const glad = [word('happy', 'Vui vẻ, hạnh phúc', 'en', 'adjective'), word('take', 'cầm, lấy', 'en', 'verb')]
+    const learner = new Map([['en:happy', { confusable: [], synonym: ['vui', 'may mắn', 'vui lòng'] }]])
+    const q = buildQuiz(glad, 2, () => 0, learner).find(only('happy'))!
+    expect(q.options).not.toContain('vui')
+    expect(q.options).toEqual(expect.arrayContaining(['may mắn', 'vui lòng']))
+  })
+
   it('falls back to the same language before other languages', () => {
     const q = buildQuiz(pool, 5, () => 0).find(only('dog'))!
     const distractors = q.options.filter((o) => o !== q.answer)

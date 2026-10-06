@@ -1,3 +1,4 @@
+import { posGroup, splitPos } from '@/lib/dictionary/pos'
 import { englishForms } from './cloze'
 import { shuffle, type Rand } from './shuffle'
 
@@ -12,17 +13,28 @@ export interface FormCue {
   key: string
   labels: readonly string[]
   vi: string
+  /** The part-of-speech groups (`lib/dictionary/pos.ts`) that take this form. */
+  pos: readonly string[]
 }
 
 export const FORM_CUES: readonly FormCue[] = [
-  { key: 'past', labels: ['past'], vi: 'quá khứ đơn' },
-  { key: 'pp', labels: ['past participle'], vi: 'quá khứ phân từ' },
-  { key: 'ing', labels: ['present participle'], vi: 'dạng V-ing' },
-  { key: 's3', labels: ['present singular third-person', 'indicative present singular third-person'], vi: 'ngôi thứ ba số ít' },
-  { key: 'plural', labels: ['plural'], vi: 'số nhiều' },
-  { key: 'comparative', labels: ['comparative'], vi: 'so sánh hơn' },
-  { key: 'superlative', labels: ['superlative'], vi: 'so sánh nhất' },
+  { key: 'past', labels: ['past'], vi: 'quá khứ đơn', pos: ['verb'] },
+  { key: 'pp', labels: ['past participle'], vi: 'quá khứ phân từ', pos: ['verb'] },
+  { key: 'ing', labels: ['present participle'], vi: 'V-ing', pos: ['verb'] },
+  { key: 's3', labels: ['present singular third-person', 'indicative present singular third-person'], vi: 'ngôi thứ ba số ít', pos: ['verb'] },
+  { key: 'plural', labels: ['plural'], vi: 'số nhiều', pos: ['noun'] },
+  { key: 'comparative', labels: ['comparative'], vi: 'so sánh hơn', pos: ['adjective', 'adverb'] },
+  { key: 'superlative', labels: ['superlative'], vi: 'so sánh nhất', pos: ['adjective', 'adverb'] },
 ]
+
+/** The cues for the first inflecting part of speech the learner saved: "spot" saved as
+ *  "noun,verb" with a noun meaning asks for "spots" as a plural, never as a verb form. */
+function cuesFor(pos: string | null | undefined): readonly FormCue[] {
+  const groups = splitPos(pos).map((p) => posGroup(p)?.key)
+  const first = groups.find((g) => g && FORM_CUES.some((c) => c.pos.includes(g)))
+  if (first) return FORM_CUES.filter((c) => c.pos.includes(first))
+  return groups.length > 0 ? [] : FORM_CUES
+}
 
 export interface FormQuestion {
   cue: string
@@ -44,13 +56,13 @@ function regular(headword: string): Set<string> {
 
 /** One form of an English word to ask for, or null when the source lists none worth asking. */
 export function pickFormQuestion(
-  headword: string, forms: readonly { text: string; label: string | null }[], rand: Rand = Math.random,
+  headword: string, forms: readonly { text: string; label: string | null }[], rand: Rand = Math.random, pos: string | null = null,
 ): FormQuestion | null {
   const base = headword.trim().toLowerCase()
   if (!WORD.test(base)) return null
   const regulars = regular(base)
   const questions: FormQuestion[] = []
-  for (const cue of FORM_CUES) {
+  for (const cue of cuesFor(pos)) {
     const answers = [...new Set(forms
       .filter((f) => f.label && cue.labels.includes(f.label.trim().toLowerCase()))
       .map((f) => f.text.trim())

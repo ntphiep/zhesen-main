@@ -55,8 +55,12 @@ export const meaningKey = (m: string) => m.trim().replace(/[\s\p{P}]+$/u, '').to
 
 const terms = (m: string) => m.split(/[,;/]/).map(meaningKey).filter(Boolean)
 
+/** "vui" inside "vui vẻ" is the same answer; "con sói" beside "con chó" is not. Whole syllables only. */
+const overlaps = (a: string, b: string) => ` ${a} `.includes(` ${b} `) || ` ${b} `.includes(` ${a} `)
+
 /** Distractors in order: same language and part of speech, the learner layer's confusables,
- *  synonyms sharing no Vietnamese term with the answer, same language, then the rest. */
+ *  synonyms, same language, then the rest. None shares a Vietnamese term with the answer:
+ *  "trẻ em" or "vui" offered against "Trẻ em, đứa trẻ" or "Vui vẻ" is a second right answer. */
 export function buildQuiz(
   words: QuizWord[], count: number, rand: Rand = Math.random, learner: Map<string, LearnerDistractors> = new Map(),
 ): QuizQuestion[] {
@@ -67,16 +71,16 @@ export function buildQuiz(
     const others = shuffle(usable.filter((x) => x.id !== t.id), rand)
     const sameLang = others.filter((x) => x.lang === t.lang)
     const extra = (t.entryId && learner.get(t.entryId)) || { confusable: [], synonym: [] }
-    const answerTerms = new Set(terms(t.meaningVi))
+    const answerTerms = terms(t.meaningVi)
     const distractors = [
       ...sameLang.filter((x) => t.pos && x.pos === t.pos).map((x) => x.meaningVi),
       ...extra.confusable,
-      ...extra.synonym.filter((m) => !terms(m).some((k) => answerTerms.has(k))),
+      ...extra.synonym,
       ...sameLang.map((x) => x.meaningVi),
       ...others.map((x) => x.meaningVi),
     ]
       .map((m) => m.trim())
-      .filter((m) => m && meaningKey(m) !== meaningKey(t.meaningVi))
+      .filter((m) => m && !terms(m).some((k) => answerTerms.some((a) => overlaps(a, k))))
       .filter((m, i, arr) => arr.findIndex((o) => meaningKey(o) === meaningKey(m)) === i) // distinct distractor texts
       .slice(0, 3)
     return {

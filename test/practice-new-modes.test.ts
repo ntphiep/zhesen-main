@@ -30,6 +30,12 @@ describe('findGap', () => {
     expect(findGap([{ text: `hello ${'and more words '.repeat(12)}`, translationVi: null }], forms, 'en')).toBeNull()
   })
 
+  it('skips a fragment that leaves one word to read the gap from', () => {
+    const forms = clozeForms('take', 'en', ['took'])
+    expect(findGap([{ text: 'took shape', translationVi: null }], forms, 'en')).toBeNull()
+    expect(findGap([{ text: 'The plan took shape slowly.', translationVi: null }], forms, 'en')?.answer).toBe('took')
+  })
+
   it('finds a Chinese word inside its sentence', () => {
     expect(findGap([{ text: '我每天学习中文。', translationVi: null }], ['学习'], 'zh')).toMatchObject({ before: '我每天', answer: '学习', after: '中文。' })
   })
@@ -49,6 +55,13 @@ describe('pickFormQuestion', () => {
   it('takes every spelling of the form', () => {
     const learn = [{ text: 'learned', label: 'past' }, { text: 'learnt', label: 'past' }]
     expect(pickFormQuestion('learn', learn, first)?.answers).toEqual(['learned', 'learnt'])
+  })
+
+  it('asks the forms of the part of speech the learner saved first', () => {
+    const spot = [{ text: 'spots', label: 'plural' }, { text: 'spots', label: 'present singular third-person' }, { text: 'spotted', label: 'past' }]
+    expect(pickFormQuestion('spot', spot, first, 'noun,verb')).toEqual({ cue: 'số nhiều', answers: ['spots'], irregular: false })
+    expect(pickFormQuestion('spot', spot, first, 'verb')?.cue).not.toBe('số nhiều')
+    expect(pickFormQuestion('on', [{ text: 'ons', label: 'plural' }], first, 'preposition')).toBeNull()
   })
 
   it('asks nothing of a phrase or of a word without forms', () => {

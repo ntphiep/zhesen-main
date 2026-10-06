@@ -75,7 +75,7 @@ async function formsRound(supabase: SupabaseClient, words: PracticeWord[], rand:
   const out: TypingPrompt[] = []
   for (const w of order) {
     if (out.length >= ROUND_SIZE) break
-    const q = pickFormQuestion(w.headword, forms.get(context.get(w.id)?.entryId ?? '') ?? [], rand)
+    const q = pickFormQuestion(w.headword, forms.get(context.get(w.id)?.entryId ?? '') ?? [], rand, context.get(w.id)?.pos)
     if (q) out.push(prompt(w, { cue: q.cue, answer: q.answers[0], accepted: q.answers.slice(1) }))
   }
   return out

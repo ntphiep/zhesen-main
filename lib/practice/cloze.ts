@@ -23,6 +23,8 @@ export interface ClozeGap {
 
 /** Long enough to give context, short enough to read in one look. */
 const MAX_SENTENCE = 160
+/** Words (characters for Chinese) the sentence must keep beside the gap. */
+const MIN_CONTEXT = 2
 
 /** Idiom placeholders and what a sentence writes in their place. */
 const PLACEHOLDERS: Record<string, string> = {
@@ -71,8 +73,10 @@ export function findGap(sentences: readonly ClozeSentence[], forms: readonly str
     for (const form of forms) {
       const m = pattern(form, lang).exec(text)
       if (!m) continue
-      // The whole sentence is the word: nothing would be left to read.
-      if (text.replace(m[0], '').replace(/[\p{P}\s]/gu, '') === '') continue
+      // "took shape" leaves one word to read the gap from, which is a guess, not a recall.
+      const rest = text.replace(m[0], ' ')
+      const context = lang === 'zh' ? rest.replace(/[\p{P}\s]/gu, '').length : rest.split(/[\s\p{P}]+/u).filter(Boolean).length
+      if (context < MIN_CONTEXT) continue
       return {
         before: text.slice(0, m.index),
         answer: m[0],
