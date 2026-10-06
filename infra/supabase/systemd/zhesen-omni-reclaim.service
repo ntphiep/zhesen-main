@@ -1,0 +1,10 @@
+# Frees OmniRoute's page cache before its memory guard counts it as pressure. Started by
+# zhesen-omni-reclaim.timer; logs in `journalctl -u zhesen-omni-reclaim`.
+[Unit]
+Description=Reclaim OmniRoute page cache
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /opt/zhesen/supabase/bin/omni-reclaim.sh

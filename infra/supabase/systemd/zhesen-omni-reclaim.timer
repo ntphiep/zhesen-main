@@ -1,0 +1,11 @@
+# Every 2 minutes: under the batch jobs the cache grew 43 MB a minute (2026-10-06), and the
+# guard trips at 1,288 MB of the 1,400 MB limit with 600 to 900 MB of it anon memory.
+[Unit]
+Description=Reclaim OmniRoute page cache every 2 minutes
+
+[Timer]
+OnCalendar=*:0/2
+AccuracySec=15s
+
+[Install]
+WantedBy=timers.target
