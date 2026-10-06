@@ -13,3 +13,12 @@ if [ $((cur * 100 / max)) -ge 60 ]; then
   echo 500M > "$cg/memory.reclaim" 2>/dev/null || true
   echo "reclaimed $((cur >> 20)) MB to $(($(cat "$cg/memory.current") >> 20)) MB of $((max >> 20)) MB"
 fi
+# SQLite never shrinks a WAL file by itself: on 2026-10-06 it held 424 MB beside a 455 MB
+# database, and a TRUNCATE checkpoint returned it to 0. A busy reader makes it wait a minute.
+wal=/opt/zhesen/omniroute/data/storage.sqlite-wal
+if [ "$(stat -c %s "$wal" 2>/dev/null || echo 0)" -gt 67108864 ]; then
+  docker exec zhesen-omniroute node -e '
+    const db = require("/app/node_modules/better-sqlite3")("/app/data/storage.sqlite", { fileMustExist: true, timeout: 10000 });
+    console.log("wal checkpoint", JSON.stringify(db.pragma("wal_checkpoint(TRUNCATE)")[0]));
+    db.close();' || echo "wal checkpoint failed"
+fi

@@ -136,6 +136,9 @@ async function request(cfg: AiEndpoint, opts: TextOptions, stream: boolean, sign
       'x-api-key': cfg.apiKey,
       authorization: `Bearer ${cfg.apiKey}`,
       'anthropic-version': '2023-06-01',
+      // Both routers rewrite prompts and inject a terse-style system prompt unless told not to.
+      'x-omniroute-compression': 'off',
+      'x-9router-token-saver': 'off',
     },
     body: JSON.stringify({
       model: cfg.model,

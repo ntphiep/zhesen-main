@@ -376,9 +376,12 @@ class Pool:
                     'messages': [{'role': 'user', 'content': text}]}
         if self.temperature[model]:
             req_body['temperature'] = 0.2
+        # Both routers rewrite prompts unless told not to: OmniRoute's caveman turned the raw example
+        # "grieved them very much" into "grieved them much", and a model copied it into the layer.
         req = urllib.request.Request(base.rstrip('/') + '/chat/completions', json.dumps(req_body).encode(),
                                      {'Authorization': f'Bearer {key}', 'Content-Type': 'application/json',
-                                      'Accept': 'text/event-stream'})
+                                      'Accept': 'text/event-stream', 'x-omniroute-compression': 'off',
+                                      'x-9router-token-saver': 'off'})
         parts, finish, served = [], None, None
         with urllib.request.urlopen(req, timeout=300) as r:
             if 'event-stream' not in (r.headers.get('Content-Type') or ''):

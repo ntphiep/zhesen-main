@@ -142,7 +142,15 @@ and compression analytics 3, usage history 30. OmniRoute's defaults are 90, 90, 
 its cleanup runs every 6 hours with a `VACUUM` after it. OmniRoute answers every call 503
 ("resource pressure") once its cgroup passes 92% of the 1,400 MB limit, and the cgroup counts
 page cache, so `zhesen-omni-reclaim.timer` runs `bin/omni-reclaim.sh` every minute to reclaim
-it. Install it like the reminder units below, with `zhesen-omni-reclaim.service` and `.timer`.
+it, and to truncate the database's WAL file once it passes 64 MB. Install it like the reminder
+units below, with `zhesen-omni-reclaim.service` and `.timer`.
+
+Both routers carry token savers that change what a model reads, and both were on until
+2026-10-06. OmniRoute's caveman rewrote the user message, so the raw example "grieved them very
+much" reached the model as "grieved them much" and was stored that way; 9router appended a
+terse-style system prompt. Keep OmniRoute's Compression master switch and 9router's Caveman off,
+and turn them off again after importing either database. `lib/ai/client.ts` and the batch jobs
+also send `x-omniroute-compression: off` and `x-9router-token-saver: off` on every call.
 
 Batch jobs: the learner, enrich and glossfix jobs in `supabase/scripts/` run on the instance as
 the systemd units `zhesen-learner`, `zhesen-learner-redo`, `zhesen-enrich`, `zhesen-glossfix` and

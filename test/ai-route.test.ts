@@ -148,6 +148,18 @@ describe('/api/ai', () => {
     expect(JSON.stringify(await res.json())).not.toContain('sk-secret-must-not-leak')
   })
 
+  // OmniRoute's caveman dropped words from prompts; 9router appended a terse-style instruction.
+  it('asks both routers to pass the prompt through unchanged', async () => {
+    const f = vi.fn(async () => new Response(JSON.stringify({
+      choices: [{ message: { content: '{"mnemonic":"","collocations":[],"examples":[],"confusables":[]}' } }],
+    }), { status: 200 }))
+    globalThis.fetch = f
+    await post({ task: 'coach', input: { lang: 'en', headword: 'dog', meaningVi: null } })
+    const headers = (f.mock.calls[0] as unknown as [string, RequestInit])[1].headers as Record<string, string>
+    expect(headers['x-omniroute-compression']).toBe('off')
+    expect(headers['x-9router-token-saver']).toBe('off')
+  })
+
   // `JSON.parse('null')` succeeds, so the try/catch around request.json() does
   // not stop null reaching the field reads. Casting it and dereferencing .task
   // threw, and the handler answered 500 to an ordinary bad request.
