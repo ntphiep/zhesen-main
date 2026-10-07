@@ -76,21 +76,16 @@ describe('buildQuiz distractor order', () => {
   ]
   const only = (id: string) => (q: { id: string }) => q.id === id
 
-  it('offers the same part of speech first, then confusables, then synonyms', () => {
-    const learner = new Map([['en:dog', { confusable: ['con sói'], synonym: ['con chó, chó nhà', 'cún con'] }]])
+  // #112: a synonym's gloss can be another meaning of the word itself, a second right answer.
+  it('offers the same part of speech first, then confusables, and no synonyms', () => {
+    const learner = new Map([['en:dog', { confusable: ['con sói'] }]])
     const q = buildQuiz(pool, 5, () => 0, learner).find(only('dog'))!
-    expect(q.options.filter((o) => o !== q.answer).sort()).toEqual(['con mèo', 'con sói', 'cún con'].sort())
-  })
-
-  it('never offers a synonym that shares a Vietnamese term with the answer', () => {
-    const learner = new Map([['en:dog', { confusable: [], synonym: ['chó nhà, con chó'] }]])
-    const q = buildQuiz(pool, 5, () => 0, learner).find(only('dog'))!
-    expect(q.options).not.toContain('chó nhà, con chó')
+    expect(q.options.filter((o) => o !== q.answer).sort()).toEqual(['con mèo', 'con sói', 'chạy'].sort())
   })
 
   it('never offers any distractor that shares a Vietnamese term with the answer', () => {
     const kids = [word('child', 'Trẻ em, đứa trẻ', 'en', 'noun'), word('take', 'cầm, lấy', 'en', 'verb')]
-    const learner = new Map([['en:child', { confusable: ['trẻ em'], synonym: [] }]])
+    const learner = new Map([['en:child', { confusable: ['trẻ em'] }]])
     const q = buildQuiz(kids, 2, () => 0, learner).find(only('child'))!
     expect(q.options).toEqual(expect.arrayContaining(['Trẻ em, đứa trẻ', 'cầm, lấy']))
     expect(q.options).not.toContain('trẻ em')
@@ -98,7 +93,7 @@ describe('buildQuiz distractor order', () => {
 
   it('reads a shorter term inside an answer term as the same answer, by whole syllables', () => {
     const glad = [word('happy', 'Vui vẻ, hạnh phúc', 'en', 'adjective'), word('take', 'cầm, lấy', 'en', 'verb')]
-    const learner = new Map([['en:happy', { confusable: [], synonym: ['vui', 'may mắn', 'vui lòng'] }]])
+    const learner = new Map([['en:happy', { confusable: ['vui', 'may mắn', 'vui lòng'] }]])
     const q = buildQuiz(glad, 2, () => 0, learner).find(only('happy'))!
     expect(q.options).not.toContain('vui')
     expect(q.options).toEqual(expect.arrayContaining(['may mắn', 'vui lòng']))
@@ -112,22 +107,21 @@ describe('buildQuiz distractor order', () => {
   })
 })
 
-// Confusable and synonym links carry no Vietnamese text, so the gist comes from the target.
+// Confusable links carry no Vietnamese text, so the gist comes from the target.
 describe('listLearnerDistractors', () => {
-  it('reads each link target\'s first published gist', async () => {
+  it('reads each confusable target\'s first published gist, and asks for no synonym', async () => {
     const links = queryBuilder({ data: [
       { entry_id: 'en:dog', kind: 'confusable', target_entry_id: 'en:wolf' },
-      { entry_id: 'en:dog', kind: 'synonym', target_entry_id: 'en:hound' },
-      { entry_id: 'en:dog', kind: 'synonym', target_entry_id: 'en:hidden' },
+      { entry_id: 'en:dog', kind: 'confusable', target_entry_id: 'en:hidden' },
     ], error: null })
     const gists = queryBuilder({ data: [
       { entry_id: 'en:wolf', gist_vi: ['con sói', 'chó sói'] },
-      { entry_id: 'en:hound', gist_vi: ['chó săn'] },
     ], error: null })
     const from = vi.fn((table: string) => (table === 'learner_links' ? links : gists))
     const client = { schema: vi.fn(() => ({ from })) } as unknown as SupabaseClient
     const out = await listLearnerDistractors(client, ['en:dog'])
-    expect(out.get('en:dog')).toEqual({ confusable: ['con sói'], synonym: ['chó săn'] })
+    expect(out.get('en:dog')).toEqual({ confusable: ['con sói'] })
+    expect(links.eq).toHaveBeenCalledWith('kind', 'confusable')
     expect(gists.eq).toHaveBeenCalledWith('status', 'published')
   })
 })

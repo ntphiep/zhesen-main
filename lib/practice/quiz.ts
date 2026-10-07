@@ -12,10 +12,10 @@ export interface QuizWord {
   audioUrl?: string | null
 }
 
-/** Vietnamese gists of the entries a learner confuses with this one, and of its synonyms. */
+/** Vietnamese gists of the entries a learner confuses with this one. Synonyms are left out:
+ *  "nhận" offered for take is also a meaning of take, a second right answer (#112). */
 export interface LearnerDistractors {
   confusable: string[]
-  synonym: string[]
 }
 
 export interface QuizQuestion {
@@ -59,7 +59,7 @@ const terms = (m: string) => m.split(/[,;/]/).map(meaningKey).filter(Boolean)
 const overlaps = (a: string, b: string) => ` ${a} `.includes(` ${b} `) || ` ${b} `.includes(` ${a} `)
 
 /** Distractors in order: same language and part of speech, the learner layer's confusables,
- *  synonyms, same language, then the rest. None shares a Vietnamese term with the answer:
+ *  same language, then the rest. None shares a Vietnamese term with the answer:
  *  "trẻ em" or "vui" offered against "Trẻ em, đứa trẻ" or "Vui vẻ" is a second right answer. */
 export function buildQuiz(
   words: QuizWord[], count: number, rand: Rand = Math.random, learner: Map<string, LearnerDistractors> = new Map(),
@@ -70,12 +70,11 @@ export function buildQuiz(
   return targets.map((t) => {
     const others = shuffle(usable.filter((x) => x.id !== t.id), rand)
     const sameLang = others.filter((x) => x.lang === t.lang)
-    const extra = (t.entryId && learner.get(t.entryId)) || { confusable: [], synonym: [] }
+    const extra = (t.entryId && learner.get(t.entryId)) || { confusable: [] }
     const answerTerms = terms(t.meaningVi)
     const distractors = [
       ...sameLang.filter((x) => t.pos && x.pos === t.pos).map((x) => x.meaningVi),
       ...extra.confusable,
-      ...extra.synonym,
       ...sameLang.map((x) => x.meaningVi),
       ...others.map((x) => x.meaningVi),
     ]

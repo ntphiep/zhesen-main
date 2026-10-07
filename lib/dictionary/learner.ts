@@ -456,20 +456,20 @@ export async function listLearnerGists(supabase: SupabaseClient, entryIds: strin
 
 const distractorLinkRow = z.object({
   entry_id: z.string(),
-  kind: z.enum(['confusable', 'synonym']),
+  kind: z.literal('confusable'),
   target_entry_id: z.string(),
 })
 const gistRow = z.object({ entry_id: z.string(), gist_vi: z.array(z.string()) })
 
-/** Each entry's confusables and synonyms as their first published Vietnamese gist, for quiz
- *  distractors. Two reads: those links carry no `vi` of their own. */
+/** Each entry's confusables as their first published Vietnamese gist, for quiz distractors.
+ *  Two reads: those links carry no `vi` of their own. */
 export async function listLearnerDistractors(
   supabase: SupabaseClient, entryIds: string[],
 ): Promise<Map<string, LearnerDistractors>> {
   if (entryIds.length === 0) return new Map()
   const lex = supabase.schema('lex')
   const { data, error } = await lex.from('learner_links').select('entry_id, kind, target_entry_id')
-    .in('entry_id', entryIds).in('kind', ['confusable', 'synonym']).not('target_entry_id', 'is', null)
+    .in('entry_id', entryIds).eq('kind', 'confusable').not('target_entry_id', 'is', null)
     .order('link_order')
   if (error) throw error
   const links = distractorLinkRow.array().parse(data ?? [])
@@ -483,8 +483,8 @@ export async function listLearnerDistractors(
   for (const l of links) {
     const text = gist.get(l.target_entry_id)
     if (!text) continue
-    const d = out.get(l.entry_id) ?? { confusable: [], synonym: [] }
-    d[l.kind].push(text)
+    const d = out.get(l.entry_id) ?? { confusable: [] }
+    d.confusable.push(text)
     out.set(l.entry_id, d)
   }
   return out
