@@ -8,7 +8,7 @@ import type { DictEntryDetail, DictEntryPreview, DictSense } from '@/lib/diction
 import type { WordDraft } from '@/lib/wordlist/types'
 import type { LangCode } from '@/lib/languages'
 import { getCachedToeicLayer, type ToeicLayer } from './toeicLayer'
-import type { ToeicWordTopic } from './types'
+import type { ToeicGuide, ToeicWordTopic } from './types'
 
 /** The tag every word saved from a TOEIC topic carries. */
 export const TOEIC_TAG = 'toeic'
@@ -29,6 +29,8 @@ export interface ToeicStudyWord {
   example: ToeicExample | null
   /** What a save from the topic writes; null with no entry. */
   draft: WordDraft | null
+  /** The TOEIC list's plain-English definition; absent on a topic word. */
+  definition?: string | null
 }
 
 /** Sources public pages do not show: Cambridge is proprietary and these two carry no
@@ -145,5 +147,29 @@ export function loadToeicTopic(lang: LangCode, topic: ToeicWordTopic): Promise<T
       ?? pickLayerExample(await getCachedToeicLayer(detail.id), vi)
     const entry = toeicPreview(detail, vi)
     return { word, vi, entry, example, draft: toeicDraft(entry, example) }
+  }))
+}
+
+/** The meaning a list word shows: the reviewed layer's first sense, else the dictionary's
+ *  lead gloss. A layer a barred model wrote or reviewed is skipped, as its sentences are. */
+export function listMeaning(detail: Pick<DictEntryPreview, 'glossVi'>, layer: ToeicLayer | null): string {
+  const terms = layer && !BARRED_MODEL.test(layer.model) && !BARRED_MODEL.test(layer.reviewer ?? '')
+    ? layer.senses[0]?.viTerms.slice(0, 3) ?? []
+    : []
+  return terms.length ? terms.join(', ') : detail.glossVi ?? ''
+}
+
+/** One page of the TOEIC list, read like a topic. The list gives no Vietnamese meaning, so
+ *  each word takes `listMeaning` and keeps the list's own English definition beside it. */
+export function loadToeicGroup(lang: LangCode, words: ToeicGuide['wordList']): Promise<ToeicStudyWord[]> {
+  return Promise.all(words.map(async ([word, definition]) => {
+    const id = buildEntryId(lang, word)
+    const [detail, forms] = await Promise.all([getCachedEntryDetail(id), getCachedInflections(id)])
+    if (!detail) return { word, vi: '', entry: null, example: null, draft: null, definition }
+    const layer = await getCachedToeicLayer(detail.id)
+    const vi = listMeaning(detail, layer)
+    const example = pickToeicExample(detail, vi, forms.map((f) => f.formText)) ?? pickLayerExample(layer, vi)
+    const entry = toeicPreview(detail, vi)
+    return { word, vi, entry, example, draft: toeicDraft(entry, example), definition }
   }))
 }

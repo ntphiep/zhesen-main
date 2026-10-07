@@ -26,4 +26,13 @@ describe('TOEIC page', () => {
     for (const t of guide.wordTopics) expect(container.querySelector(`#words-${t.id}`)).not.toBeNull()
     expect(screen.getByRole('link', { name: /Văn phòng và họp/ })).toHaveAttribute('href', '/theory/en/toeic/topic/office')
   })
+
+  it('links every page of the TOEIC list, named by the words it spans', () => {
+    render(<ToeicView language={language} guide={guide} />)
+    const pages = screen.getAllByRole('link', { name: /^[\d.]+ đến [\d.]+$/ })
+    expect(pages).toHaveLength(50)
+    expect(pages[0]).toHaveAttribute('href', '/theory/en/toeic/list/1')
+    expect(pages[49]).toHaveTextContent('1.226 đến 1.250')
+    expect(screen.getByRole('heading', { name: '1.250 từ hay gặp nhất trong đề' })).toBeInTheDocument()
+  })
 })

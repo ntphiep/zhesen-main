@@ -15,11 +15,13 @@ type SaveState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'done'; added: nu
 /** Save every word of a topic not yet in the notebook, with its test meaning, its sentence
  *  and the TOEIC tag. The notebook belongs to an account, so without one the same label
  *  leads to /register and back to the topic. */
-export function ToeicTopicSave({ lang, path, drafts }: {
+export function ToeicTopicSave({ lang, path, drafts, scope = 'chủ đề' }: {
   lang: LangCode
   path: string
   /** Built by `toeicDraft`, as each word's own save is. */
   drafts: WordDraft[]
+  /** What the page holds: "chủ đề", or "nhóm" on a page of the list. */
+  scope?: string
 }) {
   const { kind } = useAccount()
   const [state, setState] = useState<SaveState>({ kind: 'idle' })
@@ -47,16 +49,16 @@ export function ToeicTopicSave({ lang, path, drafts }: {
   if (kind !== 'permanent') {
     return (
       <Link href={`/register?next=${encodeURIComponent(path)}`} prefetch={false} className={s.ghost}>
-        Lưu cả chủ đề vào sổ tay
+        {`Lưu cả ${scope} vào sổ tay`}
         <LinkPending />
       </Link>
     )
   }
 
   const label = state.kind === 'busy' ? 'Đang lưu…'
-    : state.kind === 'done' ? (state.added > 0 ? `Đã lưu ${state.added} từ` : 'Cả chủ đề đã có trong sổ tay')
+    : state.kind === 'done' ? (state.added > 0 ? `Đã lưu ${state.added} từ` : `Cả ${scope} đã có trong sổ tay`)
     : state.kind === 'error' ? 'Chưa lưu được. Thử lại.'
-    : 'Lưu cả chủ đề vào sổ tay'
+    : `Lưu cả ${scope} vào sổ tay`
 
   return (
     <div className="flex flex-wrap items-center gap-3" aria-live="polite">

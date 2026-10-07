@@ -219,6 +219,8 @@ export interface ToeicGuide {
   grammar: readonly ToeicGrammarItem[]
   paraphrases: readonly ToeicParaphrase[]
   wordTopics: readonly ToeicWordTopic[]
+  /** The TOEIC Service List in frequency order, each word with its plain-English definition. */
+  wordList: readonly (readonly [word: string, definition: string | null])[]
   practice: readonly ToeicQuestion[]
   links: readonly ToeicLink[]
 }

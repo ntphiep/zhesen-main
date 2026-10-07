@@ -22,19 +22,44 @@ export function ToeicTopicView({ language, guide, topic, words }: {
   words: ToeicStudyWord[]
 }) {
   const next = guide.wordTopics[guide.wordTopics.findIndex((t) => t.id === topic.id) + 1]
-  const path = toeicTopicPath(language.code, topic.id)
+  return (
+    <ToeicWordsPage
+      language={language}
+      title={topic.titleVi}
+      lede="Nghĩa ghi theo cách dùng trong đề."
+      path={toeicTopicPath(language.code, topic.id)}
+      scope="chủ đề"
+      words={words}
+      next={next && { href: toeicTopicPath(language.code, next.id), title: next.titleVi }}
+    />
+  )
+}
+
+/** A page of TOEIC words, a topic's or a page of the list: a save for all of them, a card
+ *  per word, then the next page. `footer` carries what the page must credit. */
+export function ToeicWordsPage({ language, title, lede, path, scope, words, next, footer }: {
+  language: Language
+  title: string
+  lede: string
+  path: string
+  /** What "save all" names: "chủ đề" or "nhóm". */
+  scope: string
+  words: ToeicStudyWord[]
+  next?: { href: string; title: string }
+  footer?: React.ReactNode
+}) {
   const drafts = words.flatMap((w) => (w.draft ? [w.draft] : []))
   return (
     <main className={`${s.page} font-ui`} data-l={language.code}>
       <PageHead
         language={language}
         back={{ href: theoryBlockPath(language.code, 'toeic'), label: 'Luyện thi TOEIC' }}
-        title={topic.titleVi}
-        lede="Nghĩa ghi theo cách dùng trong đề."
+        title={title}
+        lede={lede}
       >
         {drafts.length > 0 && (
           <div className="mt-5">
-            <ToeicTopicSave lang={language.code} path={path} drafts={drafts} />
+            <ToeicTopicSave lang={language.code} path={path} drafts={drafts} scope={scope} />
           </div>
         )}
       </PageHead>
@@ -43,7 +68,8 @@ export function ToeicTopicView({ language, guide, topic, words }: {
         <ul className={`${s.grid} m-0 list-none p-0`} data-reveal="">
           {words.map((w) => <WordCard key={w.word} lang={language.code} path={path} word={w} />)}
         </ul>
-        {next && <NextPage href={toeicTopicPath(language.code, next.id)} title={next.titleVi} prefetch={false} />}
+        {next && <NextPage href={next.href} title={next.title} prefetch={false} />}
+        {footer}
       </div>
     </main>
   )
@@ -60,7 +86,8 @@ function WordCard({ lang, path, word: w }: { lang: LangCode; path: string; word:
         {w.entry && <Ipa value={w.entry.ipa} lang={lang} className={s.pron} />}
         {w.entry && <AudioButton text={w.entry.headword} lang={lang} audioUrl={w.entry.audioUrl} />}
       </div>
-      <p className={s.meaning}>{w.vi}</p>
+      {w.vi && <p className={s.meaning}>{w.vi}</p>}
+      {w.definition && <p className={s.note} lang="en">{w.definition}</p>}
       {w.example && (
         <div className={s.example}>
           <p className={s.src} lang={lang}>{w.example.text}</p>

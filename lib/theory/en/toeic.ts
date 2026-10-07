@@ -9,6 +9,7 @@ import type {
 } from '../types'
 import { TOEIC_WORD_TOPICS } from './toeicWords'
 import { TOEIC_PRACTICE } from './toeicPractice'
+import { TOEIC_LIST } from './toeicList'
 
 /** The seven parts of the Listening and Reading test in test order. Question counts are
  *  the ones in the ETS test description; the tips and traps are this project's advice. */
@@ -577,6 +578,7 @@ export const TOEIC_GUIDE: ToeicGuide = {
   grammar: TOEIC_GRAMMAR,
   paraphrases: TOEIC_PARAPHRASES,
   wordTopics: TOEIC_WORD_TOPICS,
+  wordList: TOEIC_LIST,
   practice: TOEIC_PRACTICE,
   links: TOEIC_LINKS,
 }

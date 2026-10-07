@@ -59,6 +59,22 @@ export function findToeicTopic(lang: LangCode, id: string): ToeicWordTopic | und
   return toeicGuide(lang)?.wordTopics.find((t) => t.id === id)
 }
 
+/** Words per page of the TOEIC list: a sitting's worth, and a cold page reads each one. */
+export const TOEIC_GROUP_SIZE = 25
+
+export function toeicGroupCount(lang: LangCode): number {
+  return Math.ceil((toeicGuide(lang)?.wordList.length ?? 0) / TOEIC_GROUP_SIZE)
+}
+
+/** One page of the TOEIC list, numbered from 1. Exact text match, so `01` has no second URL. */
+export function findToeicGroup(lang: LangCode, group: string): { n: number; words: ToeicGuide['wordList'] } | undefined {
+  const list = toeicGuide(lang)?.wordList
+  if (!list || !/^[1-9][0-9]*$/.test(group)) return undefined
+  const n = Number(group)
+  const words = list.slice((n - 1) * TOEIC_GROUP_SIZE, n * TOEIC_GROUP_SIZE)
+  return words.length ? { n, words } : undefined
+}
+
 /** Exact text match, so `05` is not Part 5 and has no second URL. */
 export function findToeicPart(lang: LangCode, part: string): ToeicPart | undefined {
   return toeicGuide(lang)?.parts.find((p) => String(p.number) === part)

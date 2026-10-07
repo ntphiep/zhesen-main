@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { entryPath, buildEntryId } from '@/lib/dictionary/entryId'
-import { toeicPartPath, toeicTopicPath } from '@/lib/theory/path'
+import { toeicGroupPath, toeicPartPath, toeicTopicPath } from '@/lib/theory/path'
+import { TOEIC_GROUP_SIZE } from '@/lib/theory/content'
 import { BlockPage } from './BlockPage'
 import { ToeicPractice } from './ToeicPractice'
 import { GrammarGrid, ParaphraseList, PartBody } from './ToeicParts'
@@ -153,6 +154,18 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
             </article>
           ))}
         </div>
+        <h3 className={s.h3} id="words-list">{guide.wordList.length.toLocaleString('vi-VN')} từ hay gặp nhất trong đề</h3>
+        <p className={s.prose}>
+          Xếp theo tần suất, mỗi trang {TOEIC_GROUP_SIZE} từ với nghĩa, phát âm, câu ví dụ và định nghĩa tiếng Anh.
+        </p>
+        <nav aria-label="Danh sách từ TOEIC" className={s.index}>
+          {Array.from({ length: Math.ceil(guide.wordList.length / TOEIC_GROUP_SIZE) }, (_, i) => (
+            <Link key={i} href={toeicGroupPath(language.code, i + 1)} prefetch={false} className={s.chip}>
+              {(i * TOEIC_GROUP_SIZE + 1).toLocaleString('vi-VN')}{' '}
+              <small>đến {Math.min((i + 1) * TOEIC_GROUP_SIZE, guide.wordList.length).toLocaleString('vi-VN')}</small>
+            </Link>
+          ))}
+        </nav>
       </section>
 
       <section id="practice" className={s.sec}>

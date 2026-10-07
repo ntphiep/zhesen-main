@@ -31,6 +31,10 @@ export function toeicTopicPath(lang: LangCode, id: string): string {
   return `${theoryBlockPath(lang, 'toeic')}/topic/${encodeURIComponent(id)}`
 }
 
+export function toeicGroupPath(lang: LangCode, group: number): string {
+  return `${theoryBlockPath(lang, 'toeic')}/list/${group}`
+}
+
 export function toeicPartPath(lang: LangCode, part: number): string {
   return `${theoryBlockPath(lang, 'toeic')}/part/${part}`
 }
