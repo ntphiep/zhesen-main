@@ -82,6 +82,17 @@ describe('two skills', () => {
     expect(update).toHaveBeenCalledTimes(1)
     expect(result).toMatchObject({ applied: true, logged: false })
   })
+
+  // #111: a learner who left before the schedule write returned kept the schedule but lost the log.
+  it('sends the log row while the schedule write is still in flight', async () => {
+    const { client, update, insert } = mockClient(row('2026-10-05T01:00:00Z'))
+    let release: (result: { error: null }) => void = () => {}
+    update.mockImplementation(() => ({ eq: () => new Promise<{ error: null }>((r) => { release = r }) }))
+    const pending = gradeWordById(client, 'w1', 'review', 'good', NOW)
+    await vi.waitFor(() => expect(insert).toHaveBeenCalledTimes(1))
+    release({ error: null })
+    await expect(pending).resolves.toMatchObject({ applied: true, logged: true })
+  })
 })
 
 describe('appliesToSchedule', () => {

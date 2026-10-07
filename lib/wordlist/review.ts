@@ -197,7 +197,7 @@ export interface GradeResult {
 
 const RATING: Record<Grade, number> = { again: 1, hard: 2, good: 3, easy: 4 }
 
-/** Grade a card on the mode's skill, persist the schedule when the answer applies, then log the
+/** Grade a card on the mode's skill, persist the schedule when the answer applies, and log the
  *  answer. A lost log row does not undo a saved schedule, so it is reported, not thrown. */
 export async function gradeCard(
   supabase: SupabaseClient, card: ReviewCard, mode: PracticeMode, grade: Grade, now: number,
@@ -206,9 +206,11 @@ export async function gradeCard(
   const before = card.state
   const scheduled = review(before, grade, now)
   const applied = appliesToSchedule(before, grade, now)
-  if (applied) {
-    const p = SKILL_COLUMNS[skill]
-    const { error } = await supabase.from('user_words').update({
+  const p = SKILL_COLUMNS[skill]
+  // Both rows are known before either write, so they travel together: waiting for the schedule
+  // first lost the log row of a learner who left within a second of answering (#111).
+  const update = applied
+    ? supabase.from('user_words').update({
       [`${p}stability`]: scheduled.stability,
       [`${p}difficulty`]: scheduled.difficulty,
       [`${p}elapsed_days`]: scheduled.elapsedDays,
@@ -220,9 +222,8 @@ export async function gradeCard(
       [`${p}due_at`]: new Date(scheduled.dueAt).toISOString(),
       [`${p}last_review_at`]: scheduled.lastReviewedAt ? new Date(scheduled.lastReviewedAt).toISOString() : null,
     }).eq('id', card.id)
-    if (error) throw error
-  }
-  const { error: logError } = await supabase.from('review_events').insert({
+    : null
+  const log = supabase.from('review_events').insert({
     word_id: card.id,
     skill,
     mode,
@@ -238,7 +239,9 @@ export async function gradeCard(
     scheduled_days: scheduled.scheduledDays,
     reviewed_at: new Date(now).toISOString(),
   })
-  return { next: applied ? scheduled : before, applied, logged: !logError }
+  const [updated, logged] = await Promise.all([update, log])
+  if (updated?.error) throw updated.error
+  return { next: applied ? scheduled : before, applied, logged: !logged.error }
 }
 
 /** Grade a saved word by id, reading the mode's skill first. The practice modes work from
