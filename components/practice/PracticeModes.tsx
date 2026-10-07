@@ -27,6 +27,7 @@ export function practiceModes(due: number | null): PracticeModeLink[] {
     { href: '/practice/match', label: 'Ghép cặp', sub: 'Nối từ với nghĩa', primary: false, group: 'Đọc' },
     { href: '/practice/ipa', label: 'Đọc phiên âm', sub: 'Nhìn IPA, gõ từ', primary: false, group: 'Đọc' },
     { href: '/practice/phrase', label: 'Ghép cụm từ', sub: 'Chọn từ còn thiếu trong cụm', primary: false, group: 'Đọc' },
+    { href: '/practice/toeic', label: 'Đề TOEIC Reading', sub: 'Làm đề 75 phút hoặc từng Part', primary: false, group: 'Đọc' },
     { href: '/practice/write', label: 'Viết từ', sub: 'Nhìn nghĩa, gõ từ', primary: false, group: 'Viết' },
     { href: '/practice/cloze', label: 'Điền vào câu', sub: 'Gõ từ còn thiếu trong câu', primary: false, group: 'Viết' },
     { href: '/practice/forms', label: 'Dạng từ', sub: 'Gõ quá khứ, số nhiều, so sánh', primary: false, group: 'Viết' },
@@ -48,6 +49,7 @@ const ICONS: Record<string, ReactNode> = {
   '/practice/phrase': <svg {...ICON}><rect x="2.5" y="7" width="6" height="6" rx="1.5" /><rect x="11.5" y="7" width="6" height="6" rx="1.5" strokeDasharray="2 2" /><path d="M8.5 10h3" /></svg>,
   '/practice/cloze': <svg {...ICON}><path d="M3 6h14M3 10h4M13 10h4M3 14h9" /><path d="M8.5 11.5h3" /></svg>,
   '/practice/forms': <svg {...ICON}><path d="M4 10h5M9 10l3-4h4M9 10l3 4h4" /></svg>,
+  '/practice/toeic': <svg {...ICON}><rect x="4" y="3" width="12" height="14" rx="2" /><path d="M7 7h6M7 10h6M7 13h3" /></svg>,
 }
 
 export function PracticeModes({ due }: { due: number }) {

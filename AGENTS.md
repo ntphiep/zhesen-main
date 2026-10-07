@@ -199,6 +199,10 @@ header to it by string equality. The auth cookie name is pinned in `lib/supabase
 - Check a licence before loading data, and read all of it. AllSet Learning's Chinese Grammar
   Wiki is CC BY-NC-SA 3.0 and its copyright page bars sites carrying advertising. CEFR-J is
   the same shape: the main A1-B2 list is not CC-BY-SA, only the Octanove C1/C2 part is.
+- Claude never writes product data (`BARRED_MODEL` in `lib/theory/toeicStudy.ts`), with one
+  exception the owner made on 2026-10-07: TOEIC tests. They are original items in the ETS
+  format, one JSON per test in `lib/practice/toeic/` registered in `tests.ts`, served at
+  `/practice/toeic` behind an account like every practice mode.
 
 ## AI assistant
 

@@ -71,6 +71,8 @@ selected state, no opacity suffix on token text). The owner chose it for the who
   (`node_modules/next/dist/server/web/spec-extension/unstable-cache.js:58`), not on the
   parser that function calls. A change to what a cached parser returns needs a new key part,
   or the old shape is served until the tag is flushed or `LEX_REVALIDATE` runs out.
+- `unstable_cache` cannot store an item over 2 MB, and the build only warns: test01's
+  `getCachedTappableTexts` result was 2,495,412 bytes and was never cached.
 - The data cache in `.next/cache/fetch-cache` survives `next build`, so a local build made
   right after a data load still serves the old rows. Clear that folder before checking new
   data on a local build.

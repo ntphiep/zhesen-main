@@ -1,0 +1,1951 @@
+[
+ {
+  "id": "p5-101",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 101,
+    "stem": "All employees must submit their expense reports ------- the end of the month.",
+    "options": [
+     "by",
+     "until",
+     "within",
+     "since"
+    ],
+    "answer": 0,
+    "type": "preposition",
+    "evidence": "",
+    "explanationVi": "\"by + mốc thời gian\" chỉ hạn chót. \"until\" chỉ hành động kéo dài liên tục tới mốc đó, không hợp với hành động nộp một lần như \"submit\".",
+    "vi": "Mọi nhân viên phải nộp báo cáo chi phí trước cuối tháng."
+   }
+  ]
+ },
+ {
+  "id": "p5-102",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 102,
+    "stem": "Ms. Tanaka was ------- recommended for the regional manager position by her supervisor.",
+    "options": [
+     "strong",
+     "strongly",
+     "strength",
+     "stronger"
+    ],
+    "answer": 1,
+    "type": "word-form",
+    "evidence": "",
+    "explanationVi": "Vị trí giữa \"was\" và phân từ \"recommended\" cần trạng từ bổ nghĩa cho động từ, nên chọn \"strongly\".",
+    "vi": "Cô Tanaka được người quản lý trực tiếp hết sức tiến cử cho vị trí quản lý khu vực."
+   }
+  ]
+ },
+ {
+  "id": "p5-103",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 103,
+    "stem": "The new software will allow staff to track inventory more ------- than the previous system.",
+    "options": [
+     "accurate",
+     "accuracy",
+     "accurately",
+     "accurateness"
+    ],
+    "answer": 2,
+    "type": "word-form",
+    "evidence": "",
+    "explanationVi": "\"more ------- than\" bổ nghĩa cho động từ \"track\", nên cần trạng từ so sánh \"more accurately\".",
+    "vi": "Phần mềm mới sẽ giúp nhân viên theo dõi hàng tồn kho chính xác hơn hệ thống cũ."
+   }
+  ]
+ },
+ {
+  "id": "p5-104",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 104,
+    "stem": "------- the shipment arrived two days late, the store was able to open on schedule.",
+    "options": [
+     "Despite",
+     "Although",
+     "However",
+     "Because"
+    ],
+    "answer": 1,
+    "type": "conjunction",
+    "evidence": "",
+    "explanationVi": "Vế đầu là mệnh đề có chủ ngữ và động từ, hai vế trái ý nhau, nên cần liên từ \"Although\". \"Despite\" chỉ đi với danh từ, \"Because\" sai nghĩa.",
+    "vi": "Dù lô hàng tới trễ hai ngày, cửa hàng vẫn khai trương đúng lịch."
+   }
+  ]
+ },
+ {
+  "id": "p5-105",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 105,
+    "stem": "Customers who wish to ------- their subscription should contact our service department at least ten days before renewal.",
+    "options": [
+     "cancel",
+     "refuse",
+     "resign",
+     "deny"
+    ],
+    "answer": 0,
+    "type": "vocabulary",
+    "evidence": "",
+    "explanationVi": "\"cancel a subscription\" là cụm cố định, nghĩa là huỷ gói đăng ký. \"resign\" là từ chức, \"deny\" là phủ nhận, \"refuse\" là từ chối một đề nghị.",
+    "vi": "Khách hàng muốn huỷ gói đăng ký nên liên hệ bộ phận dịch vụ ít nhất mười ngày trước ngày gia hạn."
+   }
+  ]
+ },
+ {
+  "id": "p5-106",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 106,
+    "stem": "The marketing team has asked Mr. Ruiz to review the brochure before ------- is sent to the printer.",
+    "options": [
+     "it",
+     "its",
+     "itself",
+     "them"
+    ],
+    "answer": 0,
+    "type": "pronoun",
+    "evidence": "",
+    "explanationVi": "Cần đại từ chủ ngữ số ít thay cho \"the brochure\" trước động từ \"is sent\", nên chọn \"it\".",
+    "vi": "Nhóm marketing đã nhờ ông Ruiz xem lại tờ brochure trước khi gửi đi in."
+   }
+  ]
+ },
+ {
+  "id": "p5-107",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 107,
+    "stem": "Please keep your receipt as ------- of purchase in case you need to return or exchange the item.",
+    "options": [
+     "prove",
+     "proof",
+     "proven",
+     "provable"
+    ],
+    "answer": 1,
+    "type": "word-form",
+    "evidence": "",
+    "explanationVi": "Sau giới từ \"as\" và trước \"of\" cần một danh từ: \"proof of purchase\" (bằng chứng mua hàng). \"prove\" là động từ, \"proven\" và \"provable\" là tính từ nên không đứng một mình làm tân ngữ của \"as\" được.",
+    "vi": "Vui lòng giữ lại hóa đơn làm bằng chứng mua hàng trong trường hợp bạn cần trả lại hoặc đổi sản phẩm."
+   }
+  ]
+ },
+ {
+  "id": "p5-108",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 108,
+    "stem": "Due to a scheduling conflict, the quarterly sales meeting has been ------- until next Thursday.",
+    "options": [
+     "postponed",
+     "prevented",
+     "provided",
+     "preserved"
+    ],
+    "answer": 0,
+    "type": "vocabulary",
+    "evidence": "",
+    "explanationVi": "\"postpone ... until\" nghĩa là hoãn đến một thời điểm sau, khớp với lý do trùng lịch. \"prevented\" (ngăn chặn), \"provided\" (cung cấp) và \"preserved\" (bảo tồn) đều không đi với \"until next Thursday\" theo nghĩa dời lịch.",
+    "vi": "Do trùng lịch, cuộc họp kinh doanh hằng quý đã được hoãn đến thứ Năm tuần sau."
+   }
+  ]
+ },
+ {
+  "id": "p5-109",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 109,
+    "stem": "The replacement parts for the packaging machine are expected to arrive ------- the next three business days.",
+    "options": [
+     "among",
+     "since",
+     "within",
+     "along"
+    ],
+    "answer": 2,
+    "type": "preposition",
+    "evidence": "",
+    "explanationVi": "\"within + khoảng thời gian\" nghĩa là trong vòng bao lâu, dùng với thì tương lai. \"since\" cần mốc thời gian trong quá khứ và đi với thì hoàn thành; \"among\" và \"along\" không chỉ thời gian.",
+    "vi": "Các linh kiện thay thế cho máy đóng gói dự kiến sẽ đến trong vòng ba ngày làm việc tới."
+   }
+  ]
+ },
+ {
+  "id": "p5-110",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 110,
+    "stem": "Mr. Okafor gave a very ------- presentation on the company's new shipping procedures.",
+    "options": [
+     "inform",
+     "information",
+     "informatively",
+     "informative"
+    ],
+    "answer": 3,
+    "type": "word-form",
+    "evidence": "",
+    "explanationVi": "Giữa \"a very\" và danh từ \"presentation\" cần một tính từ: \"informative\" (nhiều thông tin, bổ ích). \"information\" là danh từ, không được bổ nghĩa bởi \"very\"; \"informatively\" là trạng từ, không bổ nghĩa cho danh từ.",
+    "vi": "Ông Okafor đã có một bài thuyết trình rất bổ ích về các quy trình vận chuyển mới của công ty."
+   }
+  ]
+ },
+ {
+  "id": "p5-111",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 111,
+    "stem": "Employees attending the training conference in Chicago should bring ------- own laptops, as none will be provided.",
+    "options": [
+     "their",
+     "they",
+     "them",
+     "themselves"
+    ],
+    "answer": 0,
+    "type": "pronoun",
+    "evidence": "",
+    "explanationVi": "Trước \"own\" + danh từ chỉ dùng tính từ sở hữu: \"their own laptops\". \"they\" và \"them\" không đứng trước danh từ để chỉ sở hữu; \"themselves\" là đại từ phản thân, không kết hợp với \"own\".",
+    "vi": "Nhân viên tham dự hội nghị đào tạo ở Chicago nên mang theo máy tính xách tay của riêng mình, vì sẽ không có máy được cung cấp."
+   }
+  ]
+ },
+ {
+  "id": "p5-112",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 112,
+    "stem": "According to a recent press release, Halvorsen Logistics ------- a new regional office in Seoul next spring.",
+    "options": [
+     "has opened",
+     "opened",
+     "will open",
+     "had opened"
+    ],
+    "answer": 2,
+    "type": "verb-tense",
+    "evidence": "",
+    "explanationVi": "Mốc \"next spring\" chỉ tương lai nên dùng \"will open\". \"opened\", \"has opened\" và \"had opened\" đều diễn tả việc đã xảy ra, mâu thuẫn với \"next spring\".",
+    "vi": "Theo một thông cáo báo chí gần đây, Halvorsen Logistics sẽ mở một văn phòng khu vực mới tại Seoul vào mùa xuân năm sau."
+   }
+  ]
+ },
+ {
+  "id": "p5-113",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 113,
+    "stem": "Please ------- the attached invoice carefully and let us know if any of the charges are incorrect.",
+    "options": [
+     "respond",
+     "review",
+     "remind",
+     "refer"
+    ],
+    "answer": 1,
+    "type": "vocabulary",
+    "evidence": "",
+    "explanationVi": "\"review the invoice\" (xem xét hóa đơn) nhận tân ngữ trực tiếp và hợp nghĩa với việc kiểm tra các khoản phí. \"respond\" và \"refer\" phải có \"to\" trước tân ngữ; \"remind\" cần tân ngữ chỉ người.",
+    "vi": "Vui lòng xem xét kỹ hóa đơn đính kèm và cho chúng tôi biết nếu có khoản phí nào không chính xác."
+   }
+  ]
+ },
+ {
+  "id": "p5-114",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 114,
+    "stem": "The new assembly line has ------- increased the factory's output since it was installed in June.",
+    "options": [
+     "significant",
+     "significance",
+     "signify",
+     "significantly"
+    ],
+    "answer": 3,
+    "type": "word-form",
+    "evidence": "",
+    "explanationVi": "Giữa trợ động từ \"has\" và quá khứ phân từ \"increased\" cần một trạng từ: \"significantly\" (đáng kể). \"significant\" là tính từ và \"significance\" là danh từ, không bổ nghĩa cho động từ; \"signify\" là động từ nguyên mẫu, không đứng ở vị trí này.",
+    "vi": "Dây chuyền lắp ráp mới đã làm tăng đáng kể sản lượng của nhà máy kể từ khi được lắp đặt vào tháng Sáu."
+   }
+  ]
+ },
+ {
+  "id": "p5-115",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 115,
+    "stem": "The order will be shipped from our warehouse ------- the customer's payment has been confirmed.",
+    "options": [
+     "although",
+     "unless",
+     "once",
+     "despite"
+    ],
+    "answer": 2,
+    "type": "conjunction",
+    "evidence": "",
+    "explanationVi": "\"once\" (ngay khi, một khi) nối hai mệnh đề và cho nghĩa hợp lý: thanh toán được xác nhận rồi mới giao hàng. \"unless\" cho nghĩa ngược (giao hàng trừ khi đã thanh toán), \"although\" chỉ sự tương phản không có ở đây, còn \"despite\" là giới từ, không đứng trước mệnh đề.",
+    "vi": "Đơn hàng sẽ được gửi đi từ kho của chúng tôi ngay khi khoản thanh toán của khách hàng được xác nhận."
+   }
+  ]
+ },
+ {
+  "id": "p5-116",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 116,
+    "stem": "All factory workers are required to wear protective ------- while operating heavy machinery.",
+    "options": [
+     "equipment",
+     "merchandise",
+     "belongings",
+     "furnishings"
+    ],
+    "answer": 0,
+    "type": "vocabulary",
+    "evidence": "",
+    "explanationVi": "\"protective equipment\" (thiết bị bảo hộ) là cụm cố định, hợp với việc vận hành máy móc hạng nặng. \"merchandise\" (hàng hóa), \"belongings\" (đồ dùng cá nhân) và \"furnishings\" (đồ nội thất) không dùng để \"wear\" khi làm việc.",
+    "vi": "Tất cả công nhân nhà máy phải mặc thiết bị bảo hộ khi vận hành máy móc hạng nặng."
+   }
+  ]
+ },
+ {
+  "id": "p5-117",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 117,
+    "stem": "The ------- of the new distribution center near the highway will create more than two hundred local jobs.",
+    "options": [
+     "construct",
+     "constructively",
+     "constructive",
+     "construction"
+    ],
+    "answer": 3,
+    "type": "word-form",
+    "evidence": "",
+    "explanationVi": "Sau \"The\" và trước \"of\" cần danh từ chỉ hành động xây dựng: \"construction\". \"constructive\" là tính từ, \"constructively\" là trạng từ; \"construct\" khi là danh từ nghĩa là \"khái niệm, cấu trúc tư duy\", không hợp nghĩa.",
+    "vi": "Việc xây dựng trung tâm phân phối mới gần đường cao tốc sẽ tạo ra hơn hai trăm việc làm tại địa phương."
+   }
+  ]
+ },
+ {
+  "id": "p5-118",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 118,
+    "stem": "The results of the annual customer satisfaction survey ------- at next Monday's staff meeting.",
+    "options": [
+     "will announce",
+     "will be announced",
+     "announced",
+     "have announced"
+    ],
+    "answer": 1,
+    "type": "verb-tense",
+    "evidence": "",
+    "explanationVi": "Chủ ngữ \"The results\" chịu tác động (được công bố) nên dùng bị động, và \"next Monday\" chỉ tương lai: \"will be announced\". \"will announce\" là chủ động, còn \"announced\" và \"have announced\" sai cả thì lẫn thể.",
+    "vi": "Kết quả khảo sát mức độ hài lòng của khách hàng hằng năm sẽ được công bố tại cuộc họp nhân viên vào thứ Hai tới."
+   }
+  ]
+ },
+ {
+  "id": "p5-119",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 119,
+    "stem": "The budget committee has ------- additional funds for the renovation of the employee cafeteria.",
+    "options": [
+     "attended",
+     "enrolled",
+     "allocated",
+     "appointed"
+    ],
+    "answer": 2,
+    "type": "vocabulary",
+    "evidence": "",
+    "explanationVi": "\"allocate funds for\" (phân bổ ngân sách cho) là kết hợp chuẩn trong chủ đề ngân sách. \"enroll\" (ghi danh), \"attend\" (tham dự) và \"appoint\" (bổ nhiệm người) không đi với \"funds\".",
+    "vi": "Ủy ban ngân sách đã phân bổ thêm kinh phí cho việc cải tạo căng tin của nhân viên."
+   }
+  ]
+ },
+ {
+  "id": "p5-120",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 120,
+    "stem": "Candidates for the sales position should be ------- in at least one foreign language, preferably Spanish or Mandarin.",
+    "options": [
+     "fluencies",
+     "fluency",
+     "fluently",
+     "fluent"
+    ],
+    "answer": 3,
+    "type": "word-form",
+    "evidence": "",
+    "explanationVi": "Sau động từ nối \"be\" cần tính từ làm vị ngữ: \"be fluent in\" (thông thạo). \"fluency\" và \"fluencies\" là danh từ, không chỉ tính chất của chủ ngữ ở đây; \"fluently\" là trạng từ, không đứng sau \"be\" làm vị ngữ.",
+    "vi": "Ứng viên cho vị trí bán hàng cần thông thạo ít nhất một ngoại ngữ, ưu tiên tiếng Tây Ban Nha hoặc tiếng Quan Thoại."
+   }
+  ]
+ },
+ {
+  "id": "p5-121",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 121,
+    "stem": "All incoming shipments are inspected for damage ------- arrival at our distribution center in Memphis.",
+    "options": [
+     "onto",
+     "upon",
+     "about",
+     "toward"
+    ],
+    "answer": 1,
+    "type": "preposition",
+    "evidence": "",
+    "explanationVi": "\"upon arrival\" (ngay khi đến nơi) là cụm cố định. \"onto\" chỉ chuyển động lên bề mặt, \"about\" (về) và \"toward\" (hướng về) không kết hợp với \"arrival\" để chỉ thời điểm.",
+    "vi": "Tất cả các lô hàng nhập về đều được kiểm tra hư hỏng ngay khi đến trung tâm phân phối của chúng tôi ở Memphis."
+   }
+  ]
+ },
+ {
+  "id": "p5-122",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 122,
+    "stem": "Attendance at Thursday's safety workshop is ------- for all warehouse staff, and no exceptions will be made.",
+    "options": [
+     "mandatory",
+     "optional",
+     "eligible",
+     "potential"
+    ],
+    "answer": 0,
+    "type": "vocabulary",
+    "evidence": "",
+    "explanationVi": "Vế \"no exceptions will be made\" (không có ngoại lệ) cho thấy việc tham dự là bắt buộc: \"mandatory\". \"optional\" (tùy chọn) mâu thuẫn với vế sau; \"eligible\" dùng cho người đủ điều kiện, không dùng cho \"attendance\"; \"potential\" (tiềm năng) không hợp nghĩa.",
+    "vi": "Việc tham dự buổi hội thảo an toàn vào thứ Năm là bắt buộc đối với toàn bộ nhân viên kho, và sẽ không có ngoại lệ."
+   }
+  ]
+ },
+ {
+  "id": "p5-123",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 123,
+    "stem": "Before signing the contract, the procurement manager compared price quotes from several ------- of office furniture.",
+    "options": [
+     "supply",
+     "supplied",
+     "supplier",
+     "suppliers"
+    ],
+    "answer": 3,
+    "type": "word-form",
+    "evidence": "",
+    "explanationVi": "Sau \"several\" cần danh từ đếm được số nhiều chỉ người hoặc công ty cung cấp: \"suppliers\". \"supplier\" là số ít nên không đi với \"several\"; \"supply\" chỉ nguồn hàng chứ không phải bên báo giá; \"supplied\" là phân từ.",
+    "vi": "Trước khi ký hợp đồng, người quản lý mua hàng đã so sánh báo giá từ một số nhà cung cấp đồ nội thất văn phòng."
+   }
+  ]
+ },
+ {
+  "id": "p5-124",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 124,
+    "stem": "------- the printing company can guarantee delivery by March 1, we will need to find another vendor for the trade show brochures.",
+    "options": [
+     "Although",
+     "Whether",
+     "Unless",
+     "Since"
+    ],
+    "answer": 2,
+    "type": "conjunction",
+    "evidence": "",
+    "explanationVi": "\"Unless\" (trừ khi) cho nghĩa: nếu công ty in không bảo đảm giao hàng đúng hạn thì phải tìm nhà cung cấp khác. \"Since\" (vì) và \"Although\" (mặc dù) tạo nghĩa vô lý khi công ty đã bảo đảm được; mệnh đề \"Whether\" đứng đầu câu cần \"or not\" và không tạo nghĩa điều kiện ở đây.",
+    "vi": "Trừ khi công ty in có thể bảo đảm giao hàng trước ngày 1 tháng 3, chúng tôi sẽ cần tìm một nhà cung cấp khác cho tờ rơi của hội chợ thương mại."
+   }
+  ]
+ },
+ {
+  "id": "p5-125",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 125,
+    "stem": "Ms. Hartley was promoted to regional director in ------- of her outstanding sales record over the past three years.",
+    "options": [
+     "attention",
+     "recognition",
+     "observation",
+     "reflection"
+    ],
+    "answer": 1,
+    "type": "vocabulary",
+    "evidence": "",
+    "explanationVi": "\"in recognition of\" (để ghi nhận) là cụm cố định, hợp với việc được thăng chức nhờ thành tích. \"in attention of\", \"in observation of\" và \"in reflection of\" không phải cách diễn đạt chuẩn.",
+    "vi": "Bà Hartley được thăng chức lên giám đốc khu vực để ghi nhận thành tích bán hàng xuất sắc của bà trong ba năm qua."
+   }
+  ]
+ },
+ {
+  "id": "p5-126",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 126,
+    "stem": "Customer feedback on the redesigned online ordering system has been ------- positive since its launch last month.",
+    "options": [
+     "overwhelmingly",
+     "overwhelming",
+     "overwhelm",
+     "overwhelmed"
+    ],
+    "answer": 0,
+    "type": "word-form",
+    "evidence": "",
+    "explanationVi": "Trước tính từ \"positive\" cần trạng từ để bổ nghĩa: \"overwhelmingly positive\" (tích cực áp đảo). \"overwhelming\" và \"overwhelmed\" là tính từ, không bổ nghĩa cho một tính từ khác; \"overwhelm\" là động từ nguyên mẫu.",
+    "vi": "Phản hồi của khách hàng về hệ thống đặt hàng trực tuyến được thiết kế lại đã cực kỳ tích cực kể từ khi ra mắt vào tháng trước."
+   }
+  ]
+ },
+ {
+  "id": "p5-127",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 127,
+    "stem": "Since the new inventory tracking system was introduced in January, the number of shipping errors ------- by nearly 40 percent.",
+    "options": [
+     "decrease",
+     "is decreased",
+     "has decreased",
+     "will have decreased"
+    ],
+    "answer": 2,
+    "type": "verb-tense",
+    "evidence": "",
+    "explanationVi": "Mệnh đề \"Since + quá khứ đơn\" đi với thì hiện tại hoàn thành ở mệnh đề chính, và chủ ngữ \"the number\" là số ít: \"has decreased\". \"decrease\" sai hòa hợp chủ ngữ và thì; \"is decreased\" là hiện tại đơn bị động, sai thì sau mệnh đề \"Since\"; \"will have decreased\" cần một mốc tương lai.",
+    "vi": "Kể từ khi hệ thống theo dõi hàng tồn kho mới được đưa vào sử dụng hồi tháng Một, số lỗi giao hàng đã giảm gần 40 phần trăm."
+   }
+  ]
+ },
+ {
+  "id": "p5-128",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 128,
+    "stem": "The revised service contract ------- that all deliveries be completed before 10:00 A.M. on weekdays.",
+    "options": [
+     "considers",
+     "stipulates",
+     "accepts",
+     "achieves"
+    ],
+    "answer": 1,
+    "type": "vocabulary",
+    "evidence": "",
+    "explanationVi": "\"stipulate that\" (quy định rằng) là động từ dùng cho điều khoản hợp đồng và đi với mệnh đề giả định \"be completed\". \"considers\", \"accepts\" và \"achieves\" không đi với mệnh đề giả định này và không hợp nghĩa với chủ ngữ \"contract\".",
+    "vi": "Hợp đồng dịch vụ sửa đổi quy định rằng mọi việc giao hàng phải hoàn tất trước 10 giờ sáng vào các ngày trong tuần."
+   }
+  ]
+ },
+ {
+  "id": "p5-129",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 129,
+    "stem": "The company's three factories, two of ------- were built in the 1980s, are being upgraded with energy-efficient equipment.",
+    "options": [
+     "whom",
+     "them",
+     "those",
+     "which"
+    ],
+    "answer": 3,
+    "type": "relative-clause",
+    "evidence": "",
+    "explanationVi": "Cụm \"two of which\" mở đầu mệnh đề quan hệ không xác định, thay cho \"factories\" (vật). \"them\" và \"those\" không tạo được mệnh đề quan hệ nên câu sẽ có hai động từ chính nối sai; \"whom\" chỉ dùng cho người.",
+    "vi": "Ba nhà máy của công ty, hai trong số đó được xây dựng vào thập niên 1980, đang được nâng cấp bằng thiết bị tiết kiệm năng lượng."
+   }
+  ]
+ },
+ {
+  "id": "p5-130",
+  "part": 5,
+  "intro": "",
+  "passages": [],
+  "questions": [
+   {
+    "number": 130,
+    "stem": "Ms. Ito's expansion proposal was sent back to her team because it lacked a ------- estimate of the total cost.",
+    "options": [
+     "reliable",
+     "rely",
+     "reliably",
+     "reliance"
+    ],
+    "answer": 0,
+    "type": "word-form",
+    "evidence": "",
+    "explanationVi": "Giữa mạo từ \"a\" và danh từ \"estimate\" cần tính từ: \"reliable estimate\" (ước tính đáng tin cậy). \"reliance\" là danh từ và không tạo danh từ ghép hợp nghĩa với \"estimate\"; \"reliably\" là trạng từ và \"rely\" là động từ.",
+    "vi": "Đề xuất mở rộng của bà Ito đã bị trả lại cho nhóm của bà vì thiếu một bản ước tính tổng chi phí đáng tin cậy."
+   }
+  ]
+ },
+ {
+  "id": "p6-131",
+  "part": 6,
+  "intro": "Questions 131-134 refer to the following e-mail.",
+  "passages": [
+   {
+    "type": "e-mail",
+    "text": "To: All Staff\nFrom: Facilities Management\nSubject: Parking garage maintenance\n\nPlease be advised that the north parking garage will be closed from Monday, May 12, through Friday, May 16. During this time, crews will (131) ------- the lighting system and repaint the lane markings. Employees who normally park in the north garage may use the visitor lot on Elm Street. (132) -------. Shuttle buses will run every fifteen minutes between the visitor lot and the main entrance, (133) ------- at 7:00 A.M. We apologize for any inconvenience and appreciate your (134) -------."
+   }
+  ],
+  "questions": [
+   {
+    "number": 131,
+    "stem": "",
+    "options": [
+     "upgrade",
+     "upgraded",
+     "upgrading",
+     "upgrades"
+    ],
+    "answer": 0,
+    "type": "verb-tense",
+    "evidence": "crews will (131) -------",
+    "explanationVi": "Sau động từ khuyết thiếu \"will\" là động từ nguyên mẫu \"upgrade\"."
+   },
+   {
+    "number": 132,
+    "stem": "",
+    "options": [
+     "Permits for that lot will be distributed at the front desk.",
+     "The garage was built more than twenty years ago.",
+     "Visitors are always welcome to tour the facility.",
+     "The lighting company was founded on Elm Street."
+    ],
+    "answer": 0,
+    "type": "sentence-insertion",
+    "evidence": "Employees who normally park in the north garage may use the visitor lot on Elm Street.",
+    "explanationVi": "Câu trước cho nhân viên dùng bãi xe khách trên Elm Street, câu (A) nói tiếp cách nhận permit (giấy phép gửi xe) cho chính bãi đó. Các câu còn lại không nối với ý về chỗ gửi xe tạm."
+   },
+   {
+    "number": 133,
+    "stem": "",
+    "options": [
+     "begin",
+     "begins",
+     "beginning",
+     "began"
+    ],
+    "answer": 2,
+    "type": "word-form",
+    "evidence": "Shuttle buses will run every fifteen minutes between the visitor lot and the main entrance,",
+    "explanationVi": "Sau dấu phẩy, câu đã có động từ chính \"will run\", nên chỗ trống là cụm phân từ \"beginning at 7:00 A.M.\"."
+   },
+   {
+    "number": 134,
+    "stem": "",
+    "options": [
+     "patience",
+     "patient",
+     "patiently",
+     "patients"
+    ],
+    "answer": 0,
+    "type": "word-form",
+    "evidence": "appreciate your (134) -------",
+    "explanationVi": "Sau tính từ sở hữu \"your\" cần danh từ. \"appreciate your patience\" là cụm cố định; \"patients\" là bệnh nhân, sai nghĩa."
+   }
+  ]
+ },
+ {
+  "id": "p6-135",
+  "part": 6,
+  "intro": "Questions 135-138 refer to the following letter.",
+  "passages": [
+   {
+    "type": "letter",
+    "text": "Dear Ms. Okafor,\n\nThank you for your recent purchase of a Corvana 500 espresso machine from Halden Home Appliances. Your machine is covered by our standard one-year warranty, which (135) ------- on March 1 of next year.\n\nWe would like to offer you the option of extending this coverage for two additional years. The extended plan includes free repairs, replacement parts, and annual (136) ------- of your machine by one of our certified technicians. (137) -------. To enroll, simply complete the enclosed form and return it in the prepaid envelope.\n\nPlease note that this offer is available only to customers who sign up before the original warranty ends. (138) -------, if you choose not to extend your coverage, you will still be able to purchase repair services at our regular rates.\n\nSincerely,\nMarcus Bell\nCustomer Care Department"
+   }
+  ],
+  "questions": [
+   {
+    "number": 135,
+    "stem": "",
+    "options": [
+     "expired",
+     "has expired",
+     "will expire",
+     "had expired"
+    ],
+    "answer": 2,
+    "type": "verb-tense",
+    "evidence": "Your machine is covered by our standard one-year warranty, which (135) ------- on March 1 of next year.",
+    "explanationVi": "\"on March 1 of next year\" là mốc trong tương lai, và câu sau còn nói khách có thể gia hạn trước khi bảo hành hết, nên cần thì tương lai \"will expire\". \"has expired\" và các thì quá khứ mâu thuẫn với việc bảo hành vẫn đang còn hiệu lực."
+   },
+   {
+    "number": 136,
+    "stem": "",
+    "options": [
+     "inspections",
+     "inspector",
+     "inspect",
+     "inspected"
+    ],
+    "answer": 0,
+    "type": "word-form",
+    "evidence": "The extended plan includes free repairs, replacement parts, and annual (136) ------- of your machine by one of our certified technicians.",
+    "explanationVi": "Sau tính từ \"annual\" cần danh từ, và danh từ này đứng song song với \"repairs\", \"replacement parts\" trong danh sách quyền lợi, nên chọn \"inspections\" (các lần kiểm tra). \"inspector\" cũng là danh từ nhưng chỉ người kiểm tra, không thể là quyền lợi \"of your machine\" do technician thực hiện."
+   },
+   {
+    "number": 137,
+    "stem": "",
+    "options": [
+     "We apologize that your recent repair took longer than expected.",
+     "The full two-year plan costs $79, which can be paid in a single installment.",
+     "Our showroom will be closed for renovations next month.",
+     "Several customers have already returned their machines for a refund."
+    ],
+    "answer": 1,
+    "type": "sentence-insertion",
+    "evidence": "To enroll, simply complete the enclosed form and return it in the prepaid envelope.",
+    "explanationVi": "Câu trước liệt kê quyền lợi của gói gia hạn, câu sau hướng dẫn cách đăng ký, nên câu ở giữa nói giá của gói là hợp lý. (A) sai vì thư không nhắc đến lần sửa chữa nào, khách vừa mới mua máy."
+   },
+   {
+    "number": 138,
+    "stem": "",
+    "options": [
+     "However",
+     "Therefore",
+     "For instance",
+     "Likewise"
+    ],
+    "answer": 0,
+    "type": "transition",
+    "evidence": "Please note that this offer is available only to customers who sign up before the original warranty ends.",
+    "explanationVi": "Câu trước nói ưu đãi chỉ dành cho người đăng ký trước hạn, câu sau trấn an rằng không gia hạn thì vẫn mua được dịch vụ sửa chữa. Hai ý tương phản nên dùng \"However\". \"Therefore\" sai vì việc vẫn mua được dịch vụ sửa chữa không phải là hệ quả của giới hạn ưu đãi."
+   }
+  ]
+ },
+ {
+  "id": "p6-139",
+  "part": 6,
+  "intro": "Questions 139-142 refer to the following article.",
+  "passages": [
+   {
+    "type": "article",
+    "text": "Staff Volunteer Program Expands\n\nLast spring, Brennan Logistics (139) ------- a pilot program that gave employees one paid day each year to volunteer with a local charity. More than 200 staff members took part, and the feedback was overwhelmingly positive. (140) -------, the company has decided to increase the allowance to two days per year starting in January.\n\nEmployees may choose any registered nonprofit organization. Past volunteers have helped at food banks, cleaned up city parks, and tutored students in mathematics. (141) -------.\n\nTo request a volunteer day, submit the online form at least two weeks in advance. Your manager must approve the request before the date is (142) -------. Questions about the program can be directed to Aisha Rahman in Human Resources."
+   }
+  ],
+  "questions": [
+   {
+    "number": 139,
+    "stem": "",
+    "options": [
+     "launches",
+     "launched",
+     "will launch",
+     "is launching"
+    ],
+    "answer": 1,
+    "type": "verb-tense",
+    "evidence": "Last spring, Brennan Logistics (139) ------- a pilot program that gave employees one paid day each year to volunteer with a local charity.",
+    "explanationVi": "\"Last spring\" là mốc đã qua, và vế sau dùng \"gave\", \"took part\", nên cần quá khứ đơn \"launched\". \"will launch\" sai vì chương trình đã diễn ra và đã có phản hồi."
+   },
+   {
+    "number": 140,
+    "stem": "",
+    "options": [
+     "Nevertheless",
+     "Instead",
+     "As a result",
+     "Otherwise"
+    ],
+    "answer": 2,
+    "type": "transition",
+    "evidence": "More than 200 staff members took part, and the feedback was overwhelmingly positive.",
+    "explanationVi": "Phản hồi rất tích cực dẫn đến quyết định tăng số ngày tình nguyện, quan hệ nguyên nhân và kết quả nên dùng \"As a result\". \"Nevertheless\" chỉ sự tương phản, không hợp vì quyết định mở rộng là điều được chờ đợi sau phản hồi tốt."
+   },
+   {
+    "number": 141,
+    "stem": "",
+    "options": [
+     "The pilot program will therefore end in December as planned.",
+     "Ms. Rahman joined the company as a delivery driver ten years ago.",
+     "Most employees prefer to take their vacation during the summer months.",
+     "Others have shared their professional skills, such as helping small charities plan delivery routes."
+    ],
+    "answer": 3,
+    "type": "sentence-insertion",
+    "evidence": "Past volunteers have helped at food banks, cleaned up city parks, and tutored students in mathematics.",
+    "explanationVi": "Câu trước liệt kê việc các tình nguyện viên trước đã làm, câu (D) mở đầu bằng \"Others\" để nói thêm một nhóm khác, nên nối tiếp tự nhiên. (A) mâu thuẫn với việc chương trình được mở rộng từ tháng 1."
+   },
+   {
+    "number": 142,
+    "stem": "",
+    "options": [
+     "confirm",
+     "confirming",
+     "confirmation",
+     "confirmed"
+    ],
+    "answer": 3,
+    "type": "word-form",
+    "evidence": "Your manager must approve the request before the date is (142) -------.",
+    "explanationVi": "Chủ ngữ \"the date\" không tự xác nhận được mà được quản lý xác nhận, nên cần bị động \"is confirmed\". \"is confirming\" là chủ động, sai nghĩa vì ngày không thể thực hiện hành động xác nhận."
+   }
+  ]
+ },
+ {
+  "id": "p6-143",
+  "part": 6,
+  "intro": "Questions 143-146 refer to the following advertisement.",
+  "passages": [
+   {
+    "type": "advertisement",
+    "text": "Need a quiet place to work away from home? Pinecrest Coworking is opening its third location at 410 Harmon Avenue on September 2. Located two blocks from the Harmon Avenue subway station, the building is easy to reach by public transportation. The new space offers private offices, shared desks, and meeting rooms that can be reserved by the hour. All members enjoy high-speed Internet, free coffee, and (143) ------- priced printing.\n\nPinecrest memberships are also (144) -------. Members at any of our locations may use the other two sites at no extra charge. (145) -------.\n\nTo celebrate the opening, anyone who signs up before September 30 (146) ------- the first month at half price. Tours of the new location are available every Saturday in August. Visit www.pinecrestcowork.com to book one."
+   }
+  ],
+  "questions": [
+   {
+    "number": 143,
+    "stem": "",
+    "options": [
+     "afford",
+     "affordable",
+     "affordably",
+     "affordability"
+    ],
+    "answer": 2,
+    "type": "word-form",
+    "evidence": "free coffee, and (143) ------- priced printing.",
+    "explanationVi": "Chỗ trống bổ nghĩa cho tính từ \"priced\" trong cụm \"------- priced printing\", nên cần trạng từ \"affordably\" (giá phải chăng). \"affordable\" là tính từ, không bổ nghĩa cho một tính từ khác."
+   },
+   {
+    "number": 144,
+    "stem": "",
+    "options": [
+     "permanent",
+     "confidential",
+     "flexible",
+     "complicated"
+    ],
+    "answer": 2,
+    "type": "vocabulary",
+    "evidence": "Members at any of our locations may use the other two sites at no extra charge.",
+    "explanationVi": "Câu sau giải thích rằng thành viên dùng được cả hai địa điểm còn lại mà không phải trả thêm, tức là membership linh hoạt, nên chọn \"flexible\". \"complicated\" trái nghĩa với ý quảng cáo, \"permanent\" và \"confidential\" không liên quan đến việc dùng nhiều địa điểm."
+   },
+   {
+    "number": 145,
+    "stem": "",
+    "options": [
+     "This means you can book a meeting room downtown in the morning and work at a desk on Harmon Avenue in the afternoon.",
+     "Unfortunately, the Harmon Avenue location will be closed on weekends.",
+     "Applicants will be contacted for an interview within one week.",
+     "Our coffee is roasted by a small company in the neighborhood."
+    ],
+    "answer": 0,
+    "type": "sentence-insertion",
+    "evidence": "Members at any of our locations may use the other two sites at no extra charge.",
+    "explanationVi": "Câu (A) mở đầu bằng \"This means\" để minh hoạ việc dùng nhiều địa điểm vừa nêu ở câu trước. (B) mâu thuẫn với việc có tour vào mọi thứ Bảy; (D) nói về cà phê, thuộc đoạn đầu, không khớp với đoạn nói về membership; (C) là nội dung tin tuyển dụng."
+   },
+   {
+    "number": 146,
+    "stem": "",
+    "options": [
+     "received",
+     "will receive",
+     "has received",
+     "had received"
+    ],
+    "answer": 1,
+    "type": "verb-tense",
+    "evidence": "To celebrate the opening, anyone who signs up before September 30 (146) ------- the first month at half price.",
+    "explanationVi": "Địa điểm mới khai trương ngày September 2 và ưu đãi áp dụng cho người đăng ký trước September 30, nên việc nhận giảm giá diễn ra trong tương lai: \"will receive\". Các thì quá khứ và hoàn thành sai vì ưu đãi chưa xảy ra."
+   }
+  ]
+ },
+ {
+  "id": "p7-147",
+  "part": 7,
+  "intro": "Questions 147-148 refer to the following notice.",
+  "passages": [
+   {
+    "type": "notice",
+    "text": "Effective Monday, November 3, the offices of Verity Accounting Group will move from the fourth floor of the Dalton Building to Suite 210 of the Corwin Tower, 88 Bayfield Street. The move will allow us to serve our growing client base in a larger, more modern space.\n\nOur current office will be closed on Thursday, October 30, and Friday, October 31, while our furniture and files are packed and transported. During these two days, staff will be available by e-mail only, and all client appointments have been rescheduled. Our telephone numbers will remain the same.\n\nVisitors to the Corwin Tower will be issued a temporary pass at the security desk in the main lobby. Free parking is available in the garage beneath the building for up to two hours.\n\nWe thank our clients and neighbors for their understanding."
+   }
+  ],
+  "questions": [
+   {
+    "number": 147,
+    "stem": "What is the main purpose of the notice?",
+    "options": [
+     "To introduce a new accounting service",
+     "To explain a change to building security",
+     "To announce that a business is relocating",
+     "To request help with moving furniture"
+    ],
+    "answer": 2,
+    "type": "purpose",
+    "evidence": "the offices of Verity Accounting Group will move from the fourth floor of the Dalton Building to Suite 210 of the Corwin Tower",
+    "explanationVi": "Câu đầu thông báo văn phòng Verity Accounting Group chuyển từ Dalton Building sang Corwin Tower, đó là mục đích chính. (B) sai vì thủ tục lấy thẻ ra vào chỉ là chi tiết phụ dành cho khách tới toà nhà mới."
+   },
+   {
+    "number": 148,
+    "stem": "The word \"issued\" in paragraph 3, line 1, is closest in meaning to",
+    "options": [
+     "checked",
+     "printed",
+     "published",
+     "given"
+    ],
+    "answer": 3,
+    "type": "synonym",
+    "evidence": "Visitors to the Corwin Tower will be issued a temporary pass at the security desk in the main lobby.",
+    "explanationVi": "\"be issued a temporary pass\" nghĩa là được cấp, được phát một thẻ tạm, gần nhất là \"given\". \"published\" cũng là một nghĩa của \"issue\" (phát hành ấn phẩm) nhưng không dùng cho thẻ ra vào cấp cho khách."
+   }
+  ]
+ },
+ {
+  "id": "p7-149",
+  "part": 7,
+  "intro": "Questions 149-150 refer to the following advertisement.",
+  "passages": [
+   {
+    "type": "advertisement",
+    "text": "Summit Fitness Club: Now Open in Ridgefield\n\nSummit Fitness Club invites you to join us at our newest location, 1420 Copley Road. Our 18,000-square-foot facility features modern cardio and weight-training equipment, a heated indoor pool, and three studios for group classes such as yoga, cycling, and dance.\n\nMembership options:\n- Basic: $35 per month. Access to the gym floor and locker rooms from 6:00 A.M. to 10:00 P.M.\n- Plus: $55 per month. Everything in Basic, plus the pool and unlimited group classes.\n- Corporate: Companies that enroll ten or more employees receive 20 percent off Plus memberships.\n\nSign up by March 31 and we will waive the $50 registration fee. Every new member also receives one free session with a personal trainer.\n\nCall 555-0182 or stop by the front desk to schedule a tour."
+   }
+  ],
+  "questions": [
+   {
+    "number": 149,
+    "stem": "What is included in a Plus membership?",
+    "options": [
+     "Use of the swimming pool",
+     "Weekly sessions with a personal trainer",
+     "Access to the gym 24 hours a day",
+     "Free parking at the facility"
+    ],
+    "answer": 0,
+    "type": "detail",
+    "evidence": "Plus: $55 per month. Everything in Basic, plus the pool and unlimited group classes.",
+    "explanationVi": "Gói Plus gồm mọi thứ của Basic cộng thêm hồ bơi và lớp nhóm không giới hạn. (B) sai vì mỗi thành viên mới chỉ được 1 buổi personal trainer miễn phí, không phải hằng tuần; (C) sai vì giờ mở cửa là 6:00 A.M. tới 10:00 P.M."
+   },
+   {
+    "number": 150,
+    "stem": "What is NOT mentioned about Summit Fitness Club?",
+    "options": [
+     "It offers a discount to businesses.",
+     "It normally charges a registration fee.",
+     "It holds group exercise classes.",
+     "It provides child care for members."
+    ],
+    "answer": 3,
+    "type": "not-true",
+    "evidence": "Corporate: Companies that enroll ten or more employees receive 20 percent off Plus memberships.",
+    "explanationVi": "Quảng cáo nhắc giảm giá cho công ty (Corporate), phí đăng ký $50 và các lớp yoga, cycling, dance, nhưng không nhắc dịch vụ trông trẻ, nên chọn (D)."
+   }
+  ]
+ },
+ {
+  "id": "p7-151",
+  "part": 7,
+  "intro": "Questions 151-152 refer to the following invoice.",
+  "passages": [
+   {
+    "type": "invoice",
+    "text": "Brightline Equipment Rentals\n2275 Industrial Parkway, Milford, OH 45150\nPhone: 555-0147\n\nINVOICE\nInvoice number: 60318\nInvoice date: April 22\nCustomer: Tamsin Hale, Northgate Conference Center\nRental period: April 15-April 19\n\nItem | Quantity | Daily rate | Days | Amount\nWireless microphone | 6 | $12.00 | 5 | $360.00\nProjector and screen | 2 | $45.00 | 5 | $450.00\nFolding stage, 4 x 8 ft. | 1 | $80.00 | 3 | $240.00\n\nDelivery and setup: $75.00\nSubtotal: $1,125.00\nDeposit paid (April 10): -$300.00\nBalance due: $825.00\n\nPayment is due within 30 days of the invoice date. A late fee of 2 percent per month will be added to unpaid balances.\n\nNote: One microphone was returned with a damaged cable. As this is your first rental with us, no repair charge has been applied."
+   }
+  ],
+  "questions": [
+   {
+    "number": 151,
+    "stem": "What is suggested about Northgate Conference Center?",
+    "options": [
+     "It paid the full amount in advance.",
+     "It has not rented equipment from Brightline before.",
+     "It will be charged for a damaged cable.",
+     "It is located on Industrial Parkway."
+    ],
+    "answer": 1,
+    "type": "inference",
+    "evidence": "As this is your first rental with us, no repair charge has been applied.",
+    "explanationVi": "\"your first rental with us\" cho thấy đây là lần đầu khách thuê của Brightline. (C) sai vì hoá đơn ghi rõ không tính phí sửa chữa; (D) là địa chỉ của Brightline, không phải của khách."
+   },
+   {
+    "number": 152,
+    "stem": "According to the invoice, what will happen if the balance is not paid within 30 days?",
+    "options": [
+     "The deposit will be kept by Brightline.",
+     "The rental period will be extended.",
+     "An additional fee will be charged.",
+     "A repair charge will be added."
+    ],
+    "answer": 2,
+    "type": "detail",
+    "evidence": "A late fee of 2 percent per month will be added to unpaid balances.",
+    "explanationVi": "Hoá đơn nói số tiền chưa thanh toán sẽ bị cộng phí trễ hạn 2% mỗi tháng, tức là bị tính thêm phí. (D) sai vì phí sửa chữa đã được miễn, không liên quan đến hạn thanh toán."
+   }
+  ]
+ },
+ {
+  "id": "p7-153",
+  "part": 7,
+  "intro": "Questions 153-154 refer to the following text-message chain.",
+  "passages": [
+   {
+    "type": "text-message chain",
+    "text": "Hana Kim (9:42 A.M.)\tThe client from Brightway just called. They want to move our meeting from Thursday to Wednesday afternoon.\nLuis Ortega (9:44 A.M.)\tWednesday afternoon? I'm at the trade fair in Denver until Wednesday night.\nHana Kim (9:45 A.M.)\tI know. Could you join by video call?\nLuis Ortega (9:47 A.M.)\tI'll make it work. Just send me the link and the updated slides.\nHana Kim (9:48 A.M.)\tWill do. I'll finish the slides by tomorrow morning."
+   }
+  ],
+  "questions": [
+   {
+    "number": 153,
+    "stem": "Why did Ms. Kim write to Mr. Ortega?",
+    "options": [
+     "To report a schedule change",
+     "To ask him to visit a client",
+     "To invite him to a trade fair",
+     "To request a new set of slides"
+    ],
+    "answer": 0,
+    "type": "purpose",
+    "evidence": "They want to move our meeting from Thursday to Wednesday afternoon.",
+    "explanationVi": "Tin nhắn đầu tiên báo khách hàng muốn dời cuộc họp từ thứ Năm sang chiều thứ Tư, tức là một thay đổi lịch."
+   },
+   {
+    "number": 154,
+    "stem": "At 9:47 A.M., what does Mr. Ortega most likely mean when he writes, \"I'll make it work\"?",
+    "options": [
+     "He will repair some equipment.",
+     "He will take part in the meeting remotely.",
+     "He will return from Denver early.",
+     "He will complete the slides himself."
+    ],
+    "answer": 1,
+    "type": "intended-meaning",
+    "evidence": "Just send me the link and the updated slides.",
+    "explanationVi": "Câu trước hỏi \"Could you join by video call?\" và ngay sau đó ông Ortega xin đường link, nên ông đồng ý họp từ xa. Ông vẫn ở Denver, và cô Kim mới là người làm slides."
+   }
+  ]
+ },
+ {
+  "id": "p7-155",
+  "part": 7,
+  "intro": "Questions 155-157 refer to the following e-mail.",
+  "passages": [
+   {
+    "type": "e-mail",
+    "text": "To: Gregory Lam <glam@harbortech.com>\nFrom: Priya Desai <pdesai@caldwellevents.com>\nDate: March 3\nSubject: Your booking\n\nDear Mr. Lam,\n\nThank you for choosing Caldwell Events to host Harbor Tech's annual awards dinner. [1] I am writing to confirm the details we discussed on the phone yesterday. The dinner will take place in the Riverside Hall on Friday, April 18, from 6:30 P.M. to 10:00 P.M. Our kitchen will prepare a three-course meal for 120 guests, including vegetarian options for the 15 guests you mentioned. [2]\n\nAs agreed, a deposit of 30 percent of the total cost is due by March 14. The remaining balance must be paid no later than one week before the event. [3] Please note that the final number of guests must be confirmed by April 4, as our kitchen orders supplies two weeks in advance. [4]\n\nIf you would like to arrange a tasting of the menu, I would be happy to schedule one for you and up to three colleagues.\n\nSincerely,\nPriya Desai, Event Coordinator"
+   }
+  ],
+  "questions": [
+   {
+    "number": 155,
+    "stem": "What is the purpose of the e-mail?",
+    "options": [
+     "To request payment for a past event",
+     "To confirm arrangements for an event",
+     "To announce the winners of an award",
+     "To recommend a change to a menu"
+    ],
+    "answer": 1,
+    "type": "purpose",
+    "evidence": "I am writing to confirm the details we discussed on the phone yesterday.",
+    "explanationVi": "Người viết nói thẳng mục đích là xác nhận các chi tiết đã bàn qua điện thoại cho bữa tối sắp tới."
+   },
+   {
+    "number": 156,
+    "stem": "What is indicated about the dinner?",
+    "options": [
+     "It will be held on March 14.",
+     "It will be attended by fifteen people.",
+     "It will include meals without meat.",
+     "It will end at 6:30 P.M."
+    ],
+    "answer": 2,
+    "type": "detail",
+    "evidence": "including vegetarian options for the 15 guests you mentioned",
+    "explanationVi": "\"vegetarian options\" được diễn đạt lại thành \"meals without meat\". 15 chỉ là số khách ăn chay, tổng số khách là 120; March 14 là hạn đặt cọc."
+   },
+   {
+    "number": 157,
+    "stem": "In which of the positions marked [1], [2], [3], and [4] does the following sentence best belong?\n\"We are unable to accommodate increases in the number of guests after that date.\"",
+    "options": [
+     "[1]",
+     "[2]",
+     "[3]",
+     "[4]"
+    ],
+    "answer": 3,
+    "type": "sentence-insertion",
+    "evidence": "Please note that the final number of guests must be confirmed by April 4, as our kitchen orders supplies two weeks in advance.",
+    "explanationVi": "\"that date\" phải chỉ hạn chốt số khách là April 4, nằm ngay trước vị trí [4]. Ở [3], mốc gần nhất là hạn thanh toán, không liên quan tới số khách."
+   }
+  ]
+ },
+ {
+  "id": "p7-158",
+  "part": 7,
+  "intro": "Questions 158-160 refer to the following e-mail.",
+  "passages": [
+   {
+    "type": "e-mail",
+    "text": "To: Marcus Feld <mfeld@ostrandlogistics.com>\nFrom: Elena Varga <evarga@harrowgatehotel.com>\nDate: August 12\nSubject: Your reservation in October\n\nDear Mr. Feld,\n\nThank you for reserving a block of fifteen rooms at the Harrowgate Hotel for Ostrand Logistics' sales conference from October 8 to 10. [1] I am writing to let you know about work that will be taking place at the hotel during your stay.\n\nBeginning September 15, we will be renovating our east wing, where your rooms were originally assigned. The project includes new carpeting, updated bathrooms, and larger windows. [2] To keep noise from affecting your group, we have moved all fifteen reservations to the west wing, which faces the harbor. Your room rate will not change.\n\nPlease be aware that our ground-floor restaurant will also be closed until October 20. In the meantime, breakfast will be served in the Lantern Room on the second floor, and room service will remain available from 6:00 A.M. to 11:00 P.M. [3]\n\nIf your group still requires a meeting space during the conference, the Cedar Room is not affected by the work. I would be glad to reserve it for you at no additional charge. [4]\n\nSincerely,\nElena Varga\nGuest Relations Manager"
+   }
+  ],
+  "questions": [
+   {
+    "number": 158,
+    "stem": "Why did Ms. Varga write to Mr. Feld?",
+    "options": [
+     "To ask him to reduce the size of his group",
+     "To explain how a renovation will affect his reservation",
+     "To offer him a lower room rate",
+     "To promote a newly opened restaurant"
+    ],
+    "answer": 1,
+    "type": "purpose",
+    "evidence": "I am writing to let you know about work that will be taking place at the hotel during your stay.",
+    "explanationVi": "Bà Varga nói rõ mục đích là báo về công việc sửa chữa diễn ra trong thời gian đoàn lưu trú, rồi giải thích việc chuyển phòng và đóng cửa nhà hàng. Giá phòng được giữ nguyên (\"Your room rate will not change\"), không hạ, nên (C) sai."
+   },
+   {
+    "number": 159,
+    "stem": "What does Ms. Varga offer to do?",
+    "options": [
+     "Extend the hours of room service",
+     "Arrange breakfast in guests' rooms",
+     "Reserve a meeting room free of charge",
+     "Move the group to another hotel"
+    ],
+    "answer": 2,
+    "type": "detail",
+    "evidence": "I would be glad to reserve it for you at no additional charge.",
+    "explanationVi": "\"it\" là phòng Cedar Room dùng để họp, và bà Varga đề nghị giữ phòng này mà không tính thêm phí. Giờ room service chỉ được nhắc là vẫn giữ như cũ (6:00 A.M. tới 11:00 P.M.), không được kéo dài, nên (A) sai."
+   },
+   {
+    "number": 160,
+    "stem": "In which of the positions marked [1], [2], [3], and [4] does the following sentence best belong?\n\"Unfortunately, the work will not be finished before your arrival.\"",
+    "options": [
+     "[1]",
+     "[2]",
+     "[3]",
+     "[4]"
+    ],
+    "answer": 1,
+    "type": "sentence-insertion",
+    "evidence": "The project includes new carpeting, updated bathrooms, and larger windows. [2] To keep noise from affecting your group, we have moved all fifteen reservations to the west wing",
+    "explanationVi": "Câu chèn cho biết công trình ở cánh phía đông chưa xong khi đoàn tới, đó là lý do trực tiếp cho câu sau [2]: chuyển cả 15 phòng sang cánh phía tây để tránh tiếng ồn. Ở [1] cụm \"the work\" chưa có gì để chỉ tới vì công việc được nhắc ngay sau đó."
+   }
+  ]
+ },
+ {
+  "id": "p7-161",
+  "part": 7,
+  "intro": "Questions 161-163 refer to the following press release.",
+  "passages": [
+   {
+    "type": "article",
+    "text": "FOR IMMEDIATE RELEASE\nContact: Dana Okafor, Brennan City Transit Authority, 555-0148\n\nBRENNAN (May 6) — The Brennan City Transit Authority (BCTA) announced today that its new mobile application, RideBrennan, will be available for free download beginning June 1. The app allows riders to plan trips, see real-time arrival information for buses and light-rail trains, and pay fares directly from their phones.\n\n\"Riders told us that waiting at a stop without knowing when the next bus would come was their biggest frustration,\" said BCTA director Samuel Ortiz. \"RideBrennan addresses that concern directly.\" Arrival times in the app are updated every thirty seconds using GPS units installed on all 240 of the authority's vehicles.\n\nFares purchased through the app will cost the same as those bought at station machines. However, riders who buy a monthly pass in the app during June will receive a 15 percent discount. Paper tickets and the existing reloadable fare cards will continue to be accepted.\n\nThe app was developed by Tallis Digital, a software company based in Brennan, at a cost of $1.2 million. A trial version was tested by 500 volunteer riders over the past four months, and their feedback led to several changes, including larger text and an option to save frequent trips.\n\nRideBrennan will be available in English and Spanish at launch. Additional languages will be added later this year."
+   }
+  ],
+  "questions": [
+   {
+    "number": 161,
+    "stem": "What is the purpose of the press release?",
+    "options": [
+     "To announce a fare increase",
+     "To introduce a new light-rail line",
+     "To recruit volunteers to test software",
+     "To announce the release of a mobile application"
+    ],
+    "answer": 3,
+    "type": "purpose",
+    "evidence": "its new mobile application, RideBrennan, will be available for free download beginning June 1",
+    "explanationVi": "Thông cáo báo chí công bố ứng dụng RideBrennan sẽ ra mắt từ ngày 1 tháng 6. Việc 500 người tình nguyện thử ứng dụng đã diễn ra trong 4 tháng qua, thông cáo không tuyển thêm, nên (C) sai."
+   },
+   {
+    "number": 162,
+    "stem": "What is NOT stated about RideBrennan?",
+    "options": [
+     "It shows when buses and trains will arrive.",
+     "It will be offered in two languages at first.",
+     "It will replace the reloadable fare cards.",
+     "It was tested by members of the public."
+    ],
+    "answer": 2,
+    "type": "not-true",
+    "evidence": "Paper tickets and the existing reloadable fare cards will continue to be accepted.",
+    "explanationVi": "Thẻ nạp tiền hiện có vẫn tiếp tục được chấp nhận, nên ứng dụng không thay thế chúng. (A) khớp với \"real-time arrival information\", (B) khớp với \"English and Spanish at launch\", (D) khớp với \"500 volunteer riders\"."
+   },
+   {
+    "number": 163,
+    "stem": "The word \"addresses\" in paragraph 2 is closest in meaning to",
+    "options": [
+     "delivers",
+     "deals with",
+     "labels",
+     "sends"
+    ],
+    "answer": 1,
+    "type": "synonym",
+    "evidence": "\"RideBrennan addresses that concern directly.\"",
+    "explanationVi": "Ở đây \"addresses that concern\" nghĩa là giải quyết mối lo về việc không biết khi nào xe tới, tức \"deals with\". \"delivers\", \"labels\" và \"sends\" ứng với nghĩa ghi địa chỉ hoặc gửi đi, không hợp ngữ cảnh."
+   }
+  ]
+ },
+ {
+  "id": "p7-164",
+  "part": 7,
+  "intro": "Questions 164-167 refer to the following online chat discussion.",
+  "passages": [
+   {
+    "type": "online chat discussion",
+    "text": "Rita Gomez (10:02 A.M.)\tQuick update: Pell Packaging just told me they can't deliver our takeout containers until the end of the month.\nTom Becker (10:03 A.M.)\tThat's their second delay since March. I've already been talking to Corvan Supply about switching.\nAiko Sato (10:04 A.M.)\tHow soon could Corvan get containers to us? My store has enough for about a week.\nTom Becker (10:05 A.M.)\tThey have stock in their Fairview warehouse. If I place an order today, we'd have it Thursday.\nRita Gomez (10:06 A.M.)\tAnd the price?\nTom Becker (10:07 A.M.)\tAbout 8 percent higher per unit. But they don't require a minimum order.\nRita Gomez (10:08 A.M.)\tLet's not jump in with both feet just yet. I'd like to see how their containers hold up first.\nAiko Sato (10:09 A.M.)\tBeggars can't be choosers. My customers won't wait while we hunt for boxes.\nPaul Mendes (10:10 A.M.)\tFor what it's worth, my store used Corvan's containers for a catering event last year. They worked fine with hot soup.\nRita Gomez (10:11 A.M.)\tGood to know. Tom, go ahead with a one-time order for now. We'll talk about a contract after I've tested them.\nTom Becker (10:12 A.M.)\tWill do. I'll ask them to send a few extra samples with the shipment."
+   }
+  ],
+  "questions": [
+   {
+    "number": 164,
+    "stem": "What problem does Ms. Gomez report?",
+    "options": [
+     "A supplier will deliver an order late.",
+     "A shipment of containers arrived damaged.",
+     "The cost of takeout containers has risen.",
+     "A store has run out of food packaging."
+    ],
+    "answer": 0,
+    "type": "detail",
+    "evidence": "Pell Packaging just told me they can't deliver our takeout containers until the end of the month.",
+    "explanationVi": "Bà Gomez báo Pell Packaging không giao được hộp đựng mang đi cho tới cuối tháng, tức giao trễ. Cửa hàng của bà Sato vẫn còn hàng đủ khoảng một tuần (\"enough for about a week\"), chưa hết, nên (D) sai."
+   },
+   {
+    "number": 165,
+    "stem": "At 10:08 A.M., what does Ms. Gomez most likely mean when she writes, \"Let's not jump in with both feet just yet\"?",
+    "options": [
+     "She would rather keep using Pell Packaging.",
+     "She does not want to make a long-term commitment yet.",
+     "She thinks the order should wait until next month.",
+     "She believes Corvan Supply's price is too high."
+    ],
+    "answer": 1,
+    "type": "intended-meaning",
+    "evidence": "Tom, go ahead with a one-time order for now. We'll talk about a contract after I've tested them.",
+    "explanationVi": "\"Jump in with both feet\" là lao vào cam kết trọn vẹn; bà Gomez muốn thận trọng, chỉ đặt một lần trước và bàn hợp đồng sau khi thử hộp. Bà vẫn đồng ý đặt hàng Corvan ngay với giá đó, nên (A), (C) và (D) đều sai."
+   },
+   {
+    "number": 166,
+    "stem": "At 10:09 A.M., what does Ms. Sato most likely mean when she writes, \"Beggars can't be choosers\"?",
+    "options": [
+     "She doubts the quality of Corvan Supply's containers.",
+     "She wants customers to bring their own containers.",
+     "She plans to borrow boxes from another store.",
+     "She thinks the company should order from Corvan Supply right away."
+    ],
+    "answer": 3,
+    "type": "intended-meaning",
+    "evidence": "My customers won't wait while we hunt for boxes.",
+    "explanationVi": "Cô Sato đáp lại ý muốn thử hàng trước của cô Gomez: cửa hàng của cô chỉ còn hộp đủ dùng khoảng một tuần và khách không chờ được, nên không thể kén chọn mà phải đặt hàng của Corvan Supply ngay."
+   },
+   {
+    "number": 167,
+    "stem": "What will Mr. Becker most likely do next?",
+    "options": [
+     "Sign a contract with Corvan Supply",
+     "Pick up containers from the Fairview warehouse",
+     "Place an order and request samples",
+     "Ask Pell Packaging for a refund"
+    ],
+    "answer": 2,
+    "type": "inference",
+    "evidence": "Will do. I'll ask them to send a few extra samples with the shipment.",
+    "explanationVi": "Bà Gomez bảo ông Becker đặt một đơn hàng lần này và ông đồng ý, kèm yêu cầu Corvan gửi thêm hàng mẫu. Hợp đồng chỉ được bàn sau khi thử hộp, nên (A) sai."
+   }
+  ]
+ },
+ {
+  "id": "p7-168",
+  "part": 7,
+  "intro": "Questions 168-171 refer to the following memo.",
+  "passages": [
+   {
+    "type": "memo",
+    "text": "MEMO\nTo: All Department Heads\nFrom: Linda Choi, Director of Human Resources\nDate: February 3\nSubject: New mentoring program\n\nStarting in March, Brennan Engineering will launch a mentoring program for employees in their first year with the company. Each new hire will be paired with an experienced staff member from a different department. The goal is to help newer employees understand how the company's divisions work together and to give them someone outside their own team to turn to with questions.\n\nMentors will meet with their assigned employees for one hour every two weeks during regular working hours. These meetings should be treated as part of the mentor's normal workload, so please adjust schedules accordingly. Mentors who complete the full six-month program will receive a certificate and an additional day of paid leave.\n\nWe are looking for twenty volunteers to serve as mentors in this first round. Candidates should have worked at Brennan for at least three years and must attend a half-day training session on February 24. Please share this information with your teams and encourage interested staff to sign up on the HR portal by February 17.\n\nLast year, a survey of first-year employees found that many felt unsure whom to contact outside their own departments. We hope this program will change that."
+   }
+  ],
+  "questions": [
+   {
+    "number": 168,
+    "stem": "What is the purpose of the memo?",
+    "options": [
+     "To announce the hiring of twenty engineers",
+     "To introduce a program for new employees",
+     "To schedule annual performance reviews",
+     "To request feedback on an employee survey"
+    ],
+    "answer": 1,
+    "type": "purpose",
+    "evidence": "Brennan Engineering will launch a mentoring program for employees in their first year with the company",
+    "explanationVi": "Bản ghi nhớ giới thiệu chương trình kèm cặp (mentoring) cho nhân viên năm đầu. Con số 20 là số mentor tình nguyện cần tìm, không phải số kỹ sư được tuyển, nên (A) sai."
+   },
+   {
+    "number": 169,
+    "stem": "What is a requirement for mentors?",
+    "options": [
+     "They must work in the same department as their new hire.",
+     "They must meet with their new hire every week.",
+     "They must have been with the company for at least three years.",
+     "They must already hold a mentoring certificate."
+    ],
+    "answer": 2,
+    "type": "detail",
+    "evidence": "Candidates should have worked at Brennan for at least three years",
+    "explanationVi": "Người ứng tuyển làm mentor phải làm ở Brennan ít nhất ba năm. Mentor được ghép với nhân viên ở phòng ban khác (\"from a different department\") và gặp hai tuần một lần, nên (A) và (B) sai; chứng nhận là phần thưởng sau chương trình, nên (D) sai."
+   },
+   {
+    "number": 170,
+    "stem": "What can be inferred about the mentoring program?",
+    "options": [
+     "It was created partly in response to employee feedback.",
+     "Its meetings will take place outside working hours.",
+     "It has been run successfully in previous years.",
+     "It is open only to staff in the engineering division."
+    ],
+    "answer": 0,
+    "type": "inference",
+    "evidence": "Last year, a survey of first-year employees found that many felt unsure whom to contact outside their own departments. We hope this program will change that.",
+    "explanationVi": "Khảo sát năm ngoái cho thấy nhân viên năm đầu không biết liên hệ ai ngoài phòng ban, và công ty mong chương trình thay đổi điều đó, nên có thể suy ra chương trình ra đời một phần nhờ phản hồi này. Đây là đợt đầu tiên (\"this first round\"), nên (C) sai; buổi gặp diễn ra trong giờ làm, nên (B) sai."
+   },
+   {
+    "number": 171,
+    "stem": "By what date should interested employees sign up?",
+    "options": [
+     "February 3",
+     "February 17",
+     "February 24",
+     "March 1"
+    ],
+    "answer": 1,
+    "type": "detail",
+    "evidence": "encourage interested staff to sign up on the HR portal by February 17",
+    "explanationVi": "Hạn đăng ký trên cổng HR là ngày 17 tháng 2. Ngày 24 tháng 2 là buổi đào tạo dành cho mentor, nên (C) sai."
+   }
+  ]
+ },
+ {
+  "id": "p7-172",
+  "part": 7,
+  "intro": "Questions 172-175 refer to the following article.",
+  "passages": [
+   {
+    "type": "article",
+    "text": "Neighborhood Bike Shop Keeps Pace with Its Customers\nBy Janelle Ross\n\nMILLBROOK (July 14) — When Owen Prescott opened Gearhouse Cycles on Lark Street eighteen years ago, he sold mostly used bicycles and fixed flat tires in a space barely large enough for two customers. Today the shop occupies three storefronts, employs eleven people, and repairs more than 4,000 bicycles a year. [1]\n\nPrescott credits much of that growth to a decision he made in 2015. That year, the city added protected bike lanes along Lark Street and several nearby roads. [2] Rather than simply stocking more bikes, Prescott began offering evening classes in basic maintenance. \"I figured if people knew how to look after their bikes, they'd ride more and trust us when something bigger went wrong,\" he said. The classes, which cost $25, regularly fill up weeks in advance.\n\nGearhouse also runs a delivery service for riders who cannot bring their bikes in. A mechanic collects the bicycle, repairs it at the shop, and returns it within two days. [3] The service now accounts for nearly a quarter of the shop's repair work.\n\nPrescott's next project is a used-bicycle exchange, set to begin in September. Customers will be able to trade in bikes their children have outgrown for credit toward a larger model. [4] \"Kids grow fast,\" Prescott said. \"Parents shouldn't have to buy a brand-new bike every two years.\""
+   }
+  ],
+  "questions": [
+   {
+    "number": 172,
+    "stem": "What is the article mainly about?",
+    "options": [
+     "The growth of a local business",
+     "The opening of new bike lanes",
+     "A citywide cycling competition",
+     "The relocation of a repair shop"
+    ],
+    "answer": 0,
+    "type": "purpose",
+    "evidence": "Today the shop occupies three storefronts, employs eleven people, and repairs more than 4,000 bicycles a year.",
+    "explanationVi": "Bài báo kể Gearhouse Cycles phát triển từ một cửa hàng nhỏ thành ba mặt tiền với 11 nhân viên, cùng các dịch vụ mới. Làn xe đạp chỉ là một chi tiết giải thích sự tăng trưởng đó, nên (B) sai."
+   },
+   {
+    "number": 173,
+    "stem": "Why did Mr. Prescott begin offering maintenance classes?",
+    "options": [
+     "He had more bicycles in stock than he could sell.",
+     "He wanted to train new mechanics for his shop.",
+     "The city asked local shops to promote bicycle safety.",
+     "He hoped people would cycle more and rely on his shop for major repairs."
+    ],
+    "answer": 3,
+    "type": "detail",
+    "evidence": "\"I figured if people knew how to look after their bikes, they'd ride more and trust us when something bigger went wrong,\"",
+    "explanationVi": "Ông Prescott mong người học biết tự bảo dưỡng xe sẽ đạp nhiều hơn và tin cửa hàng khi có hỏng hóc lớn. Lớp học dành cho khách, không phải để đào tạo thợ, nên (B) sai."
+   },
+   {
+    "number": 174,
+    "stem": "The word \"collects\" in paragraph 3 is closest in meaning to",
+    "options": [
+     "saves",
+     "earns",
+     "picks up",
+     "gathers"
+    ],
+    "answer": 2,
+    "type": "synonym",
+    "evidence": "A mechanic collects the bicycle, repairs it at the shop, and returns it within two days.",
+    "explanationVi": "Thợ đến lấy xe, mang về sửa rồi trả lại, nên \"collects\" ở đây là \"picks up\". \"gathers\" là gom nhiều thứ lại một chỗ, không dùng cho việc đến lấy một chiếc xe."
+   },
+   {
+    "number": 175,
+    "stem": "In which of the positions marked [1], [2], [3], and [4] does the following sentence best belong?\n\"Almost overnight, the number of cyclists passing his door doubled.\"",
+    "options": [
+     "[1]",
+     "[2]",
+     "[3]",
+     "[4]"
+    ],
+    "answer": 1,
+    "type": "sentence-insertion",
+    "evidence": "That year, the city added protected bike lanes along Lark Street and several nearby roads. [2] Rather than simply stocking more bikes",
+    "explanationVi": "Câu chèn nêu hệ quả của việc thành phố làm làn xe đạp năm 2015, và lượng người đạp xe tăng là lý do câu sau [2] nói \"Rather than simply stocking more bikes\". Ở [1] câu này không có nguyên nhân đi kèm và không nối được với câu kể quy mô hiện tại."
+   }
+  ]
+ },
+ {
+  "id": "p7-176",
+  "part": 7,
+  "intro": "Questions 176-180 refer to the following advertisement and e-mail.",
+  "passages": [
+   {
+    "type": "advertisement",
+    "text": "Harbor & Thyme Catering is expanding! We provide food service for weddings, corporate lunches, and community festivals throughout the Portland area. Founded in 2009, the company now prepares more than 1,500 meals each week in its main kitchen. We are now hiring for the following positions.\n\nPosition | Location | Schedule | Requirement\nKitchen Assistant | Main kitchen, Burnside Street | Weekdays, 6:00 A.M.-2:00 P.M. | Food handler's permit\nEvent Server | Client sites | Weekends, evenings | Six months of serving experience\nDelivery Driver | Main kitchen, Burnside Street | Weekdays, 9:00 A.M.-3:00 P.M. | Commercial driver's license\nEvent Coordinator | Downtown office | Full-time, some weekends | Two years of event planning experience\n\nAll staff receive free meals during shifts and a monthly uniform allowance. To apply, send a résumé to Marcus Bell at jobs@harborthyme.com by March 20. Applicants for positions at client sites must also attend a paid training day on March 28. These positions require standing for long periods and lifting up to 30 pounds. Interviews will be held during the week of March 23. Questions about any position may be directed to Mr. Bell at 503-555-0148."
+   },
+   {
+    "type": "e-mail",
+    "text": "To: jobs@harborthyme.com\nFrom: Priya Raman\nDate: March 14\nSubject: Application\n\nDear Mr. Bell,\n\nI am writing to apply for one of the positions listed on your Web site. I have worked as a server at Calloway Bistro for the past year. I am also completing an associate degree in hospitality management, which I expect to finish in December.\n\nIn my current role, I regularly handle tables of twenty or more guests. I have also helped my manager arrange several private dinners, which sparked my interest in planning events. Last month, my manager asked me to train two new servers, and both now work independently.\n\nSince I attend classes at Lakeside Community College on weekdays, I am available only on weekends and in the evenings. I first learned about Harbor & Thyme last summer, when your staff served lunch at the Riverside Arts Festival, and I was impressed by how smoothly the event ran. I have attached my résumé and a reference letter from my manager. I would welcome the chance to discuss how I could contribute to your team.\n\nSincerely,\nPriya Raman"
+   }
+  ],
+  "questions": [
+   {
+    "number": 176,
+    "stem": "What is indicated about Harbor & Thyme Catering?",
+    "options": [
+     "It has recently opened a second kitchen.",
+     "It caters weddings only.",
+     "It serves events in the Portland area.",
+     "It is moving its downtown office."
+    ],
+    "answer": 2,
+    "type": "detail",
+    "evidence": "We provide food service for weddings, corporate lunches, and community festivals throughout the Portland area.",
+    "explanationVi": "Advertisement nói công ty phục vụ đám cưới, bữa trưa công ty và lễ hội khắp khu vực Portland. Đáp án (B) sai vì ngoài weddings còn có corporate lunches và festivals."
+   },
+   {
+    "number": 177,
+    "stem": "Which position is Ms. Raman most likely applying for?",
+    "options": [
+     "Kitchen Assistant",
+     "Event Server",
+     "Delivery Driver",
+     "Event Coordinator"
+    ],
+    "answer": 1,
+    "type": "cross-reference",
+    "evidence": "Event Server | Client sites | Weekends, evenings | Six months of serving experience",
+    "explanationVi": "E-mail cho biết cô Raman chỉ làm được cuối tuần và buổi tối, và đã làm server một năm. Bảng trong advertisement cho thấy chỉ vị trí Event Server làm cuối tuần, buổi tối và cần sáu tháng kinh nghiệm phục vụ. Event Coordinator cần hai năm kinh nghiệm tổ chức sự kiện và làm full-time nên không hợp."
+   },
+   {
+    "number": 178,
+    "stem": "What is NOT mentioned as something Harbor & Thyme Catering provides to its staff?",
+    "options": [
+     "Meals during work shifts",
+     "Money for uniforms",
+     "A paid day of training",
+     "Discounts on catering orders"
+    ],
+    "answer": 3,
+    "type": "not-true",
+    "evidence": "All staff receive free meals during shifts and a monthly uniform allowance.",
+    "explanationVi": "Advertisement nêu bữa ăn miễn phí trong ca, tiền đồng phục hằng tháng và một ngày training có trả lương. Không có chỗ nào nhắc đến giảm giá khi đặt dịch vụ catering."
+   },
+   {
+    "number": 179,
+    "stem": "What is suggested about Ms. Raman?",
+    "options": [
+     "She has managed a restaurant.",
+     "She holds a commercial driver's license.",
+     "She is interested in organizing events.",
+     "She will finish her studies in March."
+    ],
+    "answer": 2,
+    "type": "inference",
+    "evidence": "which sparked my interest in planning events",
+    "explanationVi": "Cô Raman viết rằng việc giúp quản lý tổ chức các bữa tối riêng đã khơi gợi sự quan tâm của cô với việc lên kế hoạch sự kiện. Đáp án (A) sai vì cô chỉ giúp quản lý, không phải là quản lý nhà hàng."
+   },
+   {
+    "number": 180,
+    "stem": "In the e-mail, the word \"handle\" in paragraph 2, line 1, is closest in meaning to",
+    "options": [
+     "manage",
+     "touch",
+     "lift",
+     "repair"
+    ],
+    "answer": 0,
+    "type": "synonym",
+    "evidence": "I regularly handle tables of twenty or more guests",
+    "explanationVi": "\"handle tables of twenty or more guests\" nghĩa là phụ trách, xử lý các bàn đông khách, gần nhất với \"manage\". \"touch\" và \"lift\" là nghĩa cầm nắm bằng tay, không hợp ngữ cảnh."
+   }
+  ]
+ },
+ {
+  "id": "p7-181",
+  "part": 7,
+  "intro": "Questions 181-185 refer to the following schedule and e-mail.",
+  "passages": [
+   {
+    "type": "schedule",
+    "text": "Bluewater Ferries\nWinter Timetable: November 1 to March 31\n\nRoute | Departs | Arrives | Days\nPort Delmar to Cass Island | 7:15 A.M. | 8:05 A.M. | Daily\nPort Delmar to Cass Island | 12:30 P.M. | 1:20 P.M. | Monday to Friday\nCass Island to Port Delmar | 9:00 A.M. | 9:50 A.M. | Daily\nCass Island to Port Delmar | 2:30 P.M. | 3:20 P.M. | Monday to Friday\nCass Island to Port Delmar | 5:45 P.M. | 6:35 P.M. | Daily\n\nFares (one way): adult foot passenger $14; vehicle with driver $40; each additional passenger in a vehicle $9.\n\nVehicles must check in at least 30 minutes before departure. Foot passengers should arrive 10 minutes before departure. Vehicle reservations are recommended on weekends.\n\nSailings may be canceled in severe weather. Updates are posted at www.bluewaterferries.com and announced at both terminals. Long-term parking is available at the Port Delmar terminal for $8 per day."
+   },
+   {
+    "type": "e-mail",
+    "text": "To: Sofia Brandt; Kenji Watanabe\nFrom: Gerald Okafor\nDate: November 4\nSubject: Saturday trip to Cass Island\n\nHi Sofia and Kenji,\n\nAs you know, the owners of Linwood Orchards have agreed to meet us at their farm on Cass Island this Saturday, November 8, at 10:00 A.M. They are considering our company to design the packaging for their new apple juice, so this visit is important. The owners mentioned that they have also spoken with two other design firms.\n\nI have reserved space for the company van on the first ferry of the day. I will drive, and you two will ride with me, so please meet me at the Port Delmar terminal by 6:40 A.M. We are bringing sample boxes and two display stands, which is why we cannot travel as foot passengers. The terminal parking lot fills quickly on weekends, so I suggest getting a ride to the port if possible.\n\nThe meeting should last about three hours. Since we will have to wait for the evening crossing back, the owners have kindly invited us to stay for lunch and a tour of the orchards.\n\nI will bring printed copies of our proposal, but please review the digital version I sent on Monday before we go. Let me know by Thursday if either of you has a problem with this plan.\n\nBest,\nGerald"
+   }
+  ],
+  "questions": [
+   {
+    "number": 181,
+    "stem": "What is NOT indicated about Bluewater Ferries?",
+    "options": [
+     "It offers more departures on weekdays than on weekends.",
+     "It recommends reserving space for vehicles on weekends.",
+     "It charges less for an extra passenger in a vehicle than for a foot passenger.",
+     "It sells food and drinks on board."
+    ],
+    "answer": 3,
+    "type": "not-true",
+    "evidence": "Fares (one way): adult foot passenger $14; vehicle with driver $40; each additional passenger in a vehicle $9.",
+    "explanationVi": "Schedule không nhắc đến việc bán đồ ăn, thức uống trên phà. Ba ý còn lại đều đúng: hai chuyến chỉ chạy Monday to Friday, đặt chỗ xe được khuyến khích cuối tuần, và $9 rẻ hơn $14."
+   },
+   {
+    "number": 182,
+    "stem": "What is the main purpose of the e-mail?",
+    "options": [
+     "To request approval for a travel budget",
+     "To announce a change in a ferry timetable",
+     "To give colleagues travel plans for a client visit",
+     "To invite coworkers to a company lunch"
+    ],
+    "answer": 2,
+    "type": "purpose",
+    "evidence": "I have reserved space for the company van on the first ferry of the day.",
+    "explanationVi": "Ông Okafor báo cho hai đồng nghiệp lịch đi phà, giờ tập trung và lý do đi bằng xe để gặp khách hàng Linwood Orchards. Bữa trưa là lời mời của chủ trang trại, không phải mục đích của e-mail."
+   },
+   {
+    "number": 183,
+    "stem": "How much will the group most likely pay for the crossing to Cass Island?",
+    "options": [
+     "$40",
+     "$42",
+     "$49",
+     "$58"
+    ],
+    "answer": 3,
+    "type": "cross-reference",
+    "evidence": "each additional passenger in a vehicle $9",
+    "explanationVi": "E-mail cho biết ông Okafor lái xe van và hai người còn lại ngồi cùng xe. Schedule ghi xe kèm tài xế $40 và mỗi hành khách thêm trên xe $9, nên tổng là 40 + 9 + 9 = $58. $42 là giá nếu cả ba đi bộ, nhưng họ không thể đi bộ vì mang hàng mẫu."
+   },
+   {
+    "number": 184,
+    "stem": "At what time will the group most likely leave Cass Island?",
+    "options": [
+     "9:00 A.M.",
+     "2:30 P.M.",
+     "5:45 P.M.",
+     "6:35 P.M."
+    ],
+    "answer": 2,
+    "type": "cross-reference",
+    "evidence": "Cass Island to Port Delmar | 5:45 P.M. | 6:35 P.M. | Daily",
+    "explanationVi": "E-mail nói chuyến đi vào thứ Bảy và nhóm phải chờ chuyến phà buổi tối để về. Schedule cho thấy chuyến 2:30 P.M. chỉ chạy Monday to Friday, nên chuyến về là 5:45 P.M. 6:35 P.M. là giờ đến Port Delmar, không phải giờ rời đảo."
+   },
+   {
+    "number": 185,
+    "stem": "In the e-mail, the word \"last\" in paragraph 3, line 1, is closest in meaning to",
+    "options": [
+     "continue",
+     "finish",
+     "delay",
+     "follow"
+    ],
+    "answer": 0,
+    "type": "synonym",
+    "evidence": "The meeting should last about three hours.",
+    "explanationVi": "\"The meeting should last about three hours\" nghĩa là cuộc họp kéo dài khoảng ba tiếng, gần nhất là \"continue\". \"finish\" là kết thúc, ngược nghĩa với việc kéo dài."
+   }
+  ]
+ },
+ {
+  "id": "p7-186",
+  "part": 7,
+  "intro": "Questions 186-190 refer to the following web page, form, and e-mail.",
+  "passages": [
+   {
+    "type": "web page",
+    "text": "Lakeview Print Services: Business Card Packages\n\nStandard | 250 cards, single-sided | $35 | Ready in 5 business days\nPremium | 500 cards, double-sided, thick matte paper | $65 | Ready in 5 business days\nExecutive | 1,000 cards, double-sided, choice of matte or glossy paper | $110 | Ready in 3 business days\n\nRush service (2 business days) is available on Standard and Premium packages for an additional $20. First-time customers receive 10 percent off any package. Free delivery on orders over $100."
+   },
+   {
+    "type": "form",
+    "text": "Lakeview Print Services: Order Form\n\nCustomer: Dana Whitfield, Whitfield Interior Design\nDate: June 2\nPackage: Premium\nRush service: Yes\nNotes: Please print our new logo on the back of each card. This is our first order with Lakeview."
+   },
+   {
+    "type": "e-mail",
+    "text": "To: orders@lakeviewprint.com\nFrom: Dana Whitfield\nDate: June 5\nSubject: Order #4471\n\nHello,\n\nI received my business cards this morning, and I am very pleased with the quality of the paper. However, the logo on the back is printed in blue rather than green, as shown in the file I uploaded. Because I am meeting several potential clients at a design exhibition next week, I need the corrected cards as soon as possible.\n\nCould you reprint the order and let me know when it will be ready? I would also appreciate it if you could deliver the cards to my office rather than having me pick them up.\n\nThank you,\nDana Whitfield"
+   }
+  ],
+  "questions": [
+   {
+    "number": 186,
+    "stem": "What is indicated about the Premium package?",
+    "options": [
+     "It is printed on glossy paper.",
+     "It includes 500 cards.",
+     "It qualifies for free delivery.",
+     "It is ready in three business days."
+    ],
+    "answer": 1,
+    "type": "detail",
+    "evidence": "Premium | 500 cards, double-sided, thick matte paper | $65 | Ready in 5 business days",
+    "explanationVi": "Web page ghi gói Premium có 500 cards. Giấy là matte, giá $65 dưới mức $100 nên không được giao miễn phí, thời gian là 5 business days."
+   },
+   {
+    "number": 187,
+    "stem": "What is suggested about Ms. Whitfield's order?",
+    "options": [
+     "It received a discount.",
+     "It was delivered free of charge.",
+     "It contained 1,000 cards.",
+     "It was printed on glossy paper."
+    ],
+    "answer": 0,
+    "type": "cross-reference",
+    "evidence": "This is our first order with Lakeview.",
+    "explanationVi": "Order form ghi đây là đơn đầu tiên, còn web page nói khách lần đầu được giảm 10 percent, nên đơn này được giảm giá."
+   },
+   {
+    "number": 188,
+    "stem": "How long did Lakeview Print Services have to complete Ms. Whitfield's order?",
+    "options": [
+     "One business day",
+     "Two business days",
+     "Three business days",
+     "Five business days"
+    ],
+    "answer": 1,
+    "type": "cross-reference",
+    "evidence": "Rush service: Yes",
+    "explanationVi": "Order form chọn rush service, còn web page nói rush service hoàn thành trong 2 business days."
+   },
+   {
+    "number": 189,
+    "stem": "What problem does Ms. Whitfield mention?",
+    "options": [
+     "The cards arrived late.",
+     "The paper is too thin.",
+     "A logo is the wrong color.",
+     "Some cards are missing."
+    ],
+    "answer": 2,
+    "type": "detail",
+    "evidence": "the logo on the back is printed in blue rather than green",
+    "explanationVi": "Logo bị in màu xanh dương thay vì xanh lá như file đã gửi. Bà khen chất lượng giấy, không than giấy mỏng."
+   },
+   {
+    "number": 190,
+    "stem": "In the e-mail, the word \"pleased\" in paragraph 1, line 1, is closest in meaning to",
+    "options": [
+     "satisfied",
+     "amused",
+     "relieved",
+     "grateful"
+    ],
+    "answer": 0,
+    "type": "synonym",
+    "evidence": "I am very pleased with the quality of the paper",
+    "explanationVi": "\"pleased with the quality\" nghĩa là hài lòng với chất lượng, gần nhất là \"satisfied\"."
+   }
+  ]
+ },
+ {
+  "id": "p7-191",
+  "part": 7,
+  "intro": "Questions 191-195 refer to the following web page, review, and e-mail.",
+  "passages": [
+   {
+    "type": "web page",
+    "text": "Northfield Home & Office: Desk Chairs\n\nWhether you work from home or manage a busy office, the right chair makes every workday more comfortable. All of our models have adjustable seat height and armrests.\n\nModel | Price | Colors | Warranty\nBasic Task Chair | $129 | Black, gray | 1 year\nComfort Mesh Chair | $219 | Black, gray, blue | 3 years\nProSupport Chair | $349 | Black | 5 years\n\nFree shipping on orders over $200. Assembly is available at any of our stores for $25. Items may be returned within 30 days of delivery for a full refund. Prices shown are valid through August 31."
+   },
+   {
+    "type": "review",
+    "text": "Rating: 3 out of 5 stars\nReviewer: Tomas Herrera\nPosted: August 12\n\nI ordered a blue chair for my home office in July. Delivery was fast, and putting the chair together took only fifteen minutes. The color is exactly as shown in the photos. It is comfortable, and the mesh back keeps me cool on hot afternoons. However, after only five weeks, one of the wheels cracked, and the chair now rolls unevenly.\n\nI called customer service twice, but each time I was on hold for more than twenty minutes before giving up. I expected better from a store with such a good reputation. I hope the company improves its phone support, because otherwise I would recommend this chair to anyone."
+   },
+   {
+    "type": "e-mail",
+    "text": "To: Tomas Herrera\nFrom: Alicia Gomez\nDate: August 13\nSubject: Your recent review\n\nDear Mr. Herrera,\n\nThank you for your honest review, and I apologize for the long waits you experienced. We have just hired additional staff for our phone line, so wait times should improve soon.\n\nBecause the problem you describe is covered by your chair's warranty, we can mail you a set of replacement wheels free of charge. Alternatively, you may bring the chair to our Danforth Avenue store, where a technician will install new wheels while you wait. Most customers who choose this option are finished in under half an hour. Please reply to this e-mail to let me know which option you prefer.\n\nAs a thank-you for your patience, I have also added a $20 credit to your account. I have also shared your comments with our supplier so that it can inspect the wheels from the same production batch.\n\nSincerely,\nAlicia Gomez\nCustomer Care Manager"
+   }
+  ],
+  "questions": [
+   {
+    "number": 191,
+    "stem": "What is NOT mentioned on the web page?",
+    "options": [
+     "A fee for assembling a chair",
+     "A time limit for returns",
+     "A minimum order for free shipping",
+     "An option to extend a warranty"
+    ],
+    "answer": 3,
+    "type": "not-true",
+    "evidence": "Free shipping on orders over $200. Assembly is available at any of our stores for $25. Items may be returned within 30 days of delivery for a full refund.",
+    "explanationVi": "Web page nêu phí lắp ráp $25, hạn đổi trả 30 ngày và miễn phí giao hàng cho đơn trên $200. Bảng chỉ ghi thời hạn bảo hành của từng mẫu, không nói có thể mua thêm để kéo dài bảo hành."
+   },
+   {
+    "number": 192,
+    "stem": "Which chair did Mr. Herrera most likely buy?",
+    "options": [
+     "The Basic Task Chair",
+     "The Comfort Mesh Chair",
+     "The ProSupport Chair",
+     "A chair that is no longer sold"
+    ],
+    "answer": 1,
+    "type": "cross-reference",
+    "evidence": "Comfort Mesh Chair | $219 | Black, gray, blue | 3 years",
+    "explanationVi": "Review cho biết ông Herrera đặt một chiếc ghế màu xanh dương có lưng lưới. Web page cho thấy chỉ Comfort Mesh Chair có màu blue; Basic Task Chair chỉ có đen, xám và ProSupport Chair chỉ có đen."
+   },
+   {
+    "number": 193,
+    "stem": "What is suggested about Mr. Herrera's order?",
+    "options": [
+     "It qualified for free shipping.",
+     "It included an assembly service.",
+     "It arrived later than promised.",
+     "It was paid for with store credit."
+    ],
+    "answer": 0,
+    "type": "cross-reference",
+    "evidence": "Free shipping on orders over $200.",
+    "explanationVi": "Từ review suy ra ông mua Comfort Mesh Chair, giá $219 theo web page. Web page nói đơn trên $200 được miễn phí giao hàng, nên đơn của ông đủ điều kiện. Không có thông tin nào cho thấy ông trả phí lắp ráp hay hàng đến trễ."
+   },
+   {
+    "number": 194,
+    "stem": "What does Ms. Gomez offer Mr. Herrera?",
+    "options": [
+     "A full refund for the chair",
+     "A replacement chair in a different color",
+     "A choice of two ways to repair the chair",
+     "A $25 discount on his next order"
+    ],
+    "answer": 2,
+    "type": "detail",
+    "evidence": "Alternatively, you may bring the chair to our Danforth Avenue store, where a technician will install new wheels while you wait.",
+    "explanationVi": "Bà Gomez đề nghị gửi bánh xe thay thế miễn phí, hoặc ông mang ghế đến cửa hàng để kỹ thuật viên lắp bánh mới, tức là hai cách sửa ghế. Khoản tín dụng là $20, không phải $25, và không có đề nghị hoàn tiền."
+   },
+   {
+    "number": 195,
+    "stem": "In the e-mail, the word \"honest\" in paragraph 1, line 1, is closest in meaning to",
+    "options": [
+     "generous",
+     "frank",
+     "legal",
+     "modest"
+    ],
+    "answer": 1,
+    "type": "synonym",
+    "evidence": "Thank you for your honest review",
+    "explanationVi": "\"honest review\" là bài đánh giá thẳng thắn, nói thật cả điểm tốt lẫn điểm chưa tốt, gần nhất với \"frank\". \"modest\" nghĩa là khiêm tốn, không hợp ngữ cảnh."
+   }
+  ]
+ },
+ {
+  "id": "p7-196",
+  "part": 7,
+  "intro": "Questions 196-200 refer to the following schedule, form, and e-mail.",
+  "passages": [
+   {
+    "type": "schedule",
+    "text": "Retail Futures Conference\nHollis Convention Center, Milwaukee\nThursday, May 13\n\nSession | Time | Room | Speaker | Topic\nSession 1 | 9:00 A.M. | Hall A | Dr. Imani Brooks | Customer Loyalty in a Digital Age\nSession 2 | 10:30 A.M. | Room B | Owen Fitzgerald | Designing Smaller Stores\nSession 3 | 1:30 P.M. | Room C | Hana Lindqvist | Inventory Tools for Independent Shops\nSession 4 | 3:00 P.M. | Room B | Rafael Duarte | Hiring and Training Seasonal Staff\n\nEach session lasts one hour and includes time for questions from the audience. Lunch is served from 12:00 to 1:30 P.M. in the Lakeside Atrium. Attendees may pick up their name badges at the main entrance from 8:15 A.M. Parking is free in the convention center garage.\n\nRegistration: $180 for the full day; $95 for a half day (morning or afternoon sessions only). Members of the Retail Merchants Association receive $30 off either rate."
+   },
+   {
+    "type": "form",
+    "text": "Retail Futures Conference: Registration Form\n\nName: Celeste Moreau\nBusiness: Moreau Gift & Stationery, Racine\nE-mail: cmoreau@moreaugift.com\nPhone: 262-555-0193\nRegistration type: Half day (morning)\nRetail Merchants Association member: Yes\nSessions I plan to attend: 1, 2\nHow did you hear about the conference? Association newsletter"
+   },
+   {
+    "type": "e-mail",
+    "text": "To: cmoreau@moreaugift.com\nFrom: Rhea Castellano\nDate: May 6\nSubject: Program change\n\nDear Ms. Moreau,\n\nI am writing to let you know about a change to the conference program. Mr. Fitzgerald's flight from Boston has been rescheduled, and he will not reach Milwaukee until about 1:00 P.M. on the day of the conference. He will therefore present at 3:00 P.M. Rafael Duarte has kindly agreed to present at 10:30 A.M. instead. Both sessions will take place in Room B as originally planned. Dr. Brooks's session is not affected.\n\nWe realize that this change affects your plans, since you registered for the morning only. To make up for the inconvenience, we will upgrade your registration to a full day at no extra charge, so you can still attend Mr. Fitzgerald's session. Your new badge will be ready at the main entrance, and you are welcome to join the other attendees for lunch.\n\nIf you would prefer to keep your original registration, simply reply to this e-mail. Please contact me if you have any other questions.\n\nSincerely,\nRhea Castellano\nConference Coordinator"
+   }
+  ],
+  "questions": [
+   {
+    "number": 196,
+    "stem": "What is NOT indicated about the conference?",
+    "options": [
+     "It takes place on a single day.",
+     "Lunch is served in the Lakeside Atrium.",
+     "Sessions are held in three different rooms.",
+     "Attendees can register at the door."
+    ],
+    "answer": 3,
+    "type": "not-true",
+    "evidence": "Lunch is served from 12:00 to 1:30 P.M. in the Lakeside Atrium.",
+    "explanationVi": "Schedule cho thấy hội nghị diễn ra vào một ngày (Thursday, May 13), bữa trưa ở Lakeside Atrium, và các phiên ở Hall A, Room B, Room C. Không có thông tin nào về việc đăng ký tại cửa."
+   },
+   {
+    "number": 197,
+    "stem": "How much did Ms. Moreau most likely pay to register?",
+    "options": [
+     "$65",
+     "$95",
+     "$150",
+     "$180"
+    ],
+    "answer": 0,
+    "type": "cross-reference",
+    "evidence": "Members of the Retail Merchants Association receive $30 off either rate.",
+    "explanationVi": "Form cho thấy bà Moreau đăng ký half day (morning) và là hội viên Retail Merchants Association. Schedule ghi vé half day $95 và hội viên được giảm $30, nên bà trả 95 - 30 = $65. $150 là giá full day sau khi giảm, không phải loại vé bà chọn."
+   },
+   {
+    "number": 198,
+    "stem": "Why was the conference program changed?",
+    "options": [
+     "A room became unavailable.",
+     "More people registered than expected.",
+     "A speaker's travel plans changed.",
+     "A session topic was replaced."
+    ],
+    "answer": 2,
+    "type": "detail",
+    "evidence": "Mr. Fitzgerald's flight from Boston has been rescheduled",
+    "explanationVi": "E-mail nói chuyến bay của ông Fitzgerald bị đổi lịch nên ông đến Milwaukee muộn, vì vậy phiên của ông bị dời. Phòng không thay đổi vì cả hai phiên vẫn ở Room B."
+   },
+   {
+    "number": 199,
+    "stem": "What topic will be presented at 10:30 A.M. on May 13?",
+    "options": [
+     "Customer Loyalty in a Digital Age",
+     "Designing Smaller Stores",
+     "Inventory Tools for Independent Shops",
+     "Hiring and Training Seasonal Staff"
+    ],
+    "answer": 3,
+    "type": "cross-reference",
+    "evidence": "Session 4 | 3:00 P.M. | Room B | Rafael Duarte | Hiring and Training Seasonal Staff",
+    "explanationVi": "E-mail cho biết Rafael Duarte sẽ trình bày lúc 10:30 A.M. thay cho ông Fitzgerald. Schedule cho thấy chủ đề của Rafael Duarte là Hiring and Training Seasonal Staff. Designing Smaller Stores là chủ đề ban đầu ở khung giờ đó nhưng đã dời sang 3:00 P.M."
+   },
+   {
+    "number": 200,
+    "stem": "In the e-mail, the word \"realize\" in paragraph 2, line 1, is closest in meaning to",
+    "options": [
+     "achieve",
+     "understand",
+     "imagine",
+     "earn"
+    ],
+    "answer": 1,
+    "type": "synonym",
+    "evidence": "We realize that this change affects your plans",
+    "explanationVi": "\"We realize that this change affects your plans\" nghĩa là chúng tôi hiểu, nhận thấy thay đổi này ảnh hưởng đến kế hoạch của bà, gần nhất với \"understand\". \"achieve\" là nghĩa \"thực hiện được\" (realize a goal), không hợp ngữ cảnh."
+   }
+  ]
+ }
+]

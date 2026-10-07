@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { callAi } from '@/lib/ai/browser'
 import { useAiEnabled } from '@/lib/hooks/useAiEnabled'
 import { useModalDialog } from '@/lib/hooks/useModalDialog'
+import { onAskAi, type AskAi } from '@/lib/ai/ask'
 
 /** Turns are re-sent on every question, so this cap bounds the cost of one long
  *  session. Matches `chatInput` in `lib/ai/tasks.ts`. */
@@ -45,9 +46,27 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
   /** The reply as it streams in, unchecked until `callAi` resolves. */
   const [partial, setPartial] = useState('')
   const stopRef = useRef<AbortController | null>(null)
+  /** Bumped when a page asks about a new item, so a reply to the old thread writes nothing. */
+  const threadRef = useRef(0)
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const dialogRef = useModalDialog(open)
+  /** An item a page asked about through `askAi`, kept for the page it came from. */
+  const [asked, setAsked] = useState<(AskAi & { path: string }) | null>(null)
+  const seed = asked?.path === path ? asked : null
+
+  useEffect(() => onAskAi((detail) => {
+    threadRef.current += 1
+    stopRef.current?.abort()
+    stopRef.current = null
+    setBusy(false)
+    setPartial('')
+    setAsked({ ...detail, path })
+    setTurns([])
+    setError(null)
+    setDraft(detail.draft)
+    setOpen(true)
+  }), [path])
 
   // After useModalDialog's effect, so showModal() has run and cannot move focus again.
   useEffect(() => {
@@ -66,17 +85,22 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
     setBusy(true)
     const stop = new AbortController()
     stopRef.current = stop
+    const thread = threadRef.current
+    const live = () => thread === threadRef.current
 
     const entryId = pageEntry(path)
     try {
       const outcome = await callAi('chat', {
         context: pageContext(path, typeof document === 'undefined' ? '' : document.title),
         ...(entryId && { entryId }),
-        messages: next.slice(-HISTORY),
+        // The item asked about leads every exchange, so it costs one turn of the cap.
+        messages: seed ? [{ role: 'user', text: seed.seed }, ...next.slice(1 - HISTORY)] : next.slice(-HISTORY),
       }, stop.signal, (text) => {
+        if (!live()) return
         setPartial(text)
         endRef.current?.scrollIntoView({ block: 'end' })
       })
+      if (!live()) return
       // The question stays on screen either way, so a failure costs no retyping.
       if (outcome.status === 'error') setError(outcome.message)
       else setTurns([...next, { role: 'assistant', text: outcome.data.reply }])
@@ -84,11 +108,13 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
       // `callAi` handles fetch failures, but its dynamic task-module import rejects
       // after a redeploy, leaving the send button disabled for the life of the page.
       // An abort is the learner pressing Dừng, which needs no message.
-      if ((e as Error).name !== 'AbortError') setError('Chưa gửi được câu hỏi. Thử lại.')
+      if (live() && (e as Error).name !== 'AbortError') setError('Chưa gửi được câu hỏi. Thử lại.')
     } finally {
-      setBusy(false)
-      setPartial('')
-      stopRef.current = null
+      if (live()) {
+        setBusy(false)
+        setPartial('')
+        stopRef.current = null
+      }
     }
     endRef.current?.scrollIntoView({ block: 'end' })
   }
@@ -134,7 +160,9 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
             <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 text-sm">
               {turns.length === 0 && (
                 <p className="text-black/55">
-                  Hỏi về từ đang xem, nhờ sửa câu hoặc hỏi nên ôn gì. Câu trả lời do AI viết, chưa qua từ điển.
+                  {seed
+                    ? `Hỏi về ${seed.label}. Câu trả lời do AI viết.`
+                    : 'Hỏi về từ đang xem, nhờ sửa câu hoặc hỏi nên ôn gì. Câu trả lời do AI viết, chưa qua từ điển.'}
                 </p>
               )}
               {turns.map((t, i) => (

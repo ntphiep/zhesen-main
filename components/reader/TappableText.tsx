@@ -69,7 +69,7 @@ function placePopover(anchor: HTMLElement, word: HTMLElement) {
  * public (anon) client, and a failure degrades to plain text.
  */
 export function TappableText({
-  text, lang, resolved, quiet = false, mark = [], marks = [], translation = null, notes,
+  text, lang, resolved, quiet = false, mark = [], marks = [], translation = null, notes, tags,
 }: {
   text: string
   lang: LangCode
@@ -90,6 +90,8 @@ export function TappableText({
   /** The reader's notebook by entry id, signed in only: saved words sit on the mark with a
    *  dashed line, known ones in ink with a solid line, and a new word may carry its level. */
   notes?: ReadonlyMap<string, WordNote>
+  /** Tags a word saved from this text carries, as `toeic` on a TOEIC test. */
+  tags?: readonly string[]
 }) {
   // Tokenised up front, not left empty until the effect below answers: the words are on
   // screen from the first paint and only become tappable once the entries arrive. Starting
@@ -266,7 +268,7 @@ export function TappableText({
             {tail}
             {on && (
               <span ref={anchor} id={`${id}-pop`} className={`${r.anchor} whitespace-normal`}>
-                <WordPopover entry={entry} charInfo={charInfo} context={contextAt(offsets[i], offsets[i + 1])} />
+                <WordPopover entry={entry} charInfo={charInfo} context={contextAt(offsets[i], offsets[i + 1])} tags={tags} />
               </span>
             )}
           </span>

@@ -21,12 +21,13 @@ const SavedButton = dynamic(() => import('./SavedButton').then((m) => m.SavedBut
  * `tone="pane"` draws it in the colours of the landing page's language lanes. `draft`
  * replaces the row built from the entry, and `returnTo` the word page as the way back.
  */
-export function AddToWordlistButton({ entry, size = 'sm', tone, context, draft, returnTo }: {
+export function AddToWordlistButton({ entry, size = 'sm', tone, context, draft, tags, returnTo }: {
   entry: DictEntryPreview | DictEntryDetail
   size?: 'sm' | 'lg'
   tone?: 'pane'
   context?: SaveContext | null
   draft?: WordDraft
+  tags?: readonly string[]
   returnTo?: string
 }) {
   const { kind } = useAccount()
@@ -49,5 +50,5 @@ export function AddToWordlistButton({ entry, size = 'sm', tone, context, draft, 
       </Link>
     )
   }
-  return <SavedButton entry={entry} size={size} tone={tone} context={context} draft={draft} />
+  return <SavedButton entry={entry} size={size} tone={tone} context={context} draft={draft} tags={tags} />
 }

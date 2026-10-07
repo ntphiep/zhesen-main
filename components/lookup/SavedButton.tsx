@@ -19,7 +19,7 @@ const PILL_STATE: Record<State, string> = {
 }
 
 /** The real save, mounted only once an account is in place. */
-export function SavedButton({ entry, size = 'sm', tone, context, draft }: {
+export function SavedButton({ entry, size = 'sm', tone, context, draft, tags }: {
   entry: DictEntryPreview | DictEntryDetail
   size?: 'sm' | 'lg'
   tone?: 'pane'
@@ -27,6 +27,8 @@ export function SavedButton({ entry, size = 'sm', tone, context, draft }: {
   context?: SaveContext | null
   /** A complete row that replaces the one built from the entry. */
   draft?: WordDraft
+  /** Tags for the row built from the entry. */
+  tags?: readonly string[]
 }) {
   const supabase = useMemo(() => createClient(), [])
   const [state, setState] = useState<State>('idle')
@@ -63,7 +65,7 @@ export function SavedButton({ entry, size = 'sm', tone, context, draft }: {
   async function save() {
     setState('saving')
     try {
-      await addWord(supabase, draft ?? draftFromDictEntry(entry, context))
+      await addWord(supabase, draft ?? { ...draftFromDictEntry(entry, context), ...(tags && { tags: [...tags] }) })
       setState('added')
     } catch (e) {
       setState(e instanceof WordAlreadyExistsError ? 'exists' : 'error')

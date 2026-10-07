@@ -25,8 +25,8 @@ beforeEach(() => { session.user = null })
 
 // #13: the sign-in door carried `/practice`, so the learner landed on the index, not the mode.
 describe('practice mode pages, signed out', () => {
-  it('finds the eleven modes', () => {
-    expect(MODES).toHaveLength(11)
+  it('finds the twelve modes', () => {
+    expect(MODES).toHaveLength(12)
   })
 
   it.each(MODES)('sends /practice/%s to /login and back to the same mode', async (mode) => {

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { entryPath, buildEntryId } from '@/lib/dictionary/entryId'
 import { toeicGroupPath, toeicPartPath, toeicTopicPath } from '@/lib/theory/path'
 import { TOEIC_GROUP_SIZE } from '@/lib/theory/content'
+import { TOEIC_PATH } from '@/lib/practice/toeic/session'
 import { BlockPage } from './BlockPage'
 import { ToeicPractice } from './ToeicPractice'
 import { GrammarGrid, ParaphraseList, PartBody } from './ToeicParts'
@@ -20,6 +21,7 @@ const SECTIONS: { key: ToeicSection; name: string; titleVi: string }[] = [
  *  keeps testing, one Part 5 set, then the plan and the day itself. */
 export function ToeicView({ language, guide }: { language: Language; guide: ToeicGuide }) {
   const nav = [
+    { id: 'test', titleVi: 'Làm đề' },
     { id: 'format', titleVi: 'Cấu trúc đề' },
     { id: guide.scoring.id, titleVi: 'Điểm' },
     ...SECTIONS.map((sec) => ({ id: sec.key, titleVi: sec.name })),
@@ -45,6 +47,14 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
         </nav>
       }
     >
+      <section id="test" className={s.sec}>
+        <h2 className={s.h2}>Làm đề Reading</h2>
+        <p className={s.prose}>Làm đề Reading 100 câu trong 75 phút hoặc luyện từng Part, có giải thích từng câu.</p>
+        <p className="m-0">
+          <Link href={TOEIC_PATH} className={s.btn}>Làm đề <ArrowRight /></Link>
+        </p>
+      </section>
+
       <section id="format" className={s.sec} data-reveal="">
         <h2 className={s.h2}>Cấu trúc đề</h2>
         <p className={s.prose}>

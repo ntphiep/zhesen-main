@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { AiChatPanel } from '@/components/ai/AiChatPanel'
 import { resetAiEnabledCache } from '@/lib/hooks/useAiEnabled'
 import { callAi, aiEnabled } from '@/lib/ai/browser'
+import { askAi } from '@/lib/ai/ask'
 
 vi.mock('@/lib/ai/browser', () => ({ callAi: vi.fn(), aiEnabled: vi.fn() }))
 vi.mock('next/navigation', () => ({ usePathname: () => '/dictionary/en/adjourned' }))
@@ -172,5 +173,42 @@ describe('AiChatPanel', () => {
     expect(screen.queryByLabelText('Câu hỏi cho AI')).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'Hỏi AI' }))
     expect(dialog).toHaveAttribute('open')
+  })
+
+  // A page asking about one item opens the panel on it, and the item leads every question.
+  it('opens on an item a page asks about and sends it ahead of the question', async () => {
+    vi.mocked(callAi).mockResolvedValue({ status: 'ok', data: { reply: 'Vì by chỉ hạn chót.' } })
+    render(<AiChatPanel enabled />)
+    act(() => askAi({ label: 'câu 101', seed: 'Câu 101. Đáp án: (A) by.', draft: 'Giải thích thêm câu này.' }))
+    expect(screen.getByText('Hỏi về câu 101. Câu trả lời do AI viết.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Câu hỏi cho AI')).toHaveValue('Giải thích thêm câu này.')
+    await userEvent.click(screen.getByRole('button', { name: 'Gửi' }))
+    expect(callAi).toHaveBeenCalledWith('chat', expect.objectContaining({
+      messages: [
+        { role: 'user', text: 'Câu 101. Đáp án: (A) by.' },
+        { role: 'user', text: 'Giải thích thêm câu này.' },
+      ],
+    }), expect.any(AbortSignal), expect.any(Function))
+  })
+
+  // A reply still arriving when the page asks about the next item belongs to the old thread.
+  it('aborts a reply in flight when a page asks about another item and drops its late answer', async () => {
+    let signal: AbortSignal | undefined
+    let reply: (v: { status: 'ok'; data: { reply: string } }) => void = () => {}
+    vi.mocked(callAi).mockImplementationOnce((_task, _input, s) => {
+      signal = s
+      return new Promise((resolve) => { reply = resolve })
+    })
+    render(<AiChatPanel enabled />)
+    act(() => askAi({ label: 'câu 101', seed: 'Câu 101.', draft: 'Câu cũ?' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Gửi' }))
+    act(() => askAi({ label: 'câu 102', seed: 'Câu 102.', draft: 'Câu mới?' }))
+
+    expect(signal?.aborted).toBe(true)
+    await act(async () => reply({ status: 'ok', data: { reply: 'Trả lời cũ.' } }))
+    expect(screen.queryByText('Trả lời cũ.')).toBeNull()
+    expect(screen.queryByText('Câu cũ?')).toBeNull()
+    expect(screen.getByText('Hỏi về câu 102. Câu trả lời do AI viết.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Gửi' })).toBeEnabled()
   })
 })
