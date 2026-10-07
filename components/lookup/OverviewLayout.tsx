@@ -6,11 +6,13 @@ import { CharacterPanel } from './CharacterPanel'
 import { ConjugationTable } from './ConjugationTable'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { BACKLINKS_LABEL, BacklinkList, LayerNote } from './LearnerParts'
+import { GrammarChips, OriginNotes, SoundNotes, originRows, soundFacts } from './WordNotes'
 import {
   AiCorner, Badge, CARD, CONTAINER, Card, EnglishMark, ExampleRows, FamilyRows, FormLegend, FormTimeline, GrammarList, IrregularNote,
   LevelChip, PhrasesCard, PivotMark, PosChip, SectionLabel, SynonymsRows, UntranslatedNote, baseFormLabel, hasSynonyms,
 } from './WordParts'
 import { parseClassifiers } from '@/lib/dictionary/textQuality'
+import { grammarLabels, shownOrigins } from '@/lib/dictionary/origin'
 import { senseSections, type SenseSection } from '@/lib/dictionary/wordPage'
 import {
   balanceColumns, cleanExamples, groupSenses, headwordForms, mainSenses, splitPhrasalVerbs, translatedFirst, type WordView,
@@ -25,7 +27,9 @@ const SHOWN_GROUPS = 6
 const MAIN_LINES = 4
 const SHOWN_FAMILY = 4
 
-interface MainLine { key: string; text: string; pos: string | null; cefr: string | null; en: string | null; mark: 'pivot' | 'english' | null }
+interface MainLine {
+  key: string; text: string; pos: string | null; cefr: string | null; en: string | null; mark: 'pivot' | 'english' | null; grammar: string[]
+}
 
 /**
  * The whole word on one screen, as cards on a pastel page: the headword, its main meanings
@@ -42,10 +46,12 @@ export function OverviewLayout({ view }: { view: WordView }) {
   const lines: MainLine[] = layer
     ? layer.map((s) => ({
       key: `layer-${s.order}`, text: s.viTerms.join(', '), pos: s.pos, cefr: s.cefr, en: s.enDefinition, mark: s.pivot ? 'pivot' : null,
+      grammar: grammarLabels(view.notes, s.sourceSenseIds),
     }))
     : leadSenses.map((s, i) => ({
       key: s.id ?? `${s.senseOrder}-${i}`, text: s.glossVi ?? s.pivotVi ?? s.glossEn ?? '', pos: s.pos, cefr: null,
       en: s.glossVi || s.pivotVi ? s.glossEn : null, mark: s.glossVi ? null : s.pivotVi ? 'pivot' : 'english',
+      grammar: grammarLabels(view.notes, [s.id]),
     }))
   const classifiers = [...new Set(view.senses.flatMap((s) => parseClassifiers(s.glossEn)))]
   // The explorer holds what the top card leaves out: give up's "từ bỏ" senses were read twice.
@@ -63,6 +69,9 @@ export function OverviewLayout({ view }: { view: WordView }) {
     : { phrasal: [], other: view.phrases }
   const synonymRows = view.senseSynonyms.length + (view.synonyms.length > 0 ? 1 : 0)
   const irregular = view.forms.some((f) => f.irregular)
+  const sound = soundFacts(head, view.notes)
+  const leadPos = sections[0]?.key
+  const hasOrigin = shownOrigins(view.notes, leadPos).length > 0
 
   const tiles = ([
     head.lang === 'zh' && view.characters.length > 0 && {
@@ -90,6 +99,10 @@ export function OverviewLayout({ view }: { view: WordView }) {
         </Card>
       ),
     },
+    sound !== null && {
+      key: 'sound', wide: false, rows: 2 + (sound.count >= 2 ? 2 : 0) + 1.5 * sound.tips.length + (sound.homophones.length > 0 ? 1 : 0),
+      node: <Card id="sound" label="Cách đọc"><SoundNotes facts={sound} /></Card>,
+    },
     view.phrases.length > 0 && {
       key: 'phrases', wide: true,
       rows: phrasal.length > 0 ? 3 + Math.ceil(Math.min(phrasal.length, 8) / 4) * 4 : 3 + 1.5 * Math.min(other.length, 8),
@@ -115,9 +128,13 @@ export function OverviewLayout({ view }: { view: WordView }) {
       key: 'senses', wide: true, rows: 6 + 2 * rest.length,
       node: (
         <Card id="senses" label={restCount === total ? `Tất cả ${total} nghĩa, theo nhóm` : `${restCount} nghĩa khác, theo nhóm`}>
-          <SenseExplorer sections={rest} />
+          <SenseExplorer sections={rest} notes={view.notes} />
         </Card>
       ),
+    },
+    hasOrigin && {
+      key: 'origin', wide: false, rows: originRows(view.notes, leadPos),
+      node: <Card id="origin" label="Nguồn gốc"><OriginNotes notes={view.notes} leadPos={leadPos} /></Card>,
     },
     view.siblings.length > 0 && {
       key: 'other-languages', wide: false, rows: 2 + 2 * view.siblings.length,
@@ -199,6 +216,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
                       </span>
                       <PosChip value={l.pos} />
                       <LevelChip level={l.cefr} />
+                      <GrammarChips labels={l.grammar} />
                     </span>
                     {l.en && <span className="text-[12.5px] leading-snug text-(--zs-soft)">{l.en}</span>}
                   </div>
@@ -240,7 +258,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
 
 /** Every sense, gathered by part of speech and then by the Vietnamese term it leads with.
  *  One group is open at a time, in the box under the chips. */
-function SenseExplorer({ sections }: { sections: SenseSection[] }) {
+function SenseExplorer({ sections, notes }: { sections: SenseSection[]; notes: WordView['notes'] }) {
   const rows = sections.map((sec) => ({ sec, groups: groupSenses(sec.senses) })).filter((r) => r.groups.length > 0)
   const [picked, setPicked] = useState({ row: 0, group: 0 })
   const [open, setOpen] = useState<string[]>([])
@@ -290,8 +308,10 @@ function SenseExplorer({ sections }: { sections: SenseSection[] }) {
           <ol className="flex flex-col gap-2">
             {current.senses.map((s, i) => {
               const vi = s.glossVi ?? s.pivotVi
+              const grammar = grammarLabels(notes, [s.id])
               return (
                 <li key={s.id ?? `${s.senseOrder}-${i}`} className="flex flex-col text-sm">
+                  {grammar.length > 0 && <span className="flex flex-wrap gap-1"><GrammarChips labels={grammar} /></span>}
                   {vi && vi !== current.label && <span>{vi}{!s.glossVi && <PivotMark />}</span>}
                   {s.glossEn && (vi
                     ? <span className="text-(--zs-soft)">{s.glossEn}</span>

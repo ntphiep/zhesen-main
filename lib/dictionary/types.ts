@@ -72,6 +72,54 @@ export interface DictEntryDetail extends DictEntryPreview {
   /** The synonyms that belong to one sense, from `lex.relation_senses`; absent or empty
    *  when none matched or the call failed. */
   senseLinks?: SenseLink[]
+  /** Null when the entry has no notes; absent outside the entry page. */
+  notes?: EntryNotes | null
+}
+/** How one ancestor of a word relates to the next: inherited, derived, borrowed, borrowed by
+ *  scholars, or translated part by part. */
+export type OriginRel = 'inh' | 'der' | 'bor' | 'lbor' | 'calque'
+
+export interface OriginStep {
+  rel: OriginRel
+  /** Wiktionary language code, e.g. `enm`, `la-med`. */
+  lang: string
+  /** The language's English name, for a code `lib/dictionary/origin.ts` does not name. */
+  name?: string
+  word: string
+  gloss?: string
+  /** Latin-script reading of a word in another script. */
+  tr?: string
+}
+
+export interface OriginPart {
+  word: string
+  gloss?: string
+  /** The part is an English entry. */
+  e?: true
+}
+
+export type OriginKind = 'clipping' | 'back-formation' | 'onomatopoeia' | 'coinage'
+
+/** One etymology of a word, from `lex.entry_notes.origin` (migration 0198). */
+export interface Origin {
+  /** The parts of speech, as `lex.senses.pos` spells them, this etymology covers. */
+  pos: string[]
+  /** Ancestors, nearest first. */
+  chain: OriginStep[]
+  parts?: OriginPart[]
+  /** `e`: the word it was made from is an English entry. */
+  kind?: { type: OriginKind; word?: string; e?: true; by?: string; year?: string }
+  doublets?: string[]
+}
+
+/** `lex.entry_notes` (migration 0198): what Wiktionary says about the word beyond its senses. */
+export interface EntryNotes {
+  origins: Origin[]
+  /** Written syllables, `dic`, `tion`, `a`, `ry`. */
+  syllables: string[] | null
+  homophones: string[]
+  /** Grammar labels by `lex.senses.id`: `uncountable`, `transitive`, `with to`. */
+  senseGrammar: Record<string, string[]>
 }
 export interface SenseLink {
   text: string

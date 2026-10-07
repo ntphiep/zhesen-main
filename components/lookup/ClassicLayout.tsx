@@ -6,12 +6,14 @@ import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { LemmaLink } from './LemmaLink'
 import { Backlinks, LayerNote } from './LearnerParts'
 import { SenseList } from './SenseList'
+import { OriginNotes, SoundNotes, soundFacts } from './WordNotes'
 import { useAnchor } from '@/lib/hooks/useAnchor'
 import {
   AiCorner, Badge, CONTAINER, ChipRow, ExampleRows, FormCells, GlossChips, GrammarList, LevelChip, SectionLabel, ToeicChip, WordTable,
   baseFormLabel, frequencyBars,
 } from './WordParts'
 import { senseSections } from '@/lib/dictionary/wordPage'
+import { shownOrigins } from '@/lib/dictionary/origin'
 import { cleanExamples, headwordForms, type WordView } from '@/lib/dictionary/wordView'
 
 const RAIL_CARD = 'rounded-[14px] border border-(--edge) bg-(--zs-bg) p-4'
@@ -31,16 +33,21 @@ export function ClassicLayout({ view }: { view: WordView }) {
   const baseLabel = baseFormLabel(view.forms)
   const pinyin = typeof head.attributes.pinyin === 'string' ? head.attributes.pinyin : null
   const showPinyin = pinyin !== null && !head.pronunciations.some((p) => p.ipa?.trim())
+  const sound = soundFacts(head, view.notes)
+  const leadPos = sections[0]?.key
+  const hasOrigin = shownOrigins(view.notes, leadPos).length > 0
 
   const anchor = useAnchor()
   const parts = [
     ...sections.map((s) => ({ href: `#${s.anchor}`, label: s.labelVi })),
     view.forms.length > 0 && { href: '#forms', label: 'Dạng từ' },
+    sound !== null && { href: '#sound', label: 'Cách đọc' },
     view.phrases.length > 0 && { href: '#phrases', label: 'Cụm từ' },
     view.family.length + view.related.length > 0 && { href: '#family', label: 'Họ từ' },
     view.antonyms.length > 0 && { href: '#antonyms', label: 'Trái nghĩa' },
     view.synonyms.length > 0 && { href: '#synonyms', label: view.senseSynonyms.length > 0 ? 'Đồng nghĩa khác' : 'Đồng nghĩa' },
     examples.length > 0 && { href: '#examples', label: 'Ví dụ khác' },
+    hasOrigin && { href: '#origin', label: 'Nguồn gốc' },
   ].filter((p) => p !== false).map((p) => ({ ...p, href: `#${anchor(p.href.slice(1))}` }))
 
   return (
@@ -83,7 +90,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
 
         <SenseList
           senses={view.senses} lang={lang} examples={view.examplesBySense} resolved={view.resolved} glosses={view.glosses}
-          senseSynonyms={view.senseSynonyms} mark={mark}
+          senseSynonyms={view.senseSynonyms} mark={mark} notes={view.notes}
         />
         {view.learner && <div className="-mt-6"><LayerNote layer={view.learner} view={view} /></div>}
 
@@ -97,6 +104,10 @@ export function ClassicLayout({ view }: { view: WordView }) {
           <Section id="forms" title="Dạng từ" note={irregular ? (baseLabel === 'Nguyên thể' ? 'Động từ bất quy tắc' : 'Bất quy tắc') : undefined}>
             <FormCells headword={head.headword} baseLabel={baseLabel} forms={view.forms} lang={lang} variant="compact" />
           </Section>
+        )}
+
+        {sound !== null && (
+          <Section id="sound" title="Cách đọc"><SoundNotes facts={sound} /></Section>
         )}
 
         {view.phrases.length > 0 && (
@@ -127,6 +138,9 @@ export function ClassicLayout({ view }: { view: WordView }) {
           <Section id="examples" title="Ví dụ khác">
             <ExampleRows examples={examples} lang={lang} resolved={view.resolved} glosses={view.glosses} mark={mark} variant="quote" />
           </Section>
+        )}
+        {hasOrigin && (
+          <Section id="origin" title="Nguồn gốc"><OriginNotes notes={view.notes} leadPos={leadPos} /></Section>
         )}
       </div>
 

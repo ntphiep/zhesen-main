@@ -88,8 +88,41 @@ export const relationRow = z.object({
   related_entry_id: z.string().nullable(),
 })
 
+const originStepRow = z.object({
+  rel: z.enum(['inh', 'der', 'bor', 'lbor', 'calque']),
+  lang: z.string(),
+  name: z.string().optional(),
+  word: z.string(),
+  gloss: z.string().optional(),
+  tr: z.string().optional(),
+})
+
+const originRow = z.object({
+  pos: z.array(z.string()),
+  chain: z.array(originStepRow),
+  parts: z.array(z.object({ word: z.string(), gloss: z.string().optional(), e: z.literal(true).optional() })).optional(),
+  kind: z.object({
+    type: z.enum(['clipping', 'back-formation', 'onomatopoeia', 'coinage']),
+    word: z.string().optional(), e: z.literal(true).optional(), by: z.string().optional(), year: z.string().optional(),
+  }).optional(),
+  doublets: z.array(z.string()).optional(),
+})
+
+/** `lex.entry_notes` (migration 0198), one-to-one with the entry. */
+export const entryNotesRow = z.object({
+  origin: z.array(originRow).nullable(),
+  syllables: z.array(z.string()).nullable(),
+  homophones: z.array(z.string()).nullable(),
+  sense_grammar: z.record(z.string(), z.array(z.string())).nullable(),
+})
+
 export const entryDetailRow = entryPreviewRow.extend({
   lex_relations: z.array(relationRow).nullable(),
+  // The notes are an extra: a row the schema rejects drops them, never the page.
+  entry_notes: entryNotesRow.nullable().optional().catch((ctx) => {
+    console.error('entry_notes rejected', ctx.issues[0])
+    return null
+  }),
 })
 export type EntryDetailRow = z.infer<typeof entryDetailRow>
 

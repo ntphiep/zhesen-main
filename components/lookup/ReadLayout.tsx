@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Chip, FORMS_LABEL, FoldedList, LayerNote, LearnerHeader, LearnerRail, LemmaMention, PANEL, SenseBody, SenseChips, minorGloss, minorTerms } from './LearnerParts'
 import { CARD, CONTAINER, SectionLabel } from './WordParts'
 import { minorSenses, type LearnerLayer, type MinorSense } from '@/lib/dictionary/learner'
+import { grammarLabels } from '@/lib/dictionary/origin'
+import type { EntryNotes } from '@/lib/dictionary/types'
 import { useAnchor } from '@/lib/hooks/useAnchor'
 import type { WordView } from '@/lib/dictionary/wordView'
 
@@ -69,8 +71,8 @@ export function ReadLayout({ view, layer }: { view: WordView; layer: LearnerLaye
                 {other.length === 0 ? FORMS_LABEL : 'Nghĩa khác và dạng từ'} · {minor.length}
               </SectionLabel>
               {/* The subtitles only tell the two apart when both are there. */}
-              <MinorTable label={inflections.length > 0 ? 'Nghĩa khác' : null} senses={other} noun="nghĩa khác" />
-              <MinorTable label={other.length > 0 ? FORMS_LABEL : null} senses={inflections} noun="dạng từ" />
+              <MinorTable label={inflections.length > 0 ? 'Nghĩa khác' : null} senses={other} noun="nghĩa khác" notes={view.notes} />
+              <MinorTable label={other.length > 0 ? FORMS_LABEL : null} senses={inflections} noun="dạng từ" notes={view.notes} />
             </section>
           )}
           <LayerNote layer={layer} view={view} />
@@ -96,7 +98,7 @@ export function ReadLayout({ view, layer }: { view: WordView; layer: LearnerLaye
 /** Rows of each table shown before expanding: take has 46 other senses. */
 const MINOR_SHOWN = 6
 
-function MinorTable({ label, senses, noun }: { label: string | null; senses: MinorSense[]; noun: string }) {
+function MinorTable({ label, senses, noun, notes }: { label: string | null; senses: MinorSense[]; noun: string; notes: EntryNotes | null }) {
   if (senses.length === 0) return null
   return (
     <>
@@ -111,7 +113,7 @@ function MinorTable({ label, senses, noun }: { label: string | null; senses: Min
               <span className="font-semibold">{minorTerms(m)}</span>
               {m.isInflection && m.lemma && <span className="text-[13px] text-(--zs-soft)">dạng của <LemmaMention minor={m} /></span>}
             </span>
-            <SenseChips pos={m.pos} domain={m.domain} register={m.register}>
+            <SenseChips pos={m.pos} domain={m.domain} register={m.register} grammar={grammarLabels(notes, [m.senseId])}>
               {m.isInflection && <Chip tone="form">dạng từ</Chip>}
             </SenseChips>
             <span className="line-clamp-3 text-[13px] text-(--zs-soft)" title={minorGloss(m) ?? undefined}>{minorGloss(m)}</span>

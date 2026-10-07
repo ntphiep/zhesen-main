@@ -6,6 +6,7 @@ import { CharacterPanel } from './CharacterPanel'
 import { ConjugationTable } from './ConjugationTable'
 import { LemmaLink } from './LemmaLink'
 import { BACKLINKS_LABEL, BacklinkList, LayerNote } from './LearnerParts'
+import { GrammarChips, OriginNotes, SoundNotes, soundFacts } from './WordNotes'
 import {
   AiCorner, Badge, CONTAINER, EnglishMark, FormCells, FrequencyMeter, GrammarList, LevelChip, MorphText, MoreButton, PivotMark, PosChip, ToeicChip, WordChip,
   UntranslatedNote, WordLink, baseFormLabel,
@@ -15,6 +16,7 @@ import { useAnchor } from '@/lib/hooks/useAnchor'
 import { TappableText } from '@/components/reader/TappableText'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
+import { grammarLabels, shownOrigins } from '@/lib/dictionary/origin'
 import { isSentenceTranslation } from '@/lib/dictionary/textQuality'
 import { senseSections, SHOWN_SENSES, type SenseSection } from '@/lib/dictionary/wordPage'
 import { cleanExamples, headwordForms, senseLabel, type FamilyWord, type ViewWord, type WordView } from '@/lib/dictionary/wordView'
@@ -42,6 +44,8 @@ export function BilingualLayout({ view }: { view: WordView }) {
   const mark = headwordForms(view)
   const irregular = view.forms.some((f) => f.irregular)
   const anchor = useAnchor()
+  const sound = soundFacts(head, view.notes)
+  const hasOrigin = shownOrigins(view.notes, sections[0]?.key).length > 0
 
   const wordRows = (words: (ViewWord | FamilyWord)[], family = false, tag?: string): Row[] =>
     words.map((w) => ({
@@ -68,7 +72,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
       node: (
         <MeaningSection
           section={sec} lang={lang} byText={byText} glosses={view.glosses} mark={mark}
-          examples={view.examplesBySense} synonymsBySense={synonymsBySense}
+          examples={view.examplesBySense} synonymsBySense={synonymsBySense} notes={view.notes}
         />
       ),
     })),
@@ -78,6 +82,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
       note: irregular && <Badge tone="strong">Bất quy tắc</Badge>,
       node: <FormCells headword={head.headword} baseLabel={baseFormLabel(view.forms)} forms={view.forms} lang={lang} variant="wide" />,
     }] : []),
+    ...(sound !== null ? [{ id: 'sound', title: 'Cách đọc', count: 0, node: <SoundNotes facts={sound} /> }] : []),
     ...(view.conjugation ? [{ id: 'conjugation', title: 'Chia động từ', count: 0, node: <ConjugationTable conjugation={view.conjugation} /> }] : []),
     ...(lang === 'zh' && view.characters.length > 0
       ? [{ id: 'characters', title: 'Chữ và bộ thủ', count: 0, node: <CharacterPanel characters={view.characters} /> }]
@@ -118,6 +123,9 @@ export function BilingualLayout({ view }: { view: WordView }) {
           more={(n) => `Xem thêm ${n} ví dụ`}
         />
       ),
+    }] : []),
+    ...(hasOrigin ? [{
+      id: 'origin', title: 'Nguồn gốc', count: 0, node: <OriginNotes notes={view.notes} leadPos={sections[0]?.key} />,
     }] : []),
     ...(view.grammarPoints.length > 0 ? [{
       id: 'grammar', title: 'Ngữ pháp', count: 0, node: <GrammarList points={view.grammarPoints} />,
@@ -257,7 +265,7 @@ function exampleCells(e: DictExample, lang: LangCode, byText: Map<string, Resolv
 
 /** One part of speech: the English definition beside the Vietnamese meaning, the synonyms
  *  of that meaning under the English, and the sense's example as a row of its own. */
-function MeaningSection({ section, lang, byText, glosses, mark, examples, synonymsBySense }: {
+function MeaningSection({ section, lang, byText, glosses, mark, examples, synonymsBySense, notes }: {
   section: SenseSection
   lang: LangCode
   byText: Map<string, ResolvedText>
@@ -265,6 +273,7 @@ function MeaningSection({ section, lang, byText, glosses, mark, examples, synony
   mark: string[]
   examples: Record<string, DictExample>
   synonymsBySense: Map<number, ViewWord[]>
+  notes: WordView['notes']
 }) {
   const [expanded, setExpanded] = useState(false)
   const visible = expanded ? section.senses : section.senses.slice(0, SHOWN_SENSES)
@@ -277,11 +286,13 @@ function MeaningSection({ section, lang, byText, glosses, mark, examples, synony
           const example = s.id ? examples[s.id] : undefined
           const synonyms = synonymsBySense.get(s.senseOrder) ?? []
           const cells = example ? exampleCells(example, lang, byText, glosses, mark) : null
+          const grammar = grammarLabels(notes, [s.id])
           return (
             <li key={s.id ?? `${s.senseOrder}-${i}`} id={anchor(`${section.anchor}-${i + 1}`)} data-more={i >= SHOWN_SENSES || undefined} className={`${ROW_GRID} gap-y-2.5 py-4 md:scroll-mt-24`}>
               <div className="flex min-w-0 gap-3">
                 <span className="w-4 shrink-0 pt-0.5 text-sm tabular-nums text-(--zs-soft)">{i + 1}</span>
                 <div className="flex min-w-0 flex-col gap-2.5">
+                  {grammar.length > 0 && <span className="flex flex-wrap gap-1"><GrammarChips labels={grammar} /></span>}
                   {s.glossEn && <span className="text-base leading-normal">{s.glossEn}</span>}
                   {synonyms.length > 0 && (
                     <span className="flex flex-wrap items-center gap-1.5">

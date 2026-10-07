@@ -9,8 +9,10 @@ import { AudioButton } from '@/components/ui/AudioButton'
 import { useAnchor } from '@/lib/hooks/useAnchor'
 import { TappableText } from '@/components/reader/TappableText'
 import { Badge, EnglishMark, MoreButton, PivotMark, UntranslatedNote, WordLink } from './WordParts'
+import { GrammarChips } from './WordNotes'
+import { grammarLabels } from '@/lib/dictionary/origin'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
-import type { DictExample, DictSense } from '@/lib/dictionary/types'
+import type { DictExample, DictSense, EntryNotes } from '@/lib/dictionary/types'
 import type { SenseSynonyms, ViewWord } from '@/lib/dictionary/wordView'
 import type { LangCode } from '@/lib/languages'
 
@@ -21,16 +23,19 @@ interface Shared {
   glosses: (string | null)[]
   synonyms: Map<number, ViewWord[]>
   mark: string[]
+  notes: EntryNotes | null
 }
 
-function Sense({ s, n, more, lang, examples, byText, glosses, synonyms, mark }: Shared & { s: DictSense; n: number; more: boolean }) {
+function Sense({ s, n, more, lang, examples, byText, glosses, synonyms, mark, notes }: Shared & { s: DictSense; n: number; more: boolean }) {
   const example = s.id ? examples[s.id] : undefined
+  const grammar = grammarLabels(notes, [s.id])
   const words = synonyms.get(s.senseOrder) ?? []
   const vi = s.glossVi ?? s.pivotVi
   return (
     <li data-more={more || undefined} className="flex gap-2.5">
       <span className="w-5 shrink-0 text-[15px] font-semibold text-(--zs-soft)">{n}.</span>
       <div className="flex min-w-0 flex-col gap-1.5">
+        {grammar.length > 0 && <span className="flex flex-wrap gap-1"><GrammarChips labels={grammar} /></span>}
         {/* 25.3% of English senses have no Vietnamese gloss. There the English is the
             meaning, so it takes the meaning's place, marked as English. */}
         {vi || s.glossEn
@@ -94,7 +99,7 @@ function PosSection({ section, ...shared }: Shared & { section: SenseSection }) 
 
 /** One section per part of speech, each showing its most used senses with one example
  *  apiece and the synonyms of that sense, expanding in place. */
-export function SenseList({ senses, lang, examples = {}, resolved = [], glosses = [], senseSynonyms = [], mark = [] }: {
+export function SenseList({ senses, lang, examples = {}, resolved = [], glosses = [], senseSynonyms = [], mark = [], notes = null }: {
   senses: DictSense[]
   lang: LangCode
   /** The example shown under each sense, keyed by sense id; see planExamples. */
@@ -104,6 +109,8 @@ export function SenseList({ senses, lang, examples = {}, resolved = [], glosses 
   senseSynonyms?: SenseSynonyms[]
   /** Lower-case words set in bold in the examples: the headword and its forms. */
   mark?: string[]
+  /** Supplies each sense's grammar labels. */
+  notes?: EntryNotes | null
 }) {
   // Chinese entries carry CC-CEDICT "CL:" rows that are classifier notes, not
   // meanings, so they belong on a "Lượng từ" line and not in the numbered list.
@@ -119,7 +126,7 @@ export function SenseList({ senses, lang, examples = {}, resolved = [], glosses 
       {sections.map((sec) => (
         <PosSection
           key={sec.key} section={sec} lang={lang} examples={examples} byText={byText} glosses={glosses}
-          synonyms={synonyms} mark={mark}
+          synonyms={synonyms} mark={mark} notes={notes}
         />
       ))}
       {classifiers.length > 0 && (

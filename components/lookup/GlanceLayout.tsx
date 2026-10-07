@@ -4,7 +4,10 @@ import {
   SourceLine, minorGloss, minorTerms, toneOf,
 } from './LearnerParts'
 import { CARD, CONTAINER, PivotMark, SectionLabel } from './WordParts'
+import { GrammarChips } from './WordNotes'
 import { LINK_KIND_VI, domainLabel, minorSenses, registerLabel, type LearnerLayer, type LearnerLink, type MinorSense } from '@/lib/dictionary/learner'
+import { grammarLabels } from '@/lib/dictionary/origin'
+import type { EntryNotes } from '@/lib/dictionary/types'
 import type { WordView } from '@/lib/dictionary/wordView'
 
 /** Rows of a long list shown before expanding: take has 46 other senses and 32 collocations. */
@@ -68,7 +71,9 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
                 active === s.order ? 'ring-2 ring-(--t)' : dim(s.order)
               }`}
             >
-              <SenseChips pos={s.pos} cefr={s.cefr} domain={s.domain} register={s.register}><Badge order={s.order} /></SenseChips>
+              <SenseChips pos={s.pos} cefr={s.cefr} domain={s.domain} register={s.register} grammar={grammarLabels(view.notes, s.sourceSenseIds)}>
+                <Badge order={s.order} />
+              </SenseChips>
               <h3 className="text-lg font-extrabold leading-tight">{s.viTerms.join(', ')}{s.pivot && <PivotMark />}</h3>
               {s.viDefinition && <p className="text-[15px] leading-relaxed">{s.viDefinition}</p>}
               {s.enDefinition && <p className="text-[13.5px] text-(--zs-soft)">{s.enDefinition}</p>}
@@ -76,8 +81,8 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
               <SourceLine ids={s.sourceSenseIds} view={view} />
             </article>
           ))}
-          <MinorPanel label="Nghĩa khác" senses={other} noun="nghĩa khác" />
-          <MinorPanel label={FORMS_LABEL} senses={inflections} noun="dạng từ" />
+          <MinorPanel label="Nghĩa khác" senses={other} noun="nghĩa khác" notes={view.notes} />
+          <MinorPanel label={FORMS_LABEL} senses={inflections} noun="dạng từ" notes={view.notes} />
         </section>
 
         {/* A derived layer has no collocations of its own, so the column lists the entry's phrases. */}
@@ -133,7 +138,7 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
   )
 }
 
-function MinorPanel({ label, senses, noun }: { label: string; senses: MinorSense[]; noun: string }) {
+function MinorPanel({ label, senses, noun, notes }: { label: string; senses: MinorSense[]; noun: string; notes: EntryNotes | null }) {
   if (senses.length === 0) return null
   return (
     <div className={PANEL}>
@@ -147,6 +152,7 @@ function MinorPanel({ label, senses, noun }: { label: string; senses: MinorSense
             <span>{minorTerms(m)}</span>
             {m.domain && <Chip tone="domain">{domainLabel(m.domain)}</Chip>}
             {m.register && <Chip tone="register">{registerLabel(m.register)}</Chip>}
+            <GrammarChips labels={grammarLabels(notes, [m.senseId])} />
             {m.isInflection && <Chip tone="form">{m.lemma ? `dạng của ${m.lemma}` : 'dạng từ'}</Chip>}
             {m.isInflection && m.glossEn && <span className="basis-full text-xs text-(--zs-soft)">{minorGloss(m)}</span>}
           </li>

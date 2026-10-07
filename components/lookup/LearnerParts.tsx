@@ -3,6 +3,7 @@ import { AddToWordlistButton } from './AddToWordlistButton'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { saveableEntry } from './LookupHero'
 import { Pronunciation } from './Pronunciation'
+import { GrammarChips, OriginNotes, SoundNotes, soundFacts } from './WordNotes'
 import {
   CARD, CONTAINER, FamilyRows, FrequencyMeter, LevelChip, MoreButton, PivotMark, PosChip, SectionLabel, SynonymsRows, ToeicChip, WordLink,
   WordTable, hasSynonyms,
@@ -16,6 +17,7 @@ import {
   LINK_KIND_VI, domainLabel, formDescriptionVi, markHeadword, markedRanges, registerLabel, sourceNumbers,
   type LearnerExample, type LearnerLayer, type LearnerLink, type LearnerSense, type MinorSense,
 } from '@/lib/dictionary/learner'
+import { grammarLabels, shownOrigins } from '@/lib/dictionary/origin'
 import { posGroups } from '@/lib/dictionary/pos'
 import { isClassifierGloss } from '@/lib/dictionary/textQuality'
 import { headwordForms, type WordView } from '@/lib/dictionary/wordView'
@@ -42,12 +44,13 @@ export function Chip({ tone = 'neutral', children }: { tone?: keyof typeof CHIP;
   return <span className={`shrink-0 rounded-full px-[7px] py-0.5 text-[11px] ${CHIP[tone]}`}>{children}</span>
 }
 
-/** Part of speech, level, subject field and register, whichever the sense has. */
-export function SenseChips({ pos, cefr, domain, register, children }: {
+/** Part of speech, level, subject field, register and grammar, whichever the sense has. */
+export function SenseChips({ pos, cefr, domain, register, grammar = [], children }: {
   pos?: string | null
   cefr?: string | null
   domain: string | null
   register: string | null
+  grammar?: string[]
   children?: React.ReactNode
 }) {
   return (
@@ -57,6 +60,7 @@ export function SenseChips({ pos, cefr, domain, register, children }: {
       <LevelChip level={cefr ?? null} />
       {domain && <Chip tone="domain">{domainLabel(domain)}</Chip>}
       {register && <Chip tone="register">{registerLabel(register)}</Chip>}
+      <GrammarChips labels={grammar} />
     </span>
   )
 }
@@ -195,7 +199,10 @@ export function SenseBody({ sense, view, size = 'md' }: { sense: LearnerSense; v
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <SenseChips pos={sense.pos} cefr={sense.cefr} domain={sense.domain} register={sense.register} />
+        <SenseChips
+          pos={sense.pos} cefr={sense.cefr} domain={sense.domain} register={sense.register}
+          grammar={grammarLabels(view.notes, sense.sourceSenseIds)}
+        />
         <h2 className={`font-extrabold leading-tight tracking-[-0.02em] ${TERMS[size]}`}>
           {sense.viTerms.join(', ')}{sense.pivot && <PivotMark />}
         </h2>
@@ -243,7 +250,7 @@ export function LemmaMention({ minor }: { minor: MinorSense }) {
 export function MinorBody({ minor, view }: { minor: MinorSense; view: WordView }) {
   return (
     <div className="flex flex-col gap-2">
-      <SenseChips pos={minor.pos} domain={minor.domain} register={minor.register}>
+      <SenseChips pos={minor.pos} domain={minor.domain} register={minor.register} grammar={grammarLabels(view.notes, [minor.senseId])}>
         {minor.isInflection && <Chip tone="form">dạng từ</Chip>}
       </SenseChips>
       <h2 className="text-[28px] font-extrabold leading-tight tracking-[-0.02em] sm:text-[30px]">{minorTerms(minor)}</h2>
@@ -324,6 +331,9 @@ export function LearnerRail({ view, layer, phrases = true }: { view: WordView; l
   const others = {
     senseSynonyms: view.senseSynonyms.filter((g) => !mainOrders.has(g.senseOrder)), synonyms: view.synonyms, antonyms: view.antonyms,
   }
+  const sound = soundFacts(view.head, view.notes)
+  const leadPos = view.senses[0]?.pos
+  const hasOrigin = shownOrigins(view.notes, leadPos).length > 0
   return (
     <>
       {layer.usageNoteVi && (
@@ -336,6 +346,12 @@ export function LearnerRail({ view, layer, phrases = true }: { view: WordView; l
         <section className={PANEL}>
           <SectionLabel>Dễ nhầm với</SectionLabel>
           <NoteList links={layer.confusables} />
+        </section>
+      )}
+      {sound !== null && (
+        <section className={PANEL}>
+          <SectionLabel>Cách đọc</SectionLabel>
+          <SoundNotes facts={sound} />
         </section>
       )}
       {derived && phrases && view.phrases.length > 0 && (
@@ -358,6 +374,12 @@ export function LearnerRail({ view, layer, phrases = true }: { view: WordView; l
         </section>
       )}
       {derived && <CrossLanguagePanel siblings={view.siblings} className={`${CARD} p-4 sm:p-5`} />}
+      {hasOrigin && (
+        <section className={PANEL}>
+          <SectionLabel>Nguồn gốc</SectionLabel>
+          <OriginNotes notes={view.notes} leadPos={leadPos} />
+        </section>
+      )}
       <Backlinks view={view} />
     </>
   )

@@ -67,7 +67,7 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
     supabase
       .schema('lex')
       .from('entries')
-      .select(`${DETAIL_SELECT}, lex_relations!lex_relations_entry_id_fkey(relation_type, related_text, related_entry_id)`)
+      .select(`${DETAIL_SELECT}, lex_relations!lex_relations_entry_id_fkey(relation_type, related_text, related_entry_id), entry_notes(origin, syllables, homophones, sense_grammar)`)
       .eq('id', entryId)
       // Synonyms and antonyms by rank (0197), WordNet's first; the rest in the order a loader
       // wrote them, so a word family is nearest member first.
@@ -109,6 +109,12 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
     pronunciations: toProns(r.pronunciations),
     examples, relations, senseLinks: byRelationOrder(senseLinks, relations),
     attributes: r.attributes ?? {},
+    notes: r.entry_notes ? {
+      origins: r.entry_notes.origin ?? [],
+      syllables: r.entry_notes.syllables,
+      homophones: r.entry_notes.homophones ?? [],
+      senseGrammar: r.entry_notes.sense_grammar ?? {},
+    } : null,
   }
 }
 
