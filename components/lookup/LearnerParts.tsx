@@ -4,7 +4,7 @@ import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { saveableEntry } from './LookupHero'
 import { Pronunciation } from './Pronunciation'
 import {
-  CARD, CONTAINER, FamilyRows, FrequencyMeter, LevelChip, MoreButton, PivotMark, PosChip, SectionLabel, SynonymsRows, WordLink,
+  CARD, CONTAINER, FamilyRows, FrequencyMeter, LevelChip, MoreButton, PivotMark, PosChip, SectionLabel, SynonymsRows, ToeicChip, WordLink,
   WordTable, hasSynonyms,
 } from './WordParts'
 import { AudioButton } from '@/components/ui/AudioButton'
@@ -287,6 +287,7 @@ export function LearnerHeader({ view, layer }: { view: WordView; layer: LearnerL
           )}
           <span className="flex flex-wrap items-center gap-1.5">
             <LevelChip level={head.level ?? layer.level} strong />
+            <ToeicChip place={view.toeic} />
             {gender && <Chip>{gender}</Chip>}
             {posLabels.map((p) => <Chip key={p}>{p.toLocaleLowerCase('vi')}</Chip>)}
             <FrequencyMeter rank={head.frequencyRank} small />

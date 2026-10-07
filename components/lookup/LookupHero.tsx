@@ -1,8 +1,9 @@
 import { Pronunciation } from './Pronunciation'
 import { AddToWordlistButton } from './AddToWordlistButton'
-import { FrequencyMeter, LevelChip } from './WordParts'
+import { FrequencyMeter, LevelChip, ToeicChip } from './WordParts'
 import { genderLabel } from '@/lib/dictionary/gender'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
+import type { WordView } from '@/lib/dictionary/wordView'
 
 /** Headword sizes by length, phone then wide screen, so a long word keeps to its card. */
 const SIZES: [number, string][] = [
@@ -21,7 +22,7 @@ export function saveableEntry(detail: DictEntryDetail): DictEntryDetail {
   return { ...detail, senses: [], relations: [], pronunciations: [], senseLinks: [], examples: detail.examples.filter((e) => e.translationVi) }
 }
 
-export function LookupHero({ detail, hanViet, summary, stats = [], posLabels = [] }: {
+export function LookupHero({ detail, hanViet, summary, stats = [], posLabels = [], toeic = null }: {
   detail: DictEntryDetail
   hanViet?: string | null
   /** The main meanings on one line; see summaryLine. */
@@ -30,6 +31,7 @@ export function LookupHero({ detail, hanViet, summary, stats = [], posLabels = [
   stats?: { n: number; label: string }[]
   /** The parts of speech the entry's senses carry, in their order. */
   posLabels?: string[]
+  toeic?: WordView['toeic']
 }) {
   const pinyin = typeof detail.attributes.pinyin === 'string' ? detail.attributes.pinyin : null
   const gender = genderLabel(detail.attributes)
@@ -48,6 +50,7 @@ export function LookupHero({ detail, hanViet, summary, stats = [], posLabels = [
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap gap-1.5">
             <LevelChip level={detail.level} strong />
+            <ToeicChip place={toeic} />
             {gender && <span className={CHIP}>{gender}</span>}
             {posLabels.map((p) => <span key={p} className={CHIP}>{p.toLocaleLowerCase('vi')}</span>)}
           </div>

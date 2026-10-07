@@ -8,7 +8,7 @@ import { Backlinks, LayerNote } from './LearnerParts'
 import { SenseList } from './SenseList'
 import { useAnchor } from '@/lib/hooks/useAnchor'
 import {
-  AiCorner, Badge, CONTAINER, ChipRow, ExampleRows, FormCells, GlossChips, GrammarList, LevelChip, SectionLabel, WordTable,
+  AiCorner, Badge, CONTAINER, ChipRow, ExampleRows, FormCells, GlossChips, GrammarList, LevelChip, SectionLabel, ToeicChip, WordTable,
   baseFormLabel, frequencyBars,
 } from './WordParts'
 import { senseSections } from '@/lib/dictionary/wordPage'
@@ -51,6 +51,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
             <h1 data-hw="" lang={lang} className="break-words text-[40px] leading-none sm:text-[52px]">{head.headword}</h1>
             {head.traditional && head.traditional !== head.headword && <span data-hw="" lang="zh" className="text-3xl text-(--zs-soft)">{head.traditional}</span>}
             <LevelChip level={head.level} />
+            <ToeicChip place={view.toeic} />
             {frequencyBars(head.frequencyRank) > 0 && (
               <span title="Nằm trong 3000 từ thông dụng nhất của ngôn ngữ này"><Badge tone="light">Hay gặp</Badge></span>
             )}

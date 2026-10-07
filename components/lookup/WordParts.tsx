@@ -96,6 +96,21 @@ export function LevelChip({ level, strong = false }: { level: string | null; str
   )
 }
 
+/** Opens the TOEIC list page that holds the word, beside its level in every layout's header. */
+export function ToeicChip({ place }: { place: WordView['toeic'] }) {
+  if (!place) return null
+  return (
+    <Link
+      href={place.href}
+      prefetch={false}
+      aria-label={`TOEIC, thứ ${place.rank.toLocaleString('vi-VN')} trong danh sách từ hay gặp`}
+      className="shrink-0 rounded-full border border-(--zs-line) px-[9px] py-[2px] text-xs font-semibold text-(--zs-ink) hover:bg-(--tint-1)"
+    >
+      TOEIC
+    </Link>
+  )
+}
+
 /** Marks a Vietnamese meaning inferred through English rather than written for the word. */
 export function PivotMark() {
   return (

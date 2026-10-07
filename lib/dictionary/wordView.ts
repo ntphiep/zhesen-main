@@ -101,6 +101,8 @@ export interface WordView {
   learner: LearnerLayer | null
   /** The layers that mention this entry. */
   backlinks: LearnerBacklink[]
+  /** The word's rank in the TOEIC list and the list page that shows it; null outside the list. */
+  toeic: { rank: number; href: string } | null
 }
 
 export interface WordViewInput {
@@ -118,6 +120,7 @@ export interface WordViewInput {
   learner?: LearnerLayer | null
   backlinks?: LearnerBacklink[]
   formOf?: FormOf | null
+  toeic?: WordView['toeic']
 }
 
 const toWord = ({ text, href, id, gloss, glossIsEnglish, pos, level }: RelatedItem): ViewWord =>
@@ -227,7 +230,7 @@ export function usesHeadword(text: string, headword: string, forms: string[], la
 
 export function buildWordView({
   detail, lemma = null, characters, siblings, inflections = [], grammarPoints = [], containing = [], kin = [],
-  phrasalVerbs = [], previews = {}, resolvedExamples = [], learner = null, backlinks = [], formOf = null,
+  phrasalVerbs = [], previews = {}, resolvedExamples = [], learner = null, backlinks = [], formOf = null, toeic = null,
 }: WordViewInput): WordView {
   // Spanish verbs get the conjugation table instead of a line of forms, which for them
   // would run to hundreds. A form's own forms (wents, breakings) are noise; better, which has
@@ -337,6 +340,7 @@ export function buildWordView({
     }),
     // A word the other-languages panel already shows is not listed again.
     backlinks: backlinks.filter((b) => !shownSiblings.some((s) => s.id === b.entryId)),
+    toeic,
   }
 }
 

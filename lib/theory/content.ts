@@ -75,6 +75,20 @@ export function findToeicGroup(lang: LangCode, group: string): { n: number; word
   return words.length ? { n, words } : undefined
 }
 
+const toeicRanks = new Map<LangCode, Map<string, number>>()
+
+/** A headword's rank in the TOEIC list, from 1, and the page of the list that shows it. */
+export function toeicPlace(lang: LangCode, headword: string): { rank: number; group: number } | null {
+  let ranks = toeicRanks.get(lang)
+  if (!ranks) {
+    ranks = new Map()
+    for (const [i, [word]] of (toeicGuide(lang)?.wordList ?? []).entries()) if (!ranks.has(word)) ranks.set(word, i + 1)
+    toeicRanks.set(lang, ranks)
+  }
+  const rank = ranks.get(headword)
+  return rank ? { rank, group: Math.ceil(rank / TOEIC_GROUP_SIZE) } : null
+}
+
 /** Exact text match, so `05` is not Part 5 and has no second URL. */
 export function findToeicPart(lang: LangCode, part: string): ToeicPart | undefined {
   return toeicGuide(lang)?.parts.find((p) => String(p.number) === part)

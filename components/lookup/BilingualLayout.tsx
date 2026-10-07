@@ -7,7 +7,7 @@ import { ConjugationTable } from './ConjugationTable'
 import { LemmaLink } from './LemmaLink'
 import { BACKLINKS_LABEL, BacklinkList, LayerNote } from './LearnerParts'
 import {
-  AiCorner, Badge, CONTAINER, EnglishMark, FormCells, FrequencyMeter, GrammarList, LevelChip, MorphText, MoreButton, PivotMark, PosChip, WordChip,
+  AiCorner, Badge, CONTAINER, EnglishMark, FormCells, FrequencyMeter, GrammarList, LevelChip, MorphText, MoreButton, PivotMark, PosChip, ToeicChip, WordChip,
   UntranslatedNote, WordLink, baseFormLabel,
 } from './WordParts'
 import { AudioButton } from '@/components/ui/AudioButton'
@@ -212,6 +212,7 @@ function WordBar({ view }: { view: WordView }) {
         {head.traditional && head.traditional !== head.headword && <span data-hw="" lang="zh" className="text-2xl text-(--zs-soft)">{head.traditional}</span>}
         <Pronunciation headword={head.headword} prons={head.pronunciations} lang={head.lang} pill />
         <LevelChip level={head.level} strong />
+        <ToeicChip place={view.toeic} />
         <FrequencyMeter rank={head.frequencyRank} small />
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 lg:ml-auto">
           <AddToWordlistButton size="lg" entry={{ ...head, pronunciations: [] }} />

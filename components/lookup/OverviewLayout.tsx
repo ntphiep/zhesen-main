@@ -174,6 +174,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
             hanViet={view.hanViet}
             summary={lines.length > 0 ? null : view.summary}
             posLabels={sections.filter((s) => s.key).map((s) => s.labelVi)}
+            toeic={view.toeic}
           />
           {view.lemma && <LemmaLink lemma={view.lemma} preview={view.lemmaPreview ?? undefined} lang={head.lang} />}
         </div>

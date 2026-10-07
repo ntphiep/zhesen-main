@@ -7,6 +7,9 @@ import { LookupView } from '@/components/lookup/LookupView'
 import { MapLayout } from '@/components/lookup/MapLayout'
 import { ReadLayout } from '@/components/lookup/ReadLayout'
 import { GlanceLayout } from '@/components/lookup/GlanceLayout'
+import { OverviewLayout } from '@/components/lookup/OverviewLayout'
+import { BilingualLayout } from '@/components/lookup/BilingualLayout'
+import { ClassicLayout } from '@/components/lookup/ClassicLayout'
 import { layerNote } from '@/components/lookup/LearnerParts'
 import { parseBacklinks, parseLearnerLayer } from '@/lib/dictionary/learner'
 import {
@@ -379,5 +382,33 @@ describe('a layer derived from the dictionary', () => {
     const { view: b, layer: bl } = derivedView(synonymOnly)
     render(<MapLayout view={b} layer={bl} />)
     expect(screen.getAllByText('Đồng nghĩa')).toHaveLength(1)
+  })
+})
+
+describe('the TOEIC mark', () => {
+  const name = 'TOEIC, thứ 42 trong danh sách từ hay gặp'
+
+  it('links a word of the TOEIC list to the list page that holds it, from its rank in the list', () => {
+    render(<LookupView detail={warranty} characters={[]} siblings={[]} learner={layer} backlinks={backlinks} />)
+    expect(screen.getByRole('link', { name })).toHaveAttribute('href', '/theory/en/toeic/list/2')
+  })
+
+  it('sits in the header of all six layouts', () => {
+    const toeicView = { ...view, toeic: { rank: 42, href: '/theory/en/toeic/list/2' } }
+    const layouts = [
+      () => <OverviewLayout view={toeicView} />, () => <BilingualLayout view={toeicView} />, () => <ClassicLayout view={toeicView} />,
+      () => <MapLayout view={toeicView} layer={layer} />, () => <ReadLayout view={toeicView} layer={layer} />,
+      () => <GlanceLayout view={toeicView} layer={layer} />,
+    ]
+    for (const Layout of layouts) {
+      const { unmount } = render(<Layout />)
+      expect(screen.getByRole('link', { name })).toHaveAttribute('href', '/theory/en/toeic/list/2')
+      unmount()
+    }
+  })
+
+  it('stays off a word outside the list', () => {
+    render(<LookupView detail={{ ...warranty, id: 'en:guarantor', headword: 'guarantor' }} characters={[]} siblings={[]} />)
+    expect(screen.queryByRole('link', { name: /^TOEIC/ })).not.toBeInTheDocument()
   })
 })
