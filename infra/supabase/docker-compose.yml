@@ -433,6 +433,8 @@ services:
   # logins are encrypted with OMNIROUTE_STORAGE_KEY, so that key must travel with the data.
   omniroute:
     container_name: zhesen-omniroute
+    # Not the -web variant, which adds the Chromium that gemini-web and zai-web need: under the batch,
+    # six zai-web pages of 180 to 280 MB each hit this limit and an OOM kill in 8 minutes (2026-10-08).
     image: diegosouzapw/omniroute:3.8.50
     restart: unless-stopped
     stop_grace_period: 40s
