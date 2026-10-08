@@ -20,7 +20,7 @@ import { AuditLog } from '@/components/admin/AuditLog'
 const cachedCosts = unstable_cache(async () => {
   const cfg = awsHealthConfig()
   return cfg ? getCosts(cfg) : null
-}, ['admin-costs'], { revalidate: 21_600 })
+}, ['admin-costs'], { revalidate: 86_400 })
 
 /** admin.metrics() counted every row of every table: 2.5 to 2.9 s on production on
  *  2026-10-04, and past the 8 s statement timeout when three admin pages ran at once.

@@ -13,11 +13,11 @@ import { ShellConsole } from '@/components/admin/Console'
 
 export const metadata = { title: 'Infrastructure · Admin' }
 
-/** Cost Explorer charges per request and refreshes about once a day, so six hours. */
+/** Cost Explorer charges per request and refreshes about once a day, so one day. */
 const cachedCosts = unstable_cache(async (): Promise<Costs | null> => {
   const cfg = awsHealthConfig()
   return cfg ? getCosts(cfg) : null
-}, ['admin-costs'], { revalidate: 21_600 })
+}, ['admin-costs'], { revalidate: 86_400 })
 
 async function readCosts(): Promise<Costs | null | 'error'> {
   try {

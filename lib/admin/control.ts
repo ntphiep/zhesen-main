@@ -232,14 +232,11 @@ export async function getCosts(cfg: AwsHealthConfig, now: number = Date.now()): 
   const monthEnd = day(new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 1)))
   const period = { Start: from, End: to }
 
-  const [byType, byService, forecast] = await Promise.all([
+  // One request groups by record type and service together; Keys is [type, service].
+  const [byTypeService, forecast] = await Promise.all([
     ce.send(new GetCostAndUsageCommand({
       TimePeriod: period, Granularity: 'MONTHLY', Metrics: ['UnblendedCost'],
-      GroupBy: [{ Type: 'DIMENSION', Key: 'RECORD_TYPE' }],
-    })),
-    ce.send(new GetCostAndUsageCommand({
-      TimePeriod: period, Granularity: 'MONTHLY', Metrics: ['UnblendedCost'], Filter: USAGE_ONLY,
-      GroupBy: [{ Type: 'DIMENSION', Key: 'SERVICE' }],
+      GroupBy: [{ Type: 'DIMENSION', Key: 'RECORD_TYPE' }, { Type: 'DIMENSION', Key: 'SERVICE' }],
     })),
     to < monthEnd
       ? ce.send(new GetCostForecastCommand({
@@ -249,13 +246,13 @@ export async function getCosts(cfg: AwsHealthConfig, now: number = Date.now()): 
   ])
 
   const amount = (g: { Metrics?: Record<string, { Amount?: string; Unit?: string }> }) => AMOUNT.parse(g.Metrics?.UnblendedCost?.Amount ?? '0')
-  const typeGroups = byType.ResultsByTime?.[0]?.Groups ?? []
+  const typeGroups = byTypeService.ResultsByTime?.[0]?.Groups ?? []
   const ofType = (t: string) => typeGroups.filter((g) => g.Keys?.[0] === t).reduce((n, g) => n + amount(g), 0)
   const usage = ofType('Usage')
   const credits = ofType('Credit')
   const net = typeGroups.reduce((n, g) => n + amount(g), 0)
-  const services = (byService.ResultsByTime?.[0]?.Groups ?? [])
-    .map((g) => ({ service: g.Keys?.[0] ?? '?', usage: amount(g) }))
+  const services = typeGroups.filter((g) => g.Keys?.[0] === 'Usage')
+    .map((g) => ({ service: g.Keys?.[1] ?? '?', usage: amount(g) }))
     .filter((s) => s.usage >= 0.005)
     .sort((a, b) => b.usage - a.usage)
   const rest = forecast?.Total?.Amount ? AMOUNT.parse(forecast.Total.Amount) : null
