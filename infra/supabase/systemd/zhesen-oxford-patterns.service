@@ -1,0 +1,19 @@
+# Writes the Vietnamese of the Oxford Learner's sentence patterns into lex.entry_patterns while zhesen-oxford
+# fills /opt/zhesen/oxford/oxford.jsonl (supabase/scripts/oxford/patterns.py, with learner.py in
+# /opt/zhesen/learner). Resumes from the table; logs to the journal.
+[Unit]
+Description=Zhesen Oxford pattern translations
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/opt/zhesen/oxford
+ExecStart=/bin/sh -c '. /opt/zhesen/learner/env.sh; set -a; . /opt/zhesen/batch.env; set +a; exec /usr/bin/python3 /opt/zhesen/oxford/patterns.py --workers 4'
+# Exits 0 once the crawl has finished and every word is written; a crash restarts it after five minutes.
+Restart=on-failure
+RestartSec=5min
+Nice=10
+MemoryMax=300M
+
+[Install]
+WantedBy=multi-user.target
