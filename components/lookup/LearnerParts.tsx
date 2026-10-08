@@ -326,7 +326,7 @@ export function LearnerRail({ view, layer, phrases = true }: { view: WordView; l
       {view.patterns.length > 0 && (
         <section className={PANEL}>
           <SectionLabel>Cấu trúc câu</SectionLabel>
-          <PatternList patterns={view.patterns} />
+          <PatternList patterns={view.patterns} shown={3} />
         </section>
       )}
       {layer.confusables.length > 0 && (
