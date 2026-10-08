@@ -9,6 +9,7 @@ packages:
   - unzip
   - jq
   - cron
+  - zstd
 
 write_files:
   - path: /etc/docker/daemon.json
@@ -16,7 +17,7 @@ write_files:
     content: |
       {
         "log-driver": "json-file",
-        "log-opts": { "max-size": "20m", "max-file": "5" },
+        "log-opts": { "max-size": "10m", "max-file": "3", "compress": "true" },
         "live-restore": true
       }
 
@@ -57,11 +58,6 @@ write_files:
         missingok
         notifempty
       }
-
-  - path: /etc/sysctl.d/99-zhesen.conf
-    permissions: "0644"
-    content: |
-      vm.swappiness=10
 
   - path: /opt/zhesen/bootstrap.sh
     permissions: "0750"
@@ -112,22 +108,13 @@ write_files:
         -a fetch-config -m ec2 -s \
         -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 
-      # 4 GB of RAM with Postgres at shared_buffers=1GB leaves no headroom for a
-      # vacuum or a dump running beside Studio.
-      if [ ! -f /swapfile ]; then
-        fallocate -l 2G /swapfile
-        chmod 600 /swapfile
-        mkswap /swapfile
-        swapon /swapfile
-        echo '/swapfile none swap sw 0 0' >> /etc/fstab
-      fi
-      sysctl --system
-
       mkdir -p "$COMPOSE_DIR"
       # .env and the database files live under COMPOSE_DIR and are not in the bucket.
       aws s3 sync "s3://$ASSETS_BUCKET/supabase" "$COMPOSE_DIR" --delete --region "$REGION" \
         --exclude '.env' --exclude 'volumes/db/data/*'
       chmod +x "$COMPOSE_DIR"/bin/*.sh
+      # zswap and the swap file, swappiness, huge pages for Postgres, idle daemons off.
+      "$COMPOSE_DIR/bin/host-tune.sh"
 
       # The URL parameters are written after the CloudFront distribution exists,
       # which is after this instance. render-env fails until they are there.
@@ -139,7 +126,7 @@ write_files:
       [ "$rendered" = "1" ] || { echo "bootstrap: .env not rendered after 30 minutes"; exit 1; }
 
       docker compose -f "$COMPOSE_DIR/docker-compose.yml" \
-        --project-directory "$COMPOSE_DIR" --env-file "$COMPOSE_DIR/.env" pull
+        --project-directory "$COMPOSE_DIR" --env-file "$COMPOSE_DIR/.env" pull --ignore-buildable
       docker compose -f "$COMPOSE_DIR/docker-compose.yml" \
         --project-directory "$COMPOSE_DIR" --env-file "$COMPOSE_DIR/.env" up -d
 

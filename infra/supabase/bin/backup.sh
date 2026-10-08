@@ -57,13 +57,15 @@ src.backup(dst)
 dst.close()' "$1" "$2"
 }
 snapshot /opt/zhesen/9router/db/data.sqlite "$ROUTER"
-aws s3 cp "$ROUTER" "s3://$BUCKET/9router/" --region "$REGION"
-# OmniRoute's logins stay encrypted with SSM omniroute_storage_key.
 snapshot /opt/zhesen/omniroute/data/storage.sqlite "$OMNI"
-aws s3 cp "$OMNI" "s3://$BUCKET/omniroute/" --region "$REGION"
-
-# Only the newest set stays on the disk, for the fastest restore; S3 keeps 30 days.
-find "$LOCAL_DIR" -type f ! -name "*-$STAMP.*" -delete
+# SQLite pages compress well: zstd -9 took the OmniRoute copy from 496 MB to 68 MB.
+zstd -q -9 --rm "$ROUTER" "$OMNI"
+aws s3 cp "$ROUTER.zst" "s3://$BUCKET/9router/" --region "$REGION"
+# OmniRoute's logins stay encrypted with SSM omniroute_storage_key.
+aws s3 cp "$OMNI.zst" "s3://$BUCKET/omniroute/" --region "$REGION"
 
 echo "backup: $STAMP -> s3://$BUCKET/postgres/, 9router/ and omniroute/"
-du -h "$DUMP" "$GLOBALS" "$ROUTER" "$OMNI"
+du -h "$DUMP" "$GLOBALS" "$ROUTER.zst" "$OMNI.zst"
+# S3 keeps 30 days; a local copy only doubled 800 MB on a 30 GB disk. This also clears what
+# a failed run left behind, but not the restore_*.dump an admin restore downloads here.
+find "$LOCAL_DIR" -type f \( -name 'postgres-*' -o -name 'globals-*' -o -name '9router-*' -o -name 'omniroute-*' \) -delete

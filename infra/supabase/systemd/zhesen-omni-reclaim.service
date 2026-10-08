@@ -1,7 +1,8 @@
-# Frees OmniRoute's page cache before its memory guard counts it as pressure. Started by
-# zhesen-omni-reclaim.timer; logs in `journalctl -u zhesen-omni-reclaim`.
+# Frees OmniRoute's page cache before its memory guard counts it as pressure, and moves the cold
+# memory of both routers and the idle host daemons out of RAM. Started by zhesen-omni-reclaim.timer;
+# logs in `journalctl -u zhesen-omni-reclaim`.
 [Unit]
-Description=Reclaim OmniRoute page cache
+Description=Reclaim OmniRoute page cache and cold memory
 Requires=docker.service
 After=docker.service
 

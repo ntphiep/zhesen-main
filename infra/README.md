@@ -94,6 +94,7 @@ aws s3 sync s3://zhesen-infra-assets-<account>/supabase . --delete \
   --exclude '.env' --exclude 'volumes/db/data/*'
 bin/render-env.sh   # only when env.template or an SSM parameter changed
 bin/set-ai-cache-secret.sh   # after migration 0181 and after rotating /zhesen/prod/ai_cache_secret
+bin/host-tune.sh   # only when it changed; idempotent
 docker compose -f docker-compose.yml --env-file .env up -d
 ```
 
@@ -103,18 +104,20 @@ upstream's `utils/upgrade-pg17.sh` is the pattern for that.
 ## Operating it
 
 Shell: `aws ssm start-session --region ap-northeast-2 --target <instance_id>`, then
-`sudo -i`. Compose lives in `/opt/zhesen/supabase`; `docker ps` shows seven containers,
-because `studio` and `meta` are stopped to leave memory to the model routers.
+`sudo -i`. Compose lives in `/opt/zhesen/supabase`; `docker ps` shows seven containers.
+`studio` and `meta` sit in the `studio` profile, so `up -d` neither starts them nor keeps
+their 2.3 GB of images on the disk.
 
 Metrics: `zhesen-sampler` writes host and container counters to `admin.host_samples` every
 5 s and keeps one hour. `/admin/infra` reads them through PostgREST and falls back to one SSM
 command when the newest row is more than 20 s old. `docker logs zhesen-sampler` holds one line
 per failed sample.
 
-Studio: `docker compose start studio meta` on the instance, then
-`pwsh infra/supabase/bin/studio-tunnel.ps1` and `http://localhost:8000`, user `zhesen`,
-password in SSM `/zhesen/prod/dashboard_password`. Stop both again afterwards. A
-`docker compose up -d` that names no service, as a deploy runs it, starts them too.
+Studio: `docker compose --env-file .env --profile studio up -d studio meta` on the instance,
+which pulls both images first, then `pwsh infra/supabase/bin/studio-tunnel.ps1` and
+`http://localhost:8000`, user `zhesen`, password in SSM `/zhesen/prod/dashboard_password`.
+Afterwards remove both with their images: `docker compose --profile studio rm -sf studio meta`,
+then `docker rmi supabase/studio:2026.09.07-sha-7996410 supabase/postgres-meta:v0.99.0`.
 
 9router: the assistant's model router, container `zhesen-9router`. The app calls
 `https://<cloudfront>/ai/v1/` with a 9router API key held in SSM `/zhesen/prod/ai_api_key`. Its
@@ -138,12 +141,18 @@ encrypted in `/opt/zhesen/omniroute/data/storage.sqlite` under SSM
 `/zhesen/prod/omniroute_storage_key`, which cannot be rotated without losing them. The nightly
 backup copies that file to `omniroute/`. Table retention is a dashboard setting stored in that
 file (Settings, Database, or `PATCH /api/settings/database`): call logs 2 days, quota snapshots
-and compression analytics 3, usage history 30. OmniRoute's defaults are 90, 90, 30 and 365, and
-its cleanup runs every 6 hours with a `VACUUM` after it. OmniRoute answers every call 503
+and compression analytics 3, usage history 7. OmniRoute's defaults are 90, 90, 30 and 365, and
+its cleanup runs every 6 hours with a `VACUUM` after it. The image is built on the instance from
+`supabase/omniroute/Dockerfile`, which copies upstream's image into one layer without the
+native binaries of other platforms: 5.66 GB became 2.68 GB. A version bump changes `UPSTREAM`
+there and the tag in `docker-compose.yml`, then `docker compose build omniroute`,
+`docker compose up -d omniroute`, and `docker builder prune -af` with `docker rmi` of the
+upstream image to give the disk back. OmniRoute answers every call 503
 ("resource pressure") once its cgroup passes 92% of the 1,400 MB limit, and the cgroup counts
 page cache, so `zhesen-omni-reclaim.timer` runs `bin/omni-reclaim.sh` every minute to reclaim
-it, and to truncate the database's WAL file once it passes 64 MB. Install it like the reminder
-units below, with `zhesen-omni-reclaim.service` and `.timer`.
+it, to truncate the database's WAL file once it passes 64 MB, and to move cold memory out of RAM
+(Memory and disk, below). Install it like the reminder units below, with
+`zhesen-omni-reclaim.service` and `.timer`.
 
 Both routers carry token savers that change what a model reads, and both were on until
 2026-10-06. OmniRoute's caveman rewrote the user message, so the raw example "grieved them very
@@ -182,9 +191,10 @@ systemctl daemon-reload && systemctl enable --now zhesen-push.timer
 
 Backup: `bin/backup.sh` at 03:30 UTC writes `pg_dump -Fc` plus `pg_dumpall --globals-only`
 to `s3://zhesen-db-backups-<account>/postgres/`, and copies of the 9router and OmniRoute
-databases to `9router/` and `omniroute/`, all kept 30 days; a failure posts to SNS. Only the newest
-set stays in `/var/backups/zhesen`. Restore 9router by stopping
-`zhesen-9router` and putting the file back as `/opt/zhesen/9router/db/data.sqlite`.
+databases, compressed with zstd, to `9router/` and `omniroute/`, all kept 30 days; a failure
+posts to SNS. Nothing stays in `/var/backups/zhesen`. Restore 9router by stopping
+`zhesen-9router`, `zstd -d` on the newest `9router-*.sqlite.zst`, and putting the file back as
+`/opt/zhesen/9router/db/data.sqlite`; OmniRoute's file goes back the same way.
 The root volume outlives the instance (`delete_on_termination = false`), so a dead host
 is rebuilt around the same volume; there is no volume snapshot.
 
@@ -200,7 +210,29 @@ Resize: Change type on `/admin/infra` stops the instance, sets the type and star
 about 2 to 3 minutes down. Terraform ignores `instance_type`, so an apply does not revert it;
 `instance_type` in `terraform.tfvars` only applies to a rebuilt instance. Volume, private IP and
 instance id survive. More memory means raising `shared_buffers` and `effective_cache_size` in
-`docker-compose.yml`.
+`docker-compose.yml`, and `vm.nr_hugepages` in `bin/host-tune.sh` to the new
+`show shared_memory_size_in_huge_pages`.
+
+Memory and disk: `bin/host-tune.sh` fits the host to 3.8 GB shared by Postgres and two routers.
+Swapped pages pass through zswap, a zstd-compressed pool in RAM capped at 2% of it, to a 2 GB
+swap file, with `vm.swappiness` at 100. Postgres's 256 MB of shared buffers sit on 155 huge pages
+reserved at boot, and the container's 1 GB reservation becomes its cgroup's `memory.low`, which
+keeps the page cache Postgres reads lex through. Every minute `bin/omni-reclaim.sh` takes cold
+memory out of RAM after Meta's TMO: 2% of each router's cgroup, and 2% of the anonymous memory of
+dockerd, containerd, the CloudWatch and SSM agents, snapd and unattended-upgrades, each only while
+that cgroup shows almost no memory pressure. Over 120 s the routers read back 1.1 MB of the
+767 MB they held in swap. host-tune also turns off daemons a headless host never uses, caps the
+journal at 64 MB and keeps two snap revisions. A reboot empties the page cache, and lookups hit
+the 3 s anon timeout until it refills; read lex back into it first:
+
+```bash
+D=/opt/zhesen/supabase/volumes/db/data
+docker exec supabase-db psql -U supabase_admin -d postgres -Atc "select pg_relation_filepath(c.oid)
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'lex'
+  and (c.relkind = 'i' or c.relname in ('entries', 'gloss_terms', 'pronunciations'))" |
+  while read -r f; do cat "$D/$f"* > /dev/null; done
+find "$D/base" -name 'pgrn*' -type f -exec cat {} + > /dev/null
+```
 
 Alarms (CPU, CPU credits, memory, disk, status checks), the 45 USD budget and a failed
 backup publish to SNS topic `zhesen-alerts`. Its one subscriber is the HTTPS endpoint
