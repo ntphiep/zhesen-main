@@ -92,7 +92,6 @@ function WordCard({ lang, path, word: w }: { lang: LangCode; path: string; word:
         <div className={s.example}>
           <p className={s.src} lang={lang}>{w.example.text}</p>
           <p className={s.vi}>{w.example.vi}</p>
-          {w.example.byModel && <p className={s.label}>câu soạn mới</p>}
         </div>
       )}
       {w.entry && w.draft && (

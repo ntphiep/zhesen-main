@@ -5,11 +5,11 @@ import { AddToWordlistButton } from './AddToWordlistButton'
 import { CharacterPanel } from './CharacterPanel'
 import { ConjugationTable } from './ConjugationTable'
 import { LemmaLink } from './LemmaLink'
-import { BACKLINKS_LABEL, BacklinkList, LayerNote } from './LearnerParts'
-import { GrammarChips, OriginNotes, SoundNotes, soundFacts } from './WordNotes'
+import { BACKLINKS_LABEL, BacklinkList } from './LearnerParts'
+import { GrammarChips, OriginNotes } from './WordNotes'
 import {
   AiCorner, Badge, CONTAINER, EnglishMark, FormCells, FrequencyMeter, GrammarList, LevelChip, MorphText, MoreButton, PivotMark, PosChip, ToeicChip, WordChip,
-  UntranslatedNote, WordLink, baseFormLabel,
+  Term, UntranslatedNote, WordLink, baseFormLabel,
 } from './WordParts'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { useAnchor } from '@/lib/hooks/useAnchor'
@@ -44,7 +44,6 @@ export function BilingualLayout({ view }: { view: WordView }) {
   const mark = headwordForms(view)
   const irregular = view.forms.some((f) => f.irregular)
   const anchor = useAnchor()
-  const sound = soundFacts(head, view.notes)
   const hasOrigin = shownOrigins(view.notes, sections[0]?.key).length > 0
 
   const wordRows = (words: (ViewWord | FamilyWord)[], family = false, tag?: string): Row[] =>
@@ -79,10 +78,9 @@ export function BilingualLayout({ view }: { view: WordView }) {
     // After the meanings, so a phone opens on the first one.
     ...(view.forms.length > 0 ? [{
       id: 'forms', title: 'Dạng từ', count: 0,
-      note: irregular && <Badge tone="strong">Bất quy tắc</Badge>,
+      note: irregular && <Badge tone="strong"><Term vi="Bất quy tắc" /></Badge>,
       node: <FormCells headword={head.headword} baseLabel={baseFormLabel(view.forms)} forms={view.forms} lang={lang} variant="wide" />,
     }] : []),
-    ...(sound !== null ? [{ id: 'sound', title: 'Cách đọc', count: 0, node: <SoundNotes facts={sound} /> }] : []),
     ...(view.conjugation ? [{ id: 'conjugation', title: 'Chia động từ', count: 0, node: <ConjugationTable conjugation={view.conjugation} /> }] : []),
     ...(lang === 'zh' && view.characters.length > 0
       ? [{ id: 'characters', title: 'Chữ và bộ thủ', count: 0, node: <CharacterPanel characters={view.characters} /> }]
@@ -186,7 +184,6 @@ export function BilingualLayout({ view }: { view: WordView }) {
         <div className="flex min-w-0 flex-col gap-12">
           {view.lemma && <LemmaLink lemma={view.lemma} preview={view.lemmaPreview ?? undefined} lang={lang} />}
           <UntranslatedNote senses={view.senses} />
-          {view.learner && <div className="-mt-9"><LayerNote layer={view.learner} view={view} /></div>}
           <div className="flex flex-col gap-10">
             <div aria-hidden="true" className="hidden grid-cols-2 gap-x-10 border-b-2 border-(--c-l) pb-2 text-xs font-bold tracking-[0.02em] text-(--zs-soft) md:grid">
               <span>{lang === 'en' ? LANG_LABELS.en : `${LANG_LABELS[lang]}, tiếng Anh`}</span>
@@ -195,7 +192,7 @@ export function BilingualLayout({ view }: { view: WordView }) {
             {blocks.map((b) => (
               <section key={b.id} id={anchor(b.id)} data-reveal="" className="flex flex-col gap-4 md:scroll-mt-24">
                 <h2 className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[22px] font-extrabold tracking-[-0.02em]">
-                  {b.title}
+                  <span><Term vi={b.title} /></span>
                   {b.note}
                 </h2>
                 {b.node}

@@ -4,12 +4,12 @@ import { CharacterPanel } from './CharacterPanel'
 import { ConjugationTable } from './ConjugationTable'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { LemmaLink } from './LemmaLink'
-import { Backlinks, LayerNote } from './LearnerParts'
+import { Backlinks } from './LearnerParts'
 import { SenseList } from './SenseList'
-import { OriginNotes, SoundNotes, soundFacts } from './WordNotes'
+import { OriginNotes } from './WordNotes'
 import { useAnchor } from '@/lib/hooks/useAnchor'
 import {
-  AiCorner, Badge, CONTAINER, ChipRow, ExampleRows, FormCells, GlossChips, GrammarList, LevelChip, SectionLabel, ToeicChip, WordTable,
+  AiCorner, Badge, CONTAINER, ChipRow, ExampleRows, FormCells, GlossChips, GrammarList, LevelChip, SectionLabel, Term, ToeicChip, WordTable,
   baseFormLabel, frequencyBars,
 } from './WordParts'
 import { senseSections } from '@/lib/dictionary/wordPage'
@@ -33,7 +33,6 @@ export function ClassicLayout({ view }: { view: WordView }) {
   const baseLabel = baseFormLabel(view.forms)
   const pinyin = typeof head.attributes.pinyin === 'string' ? head.attributes.pinyin : null
   const showPinyin = pinyin !== null && !head.pronunciations.some((p) => p.ipa?.trim())
-  const sound = soundFacts(head, view.notes)
   const leadPos = sections[0]?.key
   const hasOrigin = shownOrigins(view.notes, leadPos).length > 0
 
@@ -41,7 +40,6 @@ export function ClassicLayout({ view }: { view: WordView }) {
   const parts = [
     ...sections.map((s) => ({ href: `#${s.anchor}`, label: s.labelVi })),
     view.forms.length > 0 && { href: '#forms', label: 'Dạng từ' },
-    sound !== null && { href: '#sound', label: 'Cách đọc' },
     view.phrases.length > 0 && { href: '#phrases', label: 'Cụm từ' },
     view.family.length + view.related.length > 0 && { href: '#family', label: 'Họ từ' },
     view.antonyms.length > 0 && { href: '#antonyms', label: 'Trái nghĩa' },
@@ -92,7 +90,6 @@ export function ClassicLayout({ view }: { view: WordView }) {
           senses={view.senses} lang={lang} examples={view.examplesBySense} resolved={view.resolved} glosses={view.glosses}
           senseSynonyms={view.senseSynonyms} mark={mark} notes={view.notes}
         />
-        {view.learner && <div className="-mt-6"><LayerNote layer={view.learner} view={view} /></div>}
 
         {view.conjugation && (
           <Section id="conjugation" title="Chia động từ"><ConjugationTable conjugation={view.conjugation} /></Section>
@@ -106,10 +103,6 @@ export function ClassicLayout({ view }: { view: WordView }) {
           </Section>
         )}
 
-        {sound !== null && (
-          <Section id="sound" title="Cách đọc"><SoundNotes facts={sound} /></Section>
-        )}
-
         {view.phrases.length > 0 && (
           <Section id="phrases" title="Cụm từ" note={`${view.phrases.length} cụm từ`}>
             <WordTable words={view.phrases} head="Cụm từ" />
@@ -120,7 +113,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
             <WordTable words={view.family} head="Từ" family level />
             {view.related.length > 0 && (
               <div className="flex flex-col gap-2">
-                <span className="text-xs text-(--zs-soft)">Từ liên quan</span>
+                <span className="text-xs text-(--zs-soft)"><Term vi="Từ liên quan" /></span>
                 <ChipRow words={view.related} />
               </div>
             )}
@@ -174,8 +167,8 @@ function Section({ id, title, note, children }: { id: string; title: string; not
   return (
     <section id={anchor(id)} data-reveal="" className="flex flex-col gap-3">
       <div className="flex items-baseline gap-2.5">
-        <h2 className="text-lg font-extrabold tracking-[-0.01em]">{title}</h2>
-        {note && <span className="text-[13px] text-(--zs-soft)">{note}</span>}
+        <h2 className="text-lg font-extrabold tracking-[-0.01em]"><Term vi={title} /></h2>
+        {note && <span className="text-[13px] text-(--zs-soft)"><Term vi={note} /></span>}
       </div>
       {children}
     </section>

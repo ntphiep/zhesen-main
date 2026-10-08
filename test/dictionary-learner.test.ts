@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { clientReturning } from './helpers/supabase'
 import { GUARANTEE_BACKLINK_ROWS, WARRANTY_LAYER_ROW, WARRANTY_SENSES, XUEXI_LAYER_ROW } from './helpers/learner'
 import {
-  formDescriptionVi, getLearnerBacklinks, getLearnerLayer, isExampleReading, markHeadword, minorSenses, parseBacklinks, parseLearnerLayer, sourceNumbers,
+  formDescriptionVi, getLearnerBacklinks, getLearnerLayer, isExampleReading, markHeadword, minorSenses, parseBacklinks, parseLearnerLayer,
 } from '@/lib/dictionary/learner'
 
 describe('parseLearnerLayer', () => {
@@ -131,12 +131,6 @@ describe('minorSenses', () => {
   })
 })
 
-describe('sourceNumbers', () => {
-  it('names the Wiktionary senses by their number on the entry', () => {
-    expect(sourceNumbers(['en:warranty#5', 'en:warranty#1'], WARRANTY_SENSES)).toBe('#5, #1')
-    expect(sourceNumbers(['en:gone#1'], WARRANTY_SENSES)).toBe('')
-  })
-})
 
 describe('parseBacklinks', () => {
   it('groups the mentions of en:guarantee by the layer that makes them', () => {

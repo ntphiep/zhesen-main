@@ -39,8 +39,6 @@ const discretion: DictEntryDetail = {
         { rel: 'der', lang: 'la', name: 'Latin', word: 'discerno' },
       ],
     }],
-    syllables: ['dis', 'cre', 'tion'],
-    homophones: [],
     senseGrammar: { 'en:discretion#1': ['uncountable'], 'en:discretion#3': ['uncountable', 'with to'] },
   },
 }
@@ -53,14 +51,12 @@ beforeEach(() => {
 })
 
 describe('word notes', () => {
-  it('shows the stressed syllable, the tips and the origin in the overview', () => {
+  it('shows the origin in the overview, and no block on how to say the word', () => {
     render(<LookupView detail={discretion} characters={[]} siblings={[]} />)
-    const sound = screen.getByRole('heading', { name: 'Cách đọc' }).closest('section') as HTMLElement
-    expect(within(sound).getByText('cre').tagName).toBe('B')
-    expect(within(sound).getByText('3 âm tiết, trọng âm rơi vào âm tiết thứ 2')).toBeInTheDocument()
-    expect(within(sound).getByText('Đuôi -tion đọc là /ʃən/.')).toBeInTheDocument()
+    expect(screen.queryByText('Cách đọc')).not.toBeInTheDocument()
+    expect(screen.queryByText(/âm tiết/)).not.toBeInTheDocument()
 
-    const origin = screen.getByRole('heading', { name: 'Nguồn gốc' }).closest('section') as HTMLElement
+    const origin = screen.getByRole('heading', { name: 'Nguồn gốc (etymology)' }).closest('section') as HTMLElement
     expect(within(origin).getByText('từ tiếng Anh trung đại')).toBeInTheDocument()
     expect(within(origin).getByText('discrecioun')).toBeInTheDocument()
     expect(within(origin).queryByText('discerno')).not.toBeInTheDocument()
@@ -68,7 +64,7 @@ describe('word notes', () => {
 
   it('folds the older ancestors behind a button', async () => {
     render(<LookupView detail={discretion} characters={[]} siblings={[]} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Xem thêm 1 đời trước' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Xem thêm 1 gốc cổ hơn' }))
     expect(screen.getByText('discerno')).toBeInTheDocument()
     expect(screen.getByText('từ tiếng Latinh')).toBeInTheDocument()
   })
@@ -77,29 +73,18 @@ describe('word notes', () => {
     render(<LookupView detail={discretion} characters={[]} siblings={[]} />)
     const meanings = screen.getByRole('heading', { name: 'Nghĩa chính' }).closest('section') as HTMLElement
     expect(within(meanings).getAllByText('không đếm được')).toHaveLength(2)
+    expect(within(meanings).getAllByText('(uncountable)')).toHaveLength(2)
     expect(within(meanings).getByText('đi với to')).toBeInTheDocument()
   })
 
   it.each([['Song ngữ'], ['Cổ điển'], ['Trang đọc']])('carries the notes into %s', async (name) => {
     render(<LookupView detail={discretion} characters={[]} siblings={[]} />)
     await userEvent.click(screen.getByRole('button', { name }))
-    expect(await screen.findByRole('heading', { name: 'Nguồn gốc' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Cách đọc' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Nguồn gốc (etymology)' })).toBeInTheDocument()
+    expect(screen.queryByText('Cách đọc')).not.toBeInTheDocument()
     expect(screen.getAllByText('không đếm được').length).toBeGreaterThan(0)
   })
 
-  it('states a syllable count only when an accent agrees with the written syllables or every accent agrees', () => {
-    const idea = (syllables: string[] | null): DictEntryDetail => ({
-      ...discretion, id: 'en:idea', headword: 'idea',
-      pronunciations: [{ accent: 'en-UK', ipa: '/aɪˈdɪə/', audioUrl: null }, { accent: 'en-US', ipa: '/aɪˈdiə/', audioUrl: null }],
-      notes: { origins: [], syllables, homophones: ['ideal'], senseGrammar: {} },
-    })
-    const { unmount } = render(<LookupView detail={idea(null)} characters={[]} siblings={[]} />)
-    expect(screen.queryByText(/âm tiết/)).not.toBeInTheDocument()
-    unmount()
-    render(<LookupView detail={idea(['i', 'de', 'a'])} characters={[]} siblings={[]} />)
-    expect(screen.getByText('3 âm tiết, trọng âm rơi vào âm tiết thứ 2')).toBeInTheDocument()
-  })
 
   it('draws nothing for an entry without notes', () => {
     render(<LookupView detail={{ ...discretion, notes: null, pronunciations: [] }} characters={[]} siblings={[]} />)

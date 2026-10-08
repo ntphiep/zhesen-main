@@ -111,8 +111,6 @@ const originRow = z.object({
 /** `lex.entry_notes` (migration 0198), one-to-one with the entry. */
 export const entryNotesRow = z.object({
   origin: z.array(originRow).nullable(),
-  syllables: z.array(z.string()).nullable(),
-  homophones: z.array(z.string()).nullable(),
   sense_grammar: z.record(z.string(), z.array(z.string())).nullable(),
 })
 

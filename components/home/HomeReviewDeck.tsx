@@ -159,7 +159,6 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
                 {face?.example && (
                   <p className={h.ex}>
                     <span lang={current.lang}>{face.example.text}</span>{face.example.translation}
-                    {face.example.byModel && <small className={h.byModel}>câu soạn mới</small>}
                   </p>
                 )}
                 {face?.notes && <p className={h.ex}>{face.notes}</p>}

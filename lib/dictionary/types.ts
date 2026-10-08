@@ -115,9 +115,6 @@ export interface Origin {
 /** `lex.entry_notes` (migration 0198): what Wiktionary says about the word beyond its senses. */
 export interface EntryNotes {
   origins: Origin[]
-  /** Written syllables, `dic`, `tion`, `a`, `ry`. */
-  syllables: string[] | null
-  homophones: string[]
   /** Grammar labels by `lex.senses.id`: `uncountable`, `transitive`, `with to`. */
   senseGrammar: Record<string, string[]>
 }

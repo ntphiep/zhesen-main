@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Chip, FORMS_LABEL, FoldedList, LayerNote, LearnerHeader, LearnerRail, LemmaMention, PANEL, SenseBody, SenseChips, minorGloss, minorTerms } from './LearnerParts'
-import { CARD, CONTAINER, SectionLabel } from './WordParts'
+import { Chip, FORMS_LABEL, FoldedList, LearnerHeader, LearnerRail, LemmaMention, PANEL, SenseBody, SenseChips, minorGloss, minorTerms } from './LearnerParts'
+import { CARD, CONTAINER, SectionLabel, Term } from './WordParts'
 import { minorSenses, type LearnerLayer, type MinorSense } from '@/lib/dictionary/learner'
 import { grammarLabels } from '@/lib/dictionary/origin'
 import type { EntryNotes } from '@/lib/dictionary/types'
@@ -68,14 +68,13 @@ export function ReadLayout({ view, layer }: { view: WordView; layer: LearnerLaye
           {minor.length > 0 && (
             <section id={minorId} data-reveal="" className="flex scroll-mt-[calc(var(--header-h)+1.5rem)] flex-col gap-2.5">
               <SectionLabel>
-                {other.length === 0 ? FORMS_LABEL : 'Nghĩa khác và dạng từ'} · {minor.length}
+                {other.length === 0 ? <Term vi={FORMS_LABEL} /> : 'Nghĩa khác và dạng từ'} · {minor.length}
               </SectionLabel>
               {/* The subtitles only tell the two apart when both are there. */}
               <MinorTable label={inflections.length > 0 ? 'Nghĩa khác' : null} senses={other} noun="nghĩa khác" notes={view.notes} />
               <MinorTable label={other.length > 0 ? FORMS_LABEL : null} senses={inflections} noun="dạng từ" notes={view.notes} />
             </section>
           )}
-          <LayerNote layer={layer} view={view} />
         </div>
 
         <aside className="flex min-w-0 flex-col gap-4 lg:self-stretch">
@@ -102,7 +101,7 @@ function MinorTable({ label, senses, noun, notes }: { label: string | null; sens
   if (senses.length === 0) return null
   return (
     <>
-      {label && <SectionLabel as="h3" className="mt-2">{label} · {senses.length}</SectionLabel>}
+      {label && <SectionLabel as="h3" className="mt-2"><Term vi={label} /> · {senses.length}</SectionLabel>}
       <FoldedList
         shown={MINOR_SHOWN}
         noun={noun}
@@ -114,7 +113,7 @@ function MinorTable({ label, senses, noun, notes }: { label: string | null; sens
               {m.isInflection && m.lemma && <span className="text-[13px] text-(--zs-soft)">dạng của <LemmaMention minor={m} /></span>}
             </span>
             <SenseChips pos={m.pos} domain={m.domain} register={m.register} grammar={grammarLabels(notes, [m.senseId])}>
-              {m.isInflection && <Chip tone="form">dạng từ</Chip>}
+              {m.isInflection && <Chip tone="form"><Term vi="dạng từ" /></Chip>}
             </SenseChips>
             <span className="line-clamp-3 text-[13px] text-(--zs-soft)" title={minorGloss(m) ?? undefined}>{minorGloss(m)}</span>
           </li>

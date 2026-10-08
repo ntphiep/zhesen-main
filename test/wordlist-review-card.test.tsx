@@ -48,11 +48,11 @@ describe('WordReviewCard back from the learner layer', () => {
     },
   }
 
-  it('shows the learner example, its source mark, the extra terms and the notes', () => {
+  it('shows the learner example without a source mark, the extra terms and the notes', () => {
     render(<WordReviewCard card={zh} revealed onReveal={() => {}} onGrade={() => {}} />)
     expect(screen.getByText('我们一起学习。')).toBeInTheDocument()
     expect(screen.getByText('Chúng ta cùng học.')).toBeInTheDocument()
-    expect(screen.getByText('câu soạn mới')).toBeInTheDocument()
+    expect(screen.queryByText('câu soạn mới')).not.toBeInTheDocument()
     expect(screen.getByText('học, học tập')).toBeInTheDocument()
     expect(screen.getByText('Hay đi với 知识.')).toBeInTheDocument()
   })

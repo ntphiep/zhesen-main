@@ -79,8 +79,6 @@ export interface WordView {
   forms: ViewForm[]
   conjugation: Conjugation | null
   phrases: ViewWord[]
-  /** Phrases from collocation relations, which a model wrote. */
-  modelPhrases: number
   family: FamilyWord[]
   senseSynonyms: SenseSynonyms[]
   /** Synonyms no sense claimed. */
@@ -103,7 +101,7 @@ export interface WordView {
   backlinks: LearnerBacklink[]
   /** The word's rank in the TOEIC list and the list page that shows it; null outside the list. */
   toeic: { rank: number; href: string } | null
-  /** Origin, syllables, homophones and sense grammar from Wiktionary; null without any. */
+  /** Origin and sense grammar from Wiktionary; null without any. */
   notes: EntryNotes | null
 }
 
@@ -133,7 +131,7 @@ const LANG_ORDER = ['zh', 'es', 'en']
 /** The order a learner meets the forms in: the -s form, the past, the participles, then
  *  degrees. Any other label keeps its place after these. */
 const FORM_ORDER = [
-  'Ngôi thứ ba số ít', 'Số nhiều', 'Quá khứ', 'Quá khứ và phân từ II', 'Phân từ II (quá khứ)', 'Phân từ I (-ing)',
+  'Ngôi thứ ba số ít', 'Số nhiều', 'Quá khứ', 'Quá khứ và phân từ II', 'Phân từ II', 'Phân từ I',
   'So sánh hơn', 'So sánh nhất',
 ]
 const formRank = (label: string) => {
@@ -147,7 +145,7 @@ const formRank = (label: string) => {
  *  adjective and fed up "feds up" for a slang verb: 1,648 English entries carried such verb
  *  forms and 6,849 such degree forms. */
 const VERB_FORMS = new Set([
-  'Ngôi thứ ba số ít', 'Ngôi thứ hai số ít', 'Quá khứ', 'Quá khứ và phân từ II', 'Phân từ II (quá khứ)', 'Phân từ I (-ing)',
+  'Ngôi thứ ba số ít', 'Ngôi thứ hai số ít', 'Quá khứ', 'Quá khứ và phân từ II', 'Phân từ II', 'Phân từ I',
 ])
 export const isVerbForm = (label: string): boolean => VERB_FORMS.has(label)
 const DEGREE = new Set(['So sánh hơn', 'So sánh nhất'])
@@ -324,7 +322,6 @@ export function buildWordView({
     forms,
     conjugation,
     phrases: glossedFirst,
-    modelPhrases: tab('collocations').length,
     family: tab('derived').map((i) => ({ ...toWord(i), ...splitAroundStem(i.text, stem) })),
     senseSynonyms,
     synonyms: tab('synonyms').filter((i) => !claimed.has(i.text.toLowerCase())).map(toWord),

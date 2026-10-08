@@ -316,16 +316,6 @@ export const LINK_KIND_VI: Record<LinkKind, string> = {
   collocation: 'kết hợp', synonym: 'đồng nghĩa', antonym: 'trái nghĩa', confusable: 'dễ nhầm', equivalent: 'tương đương',
 }
 
-/** "#5, #1": the Wiktionary sense numbers a core sense came from, which are the raw
- *  senses' `sense_order`. An id the entry no longer has is left out. */
-export function sourceNumbers(ids: string[], senses: { id?: string; senseOrder: number }[]): string {
-  const order = new Map(senses.map((s) => [s.id, s.senseOrder]))
-  return ids.flatMap((id) => {
-    const n = order.get(id)
-    return n === undefined ? [] : [`#${n}`]
-  }).join(', ')
-}
-
 export interface MinorSense extends SenseLabel {
   pos: string | null
   glossEn: string | null

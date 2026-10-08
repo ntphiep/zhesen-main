@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import {
-  Chip, CollocationGloss, Equivalents, Examples, FORMS_LABEL, FoldedList, LayerNote, LearnerHeader, LearnerRail, Mention, PANEL, PhraseTable, SenseChips,
-  SourceLine, minorGloss, minorTerms, toneOf,
+  Chip, CollocationGloss, Equivalents, Examples, FORMS_LABEL, FoldedList, LearnerHeader, LearnerRail, Mention, PANEL, PhraseTable, SenseChips,
+  minorGloss, minorTerms, toneOf,
 } from './LearnerParts'
-import { CARD, CONTAINER, PivotMark, SectionLabel } from './WordParts'
+import { CARD, CONTAINER, PivotMark, SectionLabel, Term } from './WordParts'
 import { GrammarChips } from './WordNotes'
 import { LINK_KIND_VI, domainLabel, minorSenses, registerLabel, type LearnerLayer, type LearnerLink, type MinorSense } from '@/lib/dictionary/learner'
 import { grammarLabels } from '@/lib/dictionary/origin'
@@ -78,7 +78,6 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
               {s.viDefinition && <p className="text-[15px] leading-relaxed">{s.viDefinition}</p>}
               {s.enDefinition && <p className="text-[13.5px] text-(--zs-soft)">{s.enDefinition}</p>}
               <Examples examples={s.examples.slice(0, 1)} view={view} />
-              <SourceLine ids={s.sourceSenseIds} view={view} />
             </article>
           ))}
           <MinorPanel label="Nghĩa khác" senses={other} noun="nghĩa khác" notes={view.notes} />
@@ -88,7 +87,7 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
         {/* A derived layer has no collocations of its own, so the column lists the entry's phrases. */}
         <section data-reveal="1" className="flex min-w-0 flex-col gap-3">
           <SectionLabel className="px-1">
-            {derived ? `Cụm từ · ${view.phrases.length}` : `Kết hợp hay gặp · ${collocations.length}`}
+            {derived ? <><Term vi="Cụm từ" /> · {view.phrases.length}</> : <><Term vi="Kết hợp hay gặp" /> · {collocations.length}</>}
           </SectionLabel>
           <div className={PANEL}>
             {derived ? (
@@ -131,7 +130,6 @@ export function GlanceLayout({ view, layer }: { view: WordView; layer: LearnerLa
             </div>
           )}
           <LearnerRail view={view} layer={layer} phrases={false} />
-          <LayerNote layer={layer} view={view} />
         </section>
       </div>
     </div>
@@ -142,7 +140,7 @@ function MinorPanel({ label, senses, noun, notes }: { label: string; senses: Min
   if (senses.length === 0) return null
   return (
     <div className={PANEL}>
-      <SectionLabel>{label} · {senses.length}</SectionLabel>
+      <SectionLabel><Term vi={label} /> · {senses.length}</SectionLabel>
       <FoldedList
         shown={SHOWN}
         noun={noun}
@@ -151,9 +149,9 @@ function MinorPanel({ label, senses, noun, notes }: { label: string; senses: Min
           <li key={m.senseId} className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span>{minorTerms(m)}</span>
             {m.domain && <Chip tone="domain">{domainLabel(m.domain)}</Chip>}
-            {m.register && <Chip tone="register">{registerLabel(m.register)}</Chip>}
+            {m.register && <Chip tone="register"><Term vi={registerLabel(m.register)} /></Chip>}
             <GrammarChips labels={grammarLabels(notes, [m.senseId])} />
-            {m.isInflection && <Chip tone="form">{m.lemma ? `dạng của ${m.lemma}` : 'dạng từ'}</Chip>}
+            {m.isInflection && <Chip tone="form">{m.lemma ? `dạng của ${m.lemma}` : <Term vi="dạng từ" />}</Chip>}
             {m.isInflection && m.glossEn && <span className="basis-full text-xs text-(--zs-soft)">{minorGloss(m)}</span>}
           </li>
         ))}

@@ -275,7 +275,7 @@ describe('groupWordForms, whatever the row order', () => {
       { formText: 'records', formLabel: 'countable uncountable' },
     ])
     for (const f of forms) expect(f.label).not.toMatch(/^[A-Z][a-z-]+(?: [a-z-]+)*$/)
-    expect(forms.find((f) => f.text === 'fairing')?.label).toBe('Phân từ I (-ing)')
+    expect(forms.find((f) => f.text === 'fairing')?.label).toBe('Phân từ I')
     expect(forms.find((f) => f.text === 'records')).toMatchObject({ standard: false })
   })
 })

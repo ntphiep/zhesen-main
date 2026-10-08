@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Chip, FORMS_LABEL, LayerNote, LearnerHeader, LearnerRail, MinorBody, PANEL, SenseBody, minorGloss, minorTerms } from './LearnerParts'
-import { CARD, CONTAINER, MoreButton, PosChip, SectionLabel } from './WordParts'
+import { Chip, FORMS_LABEL, LearnerHeader, LearnerRail, MinorBody, SenseBody, minorGloss, minorTerms } from './LearnerParts'
+import { CARD, CONTAINER, MoreButton, PosChip, SectionLabel, Term } from './WordParts'
 import { domainLabel, minorSenses, registerLabel, type LearnerLayer, type LearnerSense, type MinorSense } from '@/lib/dictionary/learner'
 import type { WordView } from '@/lib/dictionary/wordView'
 
@@ -105,8 +105,8 @@ export function MapLayout({ view, layer }: { view: WordView; layer: LearnerLayer
             <span />
             <span className="col-start-2 col-end-4 flex flex-wrap gap-1">
               {item.minor.domain && <Chip tone="domain">{domainLabel(item.minor.domain)}</Chip>}
-              {item.minor.register && <Chip tone="register">{registerLabel(item.minor.register)}</Chip>}
-              {item.minor.isInflection && <Chip tone="form">{item.minor.lemma ? `dạng của ${item.minor.lemma}` : 'dạng từ'}</Chip>}
+              {item.minor.register && <Chip tone="register"><Term vi={registerLabel(item.minor.register)} /></Chip>}
+              {item.minor.isInflection && <Chip tone="form">{item.minor.lemma ? `dạng của ${item.minor.lemma}` : <Term vi="dạng từ" />}</Chip>}
             </span>
             {item.minor.isInflection && item.minor.glossEn && (
               <span className="col-start-2 col-end-4 text-xs text-(--zs-soft)">{minorGloss(item.minor)}</span>
@@ -177,7 +177,6 @@ export function MapLayout({ view, layer }: { view: WordView; layer: LearnerLayer
 
         <aside data-reveal="2" className="flex min-w-0 flex-col gap-4 lg:col-span-2 xl:sticky xl:top-[calc(var(--header-h)+1rem)] xl:col-span-1">
           <LearnerRail view={view} layer={layer} />
-          <div className={PANEL}><LayerNote layer={layer} view={view} /></div>
         </aside>
       </div>
     </div>

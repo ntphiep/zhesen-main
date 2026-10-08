@@ -8,7 +8,7 @@ import { wordClassPath } from '@/lib/theory/path'
 import { AudioButton } from '@/components/ui/AudioButton'
 import { useAnchor } from '@/lib/hooks/useAnchor'
 import { TappableText } from '@/components/reader/TappableText'
-import { Badge, EnglishMark, MoreButton, PivotMark, UntranslatedNote, WordLink } from './WordParts'
+import { Badge, EnglishMark, MoreButton, PivotMark, Term, UntranslatedNote, WordLink } from './WordParts'
 import { GrammarChips } from './WordNotes'
 import { grammarLabels } from '@/lib/dictionary/origin'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
@@ -78,8 +78,8 @@ function PosSection({ section, ...shared }: Shared & { section: SenseSection }) 
       <div className="flex items-baseline gap-2.5 border-b border-(--zs-line) pb-2.5">
         <h2 className="text-lg font-extrabold tracking-[-0.01em]">
           {documented
-            ? <Link href={wordClassPath(shared.lang, section.key)} className="hover:underline">{section.labelVi}</Link>
-            : section.labelVi}
+            ? <Link href={wordClassPath(shared.lang, section.key)} className="hover:underline"><Term vi={section.labelVi} /></Link>
+            : <Term vi={section.labelVi} />}
         </h2>
         <span className="text-[13px] text-(--zs-soft)">{section.senses.length} nghĩa</span>
       </div>

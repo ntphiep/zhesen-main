@@ -80,7 +80,6 @@ export function WordReviewCard({
               <div className={p.ex}>
                 <span lang={card.lang}>{back.example.text}</span>
                 {back.example.translation && <small>{back.example.translation}</small>}
-                {back.example.byModel && <small className={p.byModel}>câu soạn mới</small>}
               </div>
             )}
             {back.notes && <p className={p.notes}>{back.notes}</p>}

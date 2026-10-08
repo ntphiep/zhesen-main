@@ -1,6 +1,6 @@
 import { Pronunciation } from './Pronunciation'
 import { AddToWordlistButton } from './AddToWordlistButton'
-import { FrequencyMeter, LevelChip, ToeicChip } from './WordParts'
+import { FrequencyMeter, LevelChip, Term, ToeicChip } from './WordParts'
 import { genderLabel } from '@/lib/dictionary/gender'
 import type { DictEntryDetail } from '@/lib/dictionary/types'
 import type { WordView } from '@/lib/dictionary/wordView'
@@ -51,8 +51,8 @@ export function LookupHero({ detail, hanViet, summary, stats = [], posLabels = [
           <div className="flex flex-wrap gap-1.5">
             <LevelChip level={detail.level} strong />
             <ToeicChip place={toeic} />
-            {gender && <span className={CHIP}>{gender}</span>}
-            {posLabels.map((p) => <span key={p} className={CHIP}>{p.toLocaleLowerCase('vi')}</span>)}
+            {gender && <span className={CHIP}><Term vi={gender} /></span>}
+            {posLabels.map((p) => <span key={p} className={CHIP}><Term vi={p} lower /></span>)}
           </div>
           <FrequencyMeter rank={detail.frequencyRank} />
         </div>

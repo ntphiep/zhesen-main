@@ -9,6 +9,7 @@ import { TappableText } from '@/components/reader/TappableText'
 import { useAnchor } from '@/lib/hooks/useAnchor'
 import { isSearchPath, searchPath } from '@/lib/dictionary/entryId'
 import { grammarPointPath } from '@/lib/grammar/path'
+import { termEn } from '@/lib/dictionary/termEn'
 import { isSentenceTranslation, untranslatedCount } from '@/lib/dictionary/textQuality'
 import { isVerbForm, splitPhrasalVerbs, type FamilyWord, type ViewForm, type ViewWord, type WordView } from '@/lib/dictionary/wordView'
 import type { ResolvedText } from '@/lib/dictionary/tappable'
@@ -40,12 +41,31 @@ export function WordLink({ word, className = '', children }: {
   )
 }
 
+/** "Phân từ II" inside a sentence: only the first letter drops, the numeral stays. */
+const lowerFirst = (label: string) => label.charAt(0).toLocaleLowerCase('vi') + label.slice(1)
+
+/** A grammar term with the English name textbooks use: "Cụm động từ (phrasal verb)". */
+export function Term({ vi, en = termEn(vi), lower = false }: { vi: string; en?: string | null; lower?: boolean }) {
+  return (
+    <>
+      {lower ? lowerFirst(vi) : vi}
+      {en && ' '}
+      {en && <span lang="en" className="font-normal text-(--zs-soft)">({en})</span>}
+    </>
+  )
+}
+
+/** A label given as text names its term in English too. */
 export function SectionLabel({ children, className = '', as: Heading = 'h2' }: {
   children: React.ReactNode
   className?: string
   as?: 'h2' | 'h3'
 }) {
-  return <Heading className={`text-xs font-bold tracking-[0.02em] text-(--zs-soft) ${className}`}>{children}</Heading>
+  return (
+    <Heading className={`text-xs font-bold tracking-[0.02em] text-(--zs-soft) ${className}`}>
+      {typeof children === 'string' ? <Term vi={children} /> : children}
+    </Heading>
+  )
 }
 
 export const CARD = 'rounded-[18px] border border-(--edge) bg-(--zs-bg) shadow-(--lift)'
@@ -252,9 +272,6 @@ export function GlossChips({ words, tone, shown = 8 }: { words: ViewWord[]; tone
   )
 }
 
-/** "Phân từ II" inside a sentence: only the first letter drops, the numeral stays. */
-const lowerFirst = (label: string) => label.charAt(0).toLocaleLowerCase('vi') + label.slice(1)
-
 /** "Lưu ý": which forms break the rules, under the forms. */
 export function IrregularNote({ forms }: { forms: ViewForm[] }) {
   const labels = forms.filter((f) => f.irregular).map((f, i) => (i === 0 ? f.label : lowerFirst(f.label)))
@@ -279,8 +296,8 @@ const STOP = {
 export function FormLegend({ irregular }: { irregular: boolean }) {
   return (
     <span className="flex gap-3.5 text-xs text-(--zs-soft)">
-      <span className="flex items-center gap-1.5"><span className={`size-2 ${STOP.regular}`} />theo quy tắc</span>
-      {irregular && <span className="flex items-center gap-1.5"><span className={`size-2 ${STOP.irregular}`} />bất quy tắc</span>}
+      <span className="flex items-center gap-1.5"><span className={`size-2 ${STOP.regular}`} /><Term vi="theo quy tắc" /></span>
+      {irregular && <span className="flex items-center gap-1.5"><span className={`size-2 ${STOP.irregular}`} /><Term vi="bất quy tắc" /></span>}
     </span>
   )
 }
@@ -310,7 +327,7 @@ export function FormTimeline({ headword, baseLabel, forms, lang }: {
                 <FormText form={f} />
               </Link>
             )}
-          <span className="text-xs text-(--zs-soft)">{f.label}</span>
+          <span className="text-xs text-(--zs-soft)"><Term vi={f.label} /></span>
         </li>
       ))}
     </ol>
@@ -339,11 +356,11 @@ export function FormCells({ headword, baseLabel, forms, lang, variant }: {
         return variant === 'wide' ? (
           <div key={f.text} className={`flex flex-col gap-1.5 px-4 py-3.5 ${!f.base && f.irregular ? 'bg-(--tint-2)' : ''}`}>
             <span className="text-2xl tracking-[-0.02em]">{form}</span>
-            <span className="text-[13px] text-(--zs-soft)">{lowerFirst(f.label)}</span>
+            <span className="text-[13px] text-(--zs-soft)"><Term vi={f.label} lower /></span>
           </div>
         ) : (
           <div key={f.text} className="flex flex-col gap-1 px-4 py-3">
-            <span className="text-xs text-(--zs-soft)">{f.label}</span>
+            <span className="text-xs text-(--zs-soft)"><Term vi={f.label} /></span>
             <span className="flex items-center gap-1 text-lg">{form}<AudioButton text={f.text} lang={lang} /></span>
           </div>
         )
@@ -491,7 +508,7 @@ export function PhrasesCard({ headword, lang, phrases }: { headword: string; lan
           </ul>
           {chips.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="mr-1 text-xs font-semibold text-(--zs-soft)">Cụm từ khác</span>
+              <span className="mr-1 text-xs font-semibold text-(--zs-soft)"><Term vi="Cụm từ khác" /></span>
               {chips.map((w) => <GlossChip key={w.text} word={w} />)}
             </div>
           )}
@@ -531,7 +548,7 @@ export function FamilyRows({ family, related, shown = 6 }: { family: FamilyWord[
       )}
       {related.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs text-(--zs-soft)">Từ liên quan</span>
+          <span className="text-xs text-(--zs-soft)"><Term vi="Từ liên quan" /></span>
           <ChipRow words={related} />
         </div>
       )}

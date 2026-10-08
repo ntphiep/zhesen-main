@@ -144,7 +144,6 @@ a.card:hover { transform: translateY(-3px) rotate(-0.4deg); }
 .mean { margin-top: 1.2rem; padding-top: 1.1rem; border-top: 1.5px solid var(--zs-line); font-size: var(--s2); font-weight: 700; color: var(--zs-ink); }
 .ex { margin: 0.7rem 0 0; font-size: 0.875rem; color: var(--zs-soft); }
 .ex span { display: block; color: var(--zs-ink); }
-.byModel { display: block; margin-top: 0.2rem; font-size: 0.65625rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
 .grades { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.45rem; margin-top: 1.3rem; }
 .grades button { min-height: 2.9rem; border-radius: 12px; border: 1.5px solid var(--edge); background: var(--zs-bg); color: var(--zs-ink); font-weight: 700; cursor: pointer; transition: background-color 150ms var(--ease-std), border-color 150ms var(--ease-std), transform 160ms var(--ease-spring); }
 .grades button:hover:not(:disabled) { border-color: var(--sea-400); background: var(--tint-1); }

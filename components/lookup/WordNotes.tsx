@@ -1,14 +1,12 @@
 'use client'
 import { useState } from 'react'
-import { MoreButton, WordLink } from './WordParts'
+import { MoreButton, Term, WordLink } from './WordParts'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { REL_VI, kindLine, langLabel, originPosLabel, shownOrigins } from '@/lib/dictionary/origin'
-import { pickAccentRows } from '@/lib/dictionary/pronunciation'
-import { pronunciationTips, stressedSyllables, syllabify } from '@/lib/dictionary/soundNotes'
-import type { DictEntryDetail, EntryNotes, Origin, OriginPart } from '@/lib/dictionary/types'
+import type { EntryNotes, Origin, OriginPart } from '@/lib/dictionary/types'
 
-/** What the word page draws from `lex.entry_notes`: how to say the word, where it comes
- *  from, and the grammar labels of a sense. */
+/** What the word page draws from `lex.entry_notes`: where the word comes from and the
+ *  grammar labels of a sense. */
 
 const wordHref = (text: string) => entryPath(`en:${text}`)
 
@@ -18,94 +16,9 @@ export function GrammarChips({ labels }: { labels: string[] }) {
   return (
     <>
       {labels.map((l) => (
-        <span key={l} className="shrink-0 rounded-full border border-(--zs-line) px-[7px] py-px text-[11px] text-(--zs-soft)">{l}</span>
+        <span key={l} className="shrink-0 rounded-full border border-(--zs-line) px-[7px] py-px text-[11px] text-(--zs-soft)"><Term vi={l} /></span>
       ))}
     </>
-  )
-}
-
-/** The pronunciations a learner reads, the UK row first, as the hero lists them. */
-function accentIpas(head: Pick<DictEntryDetail, 'pronunciations' | 'lang' | 'headword'>): string[] {
-  return pickAccentRows(head.pronunciations, head.lang, head.headword).map((r) => r.ipa).filter((ipa): ipa is string => Boolean(ipa))
-}
-
-/** The syllable count and stress the block states: those of an accent that agrees with the
- *  written syllables, or, without them, those every accent agrees on. idea is /aɪˈdɪə/ in the
- *  UK and /aɪˈdiə/ in the US, so it states none. */
-function agreedSyllables(ipas: string[], written: string[] | null): Pick<SoundFacts, 'syllables' | 'count' | 'stress'> {
-  const none = { syllables: null, count: 0, stress: -1 }
-  if (written && written.length >= 2) {
-    const fit = ipas.map((ipa) => stressedSyllables(ipa, written)).find((s) => s !== null)
-    return fit ? { syllables: fit, count: written.length, stress: fit.stress } : none
-  }
-  const counted = ipas.map(syllabify)
-  const [first] = counted
-  return first && counted.every((c) => c.count === first.count && c.stress === first.stress) ? { syllables: null, ...first } : none
-}
-
-export interface SoundFacts {
-  syllables: { parts: string[]; stress: number } | null
-  count: number
-  stress: number
-  tips: string[]
-  homophones: string[]
-}
-
-/** Everything the "Cách đọc" block shows, or null when it would show nothing. English only. */
-export function soundFacts(head: Pick<DictEntryDetail, 'pronunciations' | 'lang' | 'headword'>, notes: EntryNotes | null): SoundFacts | null {
-  if (head.lang !== 'en') return null
-  const ipas = accentIpas(head)
-  const facts = {
-    ...agreedSyllables(ipas, notes?.syllables ?? null),
-    tips: pronunciationTips(ipas[0] ?? null, head.headword),
-    homophones: notes?.homophones ?? [],
-  }
-  const stressed = facts.count >= 2 && facts.stress >= 0
-  return stressed || facts.tips.length > 0 || facts.homophones.length > 0 ? facts : null
-}
-
-/** dis·cre·tion with the stressed syllable set apart, then the tips and the words that
- *  sound the same. */
-export function SoundNotes({ facts }: { facts: SoundFacts }) {
-  const { syllables, count, stress, tips, homophones } = facts
-  return (
-    <div className="flex flex-col gap-3">
-      {count >= 2 && stress >= 0 && (
-        <div className="flex flex-col gap-1">
-          {syllables && (
-            <p lang="en" className="text-[22px] leading-tight tracking-[0.01em]">
-              {syllables.parts.map((p, i) => (
-                <span key={i}>
-                  {i > 0 && <span aria-hidden="true" className="px-1 text-(--zs-soft)">·</span>}
-                  {i === syllables.stress
-                    ? <b className="font-bold text-(--zs-pen) underline decoration-2 underline-offset-4">{p}</b>
-                    : <span className="text-(--zs-soft)">{p}</span>}
-                </span>
-              ))}
-            </p>
-          )}
-          <span className="text-[13px] text-(--zs-soft)">{count} âm tiết, trọng âm rơi vào âm tiết thứ {stress + 1}</span>
-        </div>
-      )}
-      {tips.length > 0 && (
-        <ul className="flex flex-col gap-1.5 text-sm leading-snug">
-          {tips.map((t) => (
-            <li key={t} className="flex gap-2">
-              <span aria-hidden="true" className="mt-[7px] size-1.5 shrink-0 rounded-full bg-(--zs-pen)" />
-              <span>{t}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-      {homophones.length > 0 && (
-        <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
-          <span className="text-xs text-(--zs-soft)">Đọc giống</span>
-          {homophones.map((h) => (
-            <WordLink key={h} word={{ text: h, href: wordHref(h) }} className="mention font-semibold text-(--zs-pen) hover:underline" />
-          ))}
-        </p>
-      )}
-    </div>
   )
 }
 
@@ -161,10 +74,10 @@ function OriginBlock({ origin, labelled }: { origin: Origin; labelled: boolean }
           ))}
         </ol>
       )}
-      {hidden > 0 && <MoreButton expanded={expanded} label={`Xem thêm ${hidden} đời trước`} onClick={() => setExpanded((v) => !v)} />}
+      {hidden > 0 && <MoreButton expanded={expanded} label={`Xem thêm ${hidden} gốc cổ hơn`} onClick={() => setExpanded((v) => !v)} />}
       {origin.doublets && (
         <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
-          <span className="text-xs text-(--zs-soft)">Cùng gốc</span>
+          <span className="text-xs text-(--zs-soft)"><Term vi="Cùng gốc" en="doublet" /></span>
           {origin.doublets.map((d) => (
             <WordLink key={d} word={{ text: d, href: wordHref(d) }} className="mention font-semibold text-(--zs-pen) hover:underline" />
           ))}

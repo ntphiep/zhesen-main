@@ -82,7 +82,7 @@ describe('the overview senses', () => {
     const main = document.getElementById('meaning')!
     const explorer = document.getElementById('senses')!
     expect(within(main).getByRole('link', { name: 'Thêm 1 nghĩa' })).toHaveAttribute('href', '#senses')
-    expect(explorer).toHaveTextContent('1 nghĩa khác, theo nhóm')
+    expect(explorer).toHaveTextContent('1 nghĩa khác')
     expect(within(explorer).getByRole('button', { name: 'tiết lộ' })).toBeInTheDocument()
     expect(within(explorer).queryByRole('button', { name: 'từ bỏ' })).not.toBeInTheDocument()
   })

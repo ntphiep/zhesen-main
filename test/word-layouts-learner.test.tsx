@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderToString } from 'react-dom/server'
-import { DA_SENSES, DOG_SENSES, GUARANTEE_BACKLINK_ROWS, WARRANTY_LAYER_ROW, WARRANTY_SENSES } from './helpers/learner'
+import { DOG_SENSES, GUARANTEE_BACKLINK_ROWS, WARRANTY_LAYER_ROW, WARRANTY_SENSES } from './helpers/learner'
 import { LookupView } from '@/components/lookup/LookupView'
 import { MapLayout } from '@/components/lookup/MapLayout'
 import { ReadLayout } from '@/components/lookup/ReadLayout'
@@ -10,13 +10,12 @@ import { GlanceLayout } from '@/components/lookup/GlanceLayout'
 import { OverviewLayout } from '@/components/lookup/OverviewLayout'
 import { BilingualLayout } from '@/components/lookup/BilingualLayout'
 import { ClassicLayout } from '@/components/lookup/ClassicLayout'
-import { layerNote } from '@/components/lookup/LearnerParts'
 import { parseBacklinks, parseLearnerLayer } from '@/lib/dictionary/learner'
 import {
   WORD_LAYOUT_BOOT_SCRIPT, availableLayouts, resolveLayout, wordLayout, type WordLayout,
 } from '@/lib/dictionary/wordLayout'
 import { buildWordView } from '@/lib/dictionary/wordView'
-import type { DictEntryDetail, DictExample, DictSense } from '@/lib/dictionary/types'
+import type { DictEntryDetail } from '@/lib/dictionary/types'
 
 vi.mock('@/lib/supabase/client', async () => {
   const { accountAuthStub } = await import('./helpers/supabase')
@@ -174,7 +173,7 @@ describe('MapLayout', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'bảo hành, giấy bảo hành' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'under warranty' })).toHaveAttribute('href', '/dictionary/en/under%20warranty')
     expect(screen.getByText('质保').tagName).toBe('SPAN')
-    expect(screen.getByText('Từ nghĩa #5 của Wiktionary')).toBeInTheDocument()
+    expect(screen.queryByText(/Từ nghĩa #/)).not.toBeInTheDocument()
 
     await userEvent.click(within(list).getByRole('button', { name: /sự bảo đảm, sự cam đoan/ }))
     expect(screen.getByRole('heading', { level: 2, name: 'sự bảo đảm, sự cam đoan' })).toBeInTheDocument()
@@ -185,10 +184,9 @@ describe('MapLayout', () => {
     fireEvent.keyDown(document.body, { key: 'ArrowDown' })
     fireEvent.keyDown(document.body, { key: 'ArrowDown' })
     expect(screen.getByRole('heading', { level: 2, name: 'bảo đảm, điều khoản bảo đảm' })).toBeInTheDocument()
-    expect(screen.getByText('câu soạn mới')).toBeInTheDocument()
+    expect(screen.queryByText('câu soạn mới')).not.toBeInTheDocument()
     fireEvent.keyDown(document.body, { key: 'ArrowDown' })
     expect(screen.getByRole('heading', { level: 2, name: 'giao ước bảo đảm quyền sở hữu đất' })).toBeInTheDocument()
-    expect(screen.getByText('Từ nghĩa #2 của Wiktionary')).toBeInTheDocument()
     fireEvent.keyDown(document.body, { key: 'ArrowUp' })
     expect(screen.getByRole('heading', { level: 2, name: 'bảo đảm, điều khoản bảo đảm' })).toBeInTheDocument()
   })
@@ -241,15 +239,15 @@ describe('MapLayout', () => {
     const list = screen.getByRole('navigation', { name: 'Các nghĩa' })
     expect(within(list).getByText('Là dạng của từ khác')).toBeInTheDocument()
     expect(within(list).getAllByText('ngôi thứ ba số ít hiện tại thức chỉ định của casar').length).toBeGreaterThan(0)
-    expect(within(list).getByText('Là dạng của từ khác').closest('li')).toHaveTextContent(/^Là dạng của từ khác1$/)
+    expect(within(list).getByText('Là dạng của từ khác').closest('li')).toHaveTextContent(/^Là dạng của từ khác \(inflected form\)1$/)
   })
 
-  it('shows the usage note, the confusables, the backlinks and the AI note', () => {
+  it('shows the usage note, the confusables and the backlinks, with no note on who wrote the layer', () => {
     render(<MapLayout view={view} layer={layer} />)
-    expect(screen.getByText('Mô tả chung')).toBeInTheDocument()
+    expect(screen.getByText('Cách dùng')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'warrant' })).toHaveAttribute('href', '/dictionary/en/warrant')
     expect(screen.getByText('Xuất hiện ở từ khác')).toBeInTheDocument()
-    expect(screen.getByText(/AI soạn nghĩa chính, ví dụ và kết hợp từ Wiktionary/)).toBeInTheDocument()
+    expect(screen.queryByText(/AI soạn/)).not.toBeInTheDocument()
   })
 })
 
@@ -259,7 +257,7 @@ describe('ReadLayout', () => {
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent).slice(0, 4)).toEqual([
       'bảo hành, giấy bảo hành', 'sự bảo đảm, sự cam đoan', 'bảo đảm, điều khoản bảo đảm', 'Nghĩa khác và dạng từ · 5',
     ])
-    expect(screen.getAllByRole('heading', { level: 3, name: 'Kết hợp hay gặp' })).toHaveLength(3)
+    expect(screen.getAllByRole('heading', { level: 3, name: 'Kết hợp hay gặp (collocation)' })).toHaveLength(3)
     expect(screen.getByText('Nghĩa khác và dạng từ · 5')).toBeInTheDocument()
     const toc = screen.getByRole('navigation', { name: 'Trên trang này' })
     expect(within(toc).getByRole('link', { name: /bảo hành/ })).toHaveAttribute('href', '#sense-1')
@@ -296,13 +294,11 @@ describe('a layer derived from the dictionary', () => {
     return { view: v, layer: v.learner! }
   }
 
-  it('says where the senses came from and claims no AI', () => {
+  it('says nothing about where the senses or examples came from', () => {
     const { view: v, layer: l } = derivedView(warranty)
     render(<MapLayout view={v} layer={l} />)
-    expect(screen.getByText('Nghĩa lấy từ Wiktionary. Chưa có nghĩa tiếng Việt.')).toBeInTheDocument()
-    expect(screen.queryByText(/AI soạn/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Nghĩa lấy từ|máy dịch|AI soạn|Từ nghĩa #/)).not.toBeInTheDocument()
     expect(screen.queryByText('câu soạn mới')).not.toBeInTheDocument()
-    expect(screen.getByText('Từ nghĩa #1 của Wiktionary')).toBeInTheDocument()
   })
 
   it('marks a meaning that came through the English pivot', () => {
@@ -313,39 +309,8 @@ describe('a layer derived from the dictionary', () => {
     expect(screen.queryByRole('navigation', { name: 'Trên trang này' })).not.toBeInTheDocument()
   })
 
-  it('names CC-CEDICT under a Chinese sense', () => {
-    const { view: v, layer: l } = derivedView({ ...warranty, id: 'zh:打', lang: 'zh', headword: '打', senses: DA_SENSES })
-    render(<MapLayout view={v} layer={l} />)
-    expect(screen.getByText('Từ nghĩa #1 của CC-CEDICT')).toBeInTheDocument()
-    expect(screen.getByText('Nghĩa lấy từ CC-CEDICT. Nghĩa tiếng Việt do máy dịch.')).toBeInTheDocument()
-  })
 
-  it('says how much of the Vietnamese on show is machine-translated', () => {
-    const note = (senses: DictSense[], lang: DictEntryDetail['lang'] = 'en') => {
-      const { view: v, layer: l } = derivedView({ ...warranty, id: `${lang}:x`, lang, senses })
-      return layerNote(l, v)
-    }
-    const sense = (over: Partial<DictSense>, n = 1): DictSense =>
-      ({ id: `x#${n}`, pos: 'noun', glossVi: 'nhà', glossEn: 'A house.', senseOrder: n, glossViIsMt: false, ...over })
-    expect(note(DOG_SENSES)).toBe('Nghĩa lấy từ Wiktionary. Một số nghĩa tiếng Việt do máy dịch.')
-    expect(note([sense({ glossViIsMt: true }), sense({ glossViIsMt: true }, 2)], 'es')).toBe('Nghĩa lấy từ Wiktionary. Nghĩa tiếng Việt do máy dịch.')
-    expect(note([sense({}), sense({ glossViIsMt: true }, 2)], 'es')).toBe('Nghĩa lấy từ Wiktionary. Một số nghĩa tiếng Việt do máy dịch.')
-    expect(note([sense({})], 'es')).toBe('Nghĩa lấy từ Wiktionary.')
-    // en:it's: four senses, none with Vietnamese.
-    expect(note([sense({ glossVi: null, glossEn: 'Contraction of it + is.' })])).toBe('Nghĩa lấy từ Wiktionary. Chưa có nghĩa tiếng Việt.')
-  })
 
-  it('names the datasets of the examples on show, and labels the one a model wrote', () => {
-    const example = (sourceId: string, n: number): DictExample =>
-      ({ text: `A house ${n}. It has a warranty.`, reading: null, translationVi: `Một ngôi nhà ${n}.`, translationEn: null, senseId: `en:x#${n}`, sourceId })
-    const senses: DictSense[] = [1, 2, 3].map((n) => ({ id: `en:x#${n}`, pos: 'noun', glossVi: `nhà ${n}`, glossEn: `House ${n}.`, senseOrder: n, glossViIsMt: false }))
-    const detail = { ...warranty, id: 'en:x', senses, examples: [example('wiktionary-en', 1), example('tatoeba', 2), example('zhesen-ai', 3)] }
-    const { view: v, layer: l } = derivedView(detail)
-    expect(layerNote(l, v)).toBe('Nghĩa lấy từ Wiktionary. Ví dụ lấy từ Wiktionary và Tatoeba.')
-    render(<ReadLayout view={v} layer={l} />)
-    expect(screen.getAllByText('câu soạn mới')).toHaveLength(1)
-    expect(screen.getByText('câu soạn mới').closest('li')).toHaveTextContent('A house 3.')
-  })
 
   it('keeps the classic page for took, which has no meaning of its own', () => {
     const took = { ...warranty, id: 'en:took', headword: 'took', senses: [{ id: 'en:took#1', pos: 'verb', glossVi: null, glossEn: 'simple past of take', senseOrder: 1 }] }
@@ -363,7 +328,7 @@ describe('a layer derived from the dictionary', () => {
     ]
     const { view: v, layer: l } = derivedView({ ...warranty, id: 'en:dog', headword: 'dog', senses: DOG_SENSES, senseLinks })
     render(<ReadLayout view={v} layer={l} />)
-    const rail = screen.getByRole('heading', { name: 'Đồng nghĩa theo từng nghĩa' }).closest('section')!
+    const rail = screen.getByRole('heading', { name: 'Đồng nghĩa theo từng nghĩa (synonym)' }).closest('section')!
     expect(within(rail).getByRole('link', { name: 'guy' })).toHaveAttribute('href', '/dictionary/en/guy')
     expect(within(rail).getByRole('link', { name: 'ratchet' })).toBeInTheDocument()
     // chase belongs to main sense 23, which the reading page lists under that sense.

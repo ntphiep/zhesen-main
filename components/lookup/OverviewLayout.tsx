@@ -5,11 +5,11 @@ import { LemmaLink } from './LemmaLink'
 import { CharacterPanel } from './CharacterPanel'
 import { ConjugationTable } from './ConjugationTable'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
-import { BACKLINKS_LABEL, BacklinkList, LayerNote } from './LearnerParts'
-import { GrammarChips, OriginNotes, SoundNotes, originRows, soundFacts } from './WordNotes'
+import { BACKLINKS_LABEL, BacklinkList } from './LearnerParts'
+import { GrammarChips, OriginNotes, originRows } from './WordNotes'
 import {
   AiCorner, Badge, CARD, CONTAINER, Card, EnglishMark, ExampleRows, FamilyRows, FormLegend, FormTimeline, GrammarList, IrregularNote,
-  LevelChip, PhrasesCard, PivotMark, PosChip, SectionLabel, SynonymsRows, UntranslatedNote, baseFormLabel, hasSynonyms,
+  LevelChip, PhrasesCard, PivotMark, PosChip, SectionLabel, SynonymsRows, Term, UntranslatedNote, baseFormLabel, hasSynonyms,
 } from './WordParts'
 import { parseClassifiers } from '@/lib/dictionary/textQuality'
 import { grammarLabels, shownOrigins } from '@/lib/dictionary/origin'
@@ -69,7 +69,6 @@ export function OverviewLayout({ view }: { view: WordView }) {
     : { phrasal: [], other: view.phrases }
   const synonymRows = view.senseSynonyms.length + (view.synonyms.length > 0 ? 1 : 0)
   const irregular = view.forms.some((f) => f.irregular)
-  const sound = soundFacts(head, view.notes)
   const leadPos = sections[0]?.key
   const hasOrigin = shownOrigins(view.notes, leadPos).length > 0
 
@@ -83,7 +82,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
       node: (
         <Card
           id="forms"
-          label={<span className="flex items-center gap-2.5"><SectionLabel>Dạng từ</SectionLabel>{irregular && <Badge tone="strong">Bất quy tắc</Badge>}</span>}
+          label={<span className="flex items-center gap-2.5"><SectionLabel>Dạng từ</SectionLabel>{irregular && <Badge tone="strong"><Term vi="Bất quy tắc" /></Badge>}</span>}
           action={<FormLegend irregular={irregular} />}
         >
           <FormTimeline headword={head.headword} baseLabel={baseFormLabel(view.forms)} forms={view.forms} lang={head.lang} />
@@ -98,10 +97,6 @@ export function OverviewLayout({ view }: { view: WordView }) {
           <SynonymsRows view={view} />
         </Card>
       ),
-    },
-    sound !== null && {
-      key: 'sound', wide: false, rows: 2 + (sound.count >= 2 ? 2 : 0) + 1.5 * sound.tips.length + (sound.homophones.length > 0 ? 1 : 0),
-      node: <Card id="sound" label="Cách đọc"><SoundNotes facts={sound} /></Card>,
     },
     view.phrases.length > 0 && {
       key: 'phrases', wide: true,
@@ -127,7 +122,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
     explorer && {
       key: 'senses', wide: true, rows: 6 + 2 * rest.length,
       node: (
-        <Card id="senses" label={restCount === total ? `Tất cả ${total} nghĩa, theo nhóm` : `${restCount} nghĩa khác, theo nhóm`}>
+        <Card id="senses" label={restCount === total ? `Tất cả ${total} nghĩa` : `${restCount} nghĩa khác`}>
           <SenseExplorer sections={rest} notes={view.notes} />
         </Card>
       ),
@@ -224,10 +219,9 @@ export function OverviewLayout({ view }: { view: WordView }) {
               ))}
             </ol>
             <UntranslatedNote senses={view.senses} />
-            {view.learner && <LayerNote layer={view.learner} view={view} />}
             {classifiers.length > 0 && (
               <p className="flex flex-wrap items-center gap-2 border-t border-(--zs-line) pt-3 text-sm">
-                <span className="text-xs text-(--zs-soft)">Lượng từ</span>
+                <span className="text-xs text-(--zs-soft)"><Term vi="Lượng từ" /></span>
                 {classifiers.map((c) => <span key={c} className="rounded-full bg-(--zs-chip) px-2.5 py-0.5 font-medium">{c}</span>)}
               </p>
             )}
@@ -270,7 +264,7 @@ function SenseExplorer({ sections, notes }: { sections: SenseSection[]; notes: W
         return (
           <div key={sec.key} className="flex flex-wrap items-center gap-1.5">
             <span className="mr-1.5 text-sm font-semibold">
-              {sec.labelVi} <span className="font-normal text-(--zs-soft)">{sec.senses.length}</span>
+              <Term vi={sec.labelVi} /> <span className="font-normal text-(--zs-soft)">{sec.senses.length}</span>
             </span>
             {(all ? groups : groups.slice(0, SHOWN_GROUPS)).map((g, gi) => {
               const on = picked.row === ri && picked.group === gi

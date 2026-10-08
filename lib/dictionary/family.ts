@@ -23,8 +23,8 @@ const FORM_NAMES: [RegExp, string][] = [
   [/simple past and past participle/, 'Quá khứ và phân từ II'],
   [/third-person singular|present singular third-person/, 'Ngôi thứ ba số ít'],
   [/second-person singular/, 'Ngôi thứ hai số ít'],
-  [/participle (?:\S+ )?past|past (?:\S+ )?participle/, 'Phân từ II (quá khứ)'],
-  [/participle (?:\S+ )?present|present (?:\S+ )?participle|gerund/, 'Phân từ I (-ing)'],
+  [/participle (?:\S+ )?past|past (?:\S+ )?participle/, 'Phân từ II'],
+  [/participle (?:\S+ )?present|present (?:\S+ )?participle|gerund/, 'Phân từ I'],
   [/past/, 'Quá khứ'],
   [/comparative/, 'So sánh hơn'],
   [/superlative/, 'So sánh nhất'],
@@ -91,7 +91,7 @@ function describeRows(labels: string[]): { label: string; markers: string[]; sta
   const all = labels.map((raw) => ({ raw, ...describe(raw) }))
   const pool = all.some((d) => d.standard) ? all.filter((d) => d.standard) : all
   const names = new Set(pool.map((d) => d.label))
-  if (names.has('Quá khứ') && names.has('Phân từ II (quá khứ)')) {
+  if (names.has('Quá khứ') && names.has('Phân từ II')) {
     const past = pool.find((d) => d.label === 'Quá khứ')
     return { label: 'Quá khứ và phân từ II', markers: past?.markers ?? [], standard: past?.standard ?? true }
   }

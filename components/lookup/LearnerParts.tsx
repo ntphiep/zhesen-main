@@ -3,9 +3,9 @@ import { AddToWordlistButton } from './AddToWordlistButton'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { saveableEntry } from './LookupHero'
 import { Pronunciation } from './Pronunciation'
-import { GrammarChips, OriginNotes, SoundNotes, soundFacts } from './WordNotes'
+import { GrammarChips, OriginNotes } from './WordNotes'
 import {
-  CARD, CONTAINER, FamilyRows, FrequencyMeter, LevelChip, MoreButton, PivotMark, PosChip, SectionLabel, SynonymsRows, ToeicChip, WordLink,
+  CARD, CONTAINER, FamilyRows, FrequencyMeter, LevelChip, MoreButton, PivotMark, PosChip, SectionLabel, SynonymsRows, Term, ToeicChip, WordLink,
   WordTable, hasSynonyms,
 } from './WordParts'
 import { AudioButton } from '@/components/ui/AudioButton'
@@ -14,14 +14,12 @@ import { entryPath } from '@/lib/dictionary/entryId'
 import { genderLabel } from '@/lib/dictionary/gender'
 import { LANG_LABELS } from '@/lib/dictionary/labels'
 import {
-  LINK_KIND_VI, domainLabel, formDescriptionVi, markHeadword, markedRanges, registerLabel, sourceNumbers,
+  LINK_KIND_VI, domainLabel, formDescriptionVi, markHeadword, markedRanges, registerLabel,
   type LearnerExample, type LearnerLayer, type LearnerLink, type LearnerSense, type MinorSense,
 } from '@/lib/dictionary/learner'
 import { grammarLabels, shownOrigins } from '@/lib/dictionary/origin'
 import { posGroups } from '@/lib/dictionary/pos'
-import { isClassifierGloss } from '@/lib/dictionary/textQuality'
 import { headwordForms, type WordView } from '@/lib/dictionary/wordView'
-import type { LangCode } from '@/lib/languages'
 
 /** Pieces the three learner-layer layouts share, after the prototype the owner approved. */
 
@@ -59,7 +57,7 @@ export function SenseChips({ pos, cefr, domain, register, grammar = [], children
       <PosChip value={pos} />
       <LevelChip level={cefr ?? null} />
       {domain && <Chip tone="domain">{domainLabel(domain)}</Chip>}
-      {register && <Chip tone="register">{registerLabel(register)}</Chip>}
+      {register && <Chip tone="register"><Term vi={registerLabel(register)} /></Chip>}
       <GrammarChips labels={grammar} />
     </span>
   )
@@ -94,9 +92,6 @@ export function ExampleCard({ example, view }: { example: LearnerExample; view: 
       <span className="-my-1"><AudioButton text={example.text} lang={view.head.lang} /></span>
       {example.reading && <span className="col-start-1 text-[13px] text-(--zs-soft)">{example.reading}</span>}
       <span data-ex-vi="" className="col-start-1">{example.vi}</span>
-      {example.byModel && (
-        <span className="col-start-1 text-[10.5px] font-medium uppercase tracking-wide text-(--zs-soft)">câu soạn mới</span>
-      )}
     </li>
   )
 }
@@ -193,7 +188,7 @@ function Block({ label, children }: { label: string; children: React.ReactNode }
 const TERMS = { lg: 'text-[28px] sm:text-[30px]', md: 'text-[21px]' } as const
 
 /** A core sense in full: its Vietnamese terms, the plain Vietnamese definition, the English
- *  one, examples, collocations, related words, the other languages and where it came from. */
+ *  one, examples, collocations, related words and the other languages. */
 export function SenseBody({ sense, view, size = 'md' }: { sense: LearnerSense; view: WordView; size?: keyof typeof TERMS }) {
   const own = sense.equivalents.filter((e) => e.lang !== view.head.lang)
   return (
@@ -214,23 +209,9 @@ export function SenseBody({ sense, view, size = 'md' }: { sense: LearnerSense; v
       {sense.synonyms.length > 0 && <Block label="Đồng nghĩa"><NoteList links={sense.synonyms} columns /></Block>}
       {sense.antonyms.length > 0 && <Block label="Trái nghĩa"><NoteList links={sense.antonyms} columns /></Block>}
       {own.length > 0 && <Block label="Ở ngôn ngữ khác"><Equivalents links={own} /></Block>}
-      <SourceLine ids={sense.sourceSenseIds} view={view} />
     </div>
   )
 }
-
-/** A sense without English is one a model wrote: on 2026-09-29 all 62,279 of them were
- *  `zhesen-ai`, and no Wiktionary or CC-CEDICT sense lacked English. */
-const fromDictionary = (s: { glossEn: string | null }) => s.glossEn !== null
-
-export function SourceLine({ ids, view }: { ids: string[]; view: WordView }) {
-  const numbers = sourceNumbers(ids, view.senses.filter(fromDictionary))
-  if (!numbers) return null
-  return <p className="text-[11px] text-(--zs-soft)">Từ nghĩa {numbers} của {sourceName(view.head.lang)}</p>
-}
-
-/** The dictionary the raw senses of a language come from. */
-const sourceName = (lang: LangCode) => (lang === 'zh' ? 'CC-CEDICT' : 'Wiktionary')
 
 /** The title every layout gives the senses that are forms of another word. */
 export const FORMS_LABEL = 'Là dạng của từ khác'
@@ -251,14 +232,13 @@ export function MinorBody({ minor, view }: { minor: MinorSense; view: WordView }
   return (
     <div className="flex flex-col gap-2">
       <SenseChips pos={minor.pos} domain={minor.domain} register={minor.register} grammar={grammarLabels(view.notes, [minor.senseId])}>
-        {minor.isInflection && <Chip tone="form">dạng từ</Chip>}
+        {minor.isInflection && <Chip tone="form"><Term vi="dạng từ" /></Chip>}
       </SenseChips>
       <h2 className="text-[28px] font-extrabold leading-tight tracking-[-0.02em] sm:text-[30px]">{minorTerms(minor)}</h2>
       {minor.isInflection && minor.lemma && (
         <p className="text-[15.5px]">Là một dạng của <LemmaMention minor={minor} />.</p>
       )}
       {minor.glossEn && <p className="text-[13.5px] text-(--zs-soft)">{minorGloss(minor)}</p>}
-      <SourceLine ids={[minor.senseId]} view={view} />
     </div>
   )
 }
@@ -295,8 +275,8 @@ export function LearnerHeader({ view, layer }: { view: WordView; layer: LearnerL
           <span className="flex flex-wrap items-center gap-1.5">
             <LevelChip level={head.level ?? layer.level} strong />
             <ToeicChip place={view.toeic} />
-            {gender && <Chip>{gender}</Chip>}
-            {posLabels.map((p) => <Chip key={p}>{p.toLocaleLowerCase('vi')}</Chip>)}
+            {gender && <Chip><Term vi={gender} /></Chip>}
+            {posLabels.map((p) => <Chip key={p}><Term vi={p} lower /></Chip>)}
             <FrequencyMeter rank={head.frequencyRank} small />
           </span>
         </div>
@@ -331,14 +311,13 @@ export function LearnerRail({ view, layer, phrases = true }: { view: WordView; l
   const others = {
     senseSynonyms: view.senseSynonyms.filter((g) => !mainOrders.has(g.senseOrder)), synonyms: view.synonyms, antonyms: view.antonyms,
   }
-  const sound = soundFacts(view.head, view.notes)
   const leadPos = view.senses[0]?.pos
   const hasOrigin = shownOrigins(view.notes, leadPos).length > 0
   return (
     <>
       {layer.usageNoteVi && (
         <section className={PANEL}>
-          <SectionLabel>Mô tả chung</SectionLabel>
+          <SectionLabel>Cách dùng</SectionLabel>
           <UsageNote text={layer.usageNoteVi} />
         </section>
       )}
@@ -346,12 +325,6 @@ export function LearnerRail({ view, layer, phrases = true }: { view: WordView; l
         <section className={PANEL}>
           <SectionLabel>Dễ nhầm với</SectionLabel>
           <NoteList links={layer.confusables} />
-        </section>
-      )}
-      {sound !== null && (
-        <section className={PANEL}>
-          <SectionLabel>Cách đọc</SectionLabel>
-          <SoundNotes facts={sound} />
         </section>
       )}
       {derived && phrases && view.phrases.length > 0 && (
@@ -450,47 +423,6 @@ export function BacklinkList({ view }: { view: Pick<WordView, 'backlinks' | 'hea
   )
 }
 
-/** The entry's phrases, with a word on the ones the model wrote: every collocation
- *  relation is model-written (71,866 of 71,866 on 2026-09-29). */
 export function PhraseTable({ view }: { view: WordView }) {
-  return (
-    <>
-      <WordTable words={view.phrases} head="Cụm từ" shown={6} />
-      {view.modelPhrases > 0 && <p className="text-xs text-(--zs-soft)">Một số cụm từ do AI gợi ý.</p>}
-    </>
-  )
-}
-
-/** The datasets a derived layer's examples come from, by `lex.sources.id`. */
-const EXAMPLE_SOURCES: Record<string, string> = {
-  'wiktionary-en': 'Wiktionary', 'wiktionary-es': 'Wiktionary', tatoeba: 'Tatoeba', oewn: 'WordNet',
-}
-
-/** "A", "A và B", "A, B và C". */
-const listVi = (names: string[]) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} và ${names.at(-1)}`)
-
-/** Said once per layout: where the layer came from. A model wrote an AI layer. A derived one
- *  says what its own senses and examples are: the dictionary, whether their Vietnamese is
- *  machine-translated (all, some or none of it) or missing, and where each example is from.
- *  A model-written example carries its own label instead. */
-export function layerNote(layer: Pick<LearnerLayer, 'source' | 'senses'>, view: Pick<WordView, 'head' | 'senses'>): string {
-  const from = sourceName(view.head.lang)
-  if (layer.source === 'ai') return `AI soạn nghĩa chính, ví dụ và kết hợp từ ${from}. Một mô hình AI khác đã soát lại.`
-  const own = view.senses.filter((s) => fromDictionary(s) && !isClassifierGloss(s.glossEn))
-  if (own.length === 0) return 'Nghĩa do AI soạn.'
-  const direct = own.filter((s) => s.glossVi)
-  const pivoted = own.filter((s) => !s.glossVi && s.pivotVi)
-  const mt = direct.filter((s) => s.glossViIsMt)
-  const vi = direct.length + pivoted.length === 0 ? 'Chưa có nghĩa tiếng Việt.'
-    : mt.length === 0 ? null
-      : mt.length === direct.length && pivoted.length === 0 ? 'Nghĩa tiếng Việt do máy dịch.'
-        : 'Một số nghĩa tiếng Việt do máy dịch.'
-  const names = [...new Set(layer.senses.flatMap((s) => s.examples)
-    .flatMap((x) => (x.sourceId && Object.hasOwn(EXAMPLE_SOURCES, x.sourceId) ? [EXAMPLE_SOURCES[x.sourceId]] : [])))]
-  const examples = names.length > 0 ? `Ví dụ lấy từ ${listVi(names)}.` : null
-  return [`Nghĩa lấy từ ${from}.`, examples, vi].filter(Boolean).join(' ')
-}
-
-export function LayerNote({ layer, view }: { layer: Pick<LearnerLayer, 'source' | 'senses'>; view: Pick<WordView, 'head' | 'senses'> }) {
-  return <p className="text-xs text-(--zs-soft)">{layerNote(layer, view)}</p>
+  return <WordTable words={view.phrases} head="Cụm từ" shown={6} />
 }
