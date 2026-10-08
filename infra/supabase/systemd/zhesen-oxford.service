@@ -1,0 +1,19 @@
+# Harvests verb and adjective patterns, idioms and phrasal verbs from Oxford Learner's Dictionaries for the
+# English words in /opt/zhesen/oxford/words.tsv (supabase/scripts/oxford/crawl_oxford.py). Appends to
+# oxford.jsonl and resumes where it stopped; logs in crawl.log beside it.
+[Unit]
+Description=Zhesen Oxford Learner's Dictionaries crawler
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/opt/zhesen/oxford
+ExecStart=/usr/bin/python3 /opt/zhesen/oxford/crawl_oxford.py
+Environment=OX_WORKERS=2
+# Exits 0 when the list is done; a crash restarts it after five minutes.
+Restart=on-failure
+RestartSec=5min
+Nice=10
+
+[Install]
+WantedBy=multi-user.target
