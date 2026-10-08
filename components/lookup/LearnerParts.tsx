@@ -3,6 +3,7 @@ import { AddToWordlistButton } from './AddToWordlistButton'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { saveableEntry } from './LookupHero'
 import { Pronunciation } from './Pronunciation'
+import { PatternList } from './PatternList'
 import { GrammarChips, OriginNotes } from './WordNotes'
 import {
   CARD, CONTAINER, FamilyRows, FrequencyMeter, LevelChip, MoreButton, PivotMark, PosChip, SectionLabel, SynonymsRows, Term, ToeicChip, WordLink,
@@ -300,7 +301,8 @@ export function LearnerHeader({ view, layer }: { view: WordView; layer: LearnerL
   )
 }
 
-/** The usage note, the words learners confuse this one with, and the layers that mention it.
+/** The usage note, the sentence patterns, the words learners confuse this one with, and the
+ *  layers that mention it.
  *  A derived layer holds no related words, so the rail draws the entry's own: its phrases
  *  unless the layout lists them itself, its other synonyms and antonyms, the other languages. */
 export function LearnerRail({ view, layer, phrases = true }: { view: WordView; layer: LearnerLayer; phrases?: boolean }) {
@@ -319,6 +321,12 @@ export function LearnerRail({ view, layer, phrases = true }: { view: WordView; l
         <section className={PANEL}>
           <SectionLabel>Cách dùng</SectionLabel>
           <UsageNote text={layer.usageNoteVi} />
+        </section>
+      )}
+      {view.patterns.length > 0 && (
+        <section className={PANEL}>
+          <SectionLabel>Cấu trúc câu</SectionLabel>
+          <PatternList patterns={view.patterns} />
         </section>
       )}
       {layer.confusables.length > 0 && (

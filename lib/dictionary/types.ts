@@ -74,6 +74,16 @@ export interface DictEntryDetail extends DictEntryPreview {
   senseLinks?: SenseLink[]
   /** Null when the entry has no notes; absent outside the entry page. */
   notes?: EntryNotes | null
+  /** Sentence patterns with their Vietnamese; absent outside the entry page. */
+  patterns?: SentencePattern[]
+}
+
+/** One row of `lex.entry_patterns` (migration 0199): "accuse sb of sth", "buộc tội ai về việc gì". */
+export interface SentencePattern {
+  pattern: string
+  vi: string
+  example: string | null
+  exampleVi: string | null
 }
 /** How one ancestor of a word relates to the next: inherited, derived, borrowed, borrowed by
  *  scholars, or translated part by part. */

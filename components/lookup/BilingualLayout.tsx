@@ -6,6 +6,7 @@ import { CharacterPanel } from './CharacterPanel'
 import { ConjugationTable } from './ConjugationTable'
 import { LemmaLink } from './LemmaLink'
 import { BACKLINKS_LABEL, BacklinkList } from './LearnerParts'
+import { PatternText } from './PatternList'
 import { GrammarChips, OriginNotes } from './WordNotes'
 import {
   AiCorner, Badge, CONTAINER, EnglishMark, FormCells, FrequencyMeter, GrammarList, LevelChip, MorphText, MoreButton, PivotMark, PosChip, ToeicChip, WordChip,
@@ -76,6 +77,30 @@ export function BilingualLayout({ view }: { view: WordView }) {
       ),
     })),
     // After the meanings, so a phone opens on the first one.
+    ...(view.patterns.length > 0 ? [{
+      id: 'patterns', title: 'Cấu trúc câu', count: view.patterns.length,
+      node: (
+        <RowList
+          rows={view.patterns.map((p) => ({
+            key: p.pattern,
+            left: (
+              <span className="flex flex-col gap-1">
+                <span lang="en" className="text-base font-semibold text-(--zs-pen)"><PatternText text={p.pattern} /></span>
+                {p.example && <span data-ex="sm" lang="en">{p.example}</span>}
+              </span>
+            ),
+            right: (
+              <span className="flex flex-col gap-1">
+                <span className="text-[15px]">{p.vi}</span>
+                {p.exampleVi && <span data-ex-vi="plain">{p.exampleVi}</span>}
+              </span>
+            ),
+          }))}
+          shown={6}
+          more={(n) => `Xem thêm ${n} cấu trúc`}
+        />
+      ),
+    }] : []),
     ...(view.forms.length > 0 ? [{
       id: 'forms', title: 'Dạng từ', count: 0,
       note: irregular && <Badge tone="strong"><Term vi="Bất quy tắc" /></Badge>,

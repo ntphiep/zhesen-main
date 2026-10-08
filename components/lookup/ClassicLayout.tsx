@@ -6,6 +6,7 @@ import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { LemmaLink } from './LemmaLink'
 import { Backlinks } from './LearnerParts'
 import { SenseList } from './SenseList'
+import { PatternList } from './PatternList'
 import { OriginNotes } from './WordNotes'
 import { useAnchor } from '@/lib/hooks/useAnchor'
 import {
@@ -39,6 +40,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
   const anchor = useAnchor()
   const parts = [
     ...sections.map((s) => ({ href: `#${s.anchor}`, label: s.labelVi })),
+    view.patterns.length > 0 && { href: '#patterns', label: 'Cấu trúc câu' },
     view.forms.length > 0 && { href: '#forms', label: 'Dạng từ' },
     view.phrases.length > 0 && { href: '#phrases', label: 'Cụm từ' },
     view.family.length + view.related.length > 0 && { href: '#family', label: 'Họ từ' },
@@ -90,6 +92,12 @@ export function ClassicLayout({ view }: { view: WordView }) {
           senses={view.senses} lang={lang} examples={view.examplesBySense} resolved={view.resolved} glosses={view.glosses}
           senseSynonyms={view.senseSynonyms} mark={mark} notes={view.notes}
         />
+
+        {view.patterns.length > 0 && (
+          <Section id="patterns" title="Cấu trúc câu" note={`${view.patterns.length} cấu trúc`}>
+            <PatternList patterns={view.patterns} />
+          </Section>
+        )}
 
         {view.conjugation && (
           <Section id="conjugation" title="Chia động từ"><ConjugationTable conjugation={view.conjugation} /></Section>

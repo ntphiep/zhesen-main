@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { DictEntryDetail, DictEntryPreview, DictSense, DictExample, DictRelation, CrossLangSibling, TermPreview, WordForm, SenseLink } from './types'
-import { entryDetailRow, exampleRow, crossLanguageSourceRow, crossLangSiblingRow, termPreviewRow, pivotViRow, inflectionRow, relationSenseRow, toPreview, toSenses, toProns } from './rows'
+import { entryDetailRow, exampleRow, crossLanguageSourceRow, crossLangSiblingRow, termPreviewRow, pivotViRow, inflectionRow, relationSenseRow, toPatterns, toPreview, toSenses, toProns } from './rows'
 import { fillPivotVi, cleanMtGloss, cleanGlossVi } from './textQuality'
 import { entryPivots, cleanGlossTerm } from './crosslang'
 import { DETAIL_SELECT } from './entrySelect'
@@ -67,7 +67,7 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
     supabase
       .schema('lex')
       .from('entries')
-      .select(`${DETAIL_SELECT}, lex_relations!lex_relations_entry_id_fkey(relation_type, related_text, related_entry_id), entry_notes(origin, sense_grammar)`)
+      .select(`${DETAIL_SELECT}, lex_relations!lex_relations_entry_id_fkey(relation_type, related_text, related_entry_id), entry_notes(origin, sense_grammar), entry_patterns(patterns)`)
       .eq('id', entryId)
       // Synonyms and antonyms by rank (0197), WordNet's first; the rest in the order a loader
       // wrote them, so a word family is nearest member first.
@@ -113,6 +113,7 @@ export async function getEntryDetail(supabase: SupabaseClient, entryId: string):
       origins: r.entry_notes.origin ?? [],
       senseGrammar: r.entry_notes.sense_grammar ?? {},
     } : null,
+    patterns: toPatterns(r.entry_patterns),
   }
 }
 

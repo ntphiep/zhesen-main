@@ -6,6 +6,7 @@ import { CharacterPanel } from './CharacterPanel'
 import { ConjugationTable } from './ConjugationTable'
 import { CrossLanguagePanel } from './CrossLanguagePanel'
 import { BACKLINKS_LABEL, BacklinkList } from './LearnerParts'
+import { PatternList } from './PatternList'
 import { GrammarChips, OriginNotes, originRows } from './WordNotes'
 import {
   AiCorner, Badge, CARD, CONTAINER, Card, EnglishMark, ExampleRows, FamilyRows, FormLegend, FormTimeline, GrammarList, IrregularNote,
@@ -90,6 +91,10 @@ export function OverviewLayout({ view }: { view: WordView }) {
         </Card>
       ),
     },
+    view.patterns.length > 0 && {
+      key: 'patterns', wide: true, rows: 2 + 2.5 * Math.min(view.patterns.length, 6),
+      node: <Card id="patterns" label="Cấu trúc câu"><PatternList patterns={view.patterns} /></Card>,
+    },
     hasSynonyms(view) && {
       key: 'synonyms', wide: false, rows: 1 + 2 * Math.min(synonymRows, 4) + (view.antonyms.length > 0 ? 2 : 0),
       node: (
@@ -162,6 +167,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
   // One row for the sections a learner jumps to; the rest are a scroll away.
   const jumps = [
     lines.length > 0 && { href: '#meaning', label: 'Nghĩa' },
+    view.patterns.length > 0 && { href: '#patterns', label: 'Cấu trúc câu' },
     view.phrases.length > 0 && { href: '#phrases', label: 'Cụm từ' },
     examples.length > 0 && { href: '#examples', label: 'Ví dụ' },
   ].filter((j) => j !== false)

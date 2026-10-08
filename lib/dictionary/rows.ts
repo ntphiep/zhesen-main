@@ -1,7 +1,7 @@
 import { z } from '@/lib/zod'
 import type { LangCode } from '@/lib/languages'
 import { senseSections } from './wordPage'
-import type { ContainingWord, DictEntryChip, DictEntryPreview, DictSense, DictPron, SuggestionPreview } from './types'
+import type { ContainingWord, DictEntryChip, DictEntryPreview, DictSense, DictPron, SentencePattern, SuggestionPreview } from './types'
 import { cleanMtGloss, cleanGlossVi } from './textQuality'
 import { audioMatchesHeadword } from './pronunciation'
 import { joinPos } from './pos'
@@ -114,11 +114,20 @@ export const entryNotesRow = z.object({
   sense_grammar: z.record(z.string(), z.array(z.string())).nullable(),
 })
 
+/** `lex.entry_patterns` (migration 0199), one-to-one with the entry. */
+export const entryPatternsRow = z.object({
+  patterns: z.array(z.object({ p: z.string(), vi: z.string(), ex: z.string().optional(), exVi: z.string().optional() })),
+})
+
 export const entryDetailRow = entryPreviewRow.extend({
   lex_relations: z.array(relationRow).nullable(),
   // The notes are an extra: a row the schema rejects drops them, never the page.
   entry_notes: entryNotesRow.nullable().optional().catch((ctx) => {
     console.error('entry_notes rejected', ctx.issues[0])
+    return null
+  }),
+  entry_patterns: entryPatternsRow.nullable().optional().catch((ctx) => {
+    console.error('entry_patterns rejected', ctx.issues[0])
     return null
   }),
 })
@@ -268,6 +277,13 @@ export function toSenses(rows: SenseRow[] | null): DictSense[] {
 }
 export function toProns(rows: PronRow[] | null): DictPron[] {
   return (rows ?? []).map((r) => ({ accent: r.accent, ipa: r.ipa, audioUrl: r.audio_url }))
+}
+
+/** Patterns without Vietnamese are dropped, and a translation without its example is not shown. */
+export function toPatterns(row: z.infer<typeof entryPatternsRow> | null | undefined): SentencePattern[] {
+  return (row?.patterns ?? []).filter((x) => x.p.trim() && x.vi.trim()).map((x) => ({
+    pattern: x.p.trim(), vi: x.vi.trim(), example: x.ex?.trim() || null, exampleVi: (x.ex?.trim() && x.exVi?.trim()) || null,
+  }))
 }
 
 export function toPreview(r: EntryPreviewRow): DictEntryPreview {

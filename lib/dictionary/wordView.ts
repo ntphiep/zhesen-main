@@ -13,7 +13,7 @@ import {
 import type { LangCode } from '@/lib/languages'
 import type { ResolvedText } from './tappable'
 import type {
-  CharInfo, ContainingWord, CrossLangSibling, DictEntryDetail, DictEntryPreview, DictExample, DictSense, EntryNotes, TermPreview,
+  CharInfo, ContainingWord, CrossLangSibling, DictEntryDetail, DictEntryPreview, DictExample, DictSense, EntryNotes, SentencePattern, TermPreview,
   WordForm,
 } from './types'
 import type { GrammarPoint } from '@/lib/grammar/types'
@@ -103,6 +103,8 @@ export interface WordView {
   toeic: { rank: number; href: string } | null
   /** Origin and sense grammar from Wiktionary; null without any. */
   notes: EntryNotes | null
+  /** Oxford's sentence patterns with their Vietnamese, in dictionary order. */
+  patterns: SentencePattern[]
 }
 
 export interface WordViewInput {
@@ -303,7 +305,7 @@ export function buildWordView({
     // published layer levels the sense it leads with.
     head: {
       ...detail, level: formOnly ? null : (learner?.source === 'ai' && learner.level) || detail.level,
-      senses: [], relations: [], senseLinks: [], examples: detail.examples.filter((e) => e.translationVi), notes: null,
+      senses: [], relations: [], senseLinks: [], examples: detail.examples.filter((e) => e.translationVi), notes: null, patterns: [],
     },
     formOf,
     // A single character shows every reading it has; a multi-character headword shows one
@@ -341,6 +343,7 @@ export function buildWordView({
     backlinks: backlinks.filter((b) => !shownSiblings.some((s) => s.id === b.entryId)),
     toeic,
     notes: detail.notes ?? null,
+    patterns: detail.patterns ?? [],
   }
 }
 
