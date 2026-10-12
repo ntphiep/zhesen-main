@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { theoryLangPath } from '@/lib/theory/path'
 import { BLOCKS_BY_LANG } from '@/lib/theory/blocks'
 import { ArrowLeft, ArrowRight } from './Glyphs'
+import { LangReadMark } from './TheoryReads'
 import s from './Theory.module.css'
 import type { Language, LangCode } from '@/lib/languages'
 
@@ -28,7 +29,10 @@ export function TheoryLangList({ languages, grammarCounts }: {
               <span className={s.hw} lang={l.code}>{l.nativeName}</span>
               <b>{l.name}</b>
               <span>{BLOCKS_BY_LANG[l.code].length} phần · {grammarCounts[l.code]} điểm ngữ pháp</span>
-              <span className={s.open}><span>Mở</span><ArrowRight /></span>
+              <span className={s.open}>
+                <span>Mở</span><ArrowRight />
+                <LangReadMark lang={l.code} blocks={BLOCKS_BY_LANG[l.code].map((b) => b.key)} />
+              </span>
             </Link>
           ))}
         </div>

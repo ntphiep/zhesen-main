@@ -206,11 +206,11 @@ a.headword:hover { text-decoration: underline; text-decoration-thickness: 1.5px;
 .lang .hw { font-size: var(--s5); line-height: 1; letter-spacing: -0.03em; }
 .lang b { margin-top: 0.6rem; font-size: var(--s2); font-weight: 800; }
 .lang span { font-size: 0.9375rem; }
-.lang .open { display: inline-flex; align-items: center; gap: 0.45rem; margin-top: auto; padding-top: 1.5rem; font-weight: 700; }
+.lang .open { display: flex; align-items: center; gap: 0.45rem; margin-top: auto; padding-top: 1.5rem; font-weight: 700; }
 .lang .open svg { width: 1.1rem; height: 1.1rem; transition: translate 230ms var(--ease-spring); }
 .lang:hover { transform: translateY(-3px); box-shadow: var(--lift); }
 .lang:hover .open svg { translate: 4px 0; }
-.lang:hover .open span { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.18em; }
+.lang:hover .open > span:first-child { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.18em; }
 .lang:focus-visible { outline-color: currentColor; outline-offset: 3px; }
 
 .hubHw { display: block; margin-top: 1rem; font-size: var(--s5); line-height: 1; color: var(--zs-ink); }
@@ -219,6 +219,40 @@ a.headword:hover { text-decoration: underline; text-decoration-thickness: 1.5px;
 .step { grid-row: span 3; min-width: 1.6em; font-size: var(--s3); line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--zs-pen); }
 .blocks .note { margin-top: 0.1rem; }
 .blocks .small { margin-top: 0.3rem; }
+
+/* What this browser has read, drawn after hydration: a note beside the count and a line
+   along the card's foot, so nothing above it moves. A block read through fills its step. */
+.readNote { font-weight: 700; color: var(--zs-ink); }
+.meter { position: absolute; left: 1.35rem; right: 1.35rem; bottom: 0.55rem; height: 3px; border-radius: 3px; background: var(--zs-line); overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: inherit; background: var(--sea-500); transform-origin: left; transition: transform 420ms var(--ease-std); }
+/* The step's column is fixed, so a filled step does not move the title. */
+.blocks a.card { grid-template-columns: 2.8rem minmax(0, 1fr); }
+.blocks a.card[data-done] .step { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; min-width: 0; border-radius: 999px; background: var(--zs-btn); color: var(--zs-btn-ink); font-size: 1.0625rem; }
+
+/* The next unread page and the search over every page title, above the blocks. */
+.pathBar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
+.resume { display: flex; flex: 1 1 22rem; align-items: center; justify-content: space-between; gap: 1rem; min-width: 0; padding: 0.9rem 1.25rem; border: 1px solid transparent; border-radius: 18px; background: var(--zs-btn); color: var(--zs-btn-ink); text-decoration: none; transition: background-color 150ms var(--ease-std); }
+.resume .label { color: var(--zs-btn-ink); }
+.resume b { display: block; margin-top: 0.1rem; font-size: var(--s2); line-height: 1.2; font-weight: 800; letter-spacing: -0.02em; }
+.resume small { display: block; margin-top: 0.1rem; font-size: 0.875rem; }
+.resume svg { width: 1.5rem; height: 1.5rem; flex: none; transition: translate 260ms var(--ease-spring); }
+.resume:hover { background: var(--zs-btn-hover); }
+.resume:hover svg { translate: 5px 0; }
+.find { flex: 1 1 16rem; min-width: 0; min-height: 3rem; padding: 0 1rem; border-radius: 14px; border: 1.5px solid var(--edge); background: var(--zs-field); color: var(--zs-ink); font: inherit; font-size: 1rem; transition: border-color 150ms var(--ease-std); }
+.find::placeholder { color: var(--zs-soft); }
+.find:hover { border-color: var(--sea-300); }
+.find:focus-visible { border-color: var(--sea-500); }
+.found { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.found a { position: relative; display: flex; flex-direction: column; gap: 0.1rem; padding: 0.7rem 1rem 0.7rem 1.15rem; border: 1px solid transparent; border-radius: 14px; background: var(--zs-bg); color: var(--zs-ink); text-decoration: none; box-shadow: 0 0 0 1.5px var(--edge); overflow: hidden; transition: box-shadow 150ms var(--ease-std), background-color 150ms var(--ease-std); }
+.found a::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c-l); }
+.found a:hover { background: var(--tint-1); box-shadow: 0 0 0 1.5px var(--sea-400); }
+.found span { font-weight: 700; }
+.found small { font-size: 0.8125rem; color: var(--zs-soft); }
+
+/* A language tile's share of blocks opened, on the tile's own ink. */
+.lang .langRead { margin-left: auto; font-size: 0.875rem; font-weight: 700; }
+.lang .meter { left: 1.5rem; right: 1.5rem; bottom: 0.8rem; background: color-mix(in srgb, currentColor 18%, transparent); }
+.lang .meter i { background: currentColor; }
 
 /* ---------- Grammar ---------- */
 .level { width: fit-content; margin: 0; padding: 0.3rem 0.9rem; border-radius: 999px; background: var(--zs-btn); color: var(--zs-btn-ink); font-size: 1rem; font-weight: 800; letter-spacing: 0.01em; }
@@ -333,7 +367,8 @@ a.headword:hover { text-decoration: underline; text-decoration-thickness: 1.5px;
   .rows { animation: fade 220ms var(--ease-std) backwards; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .crumb svg, .chip, .card, a.card, .btn, .ghost, .field, .next, .next svg, .lang, .lang .open svg, .index a, .option, .bar i, .sheet tbody tr, .entry, .related a { transition: none; }
+  .crumb svg, .chip, .card, a.card, .btn, .ghost, .field, .next, .next svg, .lang, .lang .open svg, .index a, .option, .bar i, .sheet tbody tr, .entry, .related a, .meter i, .resume, .resume svg, .find, .found a { transition: none; }
+  .resume:hover svg { translate: none; }
   a.card:hover, .lang:hover, .index a:hover, .btn:active:not(:disabled), .ghost:active:not(:disabled), .option:active:not(:disabled) { transform: none; }
   .crumb:hover svg, .next:hover svg, .lang:hover .open svg { translate: none; }
 }

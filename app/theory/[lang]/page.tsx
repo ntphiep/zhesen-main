@@ -4,6 +4,7 @@ import { getCachedGrammarPointsByLang } from '@/lib/grammar/cached'
 import { getCachedLevelsForLanguage } from '@/lib/dictionary/cached'
 import { theoryContent } from '@/lib/theory/content'
 import { BLOCKS_BY_LANG, type TheoryBlockKey } from '@/lib/theory/blocks'
+import { theoryPages } from '@/lib/theory/pages'
 import { TheoryHub } from '@/components/theory/TheoryHub'
 
 import type { Metadata } from 'next'
@@ -62,7 +63,12 @@ export default async function TheoryLangPage({ params }: { params: Promise<{ lan
   return (
     <>
       <TheoryBreadcrumb language={language} />
-      <TheoryHub language={language} blocks={BLOCKS_BY_LANG[language.code]} counts={counts} />
+      <TheoryHub
+        language={language}
+        blocks={BLOCKS_BY_LANG[language.code]}
+        counts={counts}
+        pages={theoryPages(language.code, points, levels.map((l) => l.level))}
+      />
     </>
   )
 }

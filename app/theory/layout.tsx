@@ -1,8 +1,9 @@
 import { headwordItalic, headwordSerif } from '@/components/lookup/fonts'
+import { TheoryVisit } from '@/components/theory/TheoryReads'
 
 /** Latin words and sentences under /theory are set in Newsreader, as on the word page.
  *  Declared in a layout because next/font runs only under the Next compiler, and the
  *  theory components are rendered by tests. */
 export default function TheoryLayout({ children }: { children: React.ReactNode }) {
-  return <div className={`${headwordSerif.variable} ${headwordItalic.variable}`}>{children}</div>
+  return <div className={`${headwordSerif.variable} ${headwordItalic.variable}`}><TheoryVisit />{children}</div>
 }
