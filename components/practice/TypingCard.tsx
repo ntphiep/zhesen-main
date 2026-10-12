@@ -50,7 +50,7 @@ function Prompt({ mode, word, answered }: { mode: TypingMode; word: TypingPrompt
       if (!gap) return null
       return (
         <>
-          <p className={p.meta}>Điền vào câu</p>
+          <p className={p.meta}>Câu ví dụ</p>
           <p className={p.sentence} lang={word.lang}>
             {gap.before}
             {answered ? <b data-hw="">{gap.answer}</b> : <span className={p.blank}><span className="sr-only">chỗ trống</span></span>}
@@ -64,7 +64,7 @@ function Prompt({ mode, word, answered }: { mode: TypingMode; word: TypingPrompt
     case 'forms':
       return (
         <>
-          <p className={p.meta}>Dạng từ</p>
+          <p className={p.meta}>Từ</p>
           <div className={`${p.mid} mt-2`} lang={word.lang}>{word.headword}</div>
           <p className={p.ask}>Gõ dạng {word.cue}</p>
         </>

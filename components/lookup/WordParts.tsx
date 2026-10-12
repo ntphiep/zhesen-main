@@ -272,14 +272,13 @@ export function GlossChips({ words, tone, shown = 8 }: { words: ViewWord[]; tone
   )
 }
 
-/** "Lưu ý": which forms break the rules, under the forms. */
+/** Which forms break the rules, under the forms. */
 export function IrregularNote({ forms }: { forms: ViewForm[] }) {
   const labels = forms.filter((f) => f.irregular).map((f, i) => (i === 0 ? f.label : lowerFirst(f.label)))
   if (labels.length === 0) return null
   const list = labels.length === 1 ? labels[0] : `${labels.slice(0, -1).join(', ')} và ${labels[labels.length - 1]}`
   return (
-    <p className="flex flex-wrap items-center gap-2 border-t border-(--zs-line) pt-4 text-[13px]">
-      <Badge tone="strong">Lưu ý</Badge>
+    <p className="border-t border-(--zs-line) pt-4 text-[13px]">
       {list} không theo quy tắc.
     </p>
   )

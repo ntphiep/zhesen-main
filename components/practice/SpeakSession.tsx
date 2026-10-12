@@ -21,7 +21,7 @@ const RECOGNITION_ERRORS: Record<string, string> = {
   'service-not-allowed': 'Trình duyệt đang chặn micro. Cho phép micro rồi thử lại.',
   'audio-capture': 'Không tìm thấy micro. Kiểm tra micro rồi thử lại.',
   'no-speech': 'Chưa nghe thấy gì. Bấm Nói rồi đọc to hơn.',
-  network: 'Trình duyệt mất kết nối tới bộ nhận giọng nói. Thử lại sau ít giây.',
+  network: 'Mất kết nối mạng. Thử lại sau ít giây.',
 }
 
 interface SpeakWord { id: string; headword: string; meaningVi: string; audioUrl: string | null; lang: LangCode }

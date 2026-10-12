@@ -19,7 +19,7 @@ export interface FormCue {
 
 export const FORM_CUES: readonly FormCue[] = [
   { key: 'past', labels: ['past'], vi: 'quá khứ đơn', pos: ['verb'] },
-  { key: 'pp', labels: ['past participle'], vi: 'quá khứ phân từ', pos: ['verb'] },
+  { key: 'pp', labels: ['past participle'], vi: 'phân từ II', pos: ['verb'] },
   { key: 'ing', labels: ['present participle'], vi: 'V-ing', pos: ['verb'] },
   { key: 's3', labels: ['present singular third-person', 'indicative present singular third-person'], vi: 'ngôi thứ ba số ít', pos: ['verb'] },
   { key: 'plural', labels: ['plural'], vi: 'số nhiều', pos: ['noun'] },

@@ -9,7 +9,7 @@ import { BACKLINKS_LABEL, BacklinkList } from './LearnerParts'
 import { PatternList } from './PatternList'
 import { GrammarChips, OriginNotes, originRows } from './WordNotes'
 import {
-  AiCorner, Badge, CARD, CONTAINER, Card, EnglishMark, ExampleRows, FamilyRows, FormLegend, FormTimeline, GrammarList, IrregularNote,
+  AiCorner, CARD, CONTAINER, Card, EnglishMark, ExampleRows, FamilyRows, FormLegend, FormTimeline, GrammarList, IrregularNote,
   LevelChip, PhrasesCard, PivotMark, PosChip, SectionLabel, SynonymsRows, Term, UntranslatedNote, baseFormLabel, hasSynonyms,
 } from './WordParts'
 import { parseClassifiers } from '@/lib/dictionary/textQuality'
@@ -83,7 +83,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
       node: (
         <Card
           id="forms"
-          label={<span className="flex items-center gap-2.5"><SectionLabel>Dạng từ</SectionLabel>{irregular && <Badge tone="strong"><Term vi="Bất quy tắc" /></Badge>}</span>}
+          label={<SectionLabel>Dạng từ</SectionLabel>}
           action={<FormLegend irregular={irregular} />}
         >
           <FormTimeline headword={head.headword} baseLabel={baseFormLabel(view.forms)} forms={view.forms} lang={head.lang} />

@@ -60,7 +60,7 @@ export function ConjugationTable({ conjugation: c }: { conjugation: Conjugation 
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
         {c.infinitive && <span><span className="text-(--zs-soft)">Nguyên thể </span><span className="font-medium">{c.infinitive}</span></span>}
-        {c.gerund && <span><span className="text-(--zs-soft)">Gerundio </span><span className="font-medium">{c.gerund}</span></span>}
+        {c.gerund && <span><span className="text-(--zs-soft)">Danh động từ </span><span className="font-medium">{c.gerund}</span></span>}
         {c.pastParticiple && <span><span className="text-(--zs-soft)">Phân từ </span><span className="font-medium">{c.pastParticiple}</span></span>}
       </div>
 
@@ -69,18 +69,18 @@ export function ConjugationTable({ conjugation: c }: { conjugation: Conjugation 
       {expanded && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Lối trình bày (Indicativo)</span>
+            <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Thức chỉ định (Indicativo)</span>
             <Grid tenses={c.indicative} />
           </div>
           {c.subjunctive.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Lối giả định (Subjuntivo)</span>
+              <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Thức giả định (Subjuntivo)</span>
               <Grid tenses={c.subjunctive} />
             </div>
           )}
           {(c.imperativeAffirmative.length > 0 || c.imperativeNegative.length > 0) && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Mệnh lệnh (Imperativo)</span>
+              <span className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Thức mệnh lệnh (Imperativo)</span>
               {c.imperativeAffirmative.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs text-(--zs-soft)">Khẳng định</span>
