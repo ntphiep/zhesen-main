@@ -63,7 +63,7 @@ describe('TappableText save', () => {
     const text = 'The dog barks.'
     render(<TappableText text={text} lang="en" resolved={resolved(text)} translation="Con chó sủa." />)
     await userEvent.click(screen.getByRole('button', { name: 'dog' }))
-    await userEvent.click(await screen.findByRole('button', { name: /Thêm vào sổ tay/ }))
+    await userEvent.click(await screen.findByRole('button', { name: /Lưu vào sổ tay/ }))
     expect(addWord).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       example: 'The dog barks.', exampleTranslation: 'Con chó sủa.',
     }))
@@ -74,7 +74,7 @@ describe('TappableText save', () => {
     const text = 'I like cats. The dog barks.'
     render(<TappableText text={text} lang="en" resolved={resolved(text)} translation="Tôi thích mèo. Con chó sủa." />)
     await userEvent.click(screen.getByRole('button', { name: 'dog' }))
-    await userEvent.click(await screen.findByRole('button', { name: /Thêm vào sổ tay/ }))
+    await userEvent.click(await screen.findByRole('button', { name: /Lưu vào sổ tay/ }))
     expect(addWord).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       example: 'The dog barks.', exampleTranslation: null,
     }))

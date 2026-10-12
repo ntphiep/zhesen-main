@@ -45,7 +45,7 @@ export function AddToWordlistButton({ entry, size = 'sm', tone, context, draft, 
             size === 'lg' ? 'h-11 px-5 text-sm' : 'h-9 px-4 text-[13px]'
           }`}
       >
-        Thêm vào sổ tay
+        Lưu vào sổ tay
         <LinkPending />
       </Link>
     )

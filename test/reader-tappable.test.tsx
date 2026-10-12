@@ -40,7 +40,7 @@ describe('WordPopover', () => {
     expect(screen.getByText('con chó')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /chi tiết/i })).toHaveAttribute('href', '/dictionary/en/dog')
     // The button mounts only once the session read resolves.
-    expect(await screen.findByRole('button', { name: /Thêm vào sổ tay/i })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Lưu vào sổ tay/i })).toBeInTheDocument()
   })
 
   it('renders character info for the zh fallback', () => {

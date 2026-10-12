@@ -46,21 +46,21 @@ describe('AddToWordlistButton', () => {
 
   it('offers the add for a word that is not saved', async () => {
     render(<AddToWordlistButton entry={entry} />)
-    expect(await screen.findByRole('button', { name: /Thêm vào sổ tay/i })).toBeEnabled()
+    expect(await screen.findByRole('button', { name: /Lưu vào sổ tay/i })).toBeEnabled()
   })
 
   it('shows "Đã có trong sổ tay" when the entry is already saved', async () => {
     const { WordAlreadyExistsError } = await import('@/lib/wordlist/store')
     addWordMock.mockRejectedValueOnce(new WordAlreadyExistsError('en:dog'))
     render(<AddToWordlistButton entry={entry} />)
-    await userEvent.click(await screen.findByRole('button', { name: /Thêm vào sổ tay/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Lưu vào sổ tay/i }))
     expect(await screen.findByText(/Đã có trong sổ tay/i)).toBeInTheDocument()
   })
 
   it('shows a retry error for any other failure', async () => {
     addWordMock.mockRejectedValueOnce(new Error('network'))
     render(<AddToWordlistButton entry={entry} />)
-    await userEvent.click(await screen.findByRole('button', { name: /Thêm vào sổ tay/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Lưu vào sổ tay/i }))
     expect(await screen.findByText(/thử lại/i)).toBeInTheDocument()
   })
 
@@ -71,7 +71,7 @@ describe('AddToWordlistButton', () => {
     addWordMock.mockClear()
     client.auth.getSession.mockResolvedValueOnce({ data: { session: null } })
     render(<AddToWordlistButton entry={entry} />)
-    const link = await screen.findByRole('link', { name: /Thêm vào sổ tay/i })
+    const link = await screen.findByRole('link', { name: /Lưu vào sổ tay/i })
     expect(link).toHaveAttribute('href', '/register?next=%2Fdictionary%2Fen%2Fdog')
     expect(addWordMock).not.toHaveBeenCalled()
   })
@@ -81,7 +81,7 @@ describe('AddToWordlistButton', () => {
     window.history.replaceState(null, '', '/dictionary?q=the%20dog')
     client.auth.getSession.mockResolvedValueOnce({ data: { session: null } })
     render(<AddToWordlistButton entry={entry} context={{ text: 'the dog', translationVi: null }} />)
-    const link = await screen.findByRole('link', { name: /Thêm vào sổ tay/i })
+    const link = await screen.findByRole('link', { name: /Lưu vào sổ tay/i })
     expect(link).toHaveAttribute('href', '/register?next=%2Fdictionary%2Fen%2Fdog')
     window.history.replaceState(null, '', '/')
   })
@@ -91,7 +91,7 @@ describe('AddToWordlistButton', () => {
   it('remembers the entry a guest pressed save on', async () => {
     client.auth.getSession.mockResolvedValueOnce({ data: { session: null } })
     render(<AddToWordlistButton entry={entry} />)
-    fireEvent.click(await screen.findByRole('link', { name: /Thêm vào sổ tay/i }))
+    fireEvent.click(await screen.findByRole('link', { name: /Lưu vào sổ tay/i }))
     expect(JSON.parse(sessionStorage.getItem('zhesen:pending-save') ?? 'null')).toMatchObject({ id: 'en:dog' })
   })
 })
@@ -106,20 +106,20 @@ describe('AddToWordlistButton, back from registering', () => {
   it('saves the remembered entry once, then clears it', async () => {
     rememberPendingSave('en:dog')
     const first = render(<AddToWordlistButton entry={entry} />)
-    expect(await screen.findByText('Đã thêm')).toBeInTheDocument()
+    expect(await screen.findByText('Đã lưu')).toBeInTheDocument()
     expect(addWordMock).toHaveBeenCalledTimes(1)
     expect(sessionStorage.getItem('zhesen:pending-save')).toBeNull()
 
     first.unmount()
     render(<AddToWordlistButton entry={entry} />)
-    expect(await screen.findByRole('button', { name: /Thêm vào sổ tay/i })).toBeEnabled()
+    expect(await screen.findByRole('button', { name: /Lưu vào sổ tay/i })).toBeEnabled()
     expect(addWordMock).toHaveBeenCalledTimes(1)
   })
 
   it('ignores an entry remembered more than 30 minutes ago', async () => {
     rememberPendingSave('en:dog', Date.now() - 31 * 60 * 1000)
     render(<AddToWordlistButton entry={entry} />)
-    expect(await screen.findByRole('button', { name: /Thêm vào sổ tay/i })).toBeEnabled()
+    expect(await screen.findByRole('button', { name: /Lưu vào sổ tay/i })).toBeEnabled()
     expect(addWordMock).not.toHaveBeenCalled()
     expect(sessionStorage.getItem('zhesen:pending-save')).toBeNull()
   })
@@ -127,7 +127,7 @@ describe('AddToWordlistButton, back from registering', () => {
   it('leaves another entry pending for its own page', async () => {
     rememberPendingSave('en:cat')
     render(<AddToWordlistButton entry={entry} />)
-    expect(await screen.findByRole('button', { name: /Thêm vào sổ tay/i })).toBeEnabled()
+    expect(await screen.findByRole('button', { name: /Lưu vào sổ tay/i })).toBeEnabled()
     await waitFor(() => expect(isWordSavedMock).toHaveBeenCalled())
     expect(addWordMock).not.toHaveBeenCalled()
     expect(sessionStorage.getItem('zhesen:pending-save')).toContain('en:cat')

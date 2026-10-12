@@ -61,7 +61,7 @@ describe('TOEIC topic page', () => {
     expect(screen.getByRole('link', { name: 'agenda' })).toHaveAttribute('href', '/dictionary/en/agenda')
     expect(screen.queryByRole('link', { name: 'memo' })).not.toBeInTheDocument()
     expect(screen.getByText('memo')).toBeInTheDocument()
-    const saves = await screen.findAllByRole('link', { name: 'Thêm vào sổ tay' })
+    const saves = await screen.findAllByRole('link', { name: 'Lưu vào sổ tay' })
     expect(saves).toHaveLength(office.words.length - 1)
     // Back to the topic, where the save finishes with the test meaning, not the word page's first sense.
     for (const a of saves) expect(a).toHaveAttribute('href', `/register?next=${encodeURIComponent('/theory/en/toeic/topic/office')}`)

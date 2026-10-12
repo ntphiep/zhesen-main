@@ -101,8 +101,8 @@ describe('SenseList', () => {
 describe('AddToWordlistButton', () => {
   it('adds the entry and shows confirmation', async () => {
     render(<AddToWordlistButton entry={detail} />)
-    await userEvent.click(await screen.findByRole('button', { name: /Thêm vào sổ tay/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Lưu vào sổ tay/i }))
     expect(addWord).toHaveBeenCalled()
-    expect(await screen.findByText('Đã thêm')).toBeInTheDocument()
+    expect(await screen.findByText('Đã lưu')).toBeInTheDocument()
   })
 })

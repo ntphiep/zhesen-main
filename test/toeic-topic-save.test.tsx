@@ -73,7 +73,7 @@ describe('ToeicTopicSave', () => {
     listSavedEntryIds.mockResolvedValue(new Set())
     addWords.mockImplementation(async (_s, drafts: unknown[]) => drafts)
     render(<><ToeicTopicSave lang="en" path={path} drafts={drafts} /><AddToWordlistButton entry={words[0].entry} /></>)
-    expect(await screen.findByRole('button', { name: 'Thêm vào sổ tay' })).toBeEnabled()
+    expect(await screen.findByRole('button', { name: 'Lưu vào sổ tay' })).toBeEnabled()
     await userEvent.click(await screen.findByRole('button', { name: 'Lưu cả chủ đề vào sổ tay' }))
     expect(await screen.findByRole('button', { name: 'Đã có trong sổ tay' })).toBeDisabled()
   })
@@ -81,8 +81,8 @@ describe('ToeicTopicSave', () => {
   it('saves one word from its own button with the same row the topic save writes', async () => {
     addWord.mockResolvedValue(undefined)
     render(<AddToWordlistButton entry={words[0].entry} draft={drafts[0]} returnTo={path} />)
-    await userEvent.click(await screen.findByRole('button', { name: 'Thêm vào sổ tay' }))
-    expect(await screen.findByRole('button', { name: 'Đã thêm' })).toBeDisabled()
+    await userEvent.click(await screen.findByRole('button', { name: 'Lưu vào sổ tay' }))
+    expect(await screen.findByRole('button', { name: 'Đã lưu' })).toBeDisabled()
     expect(addWord).toHaveBeenCalledWith(expect.anything(), drafts[0])
   })
 
@@ -90,14 +90,14 @@ describe('ToeicTopicSave', () => {
     addWord.mockResolvedValue(undefined)
     rememberPendingSave('en:branch')
     render(<AddToWordlistButton entry={words[0].entry} draft={drafts[0]} returnTo={path} />)
-    expect(await screen.findByRole('button', { name: 'Đã thêm' })).toBeDisabled()
+    expect(await screen.findByRole('button', { name: 'Đã lưu' })).toBeDisabled()
     expect(addWord).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ meaningVi: 'chi nhánh', tags: ['toeic'] }))
   })
 
   it('sends a guest from one word back to the topic', async () => {
     user.current = null
     render(<AddToWordlistButton entry={words[0].entry} draft={drafts[0]} returnTo={path} />)
-    const link = await screen.findByRole('link', { name: /Thêm vào sổ tay/ })
+    const link = await screen.findByRole('link', { name: /Lưu vào sổ tay/ })
     expect(link).toHaveAttribute('href', `/register?next=${encodeURIComponent(path)}`)
   })
 

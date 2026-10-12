@@ -72,11 +72,11 @@ export function SavedButton({ entry, size = 'sm', tone, context, draft, tags }: 
     }
   }
 
-  const label = state === 'added' ? 'Đã thêm'
+  const label = state === 'added' ? 'Đã lưu'
     : state === 'exists' ? 'Đã có trong sổ tay'
-    : state === 'saving' ? 'Đang thêm…'
-    : state === 'error' ? 'Lỗi, thử lại'
-    : 'Thêm vào sổ tay'
+    : state === 'saving' ? 'Đang lưu…'
+    : state === 'error' ? 'Chưa lưu được. Thử lại.'
+    : 'Lưu vào sổ tay'
 
   return (
     <button

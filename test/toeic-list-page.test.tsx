@@ -77,7 +77,7 @@ describe('TOEIC list page', () => {
     // No entry: no link, no save, but the word stays in its place.
     expect(screen.getByText('e-book')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'e-book' })).not.toBeInTheDocument()
-    expect(await screen.findAllByRole('link', { name: 'Thêm vào sổ tay' })).toHaveLength(24)
+    expect(await screen.findAllByRole('link', { name: 'Lưu vào sổ tay' })).toHaveLength(24)
     expect(screen.getByRole('link', { name: /Lưu cả nhóm vào sổ tay/ })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Từ TOEIC 26 đến 50/ })).toHaveAttribute('href', '/theory/en/toeic/list/2')
     expect(screen.getByRole('link', { name: 'CC BY-SA 4.0' })).toBeInTheDocument()
