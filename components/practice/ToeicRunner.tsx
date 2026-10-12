@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
+import { BackLink } from '@/components/ui/BackLink'
 import Link from 'next/link'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { readStored, useStoredPref, writeStored } from '@/lib/hooks/useStoredPref'
@@ -174,7 +175,7 @@ export function ToeicRunner({ test, words, part = null }: {
   if (view.at === 'start') {
     body = (
       <div className={t.start}>
-        <Link href={TOEIC_PATH} className={p.back}>← Luyện đề TOEIC</Link>
+        <BackLink href={TOEIC_PATH}>Luyện đề TOEIC</BackLink>
         <h1 className="mt-3">{test.titleVi} · Reading</h1>
         <p>{index.size} câu trong 75 phút. Hết giờ thì bài tự nộp.</p>
         {saved && (

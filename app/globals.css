@@ -493,3 +493,28 @@ html[data-word-layout="overview"] main[data-boot] {
   background-color: var(--tint-1);
 }
 
+/* Every page's way back up (components/ui/BackLink.tsx): a 40px target with a pill on
+   hover, pulled left so its text still lines up with the heading below. */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: fit-content;
+  min-height: 2.5rem;
+  margin-left: -0.625rem;
+  padding: 0.375rem 0.875rem 0.375rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--zs-soft);
+  text-decoration: none;
+  transition: background-color 150ms var(--ease-std), color 150ms var(--ease-std);
+}
+.back-link svg { width: 1.125rem; height: 1.125rem; flex: none; transition: translate 230ms var(--ease-spring); }
+.back-link:hover { background-color: var(--zs-chip); color: var(--zs-ink); }
+.back-link:hover svg { translate: -3px 0; }
+.back-link:focus-visible { outline: 2px solid var(--zs-pen); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .back-link svg { transition: none; }
+  .back-link:hover svg { translate: none; }
+}

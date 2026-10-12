@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BackLink } from '@/components/ui/BackLink'
 import { createClient } from '@/lib/supabase/server'
 import { requirePermanentAccount } from '@/lib/auth/guard'
 import { TOEIC_TESTS } from '@/lib/practice/toeic/tests'
@@ -22,7 +23,7 @@ export default async function ToeicHubPage() {
   await requirePermanentAccount(await createClient(), TOEIC_PATH)
   return (
     <main className={`${p.pr} mx-auto w-full max-w-page px-6 pt-8 pb-16 font-ui`}>
-      <Link href={theoryBlockPath('en', 'toeic')} className={p.back}>← Lý thuyết TOEIC</Link>
+      <BackLink href={theoryBlockPath('en', 'toeic')}>Lý thuyết TOEIC</BackLink>
       <h1 className={p.title}>Luyện đề TOEIC Reading</h1>
       <p className={p.lede}>Làm đề có giờ hoặc luyện từng Part.</p>
       <div className={t.tests}>

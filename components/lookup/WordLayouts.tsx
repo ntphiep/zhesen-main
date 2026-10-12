@@ -1,5 +1,6 @@
 'use client'
 import { useState, useSyncExternalStore } from 'react'
+import { BackLink } from '@/components/ui/BackLink'
 import Link from 'next/link'
 import { ClassicLayout } from './ClassicLayout'
 import { FeedbackButton } from './FeedbackButton'
@@ -68,7 +69,7 @@ export function WordLayouts({ view }: { view: WordView }) {
       className={`${w.word} flex w-full flex-col gap-5 pt-5 pb-16 font-ui`}
     >
       <div className={`${CONTAINER} flex flex-wrap items-center justify-between gap-x-3 gap-y-2`}>
-        <Link href="/dictionary" prefetch={false} className="text-sm font-semibold text-(--zs-soft) transition-colors duration-150 ease-std hover:text-(--zs-ink) hover:underline">← Dịch</Link>
+        <BackLink href="/dictionary" prefetch={false}>Dịch</BackLink>
         <div className="flex flex-wrap items-center gap-2">
           <LayoutPicker
             value={hydrated ? layout : null}
