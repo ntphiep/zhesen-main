@@ -28,7 +28,7 @@ export function PronunciationView({ language, phonemes, notes }: {
       language={language}
       block="pronunciation"
       titleVi="Phát âm"
-      leadVi={`${phonemes.length} ký hiệu, mỗi ký hiệu có ví dụ, những cách viết tạo ra nó và chỗ người Việt hay đọc chệch.`}
+      leadVi={`${phonemes.length} âm, ghi bằng ký hiệu IPA.`}
     >
       {/* Not sticky. 46 chips wrap to 182px at 390 and 114px at 1440, and pinning that
           much chrome either covered the card the reader had just clicked or, once capped,

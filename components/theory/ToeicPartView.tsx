@@ -30,7 +30,6 @@ export function ToeicPartView({ language, guide, part: p }: { language: Language
           {p.extras.includes('grammar') && (
             <section className={s.sec}>
               <h2 className={s.h2}>Ngữ pháp hay ra</h2>
-              <p className={s.prose}>Mỗi điểm có bài đầy đủ trong khối Ngữ pháp.</p>
               <GrammarGrid lang={language.code} grammar={guide.grammar} />
             </section>
           )}
@@ -49,7 +48,7 @@ export function ToeicPartView({ language, guide, part: p }: { language: Language
             <section className={s.sec}>
               <h2 className={s.h2}>Luyện Part {p.number}</h2>
               <p className={s.prose}>
-                {guide.practice.length} câu, đúng độ dài Part {p.number} của đề thật. Làm trong khoảng 10 phút để quen nhịp.
+                {guide.practice.length} câu, làm trong khoảng 10 phút.
               </p>
               <ToeicPractice questions={guide.practice} />
             </section>

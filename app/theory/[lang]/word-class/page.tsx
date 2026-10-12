@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { LANG_CODES, getLanguage, isLangCode } from '@/lib/languages'
+import { LANG_CODES, getLanguage, isLangCode, nameInSentence } from '@/lib/languages'
 import { hasBlock } from '@/lib/theory/blocks'
 import { theoryContent } from '@/lib/theory/content'
 import { WordClassList } from '@/components/theory/WordClassList'
@@ -23,8 +23,8 @@ export async function generateMetadata(
   const language = isLangCode(lang) ? getLanguage(lang) : undefined
   if (!language) return {}
   return pageMetadata({
-    title: `Từ loại ${language.name}`,
-    description: `Học các loại từ trong ${language.name}: vai trò trong câu, cách biến đổi và lỗi hay mắc.`,
+    title: `Từ loại ${nameInSentence(language)}`,
+    description: `Học các loại từ trong ${nameInSentence(language)}: vai trò trong câu, cách biến đổi và lỗi hay mắc.`,
     canonical: `/theory/${language.code}/word-class`,
   })
 }

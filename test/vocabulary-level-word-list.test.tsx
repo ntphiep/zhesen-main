@@ -98,9 +98,9 @@ describe('LevelWordList', () => {
     addWords.mockResolvedValueOnce([{ id: '1' }, { id: '2' }])
     render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[]} total={3} pageSize={40} />)
 
-    await userEvent.click(await screen.findByRole('button', { name: /Thêm cả A1/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Lưu cả A1/i }))
 
-    expect(await screen.findByText(/Đã thêm 2 từ/)).toBeInTheDocument()
+    expect(await screen.findByText(/Đã lưu 2 từ/)).toBeInTheDocument()
     expect(screen.getByText(/bỏ qua 1 từ đã có/)).toBeInTheDocument()
     expect(addWords).toHaveBeenCalledWith(expect.anything(), [
       expect.objectContaining({ headword: 'a' }),
@@ -113,9 +113,9 @@ describe('LevelWordList', () => {
     listSavedEntryIds.mockResolvedValueOnce(new Set(['en:a']))
     render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[]} total={1} pageSize={40} />)
 
-    await userEvent.click(await screen.findByRole('button', { name: /Thêm cả A1/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Lưu cả A1/i }))
 
-    expect(await screen.findByText(/Đã thêm 0 từ/)).toBeInTheDocument()
+    expect(await screen.findByText(/Đã lưu 0 từ/)).toBeInTheDocument()
     expect(addWords).not.toHaveBeenCalled()
   })
 
@@ -128,9 +128,9 @@ describe('LevelWordList', () => {
     addWords.mockResolvedValueOnce([{ id: '1' }])
     render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[]} total={3} pageSize={40} />)
 
-    await userEvent.click(await screen.findByRole('button', { name: /Thêm cả A1/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /Lưu cả A1/i }))
 
-    expect(await screen.findByText(/Đã thêm 1 từ/)).toBeInTheDocument()
+    expect(await screen.findByText(/Đã lưu 1 từ/)).toBeInTheDocument()
     expect(screen.getByText(/bỏ qua 2 từ đã có/)).toBeInTheDocument()
   })
 })

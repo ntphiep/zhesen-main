@@ -28,6 +28,11 @@ export function getLanguage(code: string): Language | undefined {
   return LANGUAGES.find((l) => l.code === code)
 }
 
+/** The name inside a sentence or a title: "Ngữ pháp tiếng Anh", never "Ngữ pháp Tiếng Anh". */
+export function nameInSentence(language: Language): string {
+  return language.name.replace('Tiếng', 'tiếng')
+}
+
 export function isLangCode(code: string): code is LangCode {
   return LANGUAGES.some((l) => l.code === code)
 }

@@ -22,14 +22,14 @@ function entry(headword: string): DictEntryPreview {
 describe('LevelWordList for a guest', () => {
   it('sends "add all" to /register and back to the page the guest is on', async () => {
     render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[entry('c')]} initialStart={2} total={4} pageSize={1} />)
-    const link = await screen.findByRole('link', { name: /Thêm cả A1 vào sổ tay \(4 từ\)/ })
+    const link = await screen.findByRole('link', { name: /Lưu cả A1 vào sổ tay/ })
     expect(link).toHaveAttribute('href', `/register?next=${encodeURIComponent('/theory/en/vocabulary/A1?page=3')}`)
-    expect(screen.queryByRole('button', { name: /Thêm cả A1/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Lưu cả A1/ })).not.toBeInTheDocument()
   })
 
   it('leaves page 1 without a page parameter', async () => {
     render(<LevelWordList language={en} level="A1" levelIsEstimated={false} initialItems={[entry('a')]} total={4} pageSize={1} />)
-    const link = await screen.findByRole('link', { name: /Thêm cả A1/ })
+    const link = await screen.findByRole('link', { name: /Lưu cả A1/ })
     expect(link).toHaveAttribute('href', `/register?next=${encodeURIComponent('/theory/en/vocabulary/A1')}`)
   })
 })

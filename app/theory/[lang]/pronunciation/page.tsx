@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { LANG_CODES, getLanguage, isLangCode } from '@/lib/languages'
+import { LANG_CODES, getLanguage, isLangCode, nameInSentence } from '@/lib/languages'
 import { hasBlock } from '@/lib/theory/blocks'
 import { theoryContent } from '@/lib/theory/content'
 import { PronunciationView } from '@/components/theory/PronunciationView'
@@ -23,8 +23,8 @@ export async function generateMetadata(
   const language = isLangCode(lang) ? getLanguage(lang) : undefined
   if (!language) return {}
   return pageMetadata({
-    title: `Phát âm ${language.name}`,
-    description: `Học bảng âm ${language.name} kèm ví dụ, cách viết và lỗi người Việt hay mắc.`,
+    title: `Phát âm ${nameInSentence(language)}`,
+    description: `Học bảng âm ${nameInSentence(language)} kèm ví dụ, cách viết và lỗi người Việt hay mắc.`,
     canonical: `/theory/${language.code}/pronunciation`,
   })
 }

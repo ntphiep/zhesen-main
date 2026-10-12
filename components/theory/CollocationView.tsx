@@ -17,7 +17,7 @@ export function CollocationView({ language, patterns, sets }: {
       language={language}
       block="collocation"
       titleVi="Collocation"
-      leadVi="Collocation là những từ quen đi với nhau. Câu đúng ngữ pháp mà sai collocation thì người bản ngữ vẫn nghe ra ngay."
+      leadVi="Collocation là những từ quen đi với nhau."
     >
       {patterns.map((p, i) => (
         <section key={p.id} id={p.id} className={s.sec} data-reveal={i === 0 ? '' : undefined}>

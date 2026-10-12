@@ -14,7 +14,7 @@ export function SentenceView({ language, topics }: { language: Language; topics:
       language={language}
       block="sentence"
       titleVi="Câu và cụm từ"
-      leadVi="Từ ghép thành cụm, cụm ghép thành mệnh đề, mệnh đề ghép thành câu. Biết ba tầng này là đọc được câu dài."
+      leadVi="Từ ghép thành cụm, cụm ghép thành mệnh đề, mệnh đề ghép thành câu."
       toc={
         <nav aria-label="Chủ đề" className={s.toc}>
           {topics.map((t) => (

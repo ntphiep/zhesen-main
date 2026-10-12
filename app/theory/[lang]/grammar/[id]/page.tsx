@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getLanguage, isLangCode } from '@/lib/languages'
+import { getLanguage, isLangCode, nameInSentence } from '@/lib/languages'
 import { getCachedGrammarPointDetail } from '@/lib/grammar/cached'
 import { getCachedTappableTexts } from '@/lib/dictionary/cached'
 import { buildGrammarPointId, grammarKeyFromPath, grammarPointPath } from '@/lib/grammar/path'
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!point) return {}
   const language = getLanguage(lang)
   return pageMetadata({
-    title: `${point.titleVi} · Ngữ pháp ${language?.name ?? lang}`,
+    title: `${point.titleVi} · Ngữ pháp ${language ? nameInSentence(language) : lang}`,
     description: `Học "${point.titleVi}" qua cấu trúc ${point.pattern}, giải thích và ví dụ.`,
     canonical: grammarPointPath(point.id),
   })

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getLanguage, isLangCode } from '@/lib/languages'
+import { getLanguage, isLangCode, nameInSentence } from '@/lib/languages'
 import { getCachedCommonWords, getCachedLevelsForLanguage } from '@/lib/dictionary/cached'
 import { VocabularyHub } from '@/components/vocabulary/VocabularyHub'
 
@@ -38,8 +38,8 @@ export async function generateMetadata(
   const language = isLangCode(lang) ? getLanguage(lang) : undefined
   if (!language) return {}
   return pageMetadata({
-    title: `Từ vựng ${language.name}`,
-    description: `Xem từ thông dụng và danh sách từ vựng ${language.name} theo trình độ.`,
+    title: `Từ vựng ${nameInSentence(language)}`,
+    description: `Xem từ thông dụng và danh sách từ vựng ${nameInSentence(language)} theo trình độ.`,
     canonical: `/theory/${language.code}/vocabulary`,
   })
 }

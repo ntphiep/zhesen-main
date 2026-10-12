@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!language || !g) return {}
   return pageMetadata({
     title: `Từ vựng TOEIC ${span(g)}`,
-    description: `Học ${g.words.length} từ hay gặp trong đề TOEIC, thứ ${span(g)} theo tần suất, với nghĩa, phát âm và câu ví dụ.`,
+    description: `Học ${g.words.length} từ hay gặp trong đề TOEIC, thứ ${span(g)} theo tần suất.`,
     canonical: toeicGroupPath(language.code, g.n),
   })
 }
@@ -55,7 +55,7 @@ export default async function ToeicGroupPage({ params }: { params: Params }) {
       <ToeicWordsPage
         language={language}
         title={title}
-        lede="Xếp theo tần suất trong đề. Dòng tiếng Anh là định nghĩa của danh sách."
+        lede="Xếp theo tần suất trong đề."
         path={toeicGroupPath(language.code, g.n)}
         scope="nhóm"
         words={words}

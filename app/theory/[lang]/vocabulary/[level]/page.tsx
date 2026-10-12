@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getLanguage, isLangCode } from '@/lib/languages'
+import { getLanguage, isLangCode, nameInSentence } from '@/lib/languages'
 import { getCachedLevelsForLanguage, getCachedEntriesByLevel } from '@/lib/dictionary/cached'
 import { isLevel } from '@/lib/dictionary/levels'
 import { LevelWordList } from '@/components/vocabulary/LevelWordList'
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const n = pageNumber(page)
   return pageMetadata({
     title: `${level} · ${language.name}${n > 1 ? ` · Trang ${n}` : ''}`,
-    description: `Xem danh sách từ vựng ${language.name} trình độ ${level}${n > 1 ? `, trang ${n}` : ''}.`,
+    description: `Xem danh sách từ vựng ${nameInSentence(language)} trình độ ${level}${n > 1 ? `, trang ${n}` : ''}.`,
     canonical: levelPageHref(language.code, level, n),
   })
 }

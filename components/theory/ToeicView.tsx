@@ -38,7 +38,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
       language={language}
       block="toeic"
       titleVi="Luyện thi TOEIC"
-      leadVi="Cấu trúc đề, thang điểm và quy định phòng thi theo tài liệu của ETS, đơn vị ra đề. Mẹo, bẫy và lộ trình là kinh nghiệm ôn thi."
+      leadVi="Cấu trúc đề, thang điểm và quy định phòng thi theo tài liệu của ETS. Mẹo, bẫy và lộ trình là kinh nghiệm ôn thi."
       toc={
         <nav aria-label="Mục" className={s.toc}>
           {nav.map((n) => (
@@ -49,7 +49,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
     >
       <section id="test" className={s.sec}>
         <h2 className={s.h2}>Làm đề Reading</h2>
-        <p className={s.prose}>Làm đề Reading 100 câu trong 75 phút hoặc luyện từng Part, có giải thích từng câu.</p>
+        <p className={s.prose}>100 câu trong 75 phút. Luyện từng Part thì thấy giải thích ngay sau mỗi câu.</p>
         <p className="m-0">
           <Link href={TOEIC_PATH} className={s.btn}>Làm đề <ArrowRight /></Link>
         </p>
@@ -125,7 +125,6 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
 
       <section id="grammar" className={s.sec}>
         <h2 className={s.h2}>Ngữ pháp hay ra ở Part 5 và Part 6</h2>
-        <p className={s.prose}>Mỗi điểm có bài đầy đủ trong khối Ngữ pháp.</p>
         <GrammarGrid lang={language.code} grammar={guide.grammar} />
       </section>
 
@@ -140,7 +139,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
       <section id="words" className={s.sec}>
         <h2 className={s.h2}>Từ vựng theo chủ đề</h2>
         <p className={s.prose}>
-          Nghĩa ghi theo cách dùng trong đề. Bấm một từ để nghe phát âm và lưu vào sổ tay.
+          Nghĩa ghi theo cách dùng trong đề.
         </p>
         <div className={s.grid} data-wide="">
           {guide.wordTopics.map((t) => (
@@ -166,7 +165,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
         </div>
         <h3 className={s.h3} id="words-list">{guide.wordList.length.toLocaleString('vi-VN')} từ hay gặp nhất trong đề</h3>
         <p className={s.prose}>
-          Xếp theo tần suất, mỗi trang {TOEIC_GROUP_SIZE} từ với nghĩa, phát âm, câu ví dụ và định nghĩa tiếng Anh.
+          Xếp theo tần suất, mỗi trang {TOEIC_GROUP_SIZE} từ.
         </p>
         <nav aria-label="Danh sách từ TOEIC" className={s.index}>
           {Array.from({ length: Math.ceil(guide.wordList.length / TOEIC_GROUP_SIZE) }, (_, i) => (
@@ -181,7 +180,7 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
       <section id="practice" className={s.sec}>
         <h2 className={s.h2}>Luyện Part 5</h2>
         <p className={s.prose}>
-          {guide.practice.length} câu, đúng độ dài Part 5 của đề thật. Làm trong khoảng 10 phút để quen nhịp.
+          {guide.practice.length} câu, làm trong khoảng 10 phút.
         </p>
         <ToeicPractice questions={guide.practice} />
       </section>

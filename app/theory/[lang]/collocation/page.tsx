@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { LANG_CODES, getLanguage, isLangCode } from '@/lib/languages'
+import { LANG_CODES, getLanguage, isLangCode, nameInSentence } from '@/lib/languages'
 import { hasBlock } from '@/lib/theory/blocks'
 import { theoryContent } from '@/lib/theory/content'
 import { CollocationView } from '@/components/theory/CollocationView'
@@ -23,8 +23,8 @@ export async function generateMetadata(
   const language = isLangCode(lang) ? getLanguage(lang) : undefined
   if (!language) return {}
   return pageMetadata({
-    title: `Collocation ${language.name}`,
-    description: `Học các từ hay đi với nhau trong ${language.name}, theo từng dạng kết hợp.`,
+    title: `Collocation ${nameInSentence(language)}`,
+    description: `Học các từ hay đi với nhau trong ${nameInSentence(language)}, theo từng dạng kết hợp.`,
     canonical: `/theory/${language.code}/collocation`,
   })
 }

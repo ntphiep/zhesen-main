@@ -5,7 +5,7 @@ import { NextBlock } from '@/components/theory/NextBlock'
 import { PageHead } from '@/components/theory/BlockPage'
 import s from '@/components/theory/Theory.module.css'
 import type { GrammarLevelGroup } from '@/lib/grammar/group'
-import type { Language } from '@/lib/languages'
+import { nameInSentence, type Language } from '@/lib/languages'
 
 /** `/theory/[lang]/grammar`: grammar points grouped by level, then by category_vi. */
 export function GrammarPointList({ language, levels }: { language: Language; levels: GrammarLevelGroup[] }) {
@@ -13,8 +13,8 @@ export function GrammarPointList({ language, levels }: { language: Language; lev
     <main className={`${s.page} font-ui`} data-l={language.code}>
       <PageHead
         language={language}
-        back={{ href: theoryLangPath(language.code), label: `Lý thuyết ${language.name}` }}
-        title={`Ngữ pháp ${language.name}`}
+        back={{ href: theoryLangPath(language.code), label: `Lý thuyết ${nameInSentence(language)}` }}
+        title={`Ngữ pháp ${nameInSentence(language)}`}
       >
         {levels.length > 1 && (
           <nav aria-label="Trình độ" className="mt-5 flex flex-wrap gap-2">

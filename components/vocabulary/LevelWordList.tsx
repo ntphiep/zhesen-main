@@ -9,7 +9,7 @@ import { entryPath } from '@/lib/dictionary/entryId'
 import { levelPageHref, theoryBlockPath } from '@/lib/theory/path'
 import { useAccount } from '@/lib/hooks/useAccount'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
-import type { Language } from '@/lib/languages'
+import { nameInSentence, type Language } from '@/lib/languages'
 import { Ipa } from '@/components/ui/Ipa'
 import { loadSupabaseClient } from '@/lib/supabase/loadClient'
 import { pageCount } from '@/lib/wordlist/paginate'
@@ -80,21 +80,21 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
   }
 
   const here = levelPageHref(language.code, level, Math.floor(start / pageSize) + 1)
-  const addAllLabel = addAll.kind === 'busy' ? 'Đang thêm…'
-    : addAll.kind === 'done' ? `Đã thêm ${addAll.added} từ${addAll.skipped > 0 ? ` (bỏ qua ${addAll.skipped} từ đã có)` : ''}`
-    : addAll.kind === 'error' ? 'Lỗi, thử lại'
-    : `+ Thêm cả ${level} vào sổ tay (${total} từ)`
+  const addAllLabel = addAll.kind === 'busy' ? 'Đang lưu…'
+    : addAll.kind === 'done' ? `Đã lưu ${addAll.added} từ${addAll.skipped > 0 ? ` (bỏ qua ${addAll.skipped} từ đã có)` : ''}`
+    : addAll.kind === 'error' ? 'Chưa lưu được. Thử lại.'
+    : `Lưu cả ${level} vào sổ tay`
 
   return (
     <main className={`${s.page} font-ui`} data-l={language.code}>
       <PageHead
         language={language}
-        back={{ href: theoryBlockPath(language.code, 'vocabulary'), label: `Từ vựng ${language.name}` }}
+        back={{ href: theoryBlockPath(language.code, 'vocabulary'), label: `Từ vựng ${nameInSentence(language)}` }}
         title={<>{level}<small>{total} từ</small></>}
       >
         {levelIsEstimated && (
           <p className={s.note} data-gap="">
-            Trình độ do Zhesen ước lượng, không theo phân loại CEFR chính thức.
+            Trình độ do Zhesen ước lượng, không theo phân loại chính thức.
           </p>
         )}
 

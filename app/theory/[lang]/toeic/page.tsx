@@ -24,7 +24,7 @@ export async function generateMetadata(
   if (!language) return {}
   return pageMetadata({
     title: 'Luyện thi TOEIC',
-    description: 'Nắm cấu trúc đề TOEIC, mẹo từng part, từ vựng theo chủ đề và luyện 30 câu Part 5.',
+    description: 'Nắm cấu trúc đề TOEIC, mẹo từng Part và từ vựng theo chủ đề.',
     canonical: `/theory/${language.code}/toeic`,
   })
 }

@@ -1,12 +1,11 @@
 import Link from 'next/link'
 import { Ipa } from '@/components/ui/Ipa'
 import { BlockPage } from '@/components/theory/BlockPage'
-import { ArrowRight } from '@/components/theory/Glyphs'
 import s from '@/components/theory/Theory.module.css'
 import { entryPath } from '@/lib/dictionary/entryId'
 import { vocabularyLevelPath } from '@/lib/theory/path'
 import { LinkPending } from '@/components/ui/LinkPending'
-import type { Language } from '@/lib/languages'
+import { nameInSentence, type Language } from '@/lib/languages'
 import type { DictEntryPreview } from '@/lib/dictionary/types'
 import type { LevelSummary } from '@/lib/dictionary/levels'
 
@@ -22,12 +21,12 @@ export function VocabularyHub({ language, common, levels }: {
     <BlockPage
       language={language}
       block="vocabulary"
-      titleVi={`Từ vựng ${language.name}`}
-      leadVi="Chọn một trình độ để xem danh sách từ hoặc lưu cả danh sách vào sổ tay."
+      titleVi={`Từ vựng ${nameInSentence(language)}`}
+      leadVi=""
     >
       {levels.length > 0 && (
         <section className={s.sec} data-reveal="">
-          <h2 className={s.h2}>Duyệt theo trình độ</h2>
+          <h2 className={s.h2}>Trình độ</h2>
           <div className="flex flex-wrap gap-2">
             {levels.map((l) => (
               <Link
@@ -66,10 +65,6 @@ export function VocabularyHub({ language, common, levels }: {
           </div>
         </section>
       )}
-
-      <Link href="/practice" className={`${s.btn} w-fit`}>
-        Luyện tập từ đã lưu <ArrowRight />
-      </Link>
     </BlockPage>
   )
 }

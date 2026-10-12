@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { LANG_CODES, getLanguage, isLangCode } from '@/lib/languages'
+import { LANG_CODES, getLanguage, isLangCode, nameInSentence } from '@/lib/languages'
 import { buildGrammarPointId } from '@/lib/grammar/path'
 import { getCachedGrammarPointsByLang } from '@/lib/grammar/cached'
 import { findWordClass, theoryContent } from '@/lib/theory/content'
@@ -32,7 +32,7 @@ export async function generateMetadata(
   const wordClass = language && findWordClass(language.code, key)
   if (!language || !wordClass) return {}
   return pageMetadata({
-    title: `${wordClass.titleVi} trong ${language.name}`,
+    title: `${wordClass.titleVi} trong ${nameInSentence(language)}`,
     description: wordClass.oneLineVi,
     canonical: `/theory/${language.code}/word-class/${wordClass.key}`,
   })

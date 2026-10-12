@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { LANG_CODES, getLanguage, isLangCode } from '@/lib/languages'
+import { LANG_CODES, getLanguage, isLangCode, nameInSentence } from '@/lib/languages'
 import { getCachedGrammarPointsByLang } from '@/lib/grammar/cached'
 import { groupByLevelAndCategory } from '@/lib/grammar/group'
 import { GrammarPointList } from '@/components/grammar/GrammarPointList'
@@ -37,8 +37,8 @@ export async function generateMetadata(
   const language = isLangCode(lang) ? getLanguage(lang) : undefined
   if (!language) return {}
   return pageMetadata({
-    title: `Ngữ pháp ${language.name}`,
-    description: `Học ngữ pháp ${language.name} theo trình độ, kèm cấu trúc và ví dụ.`,
+    title: `Ngữ pháp ${nameInSentence(language)}`,
+    description: `Học ngữ pháp ${nameInSentence(language)} theo trình độ, kèm cấu trúc và ví dụ.`,
     canonical: `/theory/${language.code}/grammar`,
   })
 }

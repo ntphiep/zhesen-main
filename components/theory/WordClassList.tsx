@@ -13,7 +13,7 @@ export function WordClassList({ language, classes }: { language: Language; class
       language={language}
       block="word-class"
       titleVi="Từ loại"
-      leadVi="Mỗi từ thuộc một loại. Loại quyết định từ đứng ở đâu trong câu và đổi hình thế nào."
+      leadVi="Loại của một từ quyết định từ đứng ở đâu trong câu và đổi hình thế nào."
     >
       <div className={s.grid}>
         {classes.map((c, i) => (

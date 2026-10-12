@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { LANG_CODES, getLanguage, isLangCode } from '@/lib/languages'
+import { LANG_CODES, getLanguage, isLangCode, nameInSentence } from '@/lib/languages'
 import { hasBlock } from '@/lib/theory/blocks'
 import { theoryContent } from '@/lib/theory/content'
 import { SentenceView } from '@/components/theory/SentenceView'
@@ -23,8 +23,8 @@ export async function generateMetadata(
   const language = isLangCode(lang) ? getLanguage(lang) : undefined
   if (!language) return {}
   return pageMetadata({
-    title: `Câu và cụm từ ${language.name}`,
-    description: `Học cụm từ, mệnh đề, kiểu câu và trật tự từ trong ${language.name}.`,
+    title: `Câu và cụm từ ${nameInSentence(language)}`,
+    description: `Học cụm từ, mệnh đề, kiểu câu và trật tự từ trong ${nameInSentence(language)}.`,
     canonical: `/theory/${language.code}/sentence`,
   })
 }
