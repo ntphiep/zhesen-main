@@ -5,7 +5,6 @@ import { WARRANTY_LAYER_ROW, WARRANTY_SENSES } from './helpers/learner'
 import { GlanceLayout } from '@/components/lookup/GlanceLayout'
 import { LookupView } from '@/components/lookup/LookupView'
 import { MapLayout } from '@/components/lookup/MapLayout'
-import { ReadLayout } from '@/components/lookup/ReadLayout'
 import { wordLayout } from '@/lib/dictionary/wordLayout'
 import { buildWordView } from '@/lib/dictionary/wordView'
 import { parseLearnerLayer, type LearnerBacklink } from '@/lib/dictionary/learner'
@@ -91,7 +90,7 @@ describe('the overview senses', () => {
 describe('the first meaning comes before the forms', () => {
   const withForms = { detail: take, characters: [], siblings: [], inflections: [{ formText: 'took', formLabel: 'past' }, { formText: 'takes', formLabel: 'third-person singular' }] }
 
-  it.each([['Song ngữ'], ['Cổ điển']])('in %s', async (name) => {
+  it.each([['Cổ điển']])('in %s', async (name) => {
     render(<LookupView {...withForms} />)
     await userEvent.click(screen.getByRole('button', { name }))
     const panel = screen.getByRole('button', { name }).closest('main') ?? document.body
@@ -114,7 +113,7 @@ describe('the learner layouts', () => {
     isInflection: false, lemma: null, lemmaEntryId: null,
   }))
   const gistLine = (gist: string) => (_: string, el: Element | null) => el?.tagName === 'P' && el.textContent === gist
-  const LAYOUTS = [['MapLayout', MapLayout], ['ReadLayout', ReadLayout], ['GlanceLayout', GlanceLayout]] as const
+  const LAYOUTS = [['MapLayout', MapLayout], ['GlanceLayout', GlanceLayout]] as const
 
   // "bảo hành – sự bảo đảm" over senses titled "bảo hành, giấy bảo hành" and "sự bảo đảm, sự cam đoan",
   // then "3 nghĩa chính · 5 nghĩa khác · 9 kết hợp".
@@ -152,14 +151,6 @@ describe('the learner layouts', () => {
     let steps = 0
     while (document.activeElement !== folds[0] && steps++ < 200) await userEvent.tab()
     expect(document.activeElement).toBe(folds[0])
-  })
-
-  it('folds the other senses on the reading page after six', async () => {
-    render(<ReadLayout view={view} layer={{ ...layer, labels }} />)
-    const minor = document.getElementById('minor-senses')!
-    expect(within(minor).getAllByRole('listitem')).toHaveLength(6)
-    await userEvent.click(within(minor).getByRole('button', { name: 'Xem thêm 3 nghĩa khác' }))
-    expect(within(minor).getAllByRole('listitem')).toHaveLength(9)
   })
 
   it('folds the other senses and the collocations at a glance after six', async () => {

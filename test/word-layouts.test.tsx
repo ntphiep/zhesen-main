@@ -51,16 +51,6 @@ describe('word page layouts', () => {
     expect(screen.getByRole('link', { name: 'hound' })).toHaveAttribute('href', '/dictionary/en/hound')
   })
 
-  it('switches to the side-by-side rows and remembers the choice', async () => {
-    render(<LookupView detail={dog} characters={[]} siblings={[]} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Song ngữ' }))
-    expect(await screen.findByText('Tiếng Việt')).toBeInTheDocument()
-    expect(screen.getByText('a domesticated canid')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 1, name: 'dog' })).toBeInTheDocument()
-    expect(localStorage.getItem('zhesen:word-layout')).toBe('bilingual')
-    expect(document.documentElement.dataset.wordLayout).toBe('bilingual')
-  })
-
   it('switches to the classic page, with the synonym under its sense', async () => {
     render(<LookupView detail={dog} characters={[]} siblings={[]} />)
     await userEvent.click(screen.getByRole('button', { name: 'Cổ điển' }))
@@ -70,7 +60,7 @@ describe('word page layouts', () => {
     expect(localStorage.getItem('zhesen:word-layout')).toBe('classic')
   })
 
-  it.each([['Tổng quan'], ['Song ngữ'], ['Cổ điển']])('says in %s how many meanings are not yet translated', async (name) => {
+  it.each([['Tổng quan'], ['Cổ điển']])('says in %s how many meanings are not yet translated', async (name) => {
     render(<LookupView detail={lime} characters={[]} siblings={[]} />)
     await userEvent.click(screen.getByRole('button', { name }))
     expect(await screen.findByText('2 nghĩa chưa dịch sang tiếng Việt.')).toBeInTheDocument()

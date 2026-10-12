@@ -58,9 +58,9 @@ afterEach(() => {
 describe('hydrating the word page', () => {
   it('hydrates only the stored layout and keeps its server DOM', async () => {
     box.innerHTML = renderToString(page)
-    localStorage.setItem('zhesen:word-layout', 'read')
-    document.documentElement.dataset.wordLayout = 'read'
-    const read = box.querySelector('[data-panel="read"]')
+    localStorage.setItem('zhesen:word-layout', 'classic')
+    document.documentElement.dataset.wordLayout = 'classic'
+    const shell = box.querySelector('[data-panel="classic"]')
     const errors: unknown[] = []
     const logged = vi.spyOn(console, 'error')
     client.on = true
@@ -70,8 +70,8 @@ describe('hydrating the word page', () => {
     expect(errors).toEqual([])
     expect(logged).not.toHaveBeenCalled()
     logged.mockRestore()
-    expect([...box.querySelectorAll('[data-panel]')].map((p) => p.getAttribute('data-panel'))).toEqual(['read'])
-    expect(box.querySelector('[data-panel="read"]')).toBe(read)
+    expect([...box.querySelectorAll('[data-panel]')].map((p) => p.getAttribute('data-panel'))).toEqual(['classic'])
+    expect(box.querySelector('[data-panel="classic"]')).toBe(shell)
     expect(box.querySelector('main')).not.toHaveAttribute('data-boot')
     expect(client.renders).toEqual({ map: 0, glance: 0 })
   })

@@ -7,7 +7,7 @@ import type { SentencePattern } from '@/lib/dictionary/types'
 const SHOWN = 6
 
 /** accuse sb of sth, with sb and sth set apart as the slots they are. */
-export function PatternText({ text }: { text: string }) {
+function PatternText({ text }: { text: string }) {
   return (
     <>
       {text.split(/\b(sb's|sb|sth)\b/).map((part, i) => (i % 2 === 1

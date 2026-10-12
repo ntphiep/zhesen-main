@@ -8,7 +8,7 @@
  * before the first paint (components/lookup/WordLayouts.tsx).
  */
 
-export type WordLayout = 'overview' | 'bilingual' | 'classic' | 'map' | 'read' | 'glance'
+export type WordLayout = 'overview' | 'classic' | 'map' | 'glance'
 
 /** What a layout needs before it is offered. Gating a layout later is one more value here
  *  and one field below. */
@@ -16,10 +16,8 @@ export type LayoutRequirement = 'learner'
 
 export const WORD_LAYOUTS: { key: WordLayout; label: string; requires: LayoutRequirement | null }[] = [
   { key: 'overview', label: 'Tổng quan', requires: null },
-  { key: 'bilingual', label: 'Song ngữ', requires: null },
   { key: 'classic', label: 'Cổ điển', requires: null },
   { key: 'map', label: 'Bản đồ nghĩa', requires: 'learner' },
-  { key: 'read', label: 'Trang đọc', requires: 'learner' },
   { key: 'glance', label: 'Toàn cảnh', requires: 'learner' },
 ]
 

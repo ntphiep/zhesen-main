@@ -1,13 +1,11 @@
 'use client'
 import { useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
-import { BilingualLayout } from './BilingualLayout'
 import { ClassicLayout } from './ClassicLayout'
 import { FeedbackButton } from './FeedbackButton'
 import { GlanceLayout } from './GlanceLayout'
 import { MapLayout } from './MapLayout'
 import { OverviewLayout } from './OverviewLayout'
-import { ReadLayout } from './ReadLayout'
 import { CONTAINER } from './WordParts'
 import { LayoutPicker } from '@/components/ui/LayoutPicker'
 import { WORD_LAYOUTS, availableLayouts, resolveLayout, wordLayout, type WordLayout } from '@/lib/dictionary/wordLayout'
@@ -22,10 +20,8 @@ const useHydrated = () => useSyncExternalStore(noop, () => true, () => false)
 
 const ICONS: Record<WordLayout, React.ReactNode> = {
   overview: <><rect x="2" y="2" width="7" height="7" rx="1.5" /><rect x="11" y="2" width="7" height="4" rx="1.5" /><rect x="11" y="8" width="7" height="10" rx="1.5" /><rect x="2" y="11" width="7" height="7" rx="1.5" /></>,
-  bilingual: <><path d="M10 2v16" /><path d="M3 5h4M3 9h4M3 13h4M13 5h4M13 9h4M13 13h4" /></>,
   classic: <><path d="M2 4h9M2 8h9M2 12h9M2 16h6" /><rect x="14" y="3" width="4" height="14" rx="1" /></>,
   map: <><rect x="2" y="3" width="5" height="14" rx="1.5" /><rect x="9" y="3" width="9" height="14" rx="1.5" /></>,
-  read: <><path d="M3 5h9M3 9h9M3 13h6" /><rect x="14" y="4" width="3.5" height="12" rx="1" /></>,
   glance: <><rect x="2" y="3" width="4.5" height="14" rx="1.2" /><rect x="7.8" y="3" width="4.5" height="14" rx="1.2" /><rect x="13.6" y="3" width="4.5" height="14" rx="1.2" /></>,
 }
 
@@ -38,7 +34,7 @@ const DORMANT = { __html: '' }
  * sets its own width; the overview draws on a pastel page.
  *
  * The page is cached for everyone, so the server cannot know the stored layout. It writes
- * a panel per layout the entry offers but draws only the overview in full: all six drawn
+ * a panel per layout the entry offers but draws only the overview in full: all six layouts drawn, before two were removed,
  * made take 1,159,896 bytes of HTML with six h1. The others hold a `PanelShell`.
  * `app/globals.css` shows the panel the boot script marked on <html> before the first
  * paint. Over server HTML (main[data-boot] is in the document) every panel but a shown
@@ -135,10 +131,8 @@ function PanelShell({ view }: { view: WordView }) {
 function LayoutBody({ layout, view }: { layout: WordLayout; view: WordView }) {
   const layer = view.learner
   switch (layout) {
-    case 'bilingual': return <BilingualLayout view={view} />
     case 'classic': return <ClassicLayout view={view} />
     case 'map': return layer ? <MapLayout view={view} layer={layer} /> : <ClassicLayout view={view} />
-    case 'read': return layer ? <ReadLayout view={view} layer={layer} /> : <ClassicLayout view={view} />
     case 'glance': return layer ? <GlanceLayout view={view} layer={layer} /> : <ClassicLayout view={view} />
     default: return <OverviewLayout view={view} />
   }

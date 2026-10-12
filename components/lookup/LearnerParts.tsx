@@ -223,7 +223,7 @@ export const minorGloss = (m: MinorSense) => (m.glossEn && m.isInflection ? form
 /** The terms of a minor sense, or its English when the layer gave none. */
 export const minorTerms = (m: MinorSense) => m.viTerms.join(', ') || minorGloss(m) || ''
 
-export function LemmaMention({ minor }: { minor: MinorSense }) {
+function LemmaMention({ minor }: { minor: MinorSense }) {
   if (!minor.lemma) return null
   return <Mention link={{ text: minor.lemma, targetEntryId: minor.lemmaEntryId }} />
 }

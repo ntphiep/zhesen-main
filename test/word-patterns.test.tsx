@@ -1,12 +1,10 @@
 import { describe, it, expect, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { GUARANTEE_BACKLINK_ROWS, WARRANTY_LAYER_ROW, WARRANTY_SENSES } from './helpers/learner'
-import { BilingualLayout } from '@/components/lookup/BilingualLayout'
 import { ClassicLayout } from '@/components/lookup/ClassicLayout'
 import { GlanceLayout } from '@/components/lookup/GlanceLayout'
 import { MapLayout } from '@/components/lookup/MapLayout'
 import { OverviewLayout } from '@/components/lookup/OverviewLayout'
-import { ReadLayout } from '@/components/lookup/ReadLayout'
 import { parseBacklinks, parseLearnerLayer } from '@/lib/dictionary/learner'
 import { entryDetailRow, toPatterns } from '@/lib/dictionary/rows'
 import { buildWordView } from '@/lib/dictionary/wordView'
@@ -45,10 +43,8 @@ function viewWith(patterns: SentencePattern[]) {
 
 const LAYOUTS: [string, (view: WordView) => React.ReactElement][] = [
   ['overview', (view) => <OverviewLayout view={view} />],
-  ['bilingual', (view) => <BilingualLayout view={view} />],
   ['classic', (view) => <ClassicLayout view={view} />],
   ['map', (view) => <MapLayout view={view} layer={layer} />],
-  ['read', (view) => <ReadLayout view={view} layer={layer} />],
   ['glance', (view) => <GlanceLayout view={view} layer={layer} />],
 ]
 

@@ -421,13 +421,10 @@ main[data-boot] [data-hint] {
 }
 html:not([data-word-layout]) main[data-boot] > [data-panel="overview"],
 html[data-word-layout="overview"] main[data-boot] > [data-panel="overview"],
-html[data-word-layout="bilingual"] main[data-boot] > [data-panel="bilingual"],
 html[data-word-layout="classic"] main[data-boot] > [data-panel="classic"],
 html[data-word-layout="map"] main[data-boot]:not([data-layouts~="map"]) > [data-panel="classic"],
-html[data-word-layout="read"] main[data-boot]:not([data-layouts~="read"]) > [data-panel="classic"],
 html[data-word-layout="glance"] main[data-boot]:not([data-layouts~="glance"]) > [data-panel="classic"],
 html[data-word-layout="map"] main[data-boot][data-layouts~="map"] > [data-panel="map"],
-html[data-word-layout="read"] main[data-boot][data-layouts~="read"] > [data-panel="read"],
 html[data-word-layout="glance"] main[data-boot][data-layouts~="glance"] > [data-panel="glance"] {
   display: block;
 }
@@ -435,28 +432,22 @@ html[data-word-layout]:not([data-word-layout="overview"]) main[data-boot] {
   min-height: 100vh;
 }
 html[data-word-layout="map"] main[data-boot]:not([data-layouts~="map"]) [data-note="map"],
-html[data-word-layout="read"] main[data-boot]:not([data-layouts~="read"]) [data-note="read"],
 html[data-word-layout="glance"] main[data-boot]:not([data-layouts~="glance"]) [data-note="glance"] {
   display: block;
 }
 html:not([data-word-layout]) main[data-boot] [data-pick="overview"] [data-hint],
 html[data-word-layout="overview"] main[data-boot] [data-pick="overview"] [data-hint],
-html[data-word-layout="bilingual"] main[data-boot] [data-pick="bilingual"] [data-hint],
 html[data-word-layout="classic"] main[data-boot] [data-pick="classic"] [data-hint],
 html[data-word-layout="map"] main[data-boot] [data-pick="map"] [data-hint],
-html[data-word-layout="read"] main[data-boot] [data-pick="read"] [data-hint],
 html[data-word-layout="glance"] main[data-boot] [data-pick="glance"] [data-hint] {
   display: inline;
 }
 html:not([data-word-layout]) main[data-boot] [data-pick="overview"],
 html[data-word-layout="overview"] main[data-boot] [data-pick="overview"],
-html[data-word-layout="bilingual"] main[data-boot] [data-pick="bilingual"],
 html[data-word-layout="classic"] main[data-boot] [data-pick="classic"],
 html[data-word-layout="map"] main[data-boot]:not([data-layouts~="map"]) [data-pick="classic"],
-html[data-word-layout="read"] main[data-boot]:not([data-layouts~="read"]) [data-pick="classic"],
 html[data-word-layout="glance"] main[data-boot]:not([data-layouts~="glance"]) [data-pick="classic"],
 html[data-word-layout="map"] main[data-boot][data-layouts~="map"] [data-pick="map"],
-html[data-word-layout="read"] main[data-boot][data-layouts~="read"] [data-pick="read"],
 html[data-word-layout="glance"] main[data-boot][data-layouts~="glance"] [data-pick="glance"] {
   background-color: var(--zs-btn);
   color: var(--zs-btn-ink);

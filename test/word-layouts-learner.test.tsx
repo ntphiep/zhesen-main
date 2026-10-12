@@ -5,10 +5,8 @@ import { renderToString } from 'react-dom/server'
 import { DOG_SENSES, GUARANTEE_BACKLINK_ROWS, WARRANTY_LAYER_ROW, WARRANTY_SENSES } from './helpers/learner'
 import { LookupView } from '@/components/lookup/LookupView'
 import { MapLayout } from '@/components/lookup/MapLayout'
-import { ReadLayout } from '@/components/lookup/ReadLayout'
 import { GlanceLayout } from '@/components/lookup/GlanceLayout'
 import { OverviewLayout } from '@/components/lookup/OverviewLayout'
-import { BilingualLayout } from '@/components/lookup/BilingualLayout'
 import { ClassicLayout } from '@/components/lookup/ClassicLayout'
 import { parseBacklinks, parseLearnerLayer } from '@/lib/dictionary/learner'
 import {
@@ -46,13 +44,13 @@ beforeEach(() => {
 describe('which layouts an entry offers', () => {
   it('offers the three learner layouts only with a layer', () => {
     const keys = (learner: boolean) => availableLayouts({ learner }).map((l) => l.key)
-    expect(keys(false)).toEqual(['overview', 'bilingual', 'classic'])
-    expect(keys(true)).toEqual(['overview', 'bilingual', 'classic', 'map', 'read', 'glance'])
+    expect(keys(false)).toEqual(['overview', 'classic'])
+    expect(keys(true)).toEqual(['overview', 'classic', 'map', 'glance'])
   })
 
   it('draws the classic page for a learner layout on an entry without a layer', () => {
     const cases: [WordLayout, boolean, WordLayout][] = [
-      ['map', false, 'classic'], ['glance', false, 'classic'], ['map', true, 'map'], ['bilingual', false, 'bilingual'],
+      ['map', false, 'classic'], ['glance', false, 'classic'], ['map', true, 'map'], ['classic', false, 'classic'],
     ]
     for (const [stored, learner, drawn] of cases) expect(resolveLayout(stored, { learner })).toBe(drawn)
   })
@@ -64,19 +62,19 @@ describe('which layouts an entry offers', () => {
   })
 
   it('renders classic, and keeps the stored choice, when the entry has no layer', async () => {
-    localStorage.setItem('zhesen:word-layout', 'read')
+    localStorage.setItem('zhesen:word-layout', 'glance')
     render(<LookupView detail={{ ...warranty, id: 'en:plain', senses: [] }} characters={[]} siblings={[]} />)
     expect(screen.getByRole('button', { name: 'Cổ điển' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.queryByRole('button', { name: 'Trang đọc' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Toàn cảnh' })).not.toBeInTheDocument()
     expect(document.querySelector('[data-rendered-layout]')).toHaveAttribute('data-rendered-layout', 'classic')
-    expect(localStorage.getItem('zhesen:word-layout')).toBe('read')
+    expect(localStorage.getItem('zhesen:word-layout')).toBe('glance')
   })
 
   it('says why classic shows instead of the stored layout, and lists what the entry offers', () => {
     localStorage.setItem('zhesen:word-layout', 'map')
     render(<LookupView detail={{ ...warranty, id: 'en:plain', senses: [] }} characters={[]} siblings={[]} />)
     expect(screen.getByText('Từ này chưa có bố cục Bản đồ nghĩa, đang hiện Cổ điển.')).toBeInTheDocument()
-    expect(document.querySelector('main')).toHaveAttribute('data-layouts', 'overview bilingual classic')
+    expect(document.querySelector('main')).toHaveAttribute('data-layouts', 'overview classic')
   })
 
   it('marks the stored overview as the default and names every layout in the phone picker', () => {
@@ -85,9 +83,9 @@ describe('which layouts an entry offers', () => {
     expect(screen.queryByText(/chưa có bố cục/)).not.toBeInTheDocument()
     const select = screen.getByRole('combobox', { name: 'Bố cục' })
     expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual([
-      'Tổng quan (mặc định)', 'Song ngữ', 'Cổ điển', 'Bản đồ nghĩa', 'Trang đọc', 'Toàn cảnh',
+      'Tổng quan (mặc định)', 'Cổ điển', 'Bản đồ nghĩa', 'Toàn cảnh',
     ])
-    expect(document.querySelector('main')).toHaveAttribute('data-layouts', 'overview bilingual classic map read glance')
+    expect(document.querySelector('main')).toHaveAttribute('data-layouts', 'overview classic map glance')
   })
 
   it('switches to a learner layout, remembers it and marks it as the default', async () => {
@@ -109,32 +107,31 @@ describe('the server pass', () => {
     const main = box.querySelector('main')
     expect(main).toHaveAttribute('data-boot')
     expect([...box.querySelectorAll('[data-panel]')].map((p) => p.getAttribute('data-panel'))).toEqual([
-      'overview', 'bilingual', 'classic', 'map', 'read', 'glance',
+      'overview', 'classic', 'map', 'glance',
     ])
     const ids = [...box.querySelectorAll('[id]')].map((e) => e.id)
     expect(ids.length).toBeGreaterThan(0)
     expect(new Set(ids).size).toBe(ids.length)
-    expect(box.querySelector('[data-panel="read"] nav a')).toHaveAttribute('href', '#read-sense-1')
+    expect(box.querySelector('[data-panel="glance"] nav a')).toHaveAttribute('href', '#glance-sense-1')
     expect(box.querySelectorAll('[data-note]')).toHaveLength(0)
   })
 
   it('writes a note for each learner layout an entry without a layer lacks', () => {
     const box = document.createElement('div')
     box.innerHTML = renderToString(<LookupView detail={{ ...warranty, id: 'en:plain', senses: [] }} characters={[]} siblings={[]} />)
-    expect([...box.querySelectorAll('[data-panel]')].map((p) => p.getAttribute('data-panel'))).toEqual(['overview', 'bilingual', 'classic'])
+    expect([...box.querySelectorAll('[data-panel]')].map((p) => p.getAttribute('data-panel'))).toEqual(['overview', 'classic'])
     expect([...box.querySelectorAll('[data-note]')].map((n) => n.textContent)).toEqual([
       'Từ này chưa có bố cục Bản đồ nghĩa, đang hiện Cổ điển.',
-      'Từ này chưa có bố cục Trang đọc, đang hiện Cổ điển.',
       'Từ này chưa có bố cục Toàn cảnh, đang hiện Cổ điển.',
     ])
   })
 
   it('keeps one panel once the client renders', () => {
-    localStorage.setItem('zhesen:word-layout', 'read')
+    localStorage.setItem('zhesen:word-layout', 'classic')
     render(<LookupView detail={warranty} characters={[]} siblings={[]} learner={layer} backlinks={backlinks} />)
-    expect([...document.querySelectorAll('[data-panel]')].map((p) => p.getAttribute('data-panel'))).toEqual(['read'])
+    expect([...document.querySelectorAll('[data-panel]')].map((p) => p.getAttribute('data-panel'))).toEqual(['classic'])
     expect(document.querySelector('main')).not.toHaveAttribute('data-boot')
-    expect(document.getElementById('sense-1')).not.toBeNull()
+    expect(screen.getByRole('heading', { level: 1, name: 'warranty' })).toBeInTheDocument()
   })
 })
 
@@ -144,7 +141,7 @@ describe('the layers that mention a word', () => {
     senses: [{ id: 'en:guarantee#1', pos: 'noun', glossVi: 'sự bảo đảm', glossEn: 'A promise', senseOrder: 1 }],
   }
 
-  it('shows warranty on en:guarantee in the overview, the classic and the bilingual page', async () => {
+  it('shows warranty on en:guarantee in the overview and the classic page', async () => {
     render(<LookupView detail={guarantee} characters={[]} siblings={[]} backlinks={backlinks} />)
     const shown = async () => {
       expect(await screen.findByRole('heading', { name: 'Xuất hiện ở từ khác' })).toBeInTheDocument()
@@ -153,9 +150,6 @@ describe('the layers that mention a word', () => {
     }
     await shown()
     await userEvent.click(screen.getByRole('button', { name: 'Cổ điển' }))
-    await shown()
-    await userEvent.click(screen.getByRole('button', { name: 'Song ngữ' }))
-    await shown()
   })
 
   it('draws no block on a word nobody mentions', () => {
@@ -251,28 +245,6 @@ describe('MapLayout', () => {
   })
 })
 
-describe('ReadLayout', () => {
-  it('draws every core sense in full, then the minor senses and a contents list', () => {
-    render(<ReadLayout view={view} layer={layer} />)
-    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent).slice(0, 4)).toEqual([
-      'bảo hành, giấy bảo hành', 'sự bảo đảm, sự cam đoan', 'bảo đảm, điều khoản bảo đảm', 'Nghĩa khác và dạng từ · 5',
-    ])
-    expect(screen.getAllByRole('heading', { level: 3, name: 'Kết hợp hay gặp (collocation)' })).toHaveLength(3)
-    expect(screen.getByText('Nghĩa khác và dạng từ · 5')).toBeInTheDocument()
-    const toc = screen.getByRole('navigation', { name: 'Trên trang này' })
-    expect(within(toc).getByRole('link', { name: /bảo hành/ })).toHaveAttribute('href', '#sense-1')
-    expect(within(toc).getByRole('link', { name: /5 nghĩa khác/ })).toHaveAttribute('href', '#minor-senses')
-    expect(document.getElementById('sense-3')).not.toBeNull()
-  })
-})
-
-describe('ReadLayout contents', () => {
-  it('leaves out the contents when there is one section to list', () => {
-    render(<ReadLayout view={view} layer={{ ...layer, senses: layer.senses.slice(0, 1), labels: [] }} />)
-    expect(screen.queryByRole('navigation', { name: 'Trên trang này' })).not.toBeInTheDocument()
-  })
-})
-
 describe('GlanceLayout', () => {
   it('lights up what belongs to the sense under the pointer and dims the rest', async () => {
     render(<GlanceLayout view={view} layer={layer} />)
@@ -301,14 +273,6 @@ describe('a layer derived from the dictionary', () => {
     expect(screen.queryByText('câu soạn mới')).not.toBeInTheDocument()
   })
 
-  it('marks a meaning that came through the English pivot', () => {
-    const senses = [{ id: 'es:casa#1', pos: 'noun', glossVi: null, pivotVi: 'nhà', glossEn: 'house', senseOrder: 1 }]
-    const { view: v, layer: l } = derivedView({ ...warranty, id: 'es:casa', lang: 'es', headword: 'casa', senses })
-    render(<ReadLayout view={v} layer={l} />)
-    expect(within(screen.getByRole('heading', { level: 2, name: /^nhà/ })).getByText('qua tiếng Anh')).toBeInTheDocument()
-    expect(screen.queryByRole('navigation', { name: 'Trên trang này' })).not.toBeInTheDocument()
-  })
-
 
 
 
@@ -316,7 +280,7 @@ describe('a layer derived from the dictionary', () => {
     const took = { ...warranty, id: 'en:took', headword: 'took', senses: [{ id: 'en:took#1', pos: 'verb', glossVi: null, glossEn: 'simple past of take', senseOrder: 1 }] }
     localStorage.setItem('zhesen:word-layout', 'glance')
     render(<LookupView detail={took} characters={[]} siblings={[]} />)
-    expect(document.querySelector('main')).toHaveAttribute('data-layouts', 'overview bilingual classic')
+    expect(document.querySelector('main')).toHaveAttribute('data-layouts', 'overview classic')
     expect(document.querySelector('[data-rendered-layout]')).toHaveAttribute('data-rendered-layout', 'classic')
   })
 
@@ -327,13 +291,11 @@ describe('a layer derived from the dictionary', () => {
       { text: 'chase', senseOrder: 23, targetId: 'en:chase' },
     ]
     const { view: v, layer: l } = derivedView({ ...warranty, id: 'en:dog', headword: 'dog', senses: DOG_SENSES, senseLinks })
-    render(<ReadLayout view={v} layer={l} />)
+    render(<MapLayout view={v} layer={l} />)
     const rail = screen.getByRole('heading', { name: 'Đồng nghĩa theo từng nghĩa (synonym)' }).closest('section')!
     expect(within(rail).getByRole('link', { name: 'guy' })).toHaveAttribute('href', '/dictionary/en/guy')
     expect(within(rail).getByRole('link', { name: 'ratchet' })).toBeInTheDocument()
-    // chase belongs to main sense 23, which the reading page lists under that sense.
     expect(within(rail).queryByRole('link', { name: 'chase' })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: 'chase' })).toHaveLength(1)
   })
 
   it('names the synonym block once, and never "Đồng nghĩa" over antonyms alone', () => {
@@ -358,11 +320,11 @@ describe('the TOEIC mark', () => {
     expect(screen.getByRole('link', { name })).toHaveAttribute('href', '/theory/en/toeic/list/2')
   })
 
-  it('sits in the header of all six layouts', () => {
+  it('sits in the header of every layout', () => {
     const toeicView = { ...view, toeic: { rank: 42, href: '/theory/en/toeic/list/2' } }
     const layouts = [
-      () => <OverviewLayout view={toeicView} />, () => <BilingualLayout view={toeicView} />, () => <ClassicLayout view={toeicView} />,
-      () => <MapLayout view={toeicView} layer={layer} />, () => <ReadLayout view={toeicView} layer={layer} />,
+      () => <OverviewLayout view={toeicView} />, () => <ClassicLayout view={toeicView} />,
+      () => <MapLayout view={toeicView} layer={layer} />,
       () => <GlanceLayout view={toeicView} layer={layer} />,
     ]
     for (const Layout of layouts) {
