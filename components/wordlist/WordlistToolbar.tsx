@@ -110,30 +110,31 @@ export function WordlistToolbar({
         </select>
       )}
 
-      {/* Phrasal verbs, idioms and collocations are saved beside words. */}
-      {kindOptions.length > 1 && (
+      {/* One select for what the "Từ loại" column shows: the kind of item (a phrasal verb,
+          an idiom) and the part of speech. Two selects split one column across two
+          places, and "Cụm động từ" was missing from the one named after the column. */}
+      {kindOptions.length + posOptions.length > 1 && (
         <select
-          value={kindFilter}
-          onChange={(e) => onKindFilterChange(kindOptions.find((o) => o.key === e.target.value)?.key ?? '')}
-          className={s.field}
-          aria-label="Lọc loại mục"
-        >
-          <option value="">Từ và cụm từ</option>
-          {kindOptions.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
-        </select>
-      )}
-
-      {posOptions.length > 1 && (
-        <select
-          value={posFilter}
-          onChange={(e) => onPosFilterChange(e.target.value)}
+          value={kindFilter ? `k:${kindFilter}` : posFilter ? `p:${posFilter}` : ''}
+          onChange={(e) => {
+            const v = e.target.value
+            onKindFilterChange(kindOptions.find((o) => `k:${o.key}` === v)?.key ?? '')
+            onPosFilterChange(v.startsWith('p:') ? v.slice(2) : '')
+          }}
           className={s.field}
           aria-label="Lọc từ loại"
         >
           <option value="">Tất cả từ loại</option>
-          {/* The abbreviation leads, as it does everywhere else, but an option list has
-              no column to be read in: "art." and "adv." are indistinguishable alone. */}
-          {posOptions.map((g) => <option key={g.key} value={g.key}>{g.abbr} ({g.labelVi})</option>)}
+          {kindOptions.length > 1 && (
+            <optgroup label="Từ hay cụm từ">
+              {kindOptions.map((o) => <option key={o.key} value={`k:${o.key}`}>{o.label}</option>)}
+            </optgroup>
+          )}
+          {posOptions.length > 0 && (
+            <optgroup label="Từ loại">
+              {posOptions.map((g) => <option key={g.key} value={`p:${g.key}`}>{g.labelVi} ({g.abbr})</option>)}
+            </optgroup>
+          )}
         </select>
       )}
 

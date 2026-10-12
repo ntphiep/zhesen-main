@@ -1,4 +1,5 @@
-import type { UserWord } from './types'
+import { formatPos } from '@/lib/dictionary/pos'
+import { KIND_LABEL, wordKind, type UserWord } from './types'
 
 /** The table's columns and the preferences held over them. Data rather than markup, so the
  *  header, the cells, the menu and the sort all read one list. */
@@ -226,6 +227,11 @@ export function columnValue(w: UserWord, key: SortKey): string | number {
     // two words carrying the same tags have to land together.
     case 'tags': return [...w.tags].sort().join(', ')
     case 'fsrsLapses': return w.fsrsLapses
+    // What the cell shows ("Cụm động từ v."), not the stored "verb".
+    case 'pos': {
+      const kind = wordKind(w)
+      return [kind === 'word' ? '' : KIND_LABEL[kind], formatPos(w.pos)].filter(Boolean).join(' ')
+    }
     case 'status': return STATUS_ORDER[w.status]
     default: return w[key] ?? ''
   }
