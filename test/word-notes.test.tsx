@@ -77,7 +77,7 @@ describe('word notes', () => {
     expect(within(meanings).getByText('đi với to')).toBeInTheDocument()
   })
 
-  it.each([['Song ngữ'], ['Cổ điển'], ['Trang đọc']])('carries the notes into %s', async (name) => {
+  it.each([['Cổ điển'], ['Bản đồ nghĩa'], ['Toàn cảnh']])('carries the notes into %s', async (name) => {
     render(<LookupView detail={discretion} characters={[]} siblings={[]} />)
     await userEvent.click(screen.getByRole('button', { name }))
     expect(await screen.findByRole('heading', { name: 'Nguồn gốc (etymology)' })).toBeInTheDocument()

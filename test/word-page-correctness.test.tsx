@@ -52,7 +52,7 @@ describe('thesaurus-style related terms', () => {
     relations: ['speedy', 'rush'].map((t) => ({ relationType: 'related', relatedText: t, relatedEntryId: null })),
   })
 
-  it.each([['Tổng quan'], ['Song ngữ'], ['Cổ điển']])('calls them related words, not words of the same root, in %s', async (name) => {
+  it.each([['Tổng quan'], ['Cổ điển']])('calls them related words, not words of the same root, in %s', async (name) => {
     render(<LookupView detail={run} characters={[]} siblings={[]} />)
     await userEvent.click(screen.getByRole('button', { name }))
     await screen.findAllByText('speedy')
