@@ -66,7 +66,7 @@ describe('ToeicTopicSave', () => {
     })
     expect(sent[1]).toMatchObject({ entryId: 'en:agenda', meaningVi: 'chương trình họp', example: null, tags: ['toeic'] })
 
-    expect(screen.getByRole('link', { name: /Luyện tập/ })).toHaveAttribute('href', '/practice')
+    expect(screen.getByRole('link', { name: /Luyện tập/ })).toHaveAttribute('href', '/practice/quiz?entry=en%3Abranch&entry=en%3Aagenda&entry=en%3Amemo')
   })
 
   it('turns the save button of each word into Đã có trong sổ tay once the topic is saved', async () => {

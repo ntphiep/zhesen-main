@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { LinkPending } from '@/components/ui/LinkPending'
 import { useAccount } from '@/lib/hooks/useAccount'
 import { loadSupabaseClient } from '@/lib/supabase/loadClient'
+import { subsetHref } from '@/lib/practice/subset'
 import { announceSaved } from '@/lib/wordlist/pendingSave'
 import { ArrowRight, Warn } from './Glyphs'
 import s from './Theory.module.css'
@@ -11,6 +12,12 @@ import type { LangCode } from '@/lib/languages'
 import type { WordDraft } from '@/lib/wordlist/types'
 
 type SaveState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'done'; added: number } | { kind: 'error' }
+
+/** A quiz over exactly these words, the notebook lending the wrong answers. */
+function practiceHref(drafts: WordDraft[]): string {
+  const ids = drafts.flatMap((d) => (d.entryId ? [d.entryId] : []))
+  return ids.length ? subsetHref('/practice/quiz', { kind: 'entries', ids }) : '/practice'
+}
 
 /** Save every word of a topic not yet in the notebook, with its test meaning, its sentence
  *  and the TOEIC tag. The notebook belongs to an account, so without one the same label
@@ -72,8 +79,8 @@ export function ToeicTopicSave({ lang, path, drafts, scope = 'chủ đề' }: {
         {label}
       </button>
       {state.kind === 'done' && (
-        <Link href="/practice" prefetch={false} className={s.ghost}>
-          Luyện tập <ArrowRight />
+        <Link href={practiceHref(drafts)} prefetch={false} className={s.ghost}>
+          {`Luyện tập ${scope} này`} <ArrowRight />
           <LinkPending />
         </Link>
       )}

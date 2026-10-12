@@ -13,6 +13,7 @@ import { nameInSentence, type Language } from '@/lib/languages'
 import { Ipa } from '@/components/ui/Ipa'
 import { loadSupabaseClient } from '@/lib/supabase/loadClient'
 import { pageCount } from '@/lib/wordlist/paginate'
+import { subsetHref } from '@/lib/practice/subset'
 
 type AddAllState = { kind: 'idle' } | { kind: 'busy' } | { kind: 'done'; added: number; skipped: number } | { kind: 'error' }
 
@@ -120,6 +121,13 @@ export function LevelWordList({ language, level, levelIsEstimated, initialItems,
                 <LinkPending />
               </Link>
             )
+          )}
+
+          {addAll.kind === 'done' && (
+            <Link href={subsetHref('/practice/quiz', { kind: 'level', lang: language.code, level })} prefetch={false} className={s.ghost}>
+              {`Luyện tập từ ${level}`} <ArrowRight />
+              <LinkPending />
+            </Link>
           )}
 
           {pages > 1 && (
