@@ -25,7 +25,6 @@ export default async function ToeicHubPage() {
     <main className={`${p.pr} mx-auto w-full max-w-page px-6 pt-8 pb-16 font-ui`}>
       <BackLink href={theoryBlockPath('en', 'toeic')}>Lý thuyết TOEIC</BackLink>
       <h1 className={p.title}>Luyện đề TOEIC Reading</h1>
-      <p className={p.lede}>Làm đề có giờ hoặc luyện từng Part.</p>
       <div className={t.tests}>
         {TOEIC_TESTS.map((test) => {
           const path = toeicTestPath(test.id)

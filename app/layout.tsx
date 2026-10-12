@@ -23,9 +23,7 @@ const beVietnamPro = Be_Vietnam_Pro({
   weight: ['400', '600', '700', '800'],
 })
 
-const DESCRIPTION =
-  'Từ điển và sổ tay từ vựng cho người Việt học tiếng Trung, Tây Ban Nha và Anh. ' +
-  'Tra từ hai chiều với tiếng Việt, lưu vào sổ tay rồi ôn lại.'
+const DESCRIPTION = 'Tra từ tiếng Anh, Trung, Tây Ban Nha với tiếng Việt rồi lưu vào sổ tay để ôn.'
 
 export const metadata: Metadata = {
   // Without it every relative URL in a metadata field is a build error, and the

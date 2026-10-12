@@ -17,7 +17,6 @@
 /* Title row */
 .head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem; }
 .title { margin: 0; font-size: 2.34375rem; line-height: 1.1; font-weight: 800; letter-spacing: -0.03em; color: var(--zs-ink); }
-.lede { margin: 0.4rem 0 0; font-size: 1.0625rem; color: var(--zs-soft); }
 
 /* Buttons and fields */
 .btn, .ghost, .danger { display: inline-flex; flex: none; align-items: center; justify-content: center; gap: 0.4rem; min-height: 2.5rem; padding: 0 1.1rem; border-radius: 999px; font-size: 0.9375rem; font-weight: 700; line-height: 1.2; white-space: nowrap; text-decoration: none; cursor: pointer; transition: background-color 150ms var(--ease-std), border-color 150ms var(--ease-std), color 150ms var(--ease-std), transform 160ms var(--ease-spring); }

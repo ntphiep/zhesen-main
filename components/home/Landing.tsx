@@ -13,9 +13,9 @@ import { newsreader, patrickHand } from './fonts'
 import s from './Landing.module.css'
 
 const THEORY: { lang: LangCode; text: string }[] = [
-  { lang: 'en', text: 'Phát âm, ngữ pháp và cách dùng từ, giải thích bằng tiếng Việt. Chỉ ra trước những chỗ người Việt hay nhầm.' },
-  { lang: 'zh', text: 'Đi từ những câu đầu tiên tới ngữ pháp khó hơn, theo từng trình độ. Gặp từ mới thì lưu luôn vào sổ tay để ôn.' },
-  { lang: 'es', text: 'Danh từ có giống, động từ đổi theo ngôi. Giải thích từ đầu những thứ tiếng Việt không có, dễ trước khó sau.' },
+  { lang: 'en', text: 'Phát âm, ngữ pháp và cách dùng từ, chỉ ra trước những chỗ người Việt hay nhầm.' },
+  { lang: 'zh', text: 'Đi từ những câu đầu tiên tới ngữ pháp khó hơn, theo từng trình độ.' },
+  { lang: 'es', text: 'Danh từ có giống, động từ đổi theo ngôi. Giải thích từ đầu những thứ tiếng Việt không có.' },
 ]
 
 const ARROW = <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" /></svg>
@@ -36,7 +36,7 @@ export function Landing({ example, facts, take, phrases }: {
         <div className={s.wrap}>
           <h2 id="review-title" className={s.h2} data-reveal="">Từ đã lưu quay lại trước khi quên.</h2>
           <p className={s.lede} data-reveal="" data-i="1">
-            Mỗi từ đã lưu có lịch ôn riêng. Luyện cách nào cũng ghi vào lịch đó. Nhớ tốt thì từ quay lại muộn hơn, quên thì quay lại sớm hơn.
+            Luyện cách nào cũng ghi vào lịch ôn của từ. Nhớ tốt thì từ quay lại muộn hơn, quên thì quay lại sớm hơn.
           </p>
           <ReviewDemo example={example} />
         </div>
@@ -46,9 +46,6 @@ export function Landing({ example, facts, take, phrases }: {
         <section className={s.senses} aria-labelledby="senses-title">
           <div className={s.wrap}>
             <h2 id="senses-title" className={s.h2} data-reveal="">Từ {take.headword} có {take.senseCount >= 10 ? 'rất nhiều' : take.senseCount} nghĩa. Zhesen đưa những nghĩa hay gặp lên trước.</h2>
-            <p className={s.lede} data-reveal="" data-i="1">
-              Mỗi nghĩa chính có cụm từ hay đi kèm, câu ví dụ và từ tương đương trong tiếng Trung, tiếng Tây Ban Nha. Những nghĩa ít gặp vẫn nằm ở trang từ, xếp riêng bên dưới.
-            </p>
             <SensesMap take={take} />
             {take.tail.length > 0 && (
               <div className={s.tail} data-reveal="">
@@ -69,9 +66,6 @@ export function Landing({ example, facts, take, phrases }: {
                 <Fragment key={p.href}>{i > 0 && ', '}<span lang="en">{p.headword}</span> là {p.vi}</Fragment>
               ))}.
             </h2>
-            <p className={s.lede} data-reveal="" data-i="1">
-              Mỗi cụm động từ có nghĩa riêng, nối sang từ cùng nghĩa trong tiếng Trung và <span className={s.nw}>tiếng Tây Ban Nha</span>.
-            </p>
             <Phrases family={phrases} />
           </div>
         </section>

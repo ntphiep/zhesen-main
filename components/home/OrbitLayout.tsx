@@ -63,7 +63,7 @@ export function notebookMarks(view: Pick<HomeView, 'rows' | 'pending'>): { dots:
 
 /** The key under the globe, true to what it draws when the labels run out. */
 export function stageKey(pinned: number, due: number): string {
-  const labels = pinned < due ? `${pinned} trong ${due} từ đến hạn hôm nay có nhãn.` : 'Từ đến hạn hôm nay có nhãn.'
+  const labels = pinned < due ? `${pinned} trong ${due} từ đến hạn hôm nay hiện tên.` : 'Từ đến hạn hôm nay hiện tên.'
   return `Mỗi chấm là một từ trong sổ tay. ${labels}`
 }
 

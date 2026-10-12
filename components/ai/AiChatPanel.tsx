@@ -161,8 +161,8 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
               {turns.length === 0 && (
                 <p className="text-black/55">
                   {seed
-                    ? `Hỏi về ${seed.label}. Câu trả lời do AI viết.`
-                    : 'Hỏi về từ đang xem, nhờ sửa câu hoặc hỏi nên ôn gì. Câu trả lời do AI viết, chưa qua từ điển.'}
+                    ? `Hỏi về ${seed.label}.`
+                    : 'Hỏi về từ đang xem, nhờ sửa câu hoặc hỏi nên ôn gì.'}
                 </p>
               )}
               {turns.map((t, i) => (

@@ -180,7 +180,7 @@ describe('AiChatPanel', () => {
     vi.mocked(callAi).mockResolvedValue({ status: 'ok', data: { reply: 'Vì by chỉ hạn chót.' } })
     render(<AiChatPanel enabled />)
     act(() => askAi({ label: 'câu 101', seed: 'Câu 101. Đáp án: (A) by.', draft: 'Giải thích thêm câu này.' }))
-    expect(screen.getByText('Hỏi về câu 101. Câu trả lời do AI viết.')).toBeInTheDocument()
+    expect(screen.getByText('Hỏi về câu 101.')).toBeInTheDocument()
     expect(screen.getByLabelText('Câu hỏi cho AI')).toHaveValue('Giải thích thêm câu này.')
     await userEvent.click(screen.getByRole('button', { name: 'Gửi' }))
     expect(callAi).toHaveBeenCalledWith('chat', expect.objectContaining({
@@ -208,7 +208,7 @@ describe('AiChatPanel', () => {
     await act(async () => reply({ status: 'ok', data: { reply: 'Trả lời cũ.' } }))
     expect(screen.queryByText('Trả lời cũ.')).toBeNull()
     expect(screen.queryByText('Câu cũ?')).toBeNull()
-    expect(screen.getByText('Hỏi về câu 102. Câu trả lời do AI viết.')).toBeInTheDocument()
+    expect(screen.getByText('Hỏi về câu 102.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Gửi' })).toBeEnabled()
   })
 })

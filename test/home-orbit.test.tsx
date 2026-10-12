@@ -32,8 +32,8 @@ describe('the globe of the notebook', () => {
   })
 
   it('says how many of the due words carry a label when not all of them fit', () => {
-    expect(stageKey(18, 20)).toBe('Mỗi chấm là một từ trong sổ tay. 18 trong 20 từ đến hạn hôm nay có nhãn.')
-    expect(stageKey(5, 5)).toBe('Mỗi chấm là một từ trong sổ tay. Từ đến hạn hôm nay có nhãn.')
+    expect(stageKey(18, 20)).toBe('Mỗi chấm là một từ trong sổ tay. 18 trong 20 từ đến hạn hôm nay hiện tên.')
+    expect(stageKey(5, 5)).toBe('Mỗi chấm là một từ trong sổ tay. Từ đến hạn hôm nay hiện tên.')
   })
 
   it('lets only a label at full strength take focus', () => {

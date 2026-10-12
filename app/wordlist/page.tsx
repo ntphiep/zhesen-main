@@ -33,10 +33,7 @@ export default async function WordlistPage({
   return (
     <main className={`${s.nb} ${newsreader.variable} mx-auto max-w-page px-6 pt-8 pb-16 font-ui`}>
       <div className={s.head}>
-        <div>
-          <h1 className={s.title}>Sổ tay</h1>
-          <p className={s.lede}>Xem và sửa các từ đã lưu.</p>
-        </div>
+        <h1 className={s.title}>Sổ tay</h1>
         {words.length > 0 && (
           <Link href="/practice" className={due > 0 ? s.btn : s.ghost}>
             Luyện tập{due > 0 ? ` (${due})` : ''}
