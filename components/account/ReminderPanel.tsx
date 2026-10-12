@@ -8,6 +8,7 @@ import {
   type Reminder,
 } from '@/lib/push/reminders'
 import { Said } from './Said'
+import { Setting } from './Setting'
 import s from './Account.module.css'
 
 type Feedback = { tone: 'ok' | 'bad'; text: string } | null
@@ -123,9 +124,7 @@ export function ReminderPanel({ publicKey, userId, current }: {
   const limit = support ? LIMITS[support] : undefined
 
   return (
-    <section className={s.panel} data-m="remind" data-i="7">
-      <h2>Nhắc ôn</h2>
-      <p>Nhận một thông báo mỗi ngày khi có từ đến hạn ôn.</p>
+    <Setting title="Nhắc ôn" hint="Nhận một thông báo mỗi ngày khi có từ đến hạn ôn.">
       {(capable || on) && (
         <div className={s.row}>
           <select
@@ -155,6 +154,6 @@ export function ReminderPanel({ publicKey, userId, current }: {
       )}
       {limit && <Said tone="bad" text={limit} />}
       {feedback && <Said tone={feedback.tone} text={feedback.text} />}
-    </section>
+    </Setting>
   )
 }

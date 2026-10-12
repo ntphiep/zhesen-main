@@ -14,7 +14,6 @@
 .back span { display: inline-block; font-size: 1rem; transition: transform 200ms var(--ease-spring); }
 .back:hover span { transform: translateX(-3px); }
 .title { margin: 0.6rem 0 0; font-size: 2.34375rem; line-height: 1.1; font-weight: 800; letter-spacing: -0.03em; color: var(--zs-ink); }
-.lede { margin: 0.4rem 0 0; font-size: 1.0625rem; color: var(--zs-soft); }
 
 /* Buttons and fields */
 .btn, .ghost { display: inline-flex; flex: none; align-items: center; justify-content: center; gap: 0.45rem; min-height: 2.75rem; padding: 0 1.2rem; border-radius: 999px; font-size: 0.9375rem; font-weight: 700; line-height: 1.2; white-space: nowrap; text-decoration: none; cursor: pointer; transition: background-color 150ms var(--ease-std), border-color 150ms var(--ease-std), color 150ms var(--ease-std), transform 160ms var(--ease-spring); }
@@ -78,43 +77,40 @@ select.field { padding-right: 0.5rem; cursor: pointer; }
 .swap a:hover > span[aria-hidden] { transform: translateX(3px); }
 
 /* ---------- /account ---------- */
-.board { display: grid; gap: 1rem; margin-top: 2rem; }
-.board > section { animation: rise 420ms var(--ease-enter) both; animation-delay: calc(var(--i, 0) * 60ms); }
+.board { display: grid; gap: 1rem; margin-top: 1.75rem; }
+.board > * { animation: rise 420ms var(--ease-enter) both; animation-delay: calc(var(--i, 0) * 60ms); }
 .board > [data-i="1"] { --i: 1; }
-.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-.grid > [data-i="3"] { --i: 3; }
-.grid > [data-i="4"] { --i: 4; }
-.grid > [data-i="5"] { --i: 5; }
-.grid > [data-i="6"] { --i: 6; }
-.grid > [data-i="7"] { --i: 7; grid-column: 1 / -1; }
-.grid > * { animation: rise 420ms var(--ease-enter) both; animation-delay: calc(var(--i, 0) * 60ms); }
-@media (max-width: 767px) {
-  .grid { grid-template-columns: minmax(0, 1fr); }
-}
-
-.panel { padding: 1.4rem 1.5rem 1.5rem; border: 1px solid transparent; border-radius: 20px; background: var(--zs-bg); box-shadow: 0 0 0 1.5px var(--edge), var(--lift); }
-.panel h2 { display: flex; align-items: center; gap: 0.6rem; margin: 0; font-size: 1.3125rem; font-weight: 800; letter-spacing: -0.02em; color: var(--zs-ink); }
-/* A marker per section, a different step of the ramp each. */
-.panel h2::before { content: ""; width: 0.7rem; height: 0.7rem; flex: none; border-radius: 3px; background: var(--c-m, var(--sea-500)); }
-.panel[data-m="progress"] { --c-m: var(--sea-600); }
-.panel[data-m="theme"] { --c-m: var(--sea-400); }
-.panel[data-m="name"] { --c-m: var(--sea-300); }
-.panel[data-m="password"] { --c-m: var(--sea-500); }
-.panel[data-m="data"] { --c-m: var(--sea-200); }
-.panel[data-m="admin"], .panel[data-m="remind"] { --c-m: var(--sea-700); }
-:global(:root[data-theme="dark"]) .panel:is([data-m="admin"], [data-m="remind"]) { --c-m: var(--sea-100); }
-.panel > p { margin: 0.35rem 0 0; font-size: 0.9375rem; color: var(--zs-soft); }
-/* The progress panel sits on the pastel, the settings on white. */
-.panel[data-m="progress"] { background: var(--tint-2); box-shadow: none; }
+.board > [data-i="2"] { --i: 2; }
 
 /* Who is signed in */
 .who { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.25rem; padding: 1.25rem 1.5rem; border: 1px solid transparent; border-radius: 20px; background: var(--tint-1); box-shadow: inset 0 0 0 1.5px var(--edge); }
-.mono { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; flex: none; border-radius: 999px; background: var(--zs-btn); color: var(--zs-btn-ink); font-size: 1.3125rem; font-weight: 800; text-transform: uppercase; }
+.mono { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; flex: none; border-radius: 999px; background: var(--zs-btn); color: var(--zs-btn-ink); font-size: 1.5rem; font-weight: 800; text-transform: uppercase; }
 .whoText { flex: 1 1 16rem; min-width: 0; }
-.whoLabel { margin: 0; font-size: 0.8125rem; font-weight: 700; color: var(--zs-pen); }
-.email { margin: 0.1rem 0 0; font-size: 1.3125rem; font-weight: 800; letter-spacing: -0.015em; color: var(--zs-ink); overflow-wrap: anywhere; }
-.whoMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.75rem; margin: 0.45rem 0 0; font-size: 0.8125rem; color: var(--zs-soft); }
+.name { margin: 0; font-size: 1.3125rem; line-height: 1.25; font-weight: 800; letter-spacing: -0.015em; color: var(--zs-ink); overflow-wrap: break-word; }
+.mail { margin: 0.1rem 0 0; font-size: 0.9375rem; font-weight: 600; color: var(--zs-pen); overflow-wrap: break-word; }
+.whoMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.75rem; margin: 0.5rem 0 0; font-size: 0.8125rem; color: var(--zs-soft); }
 .role { display: inline-flex; align-items: center; padding: 0.15rem 0.65rem; border-radius: 999px; background: var(--zs-chip); font-size: 0.75rem; font-weight: 700; color: var(--zs-ink); }
+
+/* Progress, on the pastel, with the way on below it. */
+.panel { padding: 1.4rem 1.5rem 1.5rem; border-radius: 20px; background: var(--tint-2); }
+.panel h2 { display: flex; align-items: center; gap: 0.6rem; margin: 0; font-size: 1.3125rem; font-weight: 800; letter-spacing: -0.02em; color: var(--zs-ink); }
+.panel h2::before { content: ""; width: 0.7rem; height: 0.7rem; flex: none; border-radius: 3px; background: var(--sea-600); }
+.panel > .row { margin-top: 1.25rem; }
+
+/* Settings: one card, a row per setting, its name left of its control. */
+.settings { border: 1px solid transparent; border-radius: 20px; background: var(--zs-bg); box-shadow: 0 0 0 1.5px var(--edge), var(--lift); }
+.set { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); gap: 0.75rem 2.5rem; align-items: start; padding: 1.35rem 1.5rem; }
+.set + .set { border-top: 1.5px solid var(--zs-line); }
+/* Level with the middle of a 2.75rem control. */
+.setHead { padding-top: 0.6rem; }
+.setHead h2 { margin: 0; font-size: 1rem; line-height: 1.5; font-weight: 700; color: var(--zs-ink); }
+.setHead p { margin: 0.2rem 0 0; font-size: 0.875rem; color: var(--zs-soft); }
+.setBody { min-width: 0; max-width: 34rem; }
+.setBody > .row:first-child { margin-top: 0; }
+@media (max-width: 767px) {
+  .set { grid-template-columns: minmax(0, 1fr); padding: 1.15rem 1.1rem 1.25rem; }
+  .setHead { padding-top: 0; }
+}
 
 /* Progress: the split by status and by language, drawn as one bar each above its line. */
 .splits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 2rem; margin-top: 1.1rem; }
@@ -135,7 +131,7 @@ select.field { padding-right: 0.5rem; cursor: pointer; }
 .empty { margin: 0.8rem 0 0; font-size: 1rem; font-weight: 700; color: var(--zs-ink); }
 
 @media (prefers-reduced-motion: reduce) {
-  .card, .card::before, .board > section, .grid > *, .meter, .said { animation: none; }
+  .card, .card::before, .board > *, .meter, .said { animation: none; }
   .spin { animation: none; border-right-color: currentColor; opacity: 0.6; }
   .btn, .ghost, .field, .back span, .swap a > span[aria-hidden] { transition: none; }
   .btn:active:not(:disabled), .ghost:active:not(:disabled), .back:hover span, .swap a:hover > span[aria-hidden] { transform: none; }

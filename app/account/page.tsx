@@ -31,19 +31,15 @@ export default async function AccountPage() {
     <main className={`${s.acc} mx-auto max-w-page px-6 pt-8 pb-16 font-ui`}>
       <Link href="/" className={s.back}><span aria-hidden="true">←</span>Trang chủ</Link>
       <h1 className={s.title}>Tài khoản</h1>
-      <p className={s.lede}>
-        Xem tiến độ và chỉnh cài đặt tài khoản.
-      </p>
-      {profile?.role === 'admin' && <div className="mt-8"><AdminEntry /></div>}
-      <div>
-        <AccountSettings
-          email={user.email}
-          profile={profile}
-          stats={stats}
-          joinedAt={user.created_at ?? null}
-          reminders={push ? { publicKey: push.publicKey, userId: user.id, current: reminder } : undefined}
-        />
-      </div>
+      <AccountSettings
+        email={user.email}
+        profile={profile}
+        stats={stats}
+        joinedAt={user.created_at ?? null}
+        reminders={push ? { publicKey: push.publicKey, userId: user.id, current: reminder } : undefined}
+      >
+        {profile?.role === 'admin' && <AdminEntry />}
+      </AccountSettings>
     </main>
   )
 }

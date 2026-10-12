@@ -1,5 +1,6 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { MIN_PASSWORD, setPassword, signOut } from '@/lib/auth/account'
@@ -11,12 +12,14 @@ import { formatWordDate } from '@/lib/wordlist/format'
 import { WordlistStats } from '@/components/wordlist/WordlistStats'
 import { SkillMeters } from '@/components/wordlist/SkillMeters'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { LinkPending } from '@/components/ui/LinkPending'
 import { STATUS_OPTIONS } from '@/lib/wordlist/types'
 import { LANGUAGES } from '@/lib/languages'
 import type { WordlistStats as Stats } from '@/lib/wordlist/stats'
 import type { Reminder } from '@/lib/push/reminders'
 import { ReminderPanel } from './ReminderPanel'
 import { Said } from './Said'
+import { Setting } from './Setting'
 import s from './Account.module.css'
 
 type Feedback = { tone: 'ok' | 'bad'; text: string } | null
@@ -36,7 +39,7 @@ const ROLE_LABEL: Record<Profile['role'], string> = {
  * still signed in; there is no reset link.
  */
 export function AccountSettings({
-  email, profile, stats, joinedAt, reminders,
+  email, profile, stats, joinedAt, reminders, children,
 }: {
   email: string
   profile: Profile | null
@@ -45,6 +48,8 @@ export function AccountSettings({
   joinedAt: string | null
   /** Absent when the deployment has no VAPID key (`pushConfig`). */
   reminders?: { publicKey: string; userId: string; current: Reminder | null }
+  /** Extra rows at the end of the settings list, such as `AdminEntry`. */
+  children?: ReactNode
 }) {
   const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
@@ -105,14 +110,15 @@ export function AccountSettings({
   }
 
   const langs = LANGUAGES.filter((l) => stats.byLang[l.code] > 0)
+  const displayName = profile?.displayName
 
   return (
     <div className={s.board}>
       <section className={s.who}>
         <span aria-hidden="true" className={s.mono}>{email.charAt(0)}</span>
         <div className={s.whoText}>
-          <p className={s.whoLabel}>Đã đăng nhập bằng</p>
-          <p className={s.email}>{email}</p>
+          <p className={s.name}>{displayName ?? <Address email={email} />}</p>
+          {displayName && <p className={s.mail}><Address email={email} /></p>}
           <p className={s.whoMeta}>
             <span className={s.role}>{ROLE_LABEL[profile?.role ?? 'learner']}</span>
             {joinedAt && <span>Tham gia {formatWordDate(joinedAt)}</span>}
@@ -131,7 +137,7 @@ export function AccountSettings({
         </button>
       </section>
 
-      <section className={s.panel} data-m="progress" data-i="1">
+      <section className={s.panel} data-i="1">
         <h2>Tiến độ</h2>
         {stats.total === 0 ? (
           <p className={s.empty}>
@@ -168,19 +174,20 @@ export function AccountSettings({
         {stats.total > 0 && stats.skills && (
           <div className={s.skills}><SkillMeters skills={stats.skills} /></div>
         )}
+        <div className={s.row}>
+          {stats.total === 0 ? (
+            <Link href="/dictionary" prefetch={false} className={s.btn}>Tra từ<LinkPending /></Link>
+          ) : (
+            <>
+              {stats.due > 0 && <Link href="/practice/review" prefetch={false} className={s.btn}>Ôn ngay<LinkPending /></Link>}
+              <Link href="/wordlist" prefetch={false} className={s.ghost}>Mở sổ tay<LinkPending /></Link>
+            </>
+          )}
+        </div>
       </section>
 
-      <div className={s.grid}>
-        <section className={s.panel} data-m="theme" data-i="3">
-          <h2>Giao diện</h2>
-          <p>Chọn giao diện cho trình duyệt này.</p>
-          <div className={s.row}>
-            <ThemeToggle />
-          </div>
-        </section>
-
-        <section className={s.panel} data-m="name" data-i="4">
-          <h2>Tên hiển thị</h2>
+      <div className={s.settings} data-i="2">
+        <Setting title="Tên hiển thị">
           <form onSubmit={saveName} className={s.row}>
             <input
               value={name}
@@ -195,11 +202,9 @@ export function AccountSettings({
             </button>
           </form>
           {nameFeedback && <Said tone={nameFeedback.tone} text={nameFeedback.text} />}
-        </section>
+        </Setting>
 
-        <section className={s.panel} data-m="password" data-i="5">
-          <h2>Mật khẩu</h2>
-          <p>Đổi mật khẩu đăng nhập.</p>
+        <Setting title="Mật khẩu">
           {/* noValidate: the browser's bubble is English; `setPassword` checks in Vietnamese. */}
           <form onSubmit={savePassword} noValidate className={s.row}>
             {/* Tells a password manager which saved account the new password belongs to. */}
@@ -222,11 +227,15 @@ export function AccountSettings({
             </button>
           </form>
           {passwordFeedback && <Said tone={passwordFeedback.tone} text={passwordFeedback.text} />}
-        </section>
+        </Setting>
 
-        <section className={s.panel} data-m="data" data-i="6">
-          <h2>Dữ liệu</h2>
-          <p>Tải cả sổ tay về máy.</p>
+        <Setting title="Giao diện" hint="Chỉ áp dụng cho trình duyệt này.">
+          <ThemeToggle />
+        </Setting>
+
+        {reminders && <ReminderPanel {...reminders} />}
+
+        <Setting title="Dữ liệu" hint="Tải cả sổ tay về máy.">
           <div className={s.row}>
             <button
               type="button"
@@ -248,12 +257,19 @@ export function AccountSettings({
             </button>
           </div>
           {exportFeedback && <Said tone={exportFeedback.tone} text={exportFeedback.text} />}
-        </section>
+        </Setting>
 
-        {reminders && <ReminderPanel {...reminders} />}
+        {children}
       </div>
     </div>
   )
+}
+
+/** A long address wraps at the "@" before it wraps anywhere else. */
+function Address({ email }: { email: string }) {
+  const at = email.indexOf('@')
+  if (at < 1) return email
+  return <>{email.slice(0, at)}<wbr />{email.slice(at)}</>
 }
 
 /** One item of a split line never breaks inside, so "Tiếng Trung 1" stays on one line. */

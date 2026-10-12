@@ -133,6 +133,26 @@ describe('AccountSettings', () => {
     expect(screen.getByText(/Tiếng Anh 12 · Tiếng Tây Ban Nha 3/)).toBeInTheDocument()
   })
 
+  it('leads with the display name when there is one, the address under it', () => {
+    show({ profile: { ...learner, displayName: 'Hiệp' } })
+    expect(screen.getByText('Hiệp')).toBeInTheDocument()
+    expect(screen.getByText('a@b.com')).toBeInTheDocument()
+  })
+
+  it('links to the review while words are due, and to the notebook', () => {
+    show()
+    expect(screen.getByRole('link', { name: 'Ôn ngay' })).toHaveAttribute('href', '/practice/review')
+    expect(screen.getByRole('link', { name: 'Mở sổ tay' })).toHaveAttribute('href', '/wordlist')
+
+    show({ stats: { ...stats, due: 0 } })
+    expect(screen.getAllByRole('link', { name: 'Ôn ngay' })).toHaveLength(1)
+  })
+
+  it('sends an empty notebook to the lookup', () => {
+    show({ stats: empty })
+    expect(screen.getByRole('link', { name: 'Tra từ' })).toHaveAttribute('href', '/dictionary')
+  })
+
   it('says what to do instead of showing an empty progress panel', () => {
     show({ stats: empty })
     expect(screen.getByText(/Chưa có từ\./)).toBeInTheDocument()

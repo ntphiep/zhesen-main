@@ -24,10 +24,14 @@ export function AccountLink() {
       <Link
         href="/account"
         prefetch={false}
-        className={`relative ml-2 max-w-40 truncate ${QUIET}`}
+        className={`relative ml-2 flex max-w-52 items-center gap-2 py-1! pl-1.5! ${QUIET}`}
         title={email ?? undefined}
       >
-        {email}
+        {/* The same initial /account draws, on the primary fill. */}
+        <span aria-hidden="true" className="grid size-7 flex-none place-items-center rounded-full bg-(--zs-btn) text-xs font-extrabold text-(--zs-btn-ink) uppercase">
+          {email?.charAt(0)}
+        </span>
+        <span className="truncate">{email}</span>
         <LinkPending />
       </Link>
     )
