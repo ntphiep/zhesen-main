@@ -33,6 +33,36 @@
 .empty { margin-top: 1.6rem; padding: 1.4rem 1.6rem; border-radius: 20px; background: var(--tint-2); font-size: 1.0625rem; color: var(--zs-ink); }
 .empty a { font-weight: 700; color: var(--zs-pen); text-underline-offset: 0.2em; }
 
+/* Today: the one thing to do now, filled, then each skill's count as a ruled list. Beside it
+   on a wide screen, the words missed most. */
+.today { display: grid; gap: 1.5rem 2rem; margin-top: 1.6rem; }
+.today[data-split] { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
+.next { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 1rem; padding: 1.15rem 1.25rem; border: 1px solid transparent; border-radius: 22px; background: var(--zs-btn); color: var(--zs-btn-ink); text-decoration: none; box-shadow: var(--lift); transition: background-color 160ms var(--ease-std), translate 260ms var(--ease-spring); animation: rise 360ms var(--ease-enter) both; }
+.next:hover { background: var(--zs-btn-hover); translate: 0 -2px; }
+.next .ic { grid-row: auto; width: 3rem; height: 3rem; border-radius: 15px; background: var(--sea-400); color: #000; }
+:global(:root[data-theme="dark"]) .next .ic { background: var(--sea-400); color: #000; }
+.next b { display: block; font-size: 1.3125rem; line-height: 1.2; font-weight: 800; letter-spacing: -0.02em; }
+.next small { display: block; margin-top: 0.15rem; font-size: 0.9375rem; color: var(--zs-btn-ink); }
+.start { display: inline-flex; align-items: center; min-height: 2.5rem; padding: 0 1.1rem; border-radius: 999px; background: var(--zs-bg); color: var(--zs-ink); font-size: 0.9375rem; font-weight: 800; transition: transform 160ms var(--ease-spring); }
+.next:hover .start { transform: translateX(3px); }
+.skills { list-style: none; margin: 0.6rem 0 0; padding: 0; }
+.skills li { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); align-items: baseline; gap: 0.8rem; padding: 0.6rem 0.2rem; border-bottom: 1.5px solid var(--zs-line); font-size: 0.9375rem; }
+.skills li:last-child { border-bottom: 0; }
+.skills span { font-size: 0.8125rem; font-weight: 800; color: var(--zs-soft); }
+.skills a { font-weight: 700; color: var(--zs-pen); text-decoration: none; }
+.skills a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+.fail { padding: 1.1rem 1.2rem 1.2rem; border-radius: 22px; background: var(--tint-1); box-shadow: 0 0 0 1.5px var(--zs-line); animation: rise 360ms var(--ease-enter) 80ms both; }
+.fail ul { list-style: none; margin: 0 0 1rem; padding: 0; }
+.fail li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 0.8rem; padding: 0.5rem 0; border-bottom: 1.5px solid var(--zs-line); }
+.fail li:last-child { border-bottom: 0; }
+.fail li > span { min-width: 0; }
+.fail [data-hw] { font-size: 1.3125rem; color: var(--zs-ink); }
+.fail a { color: var(--zs-ink); text-decoration: none; }
+.fail a:hover [data-hw] { text-decoration: underline; text-underline-offset: 0.15em; }
+.fail small { margin-left: 0.45rem; font-size: 0.875rem; color: var(--zs-soft); }
+.fail em { font-size: 0.8125rem; font-style: normal; font-weight: 700; color: var(--zs-soft); white-space: nowrap; }
+.fail .ghost { width: 100%; }
+
 /* The six modes */
 .modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin-top: 1rem; }
 /* The hub groups the modes by the skill they train. */
@@ -41,6 +71,15 @@
 .group { margin: 0 0 0.6rem; font-size: 0.8125rem; font-weight: 800; letter-spacing: 0.02em; color: var(--zs-soft); }
 .mode { position: relative; display: grid; grid-template-columns: 2.6rem 1fr; column-gap: 0.85rem; align-items: center; padding: 1rem 1.1rem; border: 1px solid transparent; border-radius: 18px; background: var(--zs-field); box-shadow: 0 0 0 1.5px var(--edge); color: var(--zs-ink); text-decoration: none; transition: box-shadow 160ms var(--ease-std), translate 230ms var(--ease-spring), background-color 160ms var(--ease-std); animation: rise 320ms var(--ease-enter) both; }
 .mode:hover { box-shadow: 0 0 0 1.5px var(--sea-300), var(--lift); translate: 0 -2px; }
+/* The mode's link covers the card; the theory link sits above that cover. */
+.go { color: inherit; text-decoration: none; }
+.go::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.go:focus-visible { outline: none; }
+.mode:has(.go:focus-visible) { outline: 2.5px solid var(--sea-500); outline-offset: 2px; }
+.extra { grid-column: 2; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.75rem; margin-top: 0.35rem; }
+.extra small { font-size: 0.75rem; font-weight: 700; }
+.theory { position: relative; z-index: 1; font-size: 0.8125rem; font-weight: 700; color: var(--zs-pen); text-decoration: none; }
+.theory:hover { text-decoration: underline; text-underline-offset: 0.2em; }
 .mode b { font-size: 1rem; font-weight: 800; }
 .mode small { grid-column: 2; font-size: 0.8125rem; line-height: 1.4; color: var(--zs-soft); }
 .ic { grid-row: 1 / 3; display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 13px; background: var(--sea-50); color: var(--sea-700); }
@@ -198,13 +237,39 @@
 @keyframes grow { from { transform: scaleX(0); } }
 .wait { padding: 4rem 0; text-align: center; font-weight: 600; color: var(--zs-soft); }
 
-@media (max-width: 1023px) { .modes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* The calendar: a column per week, Monday at the top, shaded by the day's answers. */
+.cal { margin-top: 1rem; padding: 1.1rem 1.2rem 1.2rem; border-radius: 18px; background: var(--tint-1); box-shadow: 0 0 0 1.5px var(--edge); }
+.calHead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.3rem 1rem; }
+.calHead .group { margin: 0; }
+.calHead span { font-size: 0.875rem; font-weight: 700; color: var(--zs-ink); }
+.weeks { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, auto); grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; max-width: 26rem; margin-top: 0.8rem; animation: rise 420ms var(--ease-enter) both; }
+.weeks i { display: block; aspect-ratio: 1; border-radius: 4px; background: var(--tint-3); }
+.weeks i:not([data-n]) { background: transparent; }
+.weeks i[data-n="1"] { background: var(--sea-200); }
+.weeks i[data-n="2"] { background: var(--sea-400); }
+.weeks i[data-n="3"] { background: var(--sea-600); }
+.weeks i[data-n="4"] { background: var(--sea-700); }
+.weeks i[data-now] { box-shadow: 0 0 0 2px var(--zs-ink); }
+:global(:root[data-theme="dark"]) .weeks i[data-n="0"] { background: var(--zs-chip); }
+:global(:root[data-theme="dark"]) .weeks i[data-n="1"] { background: var(--sea-700); }
+:global(:root[data-theme="dark"]) .weeks i[data-n="2"] { background: var(--sea-600); }
+:global(:root[data-theme="dark"]) .weeks i[data-n="3"] { background: var(--sea-400); }
+:global(:root[data-theme="dark"]) .weeks i[data-n="4"] { background: var(--sea-200); }
+
+@media (max-width: 1023px) {
+  .modes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .today[data-split] { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 639px) {
   .title { font-size: 1.75rem; }
   .modes { gap: 0.5rem; }
   .mode { grid-template-columns: 1fr; row-gap: 0.5rem; align-items: start; padding: 0.85rem 0.9rem; }
   .ic { grid-row: auto; width: 2.2rem; height: 2.2rem; }
-  .mode small { grid-column: 1; }
+  .mode small, .extra { grid-column: 1; }
+  .next { grid-template-columns: auto minmax(0, 1fr); }
+  .next .ic { width: 2.6rem; height: 2.6rem; }
+  .start { grid-column: 1 / -1; justify-content: center; }
+  .weeks { gap: 3px; }
   .col { padding: 1.6rem 1rem 3rem; }
   .card { padding: 1.4rem 1rem 1.2rem; }
   .big { font-size: 2.34375rem; }
@@ -213,7 +278,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mode, .card, .face, .opt[data-state], .verdict, .tile[data-state], .mic[data-on], .meter i { animation: none; }
+  .mode, .card, .face, .opt[data-state], .verdict, .tile[data-state], .mic[data-on], .meter i, .next, .fail, .weeks { animation: none; }
+  .next { transition: background-color 160ms var(--ease-std); }
+  .next:hover { translate: none; }
+  .next:hover .start { transform: none; }
   .mode, .track i, .btn, .ghost, .grades button, .opt, .tile { transition: color 150ms var(--ease-std), background-color 150ms var(--ease-std), border-color 150ms var(--ease-std); }
   .mode:hover, .tile[data-state="sel"] { translate: none; transform: none; }
   .grades button:active:not(:disabled), .btn:active:not(:disabled), .ghost:active, .tile:active:not(:disabled) { transform: none; }

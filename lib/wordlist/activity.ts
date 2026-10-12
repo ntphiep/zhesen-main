@@ -35,6 +35,12 @@ export function studyDay(ts: number): string {
   return new Date(ts + STUDY_DAY_SHIFT_MS).toISOString().slice(0, 10)
 }
 
+/** 'Hôm nay', 'Hôm qua' or 'N ngày trước', counted in study days. */
+export function sinceLabel(at: number, now: number): string {
+  const days = Math.round((Date.parse(`${studyDay(now)}T00:00:00Z`) - Date.parse(`${studyDay(at)}T00:00:00Z`)) / DAY)
+  return days <= 0 ? 'Hôm nay' : days === 1 ? 'Hôm qua' : `${days} ngày trước`
+}
+
 /** When the study day holding `ts` began. */
 export function studyDayStart(ts: number): number {
   return Math.floor((ts + STUDY_DAY_SHIFT_MS) / DAY) * DAY - STUDY_DAY_SHIFT_MS

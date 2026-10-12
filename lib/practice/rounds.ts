@@ -6,6 +6,7 @@ import { pickFormQuestion } from './forms'
 import { buildPhraseGap, gapSlot, rivalPhrases } from './phraseGap'
 import { buildQuiz, type QuizQuestion } from './quiz'
 import { shuffle, type Rand } from './shuffle'
+import type { PracticeSubset } from './subset'
 import { listEntryExamples, listEntryForms, listExistingPhrases, listPracticeContext, listSavedPhrases } from './sources'
 import type { TypingPrompt } from './typing'
 
@@ -81,9 +82,11 @@ async function formsRound(supabase: SupabaseClient, words: PracticeWord[], rand:
   return out
 }
 
-/** The questions of one round of a typing mode, drawn from a window of the saved words. */
-export async function typingRound(supabase: SupabaseClient, mode: TypingMode, rand: Rand = Math.random): Promise<TypingPrompt[]> {
-  const words = (await listPracticeWords(supabase, { needsMeaning: mode === 'write' || mode === 'cloze' })).filter((w) => w.headword)
+/** The questions of one round of a typing mode, drawn from a window of the saved words or of `only`. */
+export async function typingRound(
+  supabase: SupabaseClient, mode: TypingMode, rand: Rand = Math.random, only?: PracticeSubset | null,
+): Promise<TypingPrompt[]> {
+  const words = (await listPracticeWords(supabase, { needsMeaning: mode === 'write' || mode === 'cloze', only })).filter((w) => w.headword)
   switch (mode) {
     case 'write': return withChinese(supabase, shuffle(words.filter(hasMeaning), rand).slice(0, ROUND_SIZE))
     case 'dictation': return withChinese(supabase, shuffle(words, rand).slice(0, ROUND_SIZE))
@@ -110,10 +113,19 @@ async function phraseRound(supabase: SupabaseClient, rand: Rand): Promise<QuizQu
   })
 }
 
-/** The questions of one round of a choice mode. */
-export async function choiceRound(supabase: SupabaseClient, mode: ChoiceMode, rand: Rand = Math.random): Promise<QuizQuestion[]> {
+/** The questions of one round of a choice mode. With `only`, the questions come from that
+ *  subset and the wrong answers from the whole notebook, so a subset of three still has four
+ *  options. */
+export async function choiceRound(
+  supabase: SupabaseClient, mode: ChoiceMode, rand: Rand = Math.random, only?: PracticeSubset | null,
+): Promise<QuizQuestion[]> {
   if (mode === 'phrase') return phraseRound(supabase, rand)
-  const all = await listPracticeWords(supabase, { needsMeaning: true })
+  const [asked, pool] = await Promise.all([
+    listPracticeWords(supabase, { needsMeaning: true, only }),
+    only ? listPracticeWords(supabase, { needsMeaning: true }) : [],
+  ])
+  const askedIds = new Set(asked.map((x) => x.id))
+  const all = [...asked, ...pool.filter((x) => !askedIds.has(x.id))]
   // Chinese has no recordings, and a browser without a Chinese voice would play nothing.
   const words = mode === 'listen' ? all.filter((x) => x.lang !== 'zh' || x.audioUrl) : all
   // Without these reads the distractors are drawn by language only.
@@ -128,5 +140,6 @@ export async function choiceRound(supabase: SupabaseClient, mode: ChoiceMode, ra
     ROUND_SIZE,
     rand,
     learner,
+    only ? askedIds : undefined,
   )
 }

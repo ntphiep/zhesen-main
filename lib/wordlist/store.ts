@@ -6,6 +6,8 @@ import { AI_FIELDS, userWordRow, type AiField, type SaveContext, type UserWord, 
 import { z } from '@/lib/zod'
 import { fetchAllRows } from '@/lib/supabase/paginate'
 import { ensureSession } from '@/lib/supabase/session'
+import type { PracticeSubset } from '@/lib/practice/subset'
+import { studyDayEnd } from './activity'
 
 export * from './types'
 
@@ -151,6 +153,23 @@ export interface PracticePoolOptions {
   /** The mode cannot use a word with no Vietnamese meaning. */
   needsMeaning?: boolean
   rand?: () => number
+  /** Draw only from these words. */
+  only?: PracticeSubset | null
+}
+
+/** A PostgREST list, quoted as supabase-js quotes `.in()`: an entry key may hold a comma. */
+const pgList = (values: readonly string[]) => `(${values.map((v) => (/[,()]/.test(v) ? `"${v}"` : v)).join(',')})`
+
+/** The filters a subset adds to both of `listPracticeWords`'s queries, as `.filter()` takes them. */
+function subsetFilters(only: PracticeSubset | null | undefined, now: number): [string, string, string][] {
+  if (!only) return []
+  switch (only.kind) {
+    case 'words': return [['id', 'in', pgList(only.ids)]]
+    case 'entries': return [['entry_id', 'in', pgList(only.ids)]]
+    case 'level': return [['lang', 'eq', only.lang], ['level', 'eq', only.level]]
+    // The review session's cutoff: due before the study day ends.
+    case 'due': return [['status', 'neq', 'known'], ['fsrs_recog_due_at', 'lte', new Date(studyDayEnd(now)).toISOString()]]
+  }
 }
 
 /** A pool of words for one practice round: six columns, server-side cap, random offset.
@@ -159,10 +178,12 @@ export interface PracticePoolOptions {
 export async function listPracticeWords(
   supabase: SupabaseClient, options: PracticePoolOptions = {},
 ): Promise<PracticeWord[]> {
-  const { pool = PRACTICE_POOL, needsMeaning = false, rand = Math.random } = options
+  const { pool = PRACTICE_POOL, needsMeaning = false, rand = Math.random, only } = options
+  const filters = subsetFilters(only, Date.now())
   // Both queries must apply the same filters: the count decides the offset the
   // window is taken from.
-  const countQuery = supabase.from('user_words').select('*', { count: 'exact', head: true })
+  let countQuery = supabase.from('user_words').select('*', { count: 'exact', head: true })
+  for (const [column, op, value] of filters) countQuery = countQuery.filter(column, op, value)
   const { count, error: countError } = await (needsMeaning
     ? countQuery.not('meaning_vi', 'is', null).neq('meaning_vi', '')
     : countQuery)
@@ -171,7 +192,8 @@ export async function listPracticeWords(
   if (total === 0) return []
 
   const offset = total > pool ? Math.floor(rand() * (total - pool + 1)) : 0
-  const rowQuery = supabase.from('user_words').select('id, lang, headword, ipa, meaning_vi, audio_url')
+  let rowQuery = supabase.from('user_words').select('id, lang, headword, ipa, meaning_vi, audio_url')
+  for (const [column, op, value] of filters) rowQuery = rowQuery.filter(column, op, value)
   const { data, error } = await (needsMeaning
     ? rowQuery.not('meaning_vi', 'is', null).neq('meaning_vi', '')
     : rowQuery)

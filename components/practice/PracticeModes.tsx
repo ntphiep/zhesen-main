@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { MIC } from '@/components/practice/SessionParts'
+import { sinceLabel } from '@/lib/wordlist/activity'
+import { THEORY_BLOCKS, type TheoryBlockKey } from '@/lib/theory/blocks'
+import { theoryBlockPath } from '@/lib/theory/path'
 import p from './Practice.module.css'
 
 export interface PracticeModeLink {
@@ -10,6 +13,8 @@ export interface PracticeModeLink {
   primary: boolean
   /** The skill the mode trains, which the hub groups by. */
   group: PracticeGroup
+  /** The English theory block the mode drills. */
+  theory?: TheoryBlockKey
 }
 
 export type PracticeGroup = 'Ôn theo lịch' | 'Nghe' | 'Đọc' | 'Viết' | 'Nói'
@@ -25,13 +30,13 @@ export function practiceModes(due: number | null): PracticeModeLink[] {
     { href: '/practice/listen', label: 'Nghe chọn nghĩa', sub: 'Nghe rồi chọn nghĩa', primary: false, group: 'Nghe' },
     { href: '/practice/quiz', label: 'Kiểm tra', sub: 'Chọn nghĩa đúng', primary: false, group: 'Đọc' },
     { href: '/practice/match', label: 'Ghép cặp', sub: 'Nối từ với nghĩa', primary: false, group: 'Đọc' },
-    { href: '/practice/ipa', label: 'Đọc phiên âm', sub: 'Nhìn IPA, gõ từ', primary: false, group: 'Đọc' },
-    { href: '/practice/phrase', label: 'Ghép cụm từ', sub: 'Chọn từ còn thiếu trong cụm', primary: false, group: 'Đọc' },
-    { href: '/practice/toeic', label: 'Đề TOEIC Reading', sub: 'Làm đề 75 phút hoặc từng Part', primary: false, group: 'Đọc' },
+    { href: '/practice/ipa', label: 'Đọc phiên âm', sub: 'Nhìn IPA, gõ từ', primary: false, group: 'Đọc', theory: 'pronunciation' },
+    { href: '/practice/phrase', label: 'Ghép cụm từ', sub: 'Chọn từ còn thiếu trong cụm', primary: false, group: 'Đọc', theory: 'collocation' },
+    { href: '/practice/toeic', label: 'Đề TOEIC Reading', sub: 'Làm đề 75 phút hoặc từng Part', primary: false, group: 'Đọc', theory: 'toeic' },
     { href: '/practice/write', label: 'Viết từ', sub: 'Nhìn nghĩa, gõ từ', primary: false, group: 'Viết' },
     { href: '/practice/cloze', label: 'Điền vào câu', sub: 'Gõ từ còn thiếu trong câu', primary: false, group: 'Viết' },
-    { href: '/practice/forms', label: 'Dạng từ', sub: 'Gõ quá khứ, số nhiều, so sánh', primary: false, group: 'Viết' },
-    { href: '/practice/speak', label: 'Luyện nói', sub: 'Nhìn nghĩa, nói to từ', primary: false, group: 'Nói' },
+    { href: '/practice/forms', label: 'Dạng từ', sub: 'Gõ quá khứ, số nhiều, so sánh', primary: false, group: 'Viết', theory: 'word-class' },
+    { href: '/practice/speak', label: 'Luyện nói', sub: 'Nhìn nghĩa, nói to từ', primary: false, group: 'Nói', theory: 'pronunciation' },
   ]
 }
 
@@ -52,7 +57,20 @@ const ICONS: Record<string, ReactNode> = {
   '/practice/toeic': <svg {...ICON}><rect x="4" y="3" width="12" height="14" rx="2" /><path d="M7 7h6M7 10h6M7 13h3" /></svg>,
 }
 
-export function PracticeModes({ due }: { due: number }) {
+export function ModeIcon({ href }: { href: string }) {
+  return <span className={p.ic}>{ICONS[href]}</span>
+}
+
+const BLOCK_TITLE = new Map(THEORY_BLOCKS.map((b) => [b.key, b.titleVi]))
+
+/** The modes grouped by skill. Each card says when the mode last graded an answer and links
+ *  the theory it drills; the card's own link covers the card, the theory link sits above it. */
+export function PracticeModes({ due, lastUsed = {}, now }: {
+  due: number
+  /** When each mode last graded an answer, keyed by mode. */
+  lastUsed?: Partial<Record<string, number>>
+  now: number
+}) {
   const modes = practiceModes(due)
   return (
     <div className={p.groups}>
@@ -60,13 +78,26 @@ export function PracticeModes({ due }: { due: number }) {
         <section key={group} aria-label={group}>
           <h2 className={p.group}>{group}</h2>
           <div className={p.modes}>
-            {modes.filter((m) => m.group === group).map((m) => (
-              <Link key={m.href} href={m.href} className={p.mode} data-primary={m.primary || undefined} data-i={Math.min(modes.indexOf(m), 5)}>
-                <span className={p.ic}>{ICONS[m.href]}</span>
-                <b>{m.label}</b>
-                <small>{m.sub}</small>
-              </Link>
-            ))}
+            {modes.filter((m) => m.group === group).map((m) => {
+              const used = lastUsed[m.href.slice('/practice/'.length)]
+              return (
+                <div key={m.href} className={p.mode} data-primary={m.primary || undefined} data-i={Math.min(modes.indexOf(m), 5)}>
+                  <ModeIcon href={m.href} />
+                  <Link href={m.href} className={p.go}><b>{m.label}</b></Link>
+                  <small>{m.sub}</small>
+                  {(used || m.theory) && (
+                    <span className={p.extra}>
+                      {used && <small>{sinceLabel(used, now)}</small>}
+                      {m.theory && (
+                        <Link href={theoryBlockPath('en', m.theory)} className={p.theory}>
+                          Lý thuyết: {BLOCK_TITLE.get(m.theory)}
+                        </Link>
+                      )}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </section>
       ))}

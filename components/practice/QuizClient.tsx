@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { gradeForMode } from '@/lib/practice/grading'
 import { choiceRound, type ChoiceMode } from '@/lib/practice/rounds'
+import type { PracticeSubset } from '@/lib/practice/subset'
 import type { QuizQuestion } from '@/lib/practice/quiz'
 import { QuizCard } from '@/components/practice/QuizCard'
 import { Empty, Loading, Result, SessionBar, Stage } from '@/components/practice/SessionParts'
@@ -14,7 +15,8 @@ const EMPTY: Record<ChoiceMode, { title: string; note: string }> = {
   phrase: { title: 'Chưa có cụm từ để luyện', note: 'Lưu thêm cụm động từ, thành ngữ hoặc kết hợp từ tiếng Anh.' },
 }
 
-export function QuizClient({ mode = 'quiz' }: { mode?: ChoiceMode }) {
+/** `only` narrows the questions to a subset of the notebook, as `choiceRound` takes it. */
+export function QuizClient({ mode = 'quiz', only = null }: { mode?: ChoiceMode; only?: PracticeSubset | null }) {
   const supabase = useMemo(() => createClient(), [])
   const { record: recordGrade, logDay, failed: syncFailed } = useGradeSync(supabase)
   const [questions, setQuestions] = useState<QuizQuestion[] | null>(null)
@@ -26,7 +28,7 @@ export function QuizClient({ mode = 'quiz' }: { mode?: ChoiceMode }) {
 
   useEffect(() => {
     let active = true
-    choiceRound(supabase, mode)
+    choiceRound(supabase, mode, Math.random, only)
       .then((qs) => {
         if (!active) return
         setQuestions(qs)
@@ -36,7 +38,7 @@ export function QuizClient({ mode = 'quiz' }: { mode?: ChoiceMode }) {
       })
       .catch(() => active && setQuestions([]))
     return () => { active = false }
-  }, [supabase, mode, round])
+  }, [supabase, mode, round, only])
 
   if (questions === null) return <Loading />
 

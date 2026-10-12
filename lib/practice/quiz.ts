@@ -63,10 +63,12 @@ const overlaps = (a: string, b: string) => ` ${a} `.includes(` ${b} `) || ` ${b}
  *  "trẻ em" or "vui" offered against "Trẻ em, đứa trẻ" or "Vui vẻ" is a second right answer. */
 export function buildQuiz(
   words: QuizWord[], count: number, rand: Rand = Math.random, learner: Map<string, LearnerDistractors> = new Map(),
+  /** Ask only these words; the rest of `words` still lends its meanings as distractors. */
+  only?: ReadonlySet<string>,
 ): QuizQuestion[] {
   const usable = words.filter((x): x is QuizWord & { meaningVi: string } => Boolean(x.meaningVi && x.meaningVi.trim()))
   if (new Set(usable.map((x) => meaningKey(x.meaningVi))).size < MIN_DISTINCT_MEANINGS) return []
-  const targets = shuffle(usable, rand).slice(0, count)
+  const targets = shuffle(only ? usable.filter((x) => only.has(x.id)) : usable, rand).slice(0, count)
   return targets.map((t) => {
     const others = shuffle(usable.filter((x) => x.id !== t.id), rand)
     const sameLang = others.filter((x) => x.lang === t.lang)

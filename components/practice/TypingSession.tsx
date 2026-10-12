@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useGradeSync } from '@/lib/hooks/useGradeSync'
 import { gradeForMode } from '@/lib/practice/grading'
 import { typingRound, type TypingMode } from '@/lib/practice/rounds'
+import type { PracticeSubset } from '@/lib/practice/subset'
 import { checkTypedAnswer, type TypedResult, type TypingPrompt } from '@/lib/practice/typing'
 import { TypingCard } from '@/components/practice/TypingCard'
 import { Empty, Loading, Result, SessionBar, Stage } from '@/components/practice/SessionParts'
@@ -31,7 +32,8 @@ function grade(value: string, q: TypingPrompt): TypedResult {
   return r
 }
 
-export function TypingSession({ mode }: { mode: TypingMode }) {
+/** `only` narrows the round to a subset of the notebook, as `typingRound` takes it. */
+export function TypingSession({ mode, only = null }: { mode: TypingMode; only?: PracticeSubset | null }) {
   const supabase = useMemo(() => createClient(), [])
   const { record: recordGrade, logDay, failed: syncFailed } = useGradeSync(supabase)
   const [queue, setQueue] = useState<TypingPrompt[] | null>(null)
@@ -44,7 +46,7 @@ export function TypingSession({ mode }: { mode: TypingMode }) {
 
   useEffect(() => {
     let active = true
-    typingRound(supabase, mode)
+    typingRound(supabase, mode, Math.random, only)
       .then((prompts) => {
         if (!active) return
         setQueue(prompts)
@@ -52,7 +54,7 @@ export function TypingSession({ mode }: { mode: TypingMode }) {
       })
       .catch(() => active && setQueue([]))
     return () => { active = false }
-  }, [supabase, mode, round])
+  }, [supabase, mode, round, only])
 
   if (queue === null) return <Loading />
 

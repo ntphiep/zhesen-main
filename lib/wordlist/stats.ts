@@ -19,6 +19,7 @@ export interface StatRow {
   /** The recognition skill's interval and reps (0160). Absent where a caller builds a row by hand. */
   recogIntervalDays?: number
   recogReps?: number
+  recogDueAt?: string
 }
 
 export interface WordlistStats {
@@ -49,34 +50,53 @@ function sameStudyDay(a: number, b: number): boolean {
   return studyDay(a) === studyDay(b)
 }
 
+/** What is due today per skill, as the hub's "today" block names it. */
+export interface TodayPlan {
+  /** Recall cards already seen and due by the end of the study day, as the review session takes them. */
+  recallDue: number
+  /** Never-seen cards the next review session adds: the daily allowance left, capped by the unseen words. */
+  newCards: number
+  /** Recognition cards due by the end of the study day, never-seen ones included. */
+  recognitionDue: number
+}
+
+export function computeTodayPlan(rows: StatRow[], now: number, newToday = 0): TodayPlan {
+  let due = 0
+  let dueNew = 0
+  let recognitionDue = 0
+  const dueBy = studyDayEnd(now)
+  for (const r of rows) {
+    if (r.status === 'known') continue
+    if (Date.parse(r.srsDueAt) <= dueBy) {
+      if (r.srsReps > 0) due++
+      else dueNew++
+    }
+    if (r.recogDueAt && Date.parse(r.recogDueAt) <= dueBy) recognitionDue++
+  }
+  // Same arithmetic as `listDueCards`, so "Cần ôn" is a promise the review
+  // session keeps. A flat count of overdue rows is dominated by never-seen
+  // cards, which are all due the instant they are saved.
+  const recallDue = Math.min(due, SESSION_LIMITS.limit)
+  const room = Math.max(0, Math.min(SESSION_LIMITS.newLimit - newToday, SESSION_LIMITS.limit - recallDue))
+  return { recallDue, newCards: Math.min(room, dueNew), recognitionDue }
+}
+
 /** `today` comes from the answer log; without it the new-card allowance is per session and
  *  "reviewed today" counts recall grades only. */
 export function computeWordlistStats(rows: StatRow[], activityDays: string[], now: number, today?: TodayEvents): WordlistStats {
-  let due = 0
   let learned = 0
   let reviewedToday = 0
   const byStatus: Record<WordStatus, number> = { new: 0, learning: 0, known: 0 }
   const byLang: Record<LangCode, number> = { en: 0, es: 0, zh: 0 }
-  let dueNew = 0
-  const dueBy = studyDayEnd(now)
   for (const r of rows) {
-    if (r.status !== 'known' && Date.parse(r.srsDueAt) <= dueBy) {
-      if (r.srsReps > 0) due++
-      else dueNew++
-    }
     if (r.srsIntervalDays >= MATURE_DAYS) learned++
     if (r.srsLastReviewedAt && sameStudyDay(Date.parse(r.srsLastReviewedAt), now)) reviewedToday++
     byStatus[r.status]++
     byLang[r.lang]++
   }
-  // Same arithmetic as `listDueCards`, so "Cần ôn" is a promise the review
-  // session keeps. A flat count of overdue rows is dominated by never-seen
-  // cards, which are all due the instant they are saved.
-  const learnedDue = Math.min(due, SESSION_LIMITS.limit)
-  const room = Math.max(0, Math.min(SESSION_LIMITS.newLimit - (today?.newToday ?? 0), SESSION_LIMITS.limit - learnedDue))
-  const sessionDue = learnedDue + Math.min(room, dueNew)
+  const plan = computeTodayPlan(rows, now, today?.newToday)
   return {
-    total: rows.length, due: sessionDue, learned, reviewedToday: today?.reviewedToday ?? reviewedToday,
+    total: rows.length, due: plan.recallDue + plan.newCards, learned, reviewedToday: today?.reviewedToday ?? reviewedToday,
     streak: computeStreak(activityDays, now), byStatus, byLang,
   }
 }
@@ -93,13 +113,14 @@ const statRowDbSchema = z.object({
   fsrs_reps: z.number(),
   fsrs_recog_scheduled_days: z.number(),
   fsrs_recog_reps: z.number(),
+  fsrs_recog_due_at: z.string(),
 })
 
 /** Every saved word's scheduling columns, one row each. RLS scopes the read. */
 export async function fetchStatRows(supabase: SupabaseClient): Promise<StatRow[]> {
   const wordRows = await fetchAllRows((from, to) =>
     supabase.from('user_words')
-      .select('lang, status, fsrs_scheduled_days, fsrs_due_at, fsrs_last_review_at, fsrs_reps, fsrs_recog_scheduled_days, fsrs_recog_reps')
+      .select('lang, status, fsrs_scheduled_days, fsrs_due_at, fsrs_last_review_at, fsrs_reps, fsrs_recog_scheduled_days, fsrs_recog_reps, fsrs_recog_due_at')
       .order('id')
       .range(from, to))
   return z.array(statRowDbSchema).parse(wordRows).map((r) => ({
@@ -111,6 +132,7 @@ export async function fetchStatRows(supabase: SupabaseClient): Promise<StatRow[]
     srsReps: r.fsrs_reps,
     recogIntervalDays: r.fsrs_recog_scheduled_days,
     recogReps: r.fsrs_recog_reps,
+    recogDueAt: r.fsrs_recog_due_at,
   }))
 }
 
@@ -119,6 +141,11 @@ export async function getWordlistStats(supabase: SupabaseClient, now: number = D
   const [rows, activityDays, today] = await Promise.all([
     fetchStatRows(supabase), getActivityDays(supabase), getTodayEvents(supabase, now),
   ])
+  return fullStats(rows, activityDays, now, today)
+}
+
+/** `computeWordlistStats` with the streak's freezes and the split per skill. */
+export function fullStats(rows: StatRow[], activityDays: string[], now: number, today: TodayEvents): WordlistStats {
   return {
     ...computeWordlistStats(rows, activityDays, now, today),
     streakDetail: streakState(activityDays, now),

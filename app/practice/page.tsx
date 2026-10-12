@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { getWordlistStats } from '@/lib/wordlist/stats'
+import { getPracticeHub } from '@/lib/practice/today'
 import { requirePermanentAccount } from '@/lib/auth/guard'
 import { WordlistStats } from '@/components/wordlist/WordlistStats'
 import { WordlistDistribution } from '@/components/wordlist/WordlistDistribution'
 import { PracticeModes } from '@/components/practice/PracticeModes'
+import { PracticeToday } from '@/components/practice/PracticeToday'
 import { pageMetadata } from '@/lib/site'
 import p from '@/components/practice/Practice.module.css'
 
@@ -13,13 +14,14 @@ export const metadata = pageMetadata({
   description: 'Ôn từ đã lưu bằng nhiều cách.',
 })
 
-// Practice hub: progress stats + every study mode, working over the saved
+// Practice hub: what to do now, every study mode, then progress, working over the saved
 // wordlist. Each mode page calls the guard with its own path, so signing in lands
 // back on that mode; a layout cannot, because it never sees the pathname.
 export default async function PracticePage() {
   const supabase = await createClient()
   await requirePermanentAccount(supabase, '/practice')
-  const stats = await getWordlistStats(supabase)
+  const hub = await getPracticeHub(supabase)
+  const { stats } = hub
   return (
     <main className={`${p.pr} mx-auto w-full max-w-page px-6 pt-8 pb-16 font-ui`}>
       <Link href="/" className={p.back}>← Trang chủ</Link>
@@ -31,7 +33,8 @@ export default async function PracticePage() {
         </div>
       ) : (
         <>
-          <PracticeModes due={stats.due} />
+          <PracticeToday hub={hub} />
+          <PracticeModes due={stats.due} lastUsed={hub.activity.lastUsed} now={hub.now} />
           <h2 className={p.h2}>Tiến độ</h2>
           <WordlistStats stats={stats} />
           <WordlistDistribution stats={stats} />
