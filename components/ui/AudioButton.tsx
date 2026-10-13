@@ -164,7 +164,7 @@ export function SourceLink({ url }: { url: string | null }) {
       target="_blank"
       rel="noopener noreferrer"
       title="Tác giả và giấy phép của bản ghi"
-      className="text-[0.7rem] text-black/60 hover:underline"
+      className="inline-flex min-h-6 items-center px-1 text-[0.7rem] text-(--zs-soft) hover:underline"
     >
       nguồn
     </a>

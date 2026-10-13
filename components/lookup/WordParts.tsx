@@ -220,7 +220,7 @@ export function MoreButton({ expanded, label, onClick, className = '' }: {
       type="button"
       onClick={onClick}
       aria-expanded={expanded}
-      className={`w-fit text-left text-[13px] font-semibold text-(--zs-pen) hover:underline ${className}`}
+      className={`min-h-6 w-fit text-left text-[13px] font-semibold text-(--zs-pen) hover:underline ${className}`}
     >
       {expanded ? 'Thu gọn' : label}
     </button>

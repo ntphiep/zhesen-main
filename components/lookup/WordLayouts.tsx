@@ -26,7 +26,7 @@ const ICONS: Record<WordLayout, React.ReactNode> = {
   glance: <><rect x="2" y="3" width="4.5" height="14" rx="1.2" /><rect x="7.8" y="3" width="4.5" height="14" rx="1.2" /><rect x="13.6" y="3" width="4.5" height="14" rx="1.2" /></>,
 }
 
-const NOTE = 'w-full text-[13px] text-(--zs-soft) sm:text-right'
+const NOTE = 'w-full text-[13px] text-(--zs-soft) max-sm:hidden sm:text-right'
 /** What a hidden panel renders while hydrating: nothing React compares or patches. */
 const DORMANT = { __html: '' }
 
@@ -70,7 +70,9 @@ export function WordLayouts({ view }: { view: WordView }) {
     >
       <div className={`${CONTAINER} flex flex-wrap items-center justify-between gap-x-3 gap-y-2`}>
         <BackLink href="/dictionary" prefetch={false}>Dịch</BackLink>
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Not under 640px, where it and "Góp ý" put about 225px above the headword; the
+            stored layout still applies there. */}
+        <div className="hidden sm:flex">
           <LayoutPicker
             value={hydrated ? layout : null}
             options={options}
@@ -78,7 +80,6 @@ export function WordLayouts({ view }: { view: WordView }) {
             fallback="overview"
             onPick={pick}
           />
-          <FeedbackButton entryId={view.head.id} senses={view.senses} />
         </div>
         {hydrated ? layout !== stored && (
           <p className={NOTE}>Từ này chưa có bố cục {label(stored)}, đang hiện {label(layout)}.</p>
@@ -103,6 +104,9 @@ export function WordLayouts({ view }: { view: WordView }) {
             </AnchorPrefix>
           </div>
         )))}
+      <div className={`${CONTAINER} flex justify-end`}>
+        <FeedbackButton entryId={view.head.id} senses={view.senses} />
+      </div>
     </main>
   )
 }

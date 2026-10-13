@@ -9,7 +9,7 @@ const KINDS: [FeedbackKind, string][] = [['meaning', 'Nghĩa sai'], ['example', 
 
 type Sent = 'idle' | 'sending' | 'sent' | 'failed'
 
-const FIELD = 'rounded-lg border border-(--edge) bg-(--zs-bg) px-3 py-2 text-sm'
+const FIELD = 'rounded-lg border-[1.5px] border-(--edge) bg-(--zs-field) px-3 py-2 text-sm text-(--zs-ink) outline-none transition-colors duration-150 ease-std hover:border-sea-200 focus-visible:border-sea-500 focus-visible:ring-3 focus-visible:ring-sea-400/30'
 
 /**
  * "Góp ý" on the word page, posting to app/dictionary/feedback/route.ts. The page is cached
@@ -76,7 +76,7 @@ export function FeedbackDialog({ entryId, senses, onClose }: {
           </div>
         </div>
       ) : (
-        <form onSubmit={submit} className="flex flex-col gap-3 p-5">
+        <form onSubmit={submit} className="flex flex-col gap-3 p-5 accent-(--zs-btn)">
           <label className="flex flex-col gap-1">
             <span className="text-xs text-(--zs-soft)">Nghĩa</span>
             <select value={senseId} onChange={(e) => setSenseId(e.target.value)} className={FIELD}>

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { formatPronunciation } from '@/lib/dictionary/pronunciation'
 import { PHONEME_ANCHORS } from '@/lib/theory/anchors'
 import { splitIpa } from '@/lib/theory/ipa'
-import { phonemePath } from '@/lib/theory/path'
+import { phonemePath, theoryBlockPath } from '@/lib/theory/path'
 import type { LangCode } from '@/lib/languages'
 
 /**
@@ -22,8 +22,15 @@ export function IpaLinked({ value, lang, className = '' }: {
   const anchors = new Map(Object.entries(PHONEME_ANCHORS[lang] ?? {}))
   if (anchors.size === 0) return <span className={`ipa ${className}`.trim()}>{shown}</span>
 
+  // On a touch screen one sound is a 5 to 14px target, so there the whole transcription
+  // is one link to the sound chart, laid over the per-sound links.
   return (
-    <span className={`ipa ${className}`.trim()}>
+    <span className={`ipa relative ${className}`.trim()}>
+      <Link
+        href={theoryBlockPath(lang, 'pronunciation')}
+        aria-label="Bảng âm"
+        className="absolute -inset-y-1.5 inset-x-0 hidden pointer-coarse:block"
+      />
       {splitIpa(shown, [...anchors.keys()]).map((t, i) => {
         const anchor = t.symbol && anchors.get(t.symbol)
         if (!anchor) return <span key={i}>{t.text}</span>
