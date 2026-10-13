@@ -58,15 +58,17 @@ export function SiteHeader() {
   )
 }
 
-/** The three-bar mark and the name, shared with the footer. */
+/** The mark and the name, shared with the footer. The mark is app/icon.svg: a Z made of
+ *  three bars, one per language colour (en, zh, es). The top bar takes --zs-ink so it
+ *  stays visible on the dark theme. Owner's choice, 2026-10-14. */
 export function BrandMark() {
   return (
-    <span className="flex items-center gap-2.5 text-[1.3125rem] font-extrabold tracking-[-0.02em] text-(--zs-ink)">
-      <i aria-hidden="true" className="grid h-5 grid-cols-[repeat(3,6px)] gap-0.5">
-        <b className="rounded-[2px] bg-sea-700" />
-        <b className="rounded-[2px] bg-sea-600" />
-        <b className="rounded-[2px] bg-sea-300" />
-      </i>
+    <span className="flex items-center gap-2 text-[1.3125rem] font-extrabold tracking-[-0.02em] text-(--zs-ink)">
+      <svg aria-hidden="true" viewBox="10 10 44 44" className="size-6 flex-none">
+        <rect x="12" y="11" width="40" height="10" rx="2.5" className="fill-(--zs-ink)" />
+        <path d="M37 23.5 H53 L27 40.5 H11 Z" className="fill-sea-600" />
+        <rect x="12" y="43" width="40" height="10" rx="2.5" className="fill-sea-300" />
+      </svg>
       Zhesen
     </span>
   )

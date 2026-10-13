@@ -10,9 +10,12 @@ export default function manifest(): MetadataRoute.Manifest {
     // --zs-bg and --sea-700 (--zs-ink) in app/globals.css.
     background_color: '#ffffff',
     theme_color: '#023c85',
+    // The maskable PNG keeps the mark inside Android's safe circle, 40% of the side.
     icons: [
       { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' },
-      { src: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+      { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
   }
 }
