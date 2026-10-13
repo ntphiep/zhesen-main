@@ -290,11 +290,13 @@ describe('a layer derived from the dictionary', () => {
       { text: 'chase', senseOrder: 23, targetId: 'en:chase' },
     ]
     const { view: v, layer: l } = derivedView({ ...warranty, id: 'en:dog', headword: 'dog', senses: DOG_SENSES, senseLinks })
-    render(<MapLayout view={v} layer={l} />)
+    render(<GlanceLayout view={v} layer={l} />)
     const rail = screen.getByRole('heading', { name: 'Đồng nghĩa theo từng nghĩa (synonym)' }).closest('section')!
     expect(within(rail).getByRole('link', { name: 'guy' })).toHaveAttribute('href', '/dictionary/en/guy')
     expect(within(rail).getByRole('link', { name: 'ratchet' })).toBeInTheDocument()
+    // chase belongs to main sense 23, which the glance page lists under that sense.
     expect(within(rail).queryByRole('link', { name: 'chase' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'chase' })).toHaveLength(1)
   })
 
   it('names the synonym block once, and never "Đồng nghĩa" over antonyms alone', () => {

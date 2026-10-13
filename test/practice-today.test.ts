@@ -62,6 +62,12 @@ describe('computeTodayPlan', () => {
     ], NOW, 19)
     expect(plan).toEqual({ recallDue: 1, newCards: 1, recognitionDue: 3 })
   })
+
+  it('leaves out of recognition a word with no meaning, which the quiz cannot ask', () => {
+    const today = '2026-10-14T00:00:00Z'
+    const plan = computeTodayPlan([row(1, today, today), { ...row(1, today, today), hasMeaning: false }], NOW)
+    expect(plan.recognitionDue).toBe(1)
+  })
 })
 
 describe('recommend', () => {
@@ -78,6 +84,12 @@ describe('recommend', () => {
     const used = { quiz: NOW - DAY, write: NOW - 3 * DAY, match: NOW, dictation: NOW, listen: NOW, cloze: NOW }
     expect(recommend(plan, [], used, NOW)).toMatchObject({ mode: '/practice/write', reason: 'Luyện lần cuối 3 ngày trước.' })
     expect(recommend(plan, [], {}, NOW)).toMatchObject({ mode: '/practice/quiz', reason: 'Chưa luyện cách này.' })
+  })
+
+  it('never offers listening to a notebook of Chinese words, which have no recordings', () => {
+    const used = { quiz: NOW, write: NOW, match: NOW, dictation: NOW, cloze: NOW }
+    expect(recommend(plan, [], used, NOW)).toMatchObject({ mode: '/practice/listen' })
+    expect(recommend(plan, [], used, NOW, false).mode).not.toBe('/practice/listen')
   })
 })
 

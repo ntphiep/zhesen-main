@@ -97,8 +97,9 @@ async function listFailing(supabase: SupabaseClient, fails: Map<string, number>)
     listLeeches(supabase, LEECH_LAPSES, FAILING_MAX),
   ])
   const out = new Map<string, FailingWord>()
-  for (const w of words) out.set(w.id, { word: w, misses: fails.get(w.id) ?? 0 })
-  for (const w of leeches) if (!out.has(w.id)) out.set(w.id, { word: w, misses: w.fsrsLapses })
+  // Write mode asks for the word from its meaning, so one without a meaning is left out.
+  for (const w of words) if (w.meaningVi?.trim()) out.set(w.id, { word: w, misses: fails.get(w.id) ?? 0 })
+  for (const w of leeches) if (w.meaningVi?.trim() && !out.has(w.id)) out.set(w.id, { word: w, misses: w.fsrsLapses })
   return [...out.values()].sort((a, b) => b.misses - a.misses).slice(0, FAILING_MAX)
 }
 
@@ -114,7 +115,11 @@ const ROTATION = ['quiz', 'write', 'match', 'dictation', 'listen', 'cloze'] as c
 
 /** One thing to do now: recall that is due, then recognition that is due, then the words
  *  missed most, then the mode left longest. */
-export function recommend(plan: TodayPlan, failing: readonly FailingWord[], lastUsed: PracticeActivity['lastUsed'], now: number): Recommendation {
+export function recommend(
+  plan: TodayPlan, failing: readonly FailingWord[], lastUsed: PracticeActivity['lastUsed'], now: number,
+  /** Whether the notebook holds a word with a recording: Chinese has none, so listen opens empty. */
+  listenable = true,
+): Recommendation {
   if (plan.recallDue > 0 || plan.newCards > 0) {
     const reason = plan.recallDue > 0
       ? `${plan.recallDue} từ cần ôn${plan.newCards > 0 ? ` và ${plan.newCards} từ mới` : ''}.`
@@ -127,7 +132,7 @@ export function recommend(plan: TodayPlan, failing: readonly FailingWord[], last
   if (failing.length > 0) {
     return { mode: '/practice/write', href: failingHref(failing), reason: `${failing.length} từ hay sai.` }
   }
-  const [mode] = [...ROTATION].sort((a, b) => (lastUsed[a] ?? 0) - (lastUsed[b] ?? 0))
+  const [mode] = ROTATION.filter((m) => listenable || m !== 'listen').sort((a, b) => (lastUsed[a] ?? 0) - (lastUsed[b] ?? 0))
   const last = lastUsed[mode]
   return {
     mode: `/practice/${mode}`,
@@ -158,7 +163,7 @@ export async function getPracticeHub(supabase: SupabaseClient, now: number = Dat
     getActivityDays(supabase),
     getTodayEvents(supabase, now),
     fetchAllRows((from, to) => supabase.from('review_events')
-      .select('word_id, mode, rating, reviewed_at').gte('reviewed_at', since).order('id').range(from, to)),
+      .select('word_id, mode, rating, reviewed_at').gte('reviewed_at', since).order('reviewed_at').order('id').range(from, to)),
   ])
   const activity = summarizeEvents(eventRow.array().parse(events), activityDays, now)
   const failing = await listFailing(supabase, activity.fails)
@@ -169,6 +174,6 @@ export async function getPracticeHub(supabase: SupabaseClient, now: number = Dat
     plan,
     activity,
     failing,
-    next: recommend(plan, failing, activity.lastUsed, now),
+    next: recommend(plan, failing, activity.lastUsed, now, rows.some((r) => r.lang !== 'zh')),
   }
 }

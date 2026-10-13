@@ -19,6 +19,7 @@ describe('practice subset in the URL', () => {
     expect(parseSubset({ entry: sp.getAll('entry') })).toEqual({ kind: 'entries', ids: ['en:a, b', 'en:c'] })
 
     expect(parseSubset({ lang: 'en', level: 'A1' })).toEqual({ kind: 'level', lang: 'en', level: 'A1' })
+    expect(parseSubset({ lang: 'zh', level: 'HSK7-9' })).toEqual({ kind: 'level', lang: 'zh', level: 'HSK7-9' })
     expect(parseSubset({ due: 'recognition' })).toEqual({ kind: 'due' })
   })
 
@@ -26,6 +27,7 @@ describe('practice subset in the URL', () => {
     expect(parseSubset({})).toBeNull()
     expect(parseSubset({ word: 'not-a-uuid' })).toBeNull()
     expect(parseSubset({ lang: 'fr', level: 'A1' })).toBeNull()
+    expect(parseSubset({ lang: 'en', level: 'HSK1' })).toBeNull()
     expect(parseSubset({ due: 'recall' })).toBeNull()
   })
 })

@@ -20,6 +20,8 @@ export interface StatRow {
   recogIntervalDays?: number
   recogReps?: number
   recogDueAt?: string
+  /** False for a word with no Vietnamese meaning, which the quiz cannot ask. */
+  hasMeaning?: boolean
 }
 
 export interface WordlistStats {
@@ -71,7 +73,7 @@ export function computeTodayPlan(rows: StatRow[], now: number, newToday = 0): To
       if (r.srsReps > 0) due++
       else dueNew++
     }
-    if (r.recogDueAt && Date.parse(r.recogDueAt) <= dueBy) recognitionDue++
+    if (r.hasMeaning !== false && r.recogDueAt && Date.parse(r.recogDueAt) <= dueBy) recognitionDue++
   }
   // Same arithmetic as `listDueCards`, so "Cần ôn" is a promise the review
   // session keeps. A flat count of overdue rows is dominated by never-seen
@@ -115,13 +117,14 @@ const statRowDbSchema = z.object({
   fsrs_recog_scheduled_days: z.number(),
   fsrs_recog_reps: z.number(),
   fsrs_recog_due_at: z.string(),
+  meaning_vi: z.string().nullable(),
 })
 
 /** Every saved word's scheduling columns, one row each. RLS scopes the read. */
 export async function fetchStatRows(supabase: SupabaseClient): Promise<StatRow[]> {
   const wordRows = await fetchAllRows((from, to) =>
     supabase.from('user_words')
-      .select('lang, status, fsrs_scheduled_days, fsrs_due_at, fsrs_last_review_at, fsrs_reps, fsrs_recog_scheduled_days, fsrs_recog_reps, fsrs_recog_due_at')
+      .select('lang, status, fsrs_scheduled_days, fsrs_due_at, fsrs_last_review_at, fsrs_reps, fsrs_recog_scheduled_days, fsrs_recog_reps, fsrs_recog_due_at, meaning_vi')
       .order('id')
       .range(from, to))
   return z.array(statRowDbSchema).parse(wordRows).map((r) => ({
@@ -134,6 +137,7 @@ export async function fetchStatRows(supabase: SupabaseClient): Promise<StatRow[]
     recogIntervalDays: r.fsrs_recog_scheduled_days,
     recogReps: r.fsrs_recog_reps,
     recogDueAt: r.fsrs_recog_due_at,
+    hasMeaning: Boolean(r.meaning_vi?.trim()),
   }))
 }
 

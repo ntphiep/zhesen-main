@@ -1,4 +1,5 @@
 import { isLangCode, type LangCode } from '@/lib/languages'
+import { isLevel } from '@/lib/dictionary/levels'
 
 /** The saved words a round draws from when not the whole notebook: chosen words (the hub's
  *  "Hay sai"), the words of one theory page by entry, one vocabulary level, or every word
@@ -28,7 +29,7 @@ export function parseSubset(sp: Params): PracticeSubset | null {
   if (entries.length) return { kind: 'entries', ids: entries }
   const [lang] = all(sp.lang)
   const [level] = all(sp.level)
-  if (lang && isLangCode(lang) && level && /^[A-Za-z0-9]{1,8}$/.test(level)) return { kind: 'level', lang, level }
+  if (lang && isLangCode(lang) && level && isLevel(lang, level)) return { kind: 'level', lang, level }
   if (all(sp.due)[0] === 'recognition') return { kind: 'due' }
   return null
 }
