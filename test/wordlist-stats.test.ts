@@ -37,6 +37,11 @@ describe('computeWordlistStats', () => {
     expect(s.streak).toBe(2)
   })
 
+  it('counts a word marked known as learned', () => {
+    const s = computeWordlistStats([row({ status: 'known' }), row({})], [], now)
+    expect(s.learned).toBe(1)
+  })
+
   it('is all zeros for an empty wordlist', () => {
     expect(computeWordlistStats([], [], now)).toEqual({
       total: 0, due: 0, learned: 0, reviewedToday: 0, streak: 0,

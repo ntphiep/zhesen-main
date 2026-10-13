@@ -89,7 +89,8 @@ export function computeWordlistStats(rows: StatRow[], activityDays: string[], no
   const byStatus: Record<WordStatus, number> = { new: 0, learning: 0, known: 0 }
   const byLang: Record<LangCode, number> = { en: 0, es: 0, zh: 0 }
   for (const r of rows) {
-    if (r.srsIntervalDays >= MATURE_DAYS) learned++
+    // A word marked known is learned too: "Đã biết 2" beside "Đã thuộc 0" read as a contradiction.
+    if (r.status === 'known' || r.srsIntervalDays >= MATURE_DAYS) learned++
     if (r.srsLastReviewedAt && sameStudyDay(Date.parse(r.srsLastReviewedAt), now)) reviewedToday++
     byStatus[r.status]++
     byLang[r.lang]++
