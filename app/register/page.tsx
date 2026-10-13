@@ -6,7 +6,7 @@ import { safeNext } from '@/lib/auth/redirect'
 import { AuthForm } from '@/components/account/AuthForm'
 import s from '@/components/account/Account.module.css'
 
-export const metadata = { title: 'Tạo tài khoản' }
+export const metadata = { title: 'Tạo tài khoản', robots: { index: false, follow: true } }
 
 export default async function RegisterPage({
   searchParams,

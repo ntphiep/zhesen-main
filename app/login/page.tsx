@@ -6,7 +6,7 @@ import { safeNext } from '@/lib/auth/redirect'
 import { AuthForm } from '@/components/account/AuthForm'
 import s from '@/components/account/Account.module.css'
 
-export const metadata = { title: 'Đăng nhập' }
+export const metadata = { title: 'Đăng nhập', robots: { index: false, follow: true } }
 
 /** Why `app/auth/callback/route.ts` sent the reader here instead of on to the
  *  page they asked for. Without these the redirect landed on a blank form. */

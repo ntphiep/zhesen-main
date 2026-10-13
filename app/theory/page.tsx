@@ -6,6 +6,7 @@ import { pageMetadata } from '@/lib/site'
 export const metadata = pageMetadata({
   title: 'Lý thuyết',
   description: 'Học ngữ pháp và từ vựng tiếng Anh, tiếng Trung, tiếng Tây Ban Nha.',
+  canonical: '/theory',
 })
 
 export default async function TheoryPage() {
