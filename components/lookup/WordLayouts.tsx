@@ -73,7 +73,6 @@ export function WordLayouts({ view }: { view: WordView }) {
         <div className="flex flex-wrap items-center gap-2">
           <LayoutPicker
             value={hydrated ? layout : null}
-            stored={hydrated ? stored : null}
             options={options}
             icons={ICONS}
             fallback="overview"

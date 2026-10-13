@@ -77,25 +77,24 @@ describe('which layouts an entry offers', () => {
     expect(document.querySelector('main')).toHaveAttribute('data-layouts', 'overview classic')
   })
 
-  it('marks the stored overview as the default and names every layout in the phone picker', () => {
+  it('opens in the overview and names every layout in the phone picker', () => {
     render(<LookupView detail={warranty} characters={[]} siblings={[]} learner={layer} backlinks={backlinks} />)
-    expect(within(screen.getByRole('button', { name: 'Tổng quan' })).getByText('mặc định')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tổng quan' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.queryByText(/chưa có bố cục/)).not.toBeInTheDocument()
     const select = screen.getByRole('combobox', { name: 'Bố cục' })
     expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual([
-      'Tổng quan (mặc định)', 'Cổ điển', 'Bản đồ nghĩa', 'Toàn cảnh',
+      'Tổng quan', 'Cổ điển', 'Bản đồ nghĩa', 'Toàn cảnh',
     ])
     expect(document.querySelector('main')).toHaveAttribute('data-layouts', 'overview classic map glance')
   })
 
-  it('switches to a learner layout, remembers it and marks it as the default', async () => {
+  it('switches to a learner layout and remembers it', async () => {
     render(<LookupView detail={warranty} characters={[]} siblings={[]} learner={layer} backlinks={backlinks} />)
     const picker = screen.getByRole('group', { name: 'Bố cục' })
-    expect(within(screen.getByRole('button', { name: 'Tổng quan' })).getByText('mặc định')).toBeInTheDocument()
     await userEvent.click(within(picker).getByRole('button', { name: 'Bản đồ nghĩa' }))
     expect(await screen.findByRole('navigation', { name: 'Các nghĩa' })).toBeInTheDocument()
     expect(localStorage.getItem('zhesen:word-layout')).toBe('map')
-    expect(within(screen.getByRole('button', { name: 'Bản đồ nghĩa' })).getByText('mặc định')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Bản đồ nghĩa' })).toHaveAttribute('aria-pressed', 'true')
   })
 })
 

@@ -5,15 +5,13 @@ export interface LayoutOption<K extends string> {
   label: string
 }
 
-/** A page's choice of layout, shared by the word page and the signed-in home.
- *
- *  `stored` is the choice this browser remembers, marked so the reader knows it sticks.
- *  Before hydration both are null and `app/globals.css` marks them from the boot script,
- *  through each button's `data-pick` and hint's `data-hint`. Under 640px the icons look
- *  alike, so a phone gets the names in a native select. */
-export function LayoutPicker<K extends string>({ value, stored, options, icons, fallback, onPick }: {
+/** A page's choice of layout, shared by the word page and the signed-in home. A pick is
+ *  remembered, so the filled button is also the one the next page opens in. Before
+ *  hydration `value` is null and `app/globals.css` fills the stored one from the boot
+ *  script through each button's `data-pick`. Under 640px the icons look alike, so a phone
+ *  gets the names in a native select. */
+export function LayoutPicker<K extends string>({ value, options, icons, fallback, onPick }: {
   value: K | null
-  stored: K | null
   options: readonly LayoutOption<K>[]
   icons: Record<K, ReactNode>
   /** What the select shows before hydration. */
@@ -34,7 +32,7 @@ export function LayoutPicker<K extends string>({ value, stored, options, icons, 
           className="rounded-lg border border-(--edge) bg-(--zs-field) px-2.5 py-1.5 text-sm font-medium text-(--zs-ink)"
         >
           {options.map((l) => (
-            <option key={l.key} value={l.key}>{l.key === stored ? `${l.label} (mặc định)` : l.label}</option>
+            <option key={l.key} value={l.key}>{l.label}</option>
           ))}
         </select>
       </label>
@@ -57,9 +55,6 @@ export function LayoutPicker<K extends string>({ value, stored, options, icons, 
               {icons[l.key]}
             </svg>
             <span>{l.label}</span>
-            {(stored === null || l.key === stored) && (
-              <span aria-hidden="true" data-hint={stored === null || undefined} className="text-[10.5px] font-normal">mặc định</span>
-            )}
           </button>
         ))}
       </div>

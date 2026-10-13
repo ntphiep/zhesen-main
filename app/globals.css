@@ -415,8 +415,7 @@ header nav .link-pending {
    overview when nothing is stored. A shell keeps the page a screen tall, so the footer
    does not jump when the layout is drawn. */
 main[data-boot] > [data-panel],
-main[data-boot] [data-note],
-main[data-boot] [data-hint] {
+main[data-boot] [data-note] {
   display: none;
 }
 html:not([data-word-layout]) main[data-boot] > [data-panel="overview"],
@@ -434,13 +433,6 @@ html[data-word-layout]:not([data-word-layout="overview"]) main[data-boot] {
 html[data-word-layout="map"] main[data-boot]:not([data-layouts~="map"]) [data-note="map"],
 html[data-word-layout="glance"] main[data-boot]:not([data-layouts~="glance"]) [data-note="glance"] {
   display: block;
-}
-html:not([data-word-layout]) main[data-boot] [data-pick="overview"] [data-hint],
-html[data-word-layout="overview"] main[data-boot] [data-pick="overview"] [data-hint],
-html[data-word-layout="classic"] main[data-boot] [data-pick="classic"] [data-hint],
-html[data-word-layout="map"] main[data-boot] [data-pick="map"] [data-hint],
-html[data-word-layout="glance"] main[data-boot] [data-pick="glance"] [data-hint] {
-  display: inline;
 }
 html:not([data-word-layout]) main[data-boot] [data-pick="overview"],
 html[data-word-layout="overview"] main[data-boot] [data-pick="overview"],
@@ -460,8 +452,7 @@ html[data-word-layout="glance"] main[data-boot][data-layouts~="glance"] [data-pi
    show that one panel and mark its picker: the landing without a session, the desk when
    nothing is stored. Named apart from the word page's data-boot and data-panel, whose
    rules above would hide these panels. */
-main[data-home-boot] > [data-home-panel],
-main[data-home-boot] [data-hint] {
+main[data-home-boot] > [data-home-panel] {
   display: none;
 }
 html:not([data-session]) main[data-home-boot] > [data-home-panel="landing"],
@@ -470,12 +461,6 @@ html[data-session][data-home-layout="desk"] main[data-home-boot] > [data-home-pa
 html[data-session][data-home-layout="today"] main[data-home-boot] > [data-home-panel="today"],
 html[data-session][data-home-layout="orbit"] main[data-home-boot] > [data-home-panel="orbit"] {
   display: block;
-}
-html:not([data-home-layout]) main[data-home-boot] [data-pick="desk"] [data-hint],
-html[data-home-layout="desk"] main[data-home-boot] [data-pick="desk"] [data-hint],
-html[data-home-layout="today"] main[data-home-boot] [data-pick="today"] [data-hint],
-html[data-home-layout="orbit"] main[data-home-boot] [data-pick="orbit"] [data-hint] {
-  display: inline;
 }
 html:not([data-home-layout]) main[data-home-boot] [data-pick="desk"],
 html[data-home-layout="desk"] main[data-home-boot] [data-pick="desk"],

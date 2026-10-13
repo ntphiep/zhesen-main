@@ -99,7 +99,6 @@ export function HomeBar({ now, picker }: { now: number | null; picker: PickerSta
       <div>
         <LayoutPicker
           value={picker.value}
-          stored={picker.stored}
           options={HOME_LAYOUTS}
           icons={ICONS}
           fallback="desk"
