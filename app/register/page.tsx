@@ -32,7 +32,14 @@ export default async function RegisterPage({
     // top it read as a form dropped on a blank page, with the whole lower half
     // empty.
     <main className={`${s.auth} font-ui`}>
-      <AuthForm mode="register" localWordCount={localWordCount} hasAnonymousSession={kind === 'anonymous'} next={next} />
+      <AuthForm
+        mode="register"
+        localWordCount={localWordCount}
+        hasAnonymousSession={kind === 'anonymous'}
+        next={next}
+        // "Lưu vào sổ tay" on a word page sends a guest here with that page as `next`.
+        notice={/^\/dictionary\/[a-z]{2}\/[^/?]+/.test(next) ? 'Tạo tài khoản để lưu từ vào sổ tay.' : undefined}
+      />
     </main>
   )
 }

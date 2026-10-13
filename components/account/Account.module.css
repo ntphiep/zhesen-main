@@ -22,10 +22,18 @@
 .btn svg, .ghost svg { width: 1rem; height: 1rem; flex: none; }
 .wide { width: 100%; }
 
-.field { width: 100%; min-width: 0; min-height: 2.75rem; padding: 0 0.9rem; border-radius: 12px; border: 1.5px solid var(--edge); background: var(--zs-field); color: var(--zs-ink); font-size: 0.9375rem; transition: border-color 150ms var(--ease-std), box-shadow 150ms var(--ease-std); }
+/* --sea-500 is 3.7:1 on the light field and 5.1:1 on the dark one; --edge was under 1.5:1. */
+.field { width: 100%; min-width: 0; min-height: 2.75rem; padding: 0 0.9rem; border-radius: 12px; border: 1.5px solid var(--sea-500); background: var(--zs-field); color: var(--zs-ink); font-size: 0.9375rem; transition: border-color 150ms var(--ease-std), box-shadow 150ms var(--ease-std); }
 /* A solid step off the value's ink: --zs-soft is the ink itself in light. */
 .field::placeholder { color: var(--zs-pen); opacity: 1; }
-.field:hover { border-color: var(--sea-200); }
+.field:hover { border-color: var(--zs-pen); }
+/* The password field with its show/hide button inside its right edge. */
+.secret { position: relative; }
+.secret .field { padding-right: 3rem; }
+.reveal { position: absolute; right: 0.25rem; bottom: 0.25rem; display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border: 0; border-radius: 10px; background: transparent; color: var(--zs-pen); cursor: pointer; }
+.reveal:hover { background: var(--tint-1); }
+.reveal svg { width: 1.125rem; height: 1.125rem; }
+.said.near { margin-top: 0.4rem; }
 .field:focus-visible { border-color: var(--sea-500); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sea-400) 28%, transparent); }
 /* The label names the field in a colour step off the value, so the two never read as one. */
 .label { display: flex; flex-direction: column; gap: 0.4rem; }

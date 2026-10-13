@@ -129,6 +129,32 @@ describe('AuthForm, sent incomplete', () => {
   })
 })
 
+describe('AuthForm, field by field', () => {
+  it('names every invalid field at once, next to the field', async () => {
+    render(<AuthForm mode="register" localWordCount={0} hasAnonymousSession={false} />)
+    await type('Mật khẩu', 'short')
+    await userEvent.click(screen.getByRole('button', { name: /Tạo tài khoản/i }))
+
+    const email = screen.getByLabelText('Email')
+    expect(email).toHaveAttribute('aria-invalid', 'true')
+    expect(email).toHaveAccessibleDescription('Nhập email.')
+    const secret = screen.getByLabelText('Mật khẩu')
+    expect(secret).toHaveAttribute('aria-invalid', 'true')
+    expect(secret).toHaveAccessibleDescription(/ít nhất 8 ký tự\.$/)
+    expect(registerWithPassword).not.toHaveBeenCalled()
+  })
+
+  it('shows and hides the password', async () => {
+    render(<AuthForm mode="login" />)
+    const toggle = screen.getByRole('button', { name: 'Hiện mật khẩu' })
+    await userEvent.click(toggle)
+    expect(screen.getByLabelText('Mật khẩu')).toHaveAttribute('type', 'text')
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(toggle)
+    expect(screen.getByLabelText('Mật khẩu')).toHaveAttribute('type', 'password')
+  })
+})
+
 // #17: a password manager keys on `autocomplete`, and stores only fields with a stable id or name.
 describe('AuthForm, read by a password manager', () => {
   it.each([
