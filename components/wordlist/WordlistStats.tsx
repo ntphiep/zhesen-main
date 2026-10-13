@@ -21,14 +21,15 @@ const FLAME = (
   </svg>
 )
 
-export function WordlistStats({ stats }: { stats: Stats }) {
+/** `omit` drops a tile a page already shows elsewhere. */
+export function WordlistStats({ stats, omit = [] }: { stats: Stats; omit?: readonly NumericStatKey[] }) {
   const [goal] = useDailyGoal()
   if (stats.total === 0) return null
   const today = goalProgress(stats.reviewedToday, goal)
   const kept = stats.streakDetail
   return (
     <div className={`${s.stats} font-ui`}>
-      {CARDS.map((c) => (
+      {CARDS.filter((c) => !omit.includes(c.key)).map((c) => (
         <div key={c.key} className={s.stat} data-k={c.key} data-met={c.key === 'reviewedToday' && today.met ? '' : undefined}>
           <b>
             {stats[c.key]}

@@ -26,9 +26,9 @@ const GROUPS: readonly PracticeGroup[] = ['Ôn theo lịch', 'Nghe', 'Đọc', '
 export function practiceModes(due: number | null): PracticeModeLink[] {
   return [
     { href: '/practice/review', label: 'Ôn từ', sub: due === null ? 'Tự chấm Lại, Khó, Tốt hay Dễ' : due > 0 ? `${due} từ cần ôn` : 'Chưa có từ đến hạn', primary: (due ?? 0) > 0, group: 'Ôn theo lịch' },
-    { href: '/practice/dictation', label: 'Nghe và chép', sub: 'Nghe rồi gõ từ', primary: false, group: 'Nghe' },
-    { href: '/practice/listen', label: 'Nghe chọn nghĩa', sub: 'Nghe rồi chọn nghĩa', primary: false, group: 'Nghe' },
-    { href: '/practice/quiz', label: 'Kiểm tra', sub: 'Chọn nghĩa đúng', primary: false, group: 'Đọc' },
+    { href: '/practice/dictation', label: 'Nghe và chép', sub: 'Nghe từ, gõ lại', primary: false, group: 'Nghe' },
+    { href: '/practice/listen', label: 'Nghe chọn nghĩa', sub: 'Nghe từ, chọn nghĩa', primary: false, group: 'Nghe' },
+    { href: '/practice/quiz', label: 'Kiểm tra', sub: 'Nhìn từ, chọn nghĩa', primary: false, group: 'Đọc' },
     { href: '/practice/match', label: 'Ghép cặp', sub: 'Nối từ với nghĩa', primary: false, group: 'Đọc' },
     { href: '/practice/ipa', label: 'Đọc phiên âm', sub: 'Nhìn IPA, gõ từ', primary: false, group: 'Đọc', theory: 'pronunciation' },
     { href: '/practice/phrase', label: 'Ghép cụm từ', sub: 'Chọn từ còn thiếu trong cụm', primary: false, group: 'Đọc', theory: 'collocation' },

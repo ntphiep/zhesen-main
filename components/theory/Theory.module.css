@@ -44,11 +44,6 @@
 .band { background: var(--c-t); }
 .band[data-strong] { background: var(--hero); }
 .head { padding-top: 1.75rem; padding-bottom: 2.25rem; }
-.crumb { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 2rem; font-size: 0.875rem; font-weight: 600; color: var(--zs-soft); text-decoration: none; }
-.crumb svg { width: 1rem; height: 1rem; transition: translate 230ms var(--ease-spring); }
-.crumb:hover { color: var(--zs-ink); }
-.crumb:hover span { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 0.2em; }
-.crumb:hover svg { translate: -3px 0; }
 .eyebrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.6rem; margin: 1rem 0 0; font-size: 0.9375rem; font-weight: 700; color: var(--zs-soft); }
 .eyebrow::before { content: ""; align-self: center; width: 0.6rem; height: 0.6rem; border-radius: 3px; background: var(--c-l); }
 .eyebrow .hw { font-size: var(--s2); color: var(--zs-ink); }
@@ -367,10 +362,10 @@ a.headword:hover { text-decoration: underline; text-decoration-thickness: 1.5px;
   .rows { animation: fade 220ms var(--ease-std) backwards; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .crumb svg, .chip, .card, a.card, .btn, .ghost, .field, .next, .next svg, .lang, .lang .open svg, .index a, .option, .bar i, .sheet tbody tr, .entry, .related a, .meter i, .resume, .resume svg, .find, .found a { transition: none; }
+  .chip, .card, a.card, .btn, .ghost, .field, .next, .next svg, .lang, .lang .open svg, .index a, .option, .bar i, .sheet tbody tr, .entry, .related a, .meter i, .resume, .resume svg, .find, .found a { transition: none; }
   .resume:hover svg { translate: none; }
   a.card:hover, .lang:hover, .index a:hover, .btn:active:not(:disabled), .ghost:active:not(:disabled), .option:active:not(:disabled) { transform: none; }
-  .crumb:hover svg, .next:hover svg, .lang:hover .open svg { translate: none; }
+  .next:hover svg, .lang:hover .open svg { translate: none; }
 }
 
 @media (max-width: 767px) {

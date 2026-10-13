@@ -23,22 +23,22 @@ export const THEORY_BLOCKS: readonly TheoryBlock[] = [
   {
     key: 'pronunciation',
     titleVi: 'Phát âm',
-    blurbVi: 'Bảng âm với ví dụ, những cách viết tạo ra âm đó, và chỗ người Việt hay đọc chệch.',
+    blurbVi: 'Từng âm, cách viết ra âm đó và chỗ người Việt hay đọc sai.',
   },
   {
     key: 'word-class',
     titleVi: 'Từ loại',
-    blurbVi: 'Mỗi loại từ đứng ở đâu trong câu, đổi hình thế nào, đi với giới từ nào.',
+    blurbVi: 'Mỗi loại từ đứng ở đâu trong câu và đổi hình ra sao.',
   },
   {
     key: 'sentence',
     titleVi: 'Câu và cụm từ',
-    blurbVi: 'Cụm từ, mệnh đề, bốn kiểu câu, và trật tự từ mà tiếng Việt không có.',
+    blurbVi: 'Trật tự từ trong cụm, trong mệnh đề và trong câu.',
   },
   {
     key: 'grammar',
     titleVi: 'Ngữ pháp',
-    blurbVi: 'Điểm ngữ pháp theo trình độ, có công thức, ví dụ và lỗi hay mắc.',
+    blurbVi: 'Từng điểm ngữ pháp theo trình độ, có ví dụ và lỗi hay gặp.',
   },
   {
     key: 'collocation',
@@ -48,12 +48,12 @@ export const THEORY_BLOCKS: readonly TheoryBlock[] = [
   {
     key: 'toeic',
     titleVi: 'Luyện thi TOEIC',
-    blurbVi: 'Cấu trúc đề, mẹo và bẫy từng part, từ vựng theo chủ đề, 30 câu luyện Part 5 và quy định ngày thi.',
+    blurbVi: 'Cấu trúc đề, bẫy từng Part và từ vựng theo chủ đề.',
   },
   {
     key: 'vocabulary',
     titleVi: 'Từ vựng',
-    blurbVi: 'Từ thông dụng và danh sách từ theo từng trình độ, mở thẳng sang sổ tay.',
+    blurbVi: 'Từ thông dụng theo từng trình độ, lưu thẳng vào sổ tay.',
   },
 ]
 

@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { BackLink } from '@/components/ui/BackLink'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { accountKind } from '@/lib/auth/account'
@@ -29,7 +29,7 @@ export default async function AccountPage() {
 
   return (
     <main className={`${s.acc} mx-auto max-w-page px-6 pt-8 pb-16 font-ui`}>
-      <Link href="/" className={s.back}><span aria-hidden="true">←</span>Trang chủ</Link>
+      <BackLink href="/">Trang chủ</BackLink>
       <h1 className={s.title}>Tài khoản</h1>
       <AccountSettings
         email={user.email}

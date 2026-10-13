@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getLanguage, isLangCode } from '@/lib/languages'
+import { getLanguage, isLangCode, nameInSentence } from '@/lib/languages'
 import { getCachedGrammarPointsByLang } from '@/lib/grammar/cached'
 import { getCachedLevelsForLanguage } from '@/lib/dictionary/cached'
 import { theoryContent } from '@/lib/theory/content'
@@ -24,6 +24,11 @@ export function generateStaticParams(): { lang: string }[] {
 // configuration export detected".
 export const revalidate = 604800
 
+/** "a, b và c": Vietnamese puts no comma before "và". */
+function listVi(items: string[]): string {
+  return items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} và ${items[items.length - 1]}`
+}
+
 export async function generateMetadata(
   { params }: { params: Promise<{ lang: string }> },
 ): Promise<Metadata> {
@@ -31,8 +36,8 @@ export async function generateMetadata(
   const language = isLangCode(lang) ? getLanguage(lang) : undefined
   if (!language) return {}
   return pageMetadata({
-    title: `Lý thuyết ${language.name}`,
-    description: `Học phát âm, từ loại, câu, ngữ pháp và collocation ${language.name}.`,
+    title: `Lý thuyết ${nameInSentence(language)}`,
+    description: `Học ${listVi(BLOCKS_BY_LANG[language.code].map((b) => b.titleVi.toLowerCase()))} ${nameInSentence(language)}.`,
     canonical: `/theory/${language.code}`,
   })
 }
@@ -57,7 +62,7 @@ export default async function TheoryLangPage({ params }: { params: Promise<{ lan
     counts['word-class'] = `${content.wordClasses.length} loại`
     counts.sentence = `${content.sentenceTopics.length} chủ đề`
     counts.collocation = `${content.collocationPatterns.length} dạng kết hợp`
-    counts.toeic = `${content.toeic.parts.length} part, ${content.toeic.practice.length} câu luyện`
+    counts.toeic = `${content.toeic.parts.length} Part, ${content.toeic.practice.length} câu luyện`
   }
 
   return (

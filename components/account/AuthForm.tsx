@@ -104,13 +104,11 @@ export function AuthForm({
         {mode === 'register' ? (upgrading ? 'Hoàn tất tài khoản' : 'Tạo tài khoản') : 'Đăng nhập'}
       </h1>
 
-      <p className={s.cardLede} data-keep={upgrading || undefined}>
-        {upgrading
-          ? `Tài khoản mới giữ nguyên ${localWordCount} từ đã lưu trên trình duyệt này.`
-          : mode === 'register'
-            ? 'Miễn phí.'
-            : 'Đăng nhập để mở sổ tay.'}
-      </p>
+      {(upgrading || mode === 'login') && (
+        <p className={s.cardLede} data-keep={upgrading || undefined}>
+          {upgrading ? `Tài khoản mới giữ nguyên ${localWordCount} từ đã lưu trên trình duyệt này.` : 'Đăng nhập để mở sổ tay.'}
+        </p>
+      )}
 
       {notice && (
         <p role="alert" className={s.alert}>

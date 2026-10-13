@@ -40,7 +40,7 @@ export function PracticeToday({ hub }: { hub: PracticeHub }) {
             </Link>
           </li>
         </ul>
-        <PracticeCalendar days={hub.activity.calendar} streak={hub.stats.streak} />
+        <PracticeCalendar days={hub.activity.calendar} />
       </section>
       {failing.length > 0 && (
         <section className={p.fail} aria-labelledby={failId}>
@@ -73,7 +73,7 @@ function level(d: CalendarDay): number {
 
 /** One cell per study day, Monday at the top, the current week last, shaded by how many
  *  answers the day logged. */
-function PracticeCalendar({ days, streak }: { days: CalendarDay[]; streak: number }) {
+function PracticeCalendar({ days }: { days: CalendarDay[] }) {
   const id = 'practice-calendar'
   const past = days.filter((d) => !d.future)
   const answers = past.reduce((n, d) => n + d.answers, 0)
@@ -82,7 +82,7 @@ function PracticeCalendar({ days, streak }: { days: CalendarDay[]; streak: numbe
     <section className={p.cal} aria-labelledby={id}>
       <div className={p.calHead}>
         <h3 className={p.group} id={id}>{weeks} tuần gần nhất</h3>
-        <span>{streak} ngày học liền, {answers} câu trả lời</span>
+        <span>{answers} câu trả lời</span>
       </div>
       <div className={p.weeks} role="img" aria-label={`${weeks} tuần gần nhất: ${past.filter((d) => d.studied).length} ngày có học`}>
         {days.map((d) => (

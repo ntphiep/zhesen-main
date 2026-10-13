@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BackLink } from '@/components/ui/BackLink'
 import { createClient } from '@/lib/supabase/server'
 import { getPracticeHub } from '@/lib/practice/today'
 import { requirePermanentAccount } from '@/lib/auth/guard'
@@ -24,9 +25,8 @@ export default async function PracticePage() {
   const { stats } = hub
   return (
     <main className={`${p.pr} mx-auto w-full max-w-page px-6 pt-8 pb-16 font-ui`}>
-      <Link href="/" className={p.back}>← Trang chủ</Link>
+      <BackLink href="/">Trang chủ</BackLink>
       <h1 className={p.title}>Luyện tập</h1>
-      <p className={p.lede}>Ôn từ đã lưu bằng nhiều cách.</p>
       {stats.total === 0 ? (
         <div className={p.empty}>
           Chưa có từ. <Link href="/dictionary" prefetch={false}>Tra một từ</Link> để lưu.
@@ -36,7 +36,7 @@ export default async function PracticePage() {
           <PracticeToday hub={hub} />
           <PracticeModes due={stats.due} lastUsed={hub.activity.lastUsed} now={hub.now} />
           <h2 className={p.h2}>Tiến độ</h2>
-          <WordlistStats stats={stats} />
+          <WordlistStats stats={stats} omit={['due']} />
           <WordlistDistribution stats={stats} />
         </>
       )}

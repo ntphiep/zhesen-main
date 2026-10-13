@@ -1,10 +1,9 @@
-import Link from 'next/link'
+import { BackLink } from '@/components/ui/BackLink'
 import { theoryLangPath } from '@/lib/theory/path'
 import { NextBlock } from './NextBlock'
-import { ArrowLeft } from './Glyphs'
 import s from './Theory.module.css'
 import type { TheoryBlockKey } from '@/lib/theory/blocks'
-import type { Language } from '@/lib/languages'
+import { nameInSentence, type Language } from '@/lib/languages'
 
 /** The head every theory page shares: the way back, the page's language, the title and
  *  one line saying what the page is for, on the language's pastel band. */
@@ -20,12 +19,9 @@ export function PageHead({ language, back, title, lede, strong, children }: {
   return (
     <div className={s.band} data-strong={strong || undefined}>
       <header className={`${s.head} mx-auto max-w-page px-6`}>
-        <Link href={back.href} prefetch={back.prefetch} className={s.crumb}>
-          <ArrowLeft /><span>{back.label}</span>
-        </Link>
+        <BackLink href={back.href} prefetch={back.prefetch}>{back.label}</BackLink>
         <p className={s.eyebrow}>
           <span className={s.hw} lang={language.code}>{language.nativeName}</span>
-          <span>{language.name}</span>
         </p>
         <h1 className={s.title}>{title}</h1>
         {lede && <p className={s.lede}>{lede}</p>}
@@ -52,7 +48,7 @@ export function BlockPage({ language, block, titleVi, leadVi, toc, children }: {
           so this only duplicated a speculative request that hung for 40s before aborting. */}
       <PageHead
         language={language}
-        back={{ href: theoryLangPath(language.code), label: `Lý thuyết ${language.name}`, prefetch: false }}
+        back={{ href: theoryLangPath(language.code), label: `Lý thuyết ${nameInSentence(language)}`, prefetch: false }}
         title={titleVi}
         lede={leadVi}
       />

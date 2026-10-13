@@ -1,7 +1,8 @@
 import Link from 'next/link'
+import { BackLink } from '@/components/ui/BackLink'
 import { theoryLangPath } from '@/lib/theory/path'
 import { BLOCKS_BY_LANG } from '@/lib/theory/blocks'
-import { ArrowLeft, ArrowRight } from './Glyphs'
+import { ArrowRight } from './Glyphs'
 import { LangReadMark } from './TheoryReads'
 import s from './Theory.module.css'
 import type { Language, LangCode } from '@/lib/languages'
@@ -15,11 +16,8 @@ export function TheoryLangList({ languages, grammarCounts }: {
   return (
     <main className={`${s.page} font-ui`}>
       <header className={`${s.head} mx-auto max-w-page px-6`}>
-        <Link href="/" className={s.crumb}><ArrowLeft /><span>Trang chủ</span></Link>
+        <BackLink href="/">Trang chủ</BackLink>
         <h1 className={s.title}>Lý thuyết</h1>
-        <p className={s.lede}>
-          Học phần không đổi của một ngôn ngữ: âm, từ loại, cấu trúc câu, ngữ pháp và những từ đi với nhau.
-        </p>
       </header>
 
       <div className="mx-auto max-w-page px-6 pb-16">
