@@ -202,7 +202,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
             id="meaning"
             label="Nghĩa chính"
             className={SPAN[7]}
-            action={explorer ? <a href="#senses" className="text-[13px] font-semibold text-(--zs-pen) hover:underline">Thêm {restCount} nghĩa</a> : undefined}
+            action={explorer ? <a href="#senses" className="inline-flex min-h-6 items-center text-[13px] font-semibold text-(--zs-pen) hover:underline">Thêm {restCount} nghĩa</a> : undefined}
           >
             <ol className="flex flex-col">
               {lines.map((l, i) => (

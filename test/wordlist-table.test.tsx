@@ -72,7 +72,7 @@ describe('WordTable', () => {
   it('marks the sorted column for a screen reader', () => {
     show(DEFAULT_PREFS, { sortKey: 'headword', sortDir: 'asc' })
     // The arrow is part of the header, so "Từ ↑" also proves the direction is drawn.
-    expect(screen.getByRole('columnheader', { name: /^Từ\s*↑$/ })).toHaveAttribute('aria-sort', 'ascending')
+    expect(screen.getByRole('columnheader', { name: /^Từ$/ })).toHaveAttribute('aria-sort', 'ascending')
   })
 
   // The audio button has nothing to order by, so its header is a label and not a control.

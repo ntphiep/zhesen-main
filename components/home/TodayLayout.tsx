@@ -44,7 +44,8 @@ export function TodayLayout({ view, failed, onRetry, picker, daily, supabase, on
           <DueTitle due={view?.due ?? null} total={view?.total ?? null} failed={failed} onRetry={onRetry} />
           <ModeLinks total={view?.total ?? null} />
           <LookupBox lookup={lookup} />
-          <Calendar view={view} />
+          {/* As on /practice: weeks of empty squares say nothing before the first review. */}
+          {view?.days.size !== 0 && <Calendar view={view} />}
         </section>
         <div className={h.reviewCol}>
           {view && supabase ? (

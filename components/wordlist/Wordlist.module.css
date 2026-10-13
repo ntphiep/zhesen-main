@@ -69,6 +69,7 @@ select.field { padding-right: 0.5rem; cursor: pointer; }
 .arrow { padding: 0.15rem 0.45rem; border: 0; border-radius: 7px; background: none; color: var(--zs-soft); font-size: 0.8125rem; cursor: pointer; }
 .arrow:hover:not(:disabled) { background: var(--tint-2); color: var(--zs-ink); }
 .arrow:disabled { opacity: 0.3; cursor: default; }
+.arrow svg, .sortMark svg { display: block; width: 0.875rem; height: 0.875rem; }
 .pin { padding: 0.15rem 0.6rem; border-radius: 999px; border: 1.5px solid var(--edge); background: var(--zs-bg); color: var(--zs-soft); font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: background-color 150ms var(--ease-std), border-color 150ms var(--ease-std); }
 .pin:hover:not(:disabled) { border-color: var(--sea-400); }
 .pin[aria-checked="true"] { border-color: var(--zs-btn); background: var(--zs-btn); color: var(--zs-btn-ink); }

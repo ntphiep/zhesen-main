@@ -11,6 +11,7 @@ import { KIND_LABEL, STATUS_LABELS, wordKind, type UserWord } from '@/lib/wordli
 import { clampWidth, MAX_COLUMN_WIDTH, MAX_PINNED_WIDTH, MIN_COLUMN_WIDTH, type ColumnDef, type ColumnKey } from '@/lib/wordlist/columns'
 import { useNarrowViewport } from '@/lib/hooks/useNarrowViewport'
 import type { SortDir, SortKey } from '@/lib/hooks/useWordlistFilters'
+import { ArrowDown, ArrowUp } from '@/components/theory/Glyphs'
 import s from './Wordlist.module.css'
 
 /** A pinned column the reader never resized. Fixed, because measuring a width back after
@@ -206,7 +207,7 @@ export function WordTable({
                     onClick={() => onToggleSort(c.sortKey as SortKey)}
                   >
                     {c.label}
-                    {sortKey === c.sortKey && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                    {sortKey === c.sortKey && <span className={s.sortMark}>{sortDir === 'asc' ? <ArrowUp /> : <ArrowDown />}</span>}
                   </button>
                 ) : (
                   c.label

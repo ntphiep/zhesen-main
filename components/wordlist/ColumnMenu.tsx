@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { COLUMNS, MAX_PINNED, type ColumnDef, type ColumnKey, type ColumnPrefs } from '@/lib/wordlist/columns'
 import { useNarrowViewport } from '@/lib/hooks/useNarrowViewport'
-import { ChevronDown } from '@/components/theory/Glyphs'
+import { ArrowDown, ArrowUp, ChevronDown } from '@/components/theory/Glyphs'
 import s from './Wordlist.module.css'
 
 interface Props {
@@ -102,7 +102,7 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
                   disabled={!up}
                   aria-label={`Chuyển cột ${c.label} lên`}
                 >
-                  ↑
+                  <ArrowUp />
                 </button>
                 <button
                   role="menuitem"
@@ -111,7 +111,7 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
                   disabled={!down}
                   aria-label={`Chuyển cột ${c.label} xuống`}
                 >
-                  ↓
+                  <ArrowDown />
                 </button>
                 {!narrow && (
                   <button
