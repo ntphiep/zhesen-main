@@ -6,7 +6,7 @@ import type { Metadata } from 'next'
  * `VERCEL_ENV`, `VERCEL_TARGET_ENV` and `VERCEL_URL` but not that one. Falling through to
  * localhost put `http://localhost:3000` in sitemap.xml, robots.txt and every canonical.
  */
-const PRODUCTION_ORIGIN = 'https://zhesen-main.vercel.app'
+const PRODUCTION_ORIGIN = 'https://zhesen.net'
 
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL
