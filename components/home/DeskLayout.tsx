@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { entryPath } from '@/lib/dictionary/entryId'
 import type { HomeView } from '@/lib/hooks/useHomeData'
 import { dayIndex, dueNote, shortDate, weekday, type ForecastDay } from '@/lib/wordlist/forecast'
-import { DayStats, DueTitle, HomeBar, Hw, LookupAnswers, LookupBox, ModeLinks, NAME, Pron, RecentChips, useHomeLookup, type PickerState } from './HomeParts'
+import { DayStats, DueTitle, HomeBar, Hw, LookupAnswers, LookupBox, ModeLinks, NAME, Pron, RecentChips, StartButton, useHomeLookup, type PickerState } from './HomeParts'
 import h from './Home.module.css'
 
 /** Cards on the desk before the rest are summed up in one. */
@@ -24,11 +24,9 @@ export function DeskLayout({ view, failed, onRetry, picker }: { view: HomeView |
       <HomeBar now={view?.now ?? null} picker={picker} />
       <section className={`${h.wrap} ${h.top6}`} aria-label="Hôm nay">
         <div>
-          <DueTitle due={view?.due ?? null} failed={failed} onRetry={onRetry} />
-          <div className={h.sub}>
-            <Link className={h.btn} href="/practice/review" prefetch={false}>Ôn ngay</Link>
-          </div>
-          <ModeLinks />
+          <DueTitle due={view?.due ?? null} total={view?.total ?? null} failed={failed} onRetry={onRetry} />
+          <StartButton total={view?.total ?? null} />
+          <ModeLinks total={view?.total ?? null} />
         </div>
         <div>
           <LookupBox lookup={lookup} />

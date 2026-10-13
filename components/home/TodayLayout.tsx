@@ -41,8 +41,8 @@ export function TodayLayout({ view, failed, onRetry, picker, daily, supabase, on
       <HomeBar now={view?.now ?? null} picker={picker} />
       <div className={`${h.wrap} ${h.log8}`}>
         <section aria-label="Hôm nay">
-          <DueTitle due={view?.due ?? null} failed={failed} onRetry={onRetry} />
-          <ModeLinks />
+          <DueTitle due={view?.due ?? null} total={view?.total ?? null} failed={failed} onRetry={onRetry} />
+          <ModeLinks total={view?.total ?? null} />
           <LookupBox lookup={lookup} />
           <Calendar view={view} />
         </section>

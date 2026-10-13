@@ -190,7 +190,9 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
           <div className={`${h.rc} ${h.done}`} data-anim={anim && reviewed ? 'in' : undefined}>
             <b>{reviewed ? 'Hết từ cần ôn.' : total ? 'Chưa có từ đến hạn ôn hôm nay.' : 'Chưa có từ. Tra một từ để lưu.'}</b>
             <p>{reviewed > 0 && `Đã ôn ${reviewed} từ.`}</p>
-            <Link className={h.btn} href="/practice" prefetch={false}>Luyện tập</Link>
+            {total
+              ? <Link className={h.btn} href="/practice" prefetch={false}>Luyện tập</Link>
+              : <Link className={h.btn} href="/dictionary" prefetch={false}>Tra từ</Link>}
           </div>
         )}
       </div>

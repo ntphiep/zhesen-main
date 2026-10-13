@@ -262,13 +262,15 @@ export function LandingWorld({ example, facts }: { example: Answers | null; fact
 const PAUSE = <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="3" width="3" height="10" rx="1" /><rect x="9.5" y="3" width="3" height="10" rx="1" /></svg>
 const PLAY = <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6a.6.6 0 0 0 .9.5l7.6-4.8a.6.6 0 0 0 0-1L5.9 2.7a.6.6 0 0 0-.9.5z" /></svg>
 
-/** "Hoa là flower, 花 và flor." Each word waits faded until its arc lands. A comma stays
- *  glued to the word before it, so a line never starts with one. */
+/** "Hoa là flower, 花 và flor." After a lookup the reader typed, each word waits faded until
+ *  its arc lands. The tour that runs on load keeps them at full contrast: faded, the
+ *  sentence read as unfinished for about 3 s. A comma stays glued to the word before it,
+ *  so a line never starts with one. */
 function SayLine({ shown, landed }: { shown: Shown; landed: Record<Lang, boolean> }) {
   const ls = ORDER.filter((l) => shown.entries[l].length)
   if (!ls.length) return <>Chưa có từ khớp. Thử một từ khác.</>
   const word = (l: Lang) => (
-    <span className={s.w} data-l={l} lang={l} data-state={shown.still ? undefined : landed[l] ? 'land' : 'wait'}>
+    <span className={s.w} data-l={l} lang={l} data-state={shown.still || !shown.user ? undefined : landed[l] ? 'land' : 'wait'}>
       {shown.entries[l][0].headword}
     </span>
   )

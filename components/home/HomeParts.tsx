@@ -66,8 +66,10 @@ export function CountUp({ value, ms = 700 }: { value: number | null; ms?: number
   return <span className={h.num}>{reduced ? value : shown}</span>
 }
 
-/** How many words the next session hands over; a failed read says so and offers the retry. */
-export function DueTitle({ due, failed, onRetry }: { due: number | null; failed: boolean; onRetry: () => void }) {
+/** How many words the next session hands over; a failed read says so and offers the retry.
+ *  With no saved word there is nothing to hand over, so it says that instead of "0". */
+export function DueTitle({ due, total, failed, onRetry }: { due: number | null; total: number | null; failed: boolean; onRetry: () => void }) {
+  if (total === 0 && !failed) return <h1 className={h.today}>Chưa có từ. Tra một từ để lưu.</h1>
   if (failed) {
     return (
       <div role="alert">
@@ -238,9 +240,22 @@ export function RecentChips({ max }: { max: number }) {
   )
 }
 
-/** The practice modes other than review, as one quiet line under the main action. */
-export function ModeLinks() {
+/** The main action: the session, or with no saved word the lookup that saves a first one. */
+export function StartButton({ total }: { total: number | null }) {
+  return (
+    <div className={h.sub}>
+      {total === 0
+        ? <Link className={h.btn} href="/dictionary" prefetch={false}>Tra từ</Link>
+        : <Link className={h.btn} href="/practice/review" prefetch={false}>Ôn ngay</Link>}
+    </div>
+  )
+}
+
+/** The practice modes other than review, as one quiet line under the main action. None
+ *  before the first saved word: every one of them would open on an empty session. */
+export function ModeLinks({ total }: { total: number | null }) {
   const id = useId()
+  if (total === 0) return null
   return (
     <nav className={h.others} aria-labelledby={id}>
       <span id={id}>Luyện cách khác</span>

@@ -10,7 +10,7 @@ import type { LangCode } from '@/lib/languages'
 import { dueNote } from '@/lib/wordlist/forecast'
 import type { ReviewCard } from '@/lib/wordlist/review'
 import { ANCHOR, type LatLon } from './globe/motion'
-import { DayStats, DueTitle, HomeBar, Hw, LookupAnswers, LookupBox, ModeLinks, NAME, ORDER, useHomeLookup, type PickerState } from './HomeParts'
+import { DayStats, DueTitle, HomeBar, Hw, LookupAnswers, LookupBox, ModeLinks, NAME, ORDER, StartButton, useHomeLookup, type PickerState } from './HomeParts'
 import h from './Home.module.css'
 
 /** Cities in countries where most people speak the language, far enough apart that two
@@ -149,11 +149,9 @@ export function OrbitLayout({ view, failed, onRetry, picker }: { view: HomeView 
       <HomeBar now={view?.now ?? null} picker={picker} />
       <section className={`${h.wrap} ${h.mine}`} aria-label="Hôm nay">
         <div>
-          <DueTitle due={view?.due ?? null} failed={failed} onRetry={onRetry} />
-          <div className={h.sub}>
-            <Link className={h.btn} href="/practice/review" prefetch={false}>Ôn ngay</Link>
-          </div>
-          <ModeLinks />
+          <DueTitle due={view?.due ?? null} total={view?.total ?? null} failed={failed} onRetry={onRetry} />
+          <StartButton total={view?.total ?? null} />
+          <ModeLinks total={view?.total ?? null} />
           <LookupBox lookup={lookup} />
           <Languages view={view} open={open} onToggle={toggle} />
         </div>
