@@ -33,8 +33,16 @@ function fold(s: string): string {
  *  hợp đồng" on a word expects to find it by that note. */
 function haystack(w: UserWord): string {
   const kind = wordKind(w)
-  return fold([w.headword, w.reading, w.ipa, w.level, kind === 'word' ? null : KIND_LABEL[kind], w.meaningVi, w.meaningEn, w.example, w.notes, ...w.tags]
-    .filter(Boolean).join(' '))
+  return [w.headword, w.reading, w.ipa, w.level, kind === 'word' ? null : KIND_LABEL[kind], w.meaningVi, w.meaningEn, w.example, w.notes, ...w.tags]
+    .filter(Boolean).join(' ').normalize('NFC').toLowerCase()
+}
+
+/** A query typed with its marks matches them exactly: folded, "ñ" was "n" and matched every row. */
+function matcher(query: string): ((w: UserWord) => boolean) | null {
+  const raw = query.trim().normalize('NFC').toLowerCase()
+  if (!raw) return null
+  const folded = fold(raw)
+  return folded === raw ? (w) => fold(haystack(w)).includes(folded) : (w) => haystack(w).includes(raw)
 }
 
 /** Rows with nothing in the sorted column stay at the end whichever way it is sorted: an
@@ -81,13 +89,13 @@ export function useWordlistFilters(words: UserWord[]) {
   const [view, toggleView] = useStoredView()
 
   const visible = useMemo(() => {
-    const q = fold(query.trim())
+    const matches = matcher(query)
     let list = words.filter((w) => {
       if (langFilter && w.lang !== langFilter) return false
       if (statusFilter && w.status !== statusFilter) return false
       // Every selected tag has to be on the word: the chips narrow, they do not widen.
       for (const t of tagFilter) if (!w.tags.includes(t)) return false
-      if (q && !haystack(w).includes(q)) return false
+      if (matches && !matches(w)) return false
       if (levelFilter && w.level !== levelFilter) return false
       // Matches on any of the word's parts of speech: a word that is both a noun and a
       // verb belongs in both filters.

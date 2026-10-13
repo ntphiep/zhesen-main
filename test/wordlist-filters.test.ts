@@ -52,6 +52,17 @@ describe('useWordlistFilters', () => {
     expect(result.current.visible.map((w) => w.id)).toEqual(['a'])
   })
 
+  it('matches the marks a query is typed with: ñ finds niño, not every n', () => {
+    const words = [mk('a', { lang: 'es', headword: 'niño' }), mk('b', { lang: 'es', headword: 'nada' }), mk('c', { headword: 'trade', meaningVi: 'thương mại' })]
+    const { result } = renderHook(() => useWordlistFilters(words))
+    const found = (q: string) => { act(() => result.current.setQuery(q)); return result.current.visible.map((w) => w.id) }
+    expect(found('ñ')).toEqual(['a'])
+    expect(found('Ñ')).toEqual(['a'])
+    expect(found('nino')).toEqual(['a'])
+    expect(found('thương')).toEqual(['c'])
+    expect(found('đ')).toEqual([])
+  })
+
   it('searches the note, the example and the tags as well as the meaning', () => {
     const words = [
       mk('a', { notes: 'gặp trong hợp đồng' }),
