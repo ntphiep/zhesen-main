@@ -76,6 +76,8 @@ function level(d: CalendarDay): number {
 function PracticeCalendar({ days }: { days: CalendarDay[] }) {
   const id = 'practice-calendar'
   const past = days.filter((d) => !d.future)
+  // Twelve weeks of empty squares say nothing to a learner who has not reviewed yet.
+  if (!past.some((d) => d.studied || d.answers > 0)) return null
   const answers = past.reduce((n, d) => n + d.answers, 0)
   const weeks = days.length / 7
   return (

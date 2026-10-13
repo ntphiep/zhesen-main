@@ -68,10 +68,10 @@ export function WordlistReview() {
   const waiting = queue.filter((c) => onStep(c.state) && c.state.dueAt > now).length
   const left = `Còn lại: ${queue.length - waiting}${waiting > 0 ? ` · Chờ: ${waiting}` : ''}`
 
+  // No bar: every card left is waiting, so it stood half full beside "Còn lại: 0".
   if (at === -1 && wakeAt !== null) {
     return (
       <Stage>
-        <SessionBar label={left} done={reviewed} total={reviewed + queue.length} />
         <div className={`${p.card} ${p.end}`}>
           <h1>Từ tiếp theo đến hạn sau {waitLabel(wakeAt - now)}.</h1>
           {reviewed > 0 && <p>Đã ôn {reviewed} từ.</p>}
