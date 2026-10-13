@@ -189,12 +189,12 @@ export async function POST(request: Request) {
 
   const envelope = envelopeSchema.safeParse(body)
   if (!envelope.success || !isTaskName(envelope.data.task)) {
-    return Response.json({ error: 'Không có tác vụ này.' }, { status: 400 })
+    return Response.json({ error: 'Yêu cầu không hợp lệ.' }, { status: 400 })
   }
 
   const task = envelope.data.task
   const spec = ERASED_TASKS[task]
-  const invalid = () => Response.json({ error: 'Dữ liệu đầu vào không hợp lệ.' }, { status: 400 })
+  const invalid = () => Response.json({ error: 'Yêu cầu không hợp lệ.' }, { status: 400 })
   if (spec.promptFor(envelope.data.input) === null) return invalid()
 
   // Budget is spent here, not on arrival. The global bucket is one bucket for

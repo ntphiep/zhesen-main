@@ -175,7 +175,7 @@ export function OverviewLayout({ view }: { view: WordView }) {
   return (
     <>
       {jumps.length > 1 && (
-        <nav aria-label="Mục trong trang" className="sticky top-[var(--header-h)] z-10 border-b border-(--zs-line) bg-(--zs-bg)/88 backdrop-blur lg:hidden">
+        <nav aria-label="Mục lục" className="sticky top-[var(--header-h)] z-10 border-b border-(--zs-line) bg-(--zs-bg)/88 backdrop-blur lg:hidden">
           <div className={`${CONTAINER} flex gap-1.5 overflow-x-auto py-2`}>
             {jumps.map((j) => (
               <a key={j.href} href={j.href} className="shrink-0 rounded-full bg-(--zs-chip) px-3.5 py-1.5 text-[13px] font-medium text-(--zs-soft)">

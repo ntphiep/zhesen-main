@@ -25,7 +25,7 @@ const GROUPS: readonly PracticeGroup[] = ['Ôn theo lịch', 'Nghe', 'Đọc', '
  *  size, or null while it is still being counted. */
 export function practiceModes(due: number | null): PracticeModeLink[] {
   return [
-    { href: '/practice/review', label: 'Ôn từ', sub: due === null ? 'Tự chấm Lại, Khó, Tốt hay Dễ' : due > 0 ? `${due} từ đến lượt ôn` : 'Chưa có từ đến hạn', primary: (due ?? 0) > 0, group: 'Ôn theo lịch' },
+    { href: '/practice/review', label: 'Ôn từ', sub: due === null ? 'Tự chấm Lại, Khó, Tốt hay Dễ' : due > 0 ? `${due} từ đến hạn` : 'Chưa có từ đến hạn', primary: (due ?? 0) > 0, group: 'Ôn theo lịch' },
     { href: '/practice/dictation', label: 'Nghe và chép', sub: 'Nghe từ, gõ lại', primary: false, group: 'Nghe' },
     { href: '/practice/listen', label: 'Nghe chọn nghĩa', sub: 'Nghe từ, chọn nghĩa', primary: false, group: 'Nghe' },
     { href: '/practice/quiz', label: 'Kiểm tra', sub: 'Nhìn từ, chọn nghĩa', primary: false, group: 'Đọc' },

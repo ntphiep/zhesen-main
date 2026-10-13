@@ -31,9 +31,6 @@ export function SiteFooter() {
             <Link href="/" prefetch={false} className="inline-flex" aria-label="Về trang chủ Zhesen">
               <BrandMark />
             </Link>
-            <p className="mt-3 max-w-[22rem] text-[0.9375rem] leading-normal text-(--zs-soft)">
-              Học tiếng Anh, tiếng Trung và tiếng Tây Ban Nha bằng tiếng Việt.
-            </p>
           </div>
           <nav aria-label="Chân trang" className="flex gap-10 sm:gap-16">
             <div>

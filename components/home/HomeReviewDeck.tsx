@@ -132,7 +132,7 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
   return (
     <section className={h.deck} aria-labelledby={labelId}>
       <div className={h.lblRow}>
-        <p className={h.lbl} id={labelId}>Phiên ôn hôm nay</p>
+        <p className={h.lbl} id={labelId}>Ôn hôm nay</p>
         <span className={h.left} aria-live="polite">{reviewed > 0 && `Đã ôn ${reviewed} từ`}</span>
       </div>
       <div className={h.slot} data-empty={current ? undefined : ''}>
@@ -183,19 +183,19 @@ export function HomeReviewDeck({ cards, supabase, now, total, onGraded }: {
         ) : wakeAt !== null ? (
           <div className={`${h.rc} ${h.done}`} data-anim={anim && reviewed ? 'in' : undefined}>
             <b>Từ tiếp theo đến hạn sau {waitLabel(wakeAt - clock)}.</b>
-            <p>{reviewed > 0 && `Đã ôn ${reviewed} từ trong phiên này.`}</p>
+            <p>{reviewed > 0 && `Đã ôn ${reviewed} từ.`}</p>
             <button type="button" className={h.btn} onClick={() => setAhead(true)}>Ôn ngay</button>
           </div>
         ) : (
           <div className={`${h.rc} ${h.done}`} data-anim={anim && reviewed ? 'in' : undefined}>
             <b>{reviewed ? 'Hết từ cần ôn.' : total ? 'Chưa có từ đến hạn ôn hôm nay.' : 'Chưa có từ. Tra một từ để lưu.'}</b>
-            <p>{reviewed > 0 && `Đã ôn ${reviewed} từ trong phiên này.`}</p>
+            <p>{reviewed > 0 && `Đã ôn ${reviewed} từ.`}</p>
             <Link className={h.btn} href="/practice" prefetch={false}>Luyện tập</Link>
           </div>
         )}
       </div>
       <p className={h.after} aria-live="polite">
-        {last && <><Hw lang={last.card.lang} text={last.card.headword} /> {last.back ? 'quay lại cuối phiên này.' : `quay lại ${when(last.dueAt, now)}.`}</>}
+        {last && <><Hw lang={last.card.lang} text={last.card.headword} /> {last.back ? 'quay lại sau các từ còn lại.' : `quay lại ${when(last.dueAt, now)}.`}</>}
       </p>
       <GradeSyncWarning failed={failed || lost} />
     </section>

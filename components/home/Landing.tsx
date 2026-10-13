@@ -13,7 +13,7 @@ import { newsreader, patrickHand } from './fonts'
 import s from './Landing.module.css'
 
 const THEORY: { lang: LangCode; text: string }[] = [
-  { lang: 'en', text: 'Phát âm, ngữ pháp và cách dùng từ, chỉ ra trước những chỗ người Việt hay nhầm.' },
+  { lang: 'en', text: 'Phát âm, ngữ pháp và cách dùng từ, kèm lỗi người Việt hay mắc.' },
   { lang: 'zh', text: 'Đi từ những câu đầu tiên tới ngữ pháp khó hơn, theo từng trình độ.' },
   { lang: 'es', text: 'Danh từ có giống, động từ đổi theo ngôi. Giải thích từ đầu những thứ tiếng Việt không có.' },
 ]
@@ -35,9 +35,6 @@ export function Landing({ example, facts, take, phrases }: {
       <section id="review" className={s.review} aria-labelledby="review-title">
         <div className={s.wrap}>
           <h2 id="review-title" className={s.h2} data-reveal="">Từ đã lưu quay lại trước khi quên.</h2>
-          <p className={s.lede} data-reveal="" data-i="1">
-            Luyện cách nào cũng ghi vào lịch ôn của từ. Nhớ tốt thì từ quay lại muộn hơn, quên thì quay lại sớm hơn.
-          </p>
           <ReviewDemo example={example} />
         </div>
       </section>

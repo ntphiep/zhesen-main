@@ -72,7 +72,7 @@ export function ToeicResults({ items, timed, onRetryWrong, onRestart }: {
       <section className={t.section}>
         <h2>Xem lại</h2>
         {wrong.length > 0 && (
-          <div className={t.filter} role="group" aria-label="Câu hiện ra">
+          <div className={t.filter} role="group" aria-label="Lọc câu">
             <button type="button" aria-pressed={only} onClick={() => setOnly(true)}>Câu sai ({wrong.length})</button>
             <button type="button" aria-pressed={!only} onClick={() => setOnly(false)}>Tất cả ({items.length})</button>
           </div>

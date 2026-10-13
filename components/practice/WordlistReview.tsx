@@ -54,7 +54,7 @@ export function WordlistReview() {
       <Stage>
         <div className={`${p.card} ${p.end}`}>
           <h1>Hết từ cần ôn.</h1>
-          {reviewed > 0 && <p>Đã ôn {reviewed} từ trong phiên này.</p>}
+          {reviewed > 0 && <p>Đã ôn {reviewed} từ.</p>}
           <GradeSyncWarning failed={syncFailed || lost} />
           <div className={p.row}><Link href="/practice" className={p.btn}>Về luyện tập</Link></div>
         </div>
@@ -74,7 +74,7 @@ export function WordlistReview() {
         <SessionBar label={left} done={reviewed} total={reviewed + queue.length} />
         <div className={`${p.card} ${p.end}`}>
           <h1>Từ tiếp theo đến hạn sau {waitLabel(wakeAt - now)}.</h1>
-          {reviewed > 0 && <p>Đã ôn {reviewed} từ trong phiên này.</p>}
+          {reviewed > 0 && <p>Đã ôn {reviewed} từ.</p>}
           <GradeSyncWarning failed={syncFailed || lost} />
           <div className={p.row}>
             <button type="button" className={p.btn} onClick={() => setAhead(true)}>Ôn ngay</button>

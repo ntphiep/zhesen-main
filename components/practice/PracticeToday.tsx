@@ -36,7 +36,7 @@ export function PracticeToday({ hub }: { hub: PracticeHub }) {
           <li>
             <span>Nhận ra</span>
             <Link href={plan.recognitionDue > 0 ? subsetHref('/practice/quiz', { kind: 'due' }) : '/practice/quiz'} prefetch={false}>
-              {plan.recognitionDue > 0 ? `${plan.recognitionDue} từ đến lượt kiểm tra` : 'Đã kiểm tra xong hôm nay'}
+              {plan.recognitionDue > 0 ? `${plan.recognitionDue} từ cần kiểm tra` : 'Đã kiểm tra xong hôm nay'}
             </Link>
           </li>
         </ul>

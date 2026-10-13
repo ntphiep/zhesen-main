@@ -156,7 +156,7 @@ describe('AccountSettings', () => {
   it('says what to do instead of showing an empty progress panel', () => {
     show({ stats: empty })
     expect(screen.getByText(/Chưa có từ\./)).toBeInTheDocument()
-    expect(screen.queryByText('Chuỗi ngày')).toBeNull()
+    expect(screen.queryByText('Ngày học liên tiếp')).toBeNull()
   })
 
   it('applies the chosen scheme and remembers it', async () => {

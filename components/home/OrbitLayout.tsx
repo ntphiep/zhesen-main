@@ -154,7 +154,7 @@ export function OrbitLayout({ view, failed, onRetry, picker }: { view: HomeView 
             <Link className={h.btn} href="/practice/review" prefetch={false}>Ôn ngay</Link>
           </div>
           <ModeLinks />
-          <LookupBox lookup={lookup} placeholder="giấc mơ" />
+          <LookupBox lookup={lookup} />
           <Languages view={view} open={open} onToggle={toggle} />
         </div>
         <div className={h.globeCol}>

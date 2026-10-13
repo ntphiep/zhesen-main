@@ -89,7 +89,7 @@ describe('HomeReviewDeck', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Khó' }))
     await screen.findByText('Hết từ cần ôn.')
     expect(m.logDay).toHaveBeenCalledTimes(1)
-    expect(screen.getByText('Đã ôn 2 từ trong phiên này.')).toBeInTheDocument()
+    expect(screen.getByText('Đã ôn 2 từ.')).toBeInTheDocument()
   })
 
   it('keeps the word on screen when the write fails', async () => {

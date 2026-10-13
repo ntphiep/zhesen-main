@@ -22,7 +22,7 @@ async function entryOf(params: Params) {
  *  card is rendered on first request, then kept for the data caches' week. */
 export async function generateImageMetadata({ params }: { params: Params }) {
   const entry = await entryOf(params)
-  return entry ? [{ id: 'card', alt: `Từ ${entry.detail.headword} và nghĩa tiếng Việt trên Zhesen`, size, contentType }] : []
+  return entry ? [{ id: 'card', alt: `${entry.detail.headword}: nghĩa tiếng Việt`, size, contentType }] : []
 }
 export const revalidate = 604800
 

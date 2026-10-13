@@ -130,7 +130,6 @@ export function AuthForm({
             autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="ban@vidu.com"
             className={s.field}
           />
         </label>

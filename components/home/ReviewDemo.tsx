@@ -39,8 +39,8 @@ const MODES: { id: Mode; title: string; small: string; icon: ReactNode }[] = [
   { id: 'card', title: 'Ôn từ', small: 'Hiện nghĩa rồi tự chấm nhớ tới đâu.', icon: <svg viewBox="0 0 20 20" {...ICON}><rect x="3" y="5" width="11" height="12" rx="2" /><path d="M7 3h8a2 2 0 0 1 2 2v9" /></svg> },
   { id: 'quiz', title: 'Kiểm tra', small: 'Chọn đúng nghĩa của từ.', icon: <svg viewBox="0 0 20 20" {...ICON}><circle cx="10" cy="10" r="7" /><path d="m7 10 2.2 2.2L13.5 8" /></svg> },
   { id: 'write', title: 'Viết từ', small: 'Nhìn nghĩa tiếng Việt, gõ lại từ.', icon: <svg viewBox="0 0 20 20" {...ICON}><path d="M4 16l.8-3.4L13 4.4a1.6 1.6 0 0 1 2.3 0l.3.3a1.6 1.6 0 0 1 0 2.3L7.4 15.2z" /><path d="M11.5 6l2.5 2.5" /></svg> },
-  { id: 'dictation', title: 'Nghe và chép', small: 'Nghe phát âm rồi gõ lại từ vừa nghe.', icon: <svg viewBox="0 0 20 20" {...ICON}><path d="M4 12v-2a6 6 0 0 1 12 0v2" /><rect x="3" y="12" width="3.5" height="5" rx="1.2" /><rect x="13.5" y="12" width="3.5" height="5" rx="1.2" /></svg> },
-  { id: 'match', title: 'Ghép cặp', small: 'Nối từng từ với nghĩa của nó.', icon: <svg viewBox="0 0 20 20" {...ICON}><circle cx="5" cy="6" r="2" /><circle cx="15" cy="14" r="2" /><path d="M7 6h3a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h-1" /></svg> },
+  { id: 'dictation', title: 'Nghe và chép', small: 'Nghe phát âm rồi gõ lại từ.', icon: <svg viewBox="0 0 20 20" {...ICON}><path d="M4 12v-2a6 6 0 0 1 12 0v2" /><rect x="3" y="12" width="3.5" height="5" rx="1.2" /><rect x="13.5" y="12" width="3.5" height="5" rx="1.2" /></svg> },
+  { id: 'match', title: 'Ghép cặp', small: 'Nối từ với nghĩa.', icon: <svg viewBox="0 0 20 20" {...ICON}><circle cx="5" cy="6" r="2" /><circle cx="15" cy="14" r="2" /><path d="M7 6h3a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h-1" /></svg> },
   { id: 'speak', title: 'Luyện nói', small: 'Đọc to cho máy nghe.', icon: MIC },
 ]
 const NOTES: Record<Mode, string> = {
@@ -128,7 +128,7 @@ function Stage({ word, words, mode }: { word: SeenWord; words: readonly SeenWord
         <p className={s.when}>
           {sched && last
             ? `${LABEL[last.grade]}. Từ này quay lại sau ${after(sched.state, last.at)}, vào ngày ${fmt(sched.state.dueAt)}.`
-            : 'Luyện một phiên, lịch ôn của từ này hiện ở đây.'}
+            : 'Chưa có lịch ôn. Trả lời thử một câu.'}
         </p>
         <ol className={s.log}>
           {sched?.history.map((h, i) => <li key={i}>Lần {i + 1}, ngày {fmt(h.at)}: {h.why ? `${h.why}, ` : ''}{LABEL[h.grade]}.</li>)}

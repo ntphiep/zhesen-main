@@ -127,7 +127,7 @@ export function recommend(
     return { mode: '/practice/review', href: '/practice/review', reason }
   }
   if (plan.recognitionDue > 0) {
-    return { mode: '/practice/quiz', href: subsetHref('/practice/quiz', { kind: 'due' }), reason: `${plan.recognitionDue} từ đến lượt kiểm tra nghĩa.` }
+    return { mode: '/practice/quiz', href: subsetHref('/practice/quiz', { kind: 'due' }), reason: `${plan.recognitionDue} từ cần kiểm tra nghĩa.` }
   }
   if (failing.length > 0) {
     return { mode: '/practice/write', href: failingHref(failing), reason: `${failing.length} từ hay sai.` }

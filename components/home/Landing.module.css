@@ -21,7 +21,6 @@
 /* The page container of globals.css and the header, so every edge lines up. */
 .wrap { max-width: var(--container-page); margin: 0 auto; padding-left: 1.5rem; padding-right: 1.5rem; }
 .h2 { margin: 0; max-width: 22ch; font-size: var(--s5); line-height: 1.12; font-weight: 800; letter-spacing: -0.03em; color: var(--zs-ink); text-wrap: balance; }
-.lede { margin: 1rem 0 0; max-width: 40rem; font-size: var(--s2); line-height: 1.55; color: var(--zs-soft); text-wrap: pretty; }
 .go { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1.6rem; min-height: 2.75rem; padding: 0 1.1rem; border-radius: 999px; border: 1.5px solid currentColor; font-weight: 700; text-decoration: none; color: var(--zs-ink); transition: background-color 150ms var(--ease-std), color 150ms var(--ease-std); }
 .go:hover { background: var(--zs-ink); color: var(--zs-bg); }
 .fade { animation: fade 180ms var(--ease-std) both; }
@@ -400,7 +399,6 @@
 @media (max-width: 1100px) { .modes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .split { grid-template-columns: minmax(0, 1fr) minmax(0, 46rem); } .root a { font-size: var(--s6); } }
 @media (max-width: 760px) {
   .h2 { font-size: var(--s4); }
-  .lede { font-size: var(--s1); }
   .phrases, .senses, .review { padding: 4rem 0; }
   .split { grid-template-columns: 1fr; margin-top: 2rem; }
   .root { padding: 0 0 1.4rem; justify-items: start; text-align: start; }

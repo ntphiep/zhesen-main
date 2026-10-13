@@ -44,7 +44,7 @@ describe('AddWordDialog', () => {
   it('manual tab requires a headword', async () => {
     const onAdd = vi.fn()
     render(<AddWordDialog open onClose={() => {}} onAdd={onAdd} />)
-    await userEvent.click(screen.getByRole('tab', { name: /Thủ công/i }))
+    await userEvent.click(screen.getByRole('tab', { name: /Tự nhập/i }))
     await userEvent.click(screen.getByRole('button', { name: /Lưu từ/i }))
     expect(onAdd).not.toHaveBeenCalled()
   })
@@ -77,7 +77,7 @@ describe('AddWordDialog', () => {
 
   it('hides the assistant when the deployment has no model configured', async () => {
     render(<AddWordDialog open onClose={() => {}} onAdd={vi.fn()} />)
-    await userEvent.click(screen.getByRole('tab', { name: /Thủ công/i }))
+    await userEvent.click(screen.getByRole('tab', { name: /Tự nhập/i }))
     expect(screen.queryByRole('button', { name: /Điền bằng AI/i })).toBeNull()
   })
 
@@ -85,8 +85,8 @@ describe('AddWordDialog', () => {
   it('stores a part of speech typed as the table shows it', async () => {
     const onAdd = vi.fn()
     render(<AddWordDialog open onClose={() => {}} onAdd={onAdd} />)
-    await userEvent.click(screen.getByRole('tab', { name: /Thủ công/i }))
-    await userEvent.type(screen.getByPlaceholderText('Ví dụ: dog'), 'dog')
+    await userEvent.click(screen.getByRole('tab', { name: /Tự nhập/i }))
+    await userEvent.type(screen.getByLabelText('Từ *'), 'dog')
     await userEvent.type(screen.getByLabelText(/Từ loại/i), 'n. · v.')
     await userEvent.click(screen.getByRole('button', { name: /Lưu từ/i }))
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ headword: 'dog', pos: 'noun,verb' }))
@@ -100,15 +100,15 @@ describe('AddWordDialog', () => {
     })
     const onAdd = vi.fn()
     render(<AddWordDialog open onClose={() => {}} onAdd={onAdd} />)
-    await userEvent.click(screen.getByRole('tab', { name: /Thủ công/i }))
-    await userEvent.type(screen.getByPlaceholderText('Ví dụ: dog'), 'dog')
-    await userEvent.type(screen.getByPlaceholderText('con chó'), 'chó nhà')
+    await userEvent.click(screen.getByRole('tab', { name: /Tự nhập/i }))
+    await userEvent.type(screen.getByLabelText('Từ *'), 'dog')
+    await userEvent.type(screen.getByLabelText('Nghĩa tiếng Việt'), 'chó nhà')
 
     await userEvent.click(await screen.findByRole('button', { name: /Điền bằng AI/i }))
     await screen.findByDisplayValue('The dog barked.')
 
     // The learner's own wording outranks the model's.
-    expect(screen.getByPlaceholderText('con chó')).toHaveValue('chó nhà')
+    expect(screen.getByLabelText('Nghĩa tiếng Việt')).toHaveValue('chó nhà')
     expect(screen.getByPlaceholderText('noun, verb...')).toHaveValue('n.')
 
     await userEvent.click(screen.getByRole('button', { name: /Lưu từ/i }))
@@ -121,8 +121,8 @@ describe('AddWordDialog', () => {
     vi.mocked(aiEnabled).mockResolvedValue(true)
     vi.mocked(callAi).mockResolvedValue({ status: 'error', message: 'Trợ lý gặp lỗi.' })
     render(<AddWordDialog open onClose={() => {}} onAdd={vi.fn()} />)
-    await userEvent.click(screen.getByRole('tab', { name: /Thủ công/i }))
-    await userEvent.type(screen.getByPlaceholderText('Ví dụ: dog'), 'dog')
+    await userEvent.click(screen.getByRole('tab', { name: /Tự nhập/i }))
+    await userEvent.type(screen.getByLabelText('Từ *'), 'dog')
     await userEvent.click(await screen.findByRole('button', { name: /Điền bằng AI/i }))
     expect(await screen.findByText('Trợ lý gặp lỗi.')).toBeInTheDocument()
   })

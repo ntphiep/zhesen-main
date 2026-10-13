@@ -17,7 +17,7 @@ export const LEECH_LAPSES = 8
 
 /** Shown wherever a learner can set "Đã biết": the word leaves the review queue, its counts and
  *  the forecast until its status changes. Quiz, match, typing and speaking still use it (owner). */
-export const KNOWN_HINT = 'Bỏ khỏi phiên ôn. Chọn trạng thái khác để ôn lại.'
+export const KNOWN_HINT = 'Không đưa vào ôn nữa. Đổi trạng thái để ôn lại.'
 
 /** Entries of STATUS_LABELS with the key still typed, for rendering option lists. */
 export const STATUS_OPTIONS = Object.entries(STATUS_LABELS) as [WordStatus, string][]

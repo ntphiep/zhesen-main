@@ -248,7 +248,7 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
           aria-selected={tab === 'manual'}
           onClick={() => setTab('manual')}
         >
-          Thủ công
+          Tự nhập
         </button>
       </div>
 
@@ -331,10 +331,9 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
                 </select>
               </label>
               <label className="flex flex-col gap-1 flex-1 min-w-0">
-                <span className={s.label}>Từ gốc *</span>
+                <span className={s.label}>Từ *</span>
                 <input
                   type="text"
-                  placeholder="Ví dụ: dog"
                   value={headword}
                   onChange={(e) => setHeadword(e.target.value)}
                   className={s.field}
@@ -398,7 +397,6 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
               <span className={s.label}>Nghĩa tiếng Việt</span>
               <input
                 type="text"
-                placeholder="con chó"
                 value={meaningVi}
                 onChange={(e) => { setMeaningVi(e.target.value); unmark('meaningVi') }}
                 className={s.field}
@@ -408,7 +406,6 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
               <span className={s.label}>Nghĩa tiếng Anh</span>
               <input
                 type="text"
-                placeholder="a domesticated carnivore"
                 value={meaningEn}
                 onChange={(e) => setMeaningEn(e.target.value)}
                 className={s.field}
@@ -418,7 +415,6 @@ export function AddWordDialog({ open, onClose, onAdd, savedEntryIds }: Props) {
               <span className={s.label}>Câu ví dụ</span>
               <input
                 type="text"
-                placeholder="The dog barked."
                 value={example}
                 onChange={(e) => { setExample(e.target.value); unmark('example') }}
                 className={s.field}

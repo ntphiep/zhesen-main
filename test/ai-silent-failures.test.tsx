@@ -67,8 +67,8 @@ describe('filling a word by hand', () => {
   it('shows a failure that throws instead of going quiet', async () => {
     vi.mocked(callAi).mockRejectedValue(new Error('chunk load failed'))
     render(<AddWordDialog open onClose={() => {}} onAdd={vi.fn()} />)
-    await userEvent.click(screen.getByRole('tab', { name: /Thủ công/i }))
-    await userEvent.type(screen.getByPlaceholderText('Ví dụ: dog'), 'dog')
+    await userEvent.click(screen.getByRole('tab', { name: /Tự nhập/i }))
+    await userEvent.type(screen.getByLabelText('Từ *'), 'dog')
     await userEvent.click(await screen.findByRole('button', { name: /Điền bằng AI/i }))
     expect(await screen.findByText('Chưa điền được. Thử lại.')).toBeInTheDocument()
   })

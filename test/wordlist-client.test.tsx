@@ -107,8 +107,8 @@ describe('WordlistClient', () => {
     // Open the dialog
     await userEvent.click(screen.getByRole('button', { name: /Thêm từ/i }))
     // Switch to manual tab so we can fill the form without a DB search
-    await userEvent.click(screen.getByRole('tab', { name: /Thủ công/i }))
-    await userEvent.type(screen.getByPlaceholderText(/Ví dụ: dog/i), 'hello')
+    await userEvent.click(screen.getByRole('tab', { name: /Tự nhập/i }))
+    await userEvent.type(screen.getByLabelText('Từ *'), 'hello')
     await userEvent.click(screen.getByRole('button', { name: /Lưu từ/i }))
     // Optimistic row should appear before the async addWord resolves
     expect(await screen.findByText('hello')).toBeInTheDocument()

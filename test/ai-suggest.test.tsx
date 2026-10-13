@@ -58,7 +58,7 @@ describe('AiSuggest', () => {
     vi.mocked(callAi).mockResolvedValue({ status: 'ok', data: { words: [] } })
     render(<AiSuggest query="qwertyuiop" />)
     await userEvent.click(await screen.findByRole('button', { name: /Hỏi AI/i }))
-    expect(await screen.findByText(/không nghĩ ra từ nào/i)).toBeInTheDocument()
+    expect(await screen.findByText(/chưa tìm ra từ nào/i)).toBeInTheDocument()
   })
 
   it('shows the refusal rather than an empty list', async () => {

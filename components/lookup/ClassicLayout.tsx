@@ -60,7 +60,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
             <LevelChip level={head.level} />
             <ToeicChip place={view.toeic} />
             {frequencyBars(head.frequencyRank) > 0 && (
-              <span title="Nằm trong 3000 từ thông dụng nhất của ngôn ngữ này"><Badge tone="light">Hay gặp</Badge></span>
+              <span title="Thuộc 3000 từ thông dụng nhất"><Badge tone="light">Hay gặp</Badge></span>
             )}
             <div className="ml-auto">
               <AddToWordlistButton size="lg" entry={{ ...head, pronunciations: [] }} />
@@ -79,7 +79,7 @@ export function ClassicLayout({ view }: { view: WordView }) {
 
         {/* The rail lists the same parts on a wide screen. */}
         {parts.length > 1 && (
-          <nav aria-label="Mục trong trang" className="-mt-4 flex gap-2 overflow-x-auto lg:hidden">
+          <nav aria-label="Mục lục" className="-mt-4 flex gap-2 overflow-x-auto lg:hidden">
             {parts.map((p) => (
               <a key={p.href} href={p.href} className="shrink-0 rounded-full border border-(--edge) px-3 py-1.5 text-[13px] font-semibold transition-colors duration-150 ease-std hover:bg-(--zs-chip)">
                 {p.label}
@@ -147,8 +147,8 @@ export function ClassicLayout({ view }: { view: WordView }) {
 
       <aside className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:max-h-[calc(100dvh-var(--header-h)-3rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
         {parts.length > 1 && (
-          <nav aria-label="Trên trang này" className={`hidden flex-col gap-2.5 lg:flex ${RAIL_CARD}`}>
-            <SectionLabel>Trên trang này</SectionLabel>
+          <nav aria-label="Mục lục" className={`hidden flex-col gap-2.5 lg:flex ${RAIL_CARD}`}>
+            <SectionLabel>Mục lục</SectionLabel>
             <ul className="flex flex-col gap-1.5 text-sm">
               {parts.map((p) => (
                 <li key={p.href}><a href={p.href} className="text-(--zs-pen) hover:underline">{p.label}</a></li>

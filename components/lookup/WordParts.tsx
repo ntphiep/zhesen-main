@@ -169,7 +169,7 @@ export function FrequencyMeter({ rank, small = false }: { rank: number | null | 
   const bars = frequencyBars(rank)
   if (bars === 0) return null
   return (
-    <span className="flex items-center gap-2 text-xs font-semibold text-(--zs-ink)" title="Nằm trong 3000 từ thông dụng nhất của ngôn ngữ này">
+    <span className="flex items-center gap-2 text-xs font-semibold text-(--zs-ink)" title="Thuộc 3000 từ thông dụng nhất">
       <span aria-hidden="true" className="flex gap-[3px]">
         {[1, 2, 3, 4, 5].map((i) => (
           <span key={i} className={`rounded-[2px] ${small ? 'h-3 w-[5px]' : 'h-3.5 w-1.5'} ${i <= bars ? 'bg-(--zs-pen)' : 'bg-(--zs-chip)'}`} />

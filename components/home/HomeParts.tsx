@@ -153,20 +153,19 @@ export function useHomeLookup() {
 }
 export type HomeLookup = ReturnType<typeof useHomeLookup>
 
-export function LookupBox({ lookup, placeholder }: { lookup: HomeLookup; placeholder: string }) {
+export function LookupBox({ lookup }: { lookup: HomeLookup }) {
   const id = useId()
   const input = useRef<HTMLInputElement>(null)
   return (
     <form
       className={l.box}
       role="search"
-      onSubmit={(e) => { e.preventDefault(); lookup.run(input.current?.value || placeholder) }}
+      onSubmit={(e) => { e.preventDefault(); lookup.run(input.current?.value ?? '') }}
     >
       <label htmlFor={id}>Gõ một từ tiếng Việt</label>
       <input
         ref={input}
         id={id}
-        placeholder={placeholder}
         autoComplete="off"
         spellCheck={false}
         enterKeyHint="search"
@@ -268,7 +267,7 @@ function StreakFact({ view }: { view: HomeView | null }) {
   return (
     <div className={h.fact}>
       <b><CountUp value={view?.streak ?? null} /></b>
-      <span>ngày học liền</span>
+      <span>ngày học liên tiếp</span>
       {/* Drawn while the numbers load too, hidden, so the card keeps its height. */}
       <p className={h.frz} data-wait={s ? undefined : ''} aria-hidden={s ? undefined : true}>
         {Array.from({ length: MAX_FREEZES }, (_, i) => (
@@ -276,9 +275,9 @@ function StreakFact({ view }: { view: HomeView | null }) {
             <path d="M8 1.5 2.5 3.6v4c0 3.3 2.3 5.8 5.5 6.9 3.2-1.1 5.5-3.6 5.5-6.9v-4z" />
           </svg>
         ))}
-        <span>{s?.freezes ?? 0}/{MAX_FREEZES} lượt giữ chuỗi</span>
+        <span>Còn {s?.freezes ?? 0}/{MAX_FREEZES} ngày nghỉ</span>
       </p>
-      {s?.savedYesterday && <p className={h.frzNote}>Hôm qua đã dùng một lượt giữ chuỗi.</p>}
+      {s?.savedYesterday && <p className={h.frzNote}>Hôm qua đã dùng một ngày nghỉ.</p>}
     </div>
   )
 }

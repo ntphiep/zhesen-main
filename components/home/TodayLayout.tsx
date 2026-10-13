@@ -43,15 +43,15 @@ export function TodayLayout({ view, failed, onRetry, picker, daily, supabase, on
         <section aria-label="Hôm nay">
           <DueTitle due={view?.due ?? null} failed={failed} onRetry={onRetry} />
           <ModeLinks />
-          <LookupBox lookup={lookup} placeholder="giấc mơ" />
+          <LookupBox lookup={lookup} />
           <Calendar view={view} />
         </section>
         <div className={h.reviewCol}>
           {view && supabase ? (
             <HomeReviewDeck cards={view.pending} supabase={supabase} now={view.now} total={view.total} onGraded={onGraded} />
           ) : (
-            <section className={h.deck} aria-label="Phiên ôn hôm nay">
-              <div className={h.lblRow}><p className={h.lbl}>Phiên ôn hôm nay</p></div>
+            <section className={h.deck} aria-label="Ôn hôm nay">
+              <div className={h.lblRow}><p className={h.lbl}>Ôn hôm nay</p></div>
               <div className={h.slot}>
                 {/* A card's lines, hidden, so the first card takes the same room. */}
                 <div className={h.rc} data-wait="" aria-hidden="true">

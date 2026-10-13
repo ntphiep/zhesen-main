@@ -8,7 +8,7 @@ export function GradeSyncWarning({ failed }: { failed: boolean }) {
         <path d="M8 1.75 15 14H1z" />
         <path d="M8 6.25v3.5M8 11.75v.25" />
       </svg>
-      Chưa lưu được tiến độ phiên này. Kiểm tra mạng rồi ôn lại.
+      Chưa lưu được một số câu trả lời. Kiểm tra mạng rồi ôn lại.
     </p>
   )
 }

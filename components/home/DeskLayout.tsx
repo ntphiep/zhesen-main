@@ -31,7 +31,7 @@ export function DeskLayout({ view, failed, onRetry, picker }: { view: HomeView |
           <ModeLinks />
         </div>
         <div>
-          <LookupBox lookup={lookup} placeholder="thời tiết" />
+          <LookupBox lookup={lookup} />
           <RecentChips max={4} />
         </div>
       </section>
@@ -40,7 +40,7 @@ export function DeskLayout({ view, failed, onRetry, picker }: { view: HomeView |
 
       <div className={`${h.wrap} ${h.desk}`}>
         <section className={h.tray} aria-labelledby={trayId}>
-          <p className={h.lbl} id={trayId}>Phiên ôn hôm nay</p>
+          <p className={h.lbl} id={trayId}>Ôn hôm nay</p>
           {view && (view.pending.length ? (
             <ol className={h.cards} data-deal="">
               {view.pending.slice(0, CARDS).map((c, i) => {

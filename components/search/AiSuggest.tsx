@@ -75,7 +75,7 @@ export function AiSuggest({ query, direction, targets }: {
   if (state.kind === 'error') return <ErrorLine>{state.message}</ErrorLine>
 
   if (state.words.length === 0) {
-    return <p className="text-sm text-(--zs-soft)">AI cũng không nghĩ ra từ nào.</p>
+    return <p className="text-sm text-(--zs-soft)">AI chưa tìm ra từ nào.</p>
   }
 
   // The route keeps only words the dictionary has, with its gloss; without the lookup the

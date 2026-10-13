@@ -38,9 +38,9 @@ export function ToeicView({ language, guide }: { language: Language; guide: Toei
       language={language}
       block="toeic"
       titleVi="Luyện thi TOEIC"
-      leadVi="Cấu trúc đề, thang điểm và quy định phòng thi theo tài liệu của ETS. Mẹo, bẫy và lộ trình là kinh nghiệm ôn thi."
+      leadVi="Nắm cấu trúc đề, mẹo từng Part và từ vựng theo chủ đề."
       toc={
-        <nav aria-label="Mục" className={s.toc}>
+        <nav aria-label="Mục lục" className={s.toc}>
           {nav.map((n) => (
             <a key={n.id} href={`#${n.id}`} className={s.chip}>{n.titleVi}</a>
           ))}

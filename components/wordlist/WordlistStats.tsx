@@ -8,7 +8,7 @@ import s from './Progress.module.css'
 type NumericStatKey = 'streak' | 'total' | 'due' | 'learned' | 'reviewedToday'
 
 const CARDS: { key: NumericStatKey; label: string }[] = [
-  { key: 'streak', label: 'Chuỗi ngày' },
+  { key: 'streak', label: 'Ngày học liên tiếp' },
   { key: 'total', label: 'Tổng số từ' },
   { key: 'due', label: 'Cần ôn' },
   { key: 'learned', label: 'Đã thuộc' },
@@ -37,8 +37,8 @@ export function WordlistStats({ stats, omit = [] }: { stats: Stats; omit?: reado
             {c.key === 'reviewedToday' && <small>/{goal}</small>}
           </b>
           <span>{c.key === 'reviewedToday' && today.met ? 'Đủ mục tiêu hôm nay' : c.label}</span>
-          {c.key === 'streak' && kept && <em>{kept.freezes}/{MAX_FREEZES} lượt giữ chuỗi</em>}
-          {c.key === 'streak' && kept?.savedYesterday && <em>Hôm qua đã dùng một lượt</em>}
+          {c.key === 'streak' && kept && <em>Còn {kept.freezes}/{MAX_FREEZES} ngày nghỉ</em>}
+          {c.key === 'streak' && kept?.savedYesterday && <em>Hôm qua đã dùng một ngày nghỉ</em>}
         </div>
       ))}
     </div>
