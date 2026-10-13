@@ -8,6 +8,11 @@
 -- 2. A gloss that places its entry ("thành phố nhỏ ở Quận Hancock, Iowa, Hoa Kỳ") no longer
 --    lends the place's address as terms. Those parts made 400 towns answer "hoa kỳ". The
 --    entries affected are rebuilt here; lex.gloss_terms stays derived from lex.senses.
+--
+-- reviewed-destructive: Harry Nguyen. The `delete from lex.gloss_terms` is 0048's own
+-- rebuild step, restated because `create or replace` takes the whole body. The table is
+-- derived from lex.senses and holds nothing a person wrote; the call at the end rebuilds
+-- the affected entries in the same transaction.
 
 CREATE OR REPLACE FUNCTION lex.search_vi(p_q text, p_langs text[] DEFAULT NULL::text[], p_limit integer DEFAULT 20)
  RETURNS TABLE(id text, lang text, headword text, traditional text, level text, frequency_rank integer, attributes jsonb, pos text, gloss_vi text, gloss_en text, ipa text, audio_url text, rank real)
