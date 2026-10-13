@@ -181,10 +181,19 @@ function segmentCommon(token: string): number {
 
 /** Reject example sentences whose words have run together: camelCase boundaries,
  *  over-long tokens, or a long token decomposing into 3+ common words. */
+/** Under 3 words, or under 5 Chinese characters: "took shape" on take, 媽的！ on 的. Such a
+ *  line is a usage, not a sentence to learn from. */
+export function isFragment(text: string, lang: string): boolean {
+  const n = lang === 'zh' ? (text.match(/\p{Script=Han}/gu) ?? []).length : text.split(/\s+/).filter(Boolean).length
+  return n < (lang === 'zh' ? 5 : 3)
+}
+
 export function isCleanExample(text: string): boolean {
   const t = text.trim()
   if (!t) return false
   if (/[a-z][A-Z]/.test(t)) return false
+  // The long s of 17th-century print: "That viſage miſ-becomes" on take.
+  if (t.includes('ſ')) return false
   for (const w of t.split(/\s+/)) {
     const letters = w.replace(/[^\p{L}]/gu, '')
     if (letters.length > 14) return false

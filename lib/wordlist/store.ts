@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { DictEntryDetail, DictEntryPreview, DictExample } from '@/lib/dictionary/types'
-import { isCleanExample, stripPhraseStop } from '@/lib/dictionary/textQuality'
+import { isCleanExample, isFragment, stripPhraseStop } from '@/lib/dictionary/textQuality'
 import type { LangCode } from '@/lib/languages'
 import { AI_FIELDS, userWordRow, type AiField, type SaveContext, type UserWord, type WordDraft, type WordStatus } from './types'
 import { z } from '@/lib/zod'
@@ -35,10 +35,18 @@ export function parseUserWordRow(r: unknown): UserWord {
 
 /** Pick an example for a flashcard: clean text, a Vietnamese translation present,
  *  shortest first because a card has room for one line. */
-function pickExample(examples: DictExample[]): DictExample | null {
-  const usable = examples.filter((x) => isCleanExample(x.text) && x.translationVi?.trim())
+/** The sentence a saved word keeps, the shortest that fits a card's one line, among those
+ *  that are a sentence rather than a fragment, illustrate the first sense when one does, and
+ *  for Chinese write the headword as the entry does, not 一起學習吧 for 学习. */
+function pickExample(e: DictEntryDetail): DictExample | null {
+  const usable = e.examples.filter((x) => isCleanExample(x.text) && x.translationVi?.trim())
   if (usable.length === 0) return null
-  return usable.reduce((best, x) => (x.text.length < best.text.length ? x : best))
+  const first = e.senses[0]?.id
+  const score = (x: DictExample) =>
+    (isFragment(x.text, e.lang) ? 6 : 0)
+    + (first && x.senseId && x.senseId !== first ? 2 : 0)
+    + (e.lang === 'zh' && !x.text.includes(e.headword) ? 6 : 0)
+  return usable.reduce((best, x) => (score(x) < score(best) || (score(x) === score(best) && x.text.length < best.text.length) ? x : best))
 }
 
 /** Whole-word pinyin from `lex.entries.attributes`. Null when it equals the IPA field:
@@ -55,7 +63,7 @@ function readingFrom(attributes: Record<string, unknown> | undefined, ipa: strin
  *  word was tapped in becomes its example: 433 of 488 saved words had none. */
 export function draftFromDictEntry(e: DictEntryPreview | DictEntryDetail, context?: SaveContext | null): WordDraft {
   const detail = 'examples' in e ? e : null
-  const example = detail ? pickExample(detail.examples) : context ? { text: context.text, translationVi: context.translationVi } : null
+  const example = detail ? pickExample(detail) : context ? { text: context.text, translationVi: context.translationVi } : null
   return {
     lang: e.lang, entryId: e.id, headword: e.headword,
     reading: detail ? readingFrom(detail.attributes, e.ipa) : null,

@@ -351,6 +351,24 @@ describe('draftFromDictEntry with the full entry', () => {
     expect(d.example).toBe('The dog ran.')
   })
 
+  it('passes over a fragment and a sentence in the other script', () => {
+    const en = draftFromDictEntry(detail({
+      examples: [
+        { text: 'took shape', reading: null, translationVi: 'a', translationEn: null },
+        { text: 'Take my hand.', reading: null, translationVi: 'b', translationEn: null },
+      ],
+    }))
+    expect(en.example).toBe('Take my hand.')
+    const zh = draftFromDictEntry(detail({
+      id: 'zh:学习', lang: 'zh', headword: '学习',
+      examples: [
+        { text: '一起學習吧！', reading: null, translationVi: 'a', translationEn: null },
+        { text: '我们一起学习吧。', reading: null, translationVi: 'b', translationEn: null },
+      ],
+    }))
+    expect(zh.example).toBe('我们一起学习吧。')
+  })
+
   it('takes the reading from the whole-word pinyin', () => {
     const d = draftFromDictEntry(detail({ attributes: { pinyin: 'gǒu' } }))
     expect(d.reading).toBe('gǒu')

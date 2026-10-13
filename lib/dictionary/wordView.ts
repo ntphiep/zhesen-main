@@ -5,7 +5,7 @@ import { phrasalTail } from './phrases'
 import { groupWordForms } from './family'
 import { formLineLemma, isFormOnly, pointerLemma } from './lemma'
 import { posGroup } from './pos'
-import { entryMeaningVi, isCleanExample, isOldSense } from './textQuality'
+import { entryMeaningVi, isCleanExample, isFragment, isOldSense } from './textQuality'
 import {
   entryGlosses, exampleCandidates, knownWordExamples, layerRanked, layerSummary, planExamples, relatedTabs, senseLabel, senseSections, summaryLine,
   type RelatedItem,
@@ -370,7 +370,9 @@ export function groupSenses(senses: DictSense[]): SenseGroup[] {
 /** The example sentences a layout may show: short, clean, and made of words the
  *  dictionary knows. */
 export function cleanExamples(examples: DictExample[], resolved: ResolvedText[], lang: LangCode): DictExample[] {
-  return knownWordExamples(examples.filter((e) => isCleanExample(e.text)), resolved, lang)
+  const clean = knownWordExamples(examples.filter((e) => isCleanExample(e.text)), resolved, lang)
+  // A fragment stays, after the sentences: 的 led with 媽的！ and 他媽的！.
+  return [...clean.filter((e) => !isFragment(e.text, lang)), ...clean.filter((e) => isFragment(e.text, lang))]
 }
 
 /** The headword and its forms, which an example sentence sets in bold. */
