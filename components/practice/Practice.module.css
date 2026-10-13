@@ -95,9 +95,10 @@
 .modes [data-i="5"] { animation-delay: 200ms; }
 
 /* Session header: exit, count, and a progress line that eases to each new step */
-.bar { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; font-size: 0.875rem; font-weight: 700; color: var(--zs-soft); }
-.bar a { color: var(--zs-pen); text-decoration: none; }
-.bar a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 0.875rem; font-weight: 700; color: var(--zs-soft); }
+/* The way out of a session: a 40px target, like components/ui/BackLink.tsx. */
+.bar a { display: inline-flex; align-items: center; min-height: 2.5rem; margin-left: -0.625rem; padding: 0 0.75rem 0 0.625rem; border-radius: 999px; color: var(--zs-pen); text-decoration: none; transition: background-color 150ms var(--ease-std); }
+.bar a:hover { background-color: var(--zs-chip); }
 .bar span { font-variant-numeric: tabular-nums; }
 .track { height: 6px; margin: 0.6rem 0 1rem; border-radius: 9px; background: var(--sea-50); overflow: hidden; }
 .track i { display: block; height: 100%; border-radius: inherit; background: var(--sea-400); transform-origin: left; transition: transform 420ms var(--ease-std); }

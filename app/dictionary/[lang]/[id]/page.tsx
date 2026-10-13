@@ -49,7 +49,7 @@ type Params = Promise<{ lang: string; id: string }>
  */
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { lang, id } = await params
-  if (!isLangCode(lang)) return {}
+  if (!isLangCode(lang) || !percentDecode(id).trim()) return {}
   const detail = await getCachedEntryDetail(buildEntryId(lang, percentDecode(id)))
   return detail ? entryMetadata(detail, await formLemma(detail)) : {}
 }
@@ -58,7 +58,13 @@ export default async function Page({ params }: { params: Params }) {
   const { lang, id } = await params
   if (!isLangCode(lang)) notFound()
   const word = percentDecode(id)
+  // /dictionary/en/%20 drew an empty page titled " là gì?".
+  if (!word.trim()) notFound()
   const data = await loadWordPage(buildEntryId(lang, word))
+  // /dictionary/en/Take is the entry take, unless Take is an entry of its own.
+  if (!data && word !== word.toLowerCase() && await getCachedEntryDetail(buildEntryId(lang, word.toLowerCase()))) {
+    permanentRedirect(entryPath(buildEntryId(lang, word.toLowerCase())))
+  }
   // An inflected phrase opens the entry that lists it as a form: gave up has no entry, and
   // took off has one with a Vietnamese gloss only, as 1,754 English phrases a form resolves do.
   if (/\s/.test(word) && (!data || data.detail.senses.every((s) => !s.glossEn))) {

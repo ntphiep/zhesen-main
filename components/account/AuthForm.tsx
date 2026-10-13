@@ -104,9 +104,9 @@ export function AuthForm({
         {mode === 'register' ? (upgrading ? 'Hoàn tất tài khoản' : 'Tạo tài khoản') : 'Đăng nhập'}
       </h1>
 
-      {(upgrading || mode === 'login') && (
-        <p className={s.cardLede} data-keep={upgrading || undefined}>
-          {upgrading ? `Tài khoản mới giữ nguyên ${localWordCount} từ đã lưu trên trình duyệt này.` : 'Đăng nhập để mở sổ tay.'}
+      {upgrading && (
+        <p className={s.cardLede} data-keep="">
+          Tài khoản mới giữ nguyên {localWordCount} từ đã lưu trên trình duyệt này.
         </p>
       )}
 

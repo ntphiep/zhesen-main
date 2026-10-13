@@ -22,8 +22,8 @@
 
 /* Exam bar: time, progress and submit stay in reach while the page scrolls. */
 .bar { position: sticky; top: var(--header-h); z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; padding: 0.6rem 0; background: var(--tint-1); border-bottom: 1.5px solid var(--zs-line); }
-.bar a { font-size: 0.875rem; font-weight: 700; color: var(--zs-pen); text-decoration: none; }
-.bar a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+.bar a { font-size: 0.875rem; font-weight: 700; display: inline-flex; align-items: center; min-height: 2.5rem; margin-left: -0.625rem; padding: 0 0.75rem 0 0.625rem; border-radius: 999px; color: var(--zs-pen); text-decoration: none; transition: background-color 150ms var(--ease-std); }
+.bar a:hover { background-color: var(--zs-chip); }
 .timer { font-size: 1.3125rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--zs-ink); }
 .timer[data-low] { text-decoration: underline; text-decoration-color: var(--sea-400); text-decoration-thickness: 3px; text-underline-offset: 0.25em; }
 .count { margin-right: auto; font-size: 0.875rem; font-weight: 700; color: var(--zs-soft); font-variant-numeric: tabular-nums; }
