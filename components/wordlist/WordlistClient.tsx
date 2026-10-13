@@ -1,6 +1,8 @@
 'use client'
 import { useMemo, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { studyDayEnd } from '@/lib/wordlist/activity'
 import { addWord, addWords, listWords, updateWord, updateWordsStatus, deleteWord, deleteWords } from '@/lib/wordlist/store'
 import { mergeTags, tagCounts } from '@/lib/wordlist/tags'
 import { formatWordDate, isDueAt, DUE_LABEL } from '@/lib/wordlist/format'
@@ -31,10 +33,14 @@ import s from './Wordlist.module.css'
 
 const LANG_NAME = new Map(LANGUAGES.map((l) => [l.code, l.name]))
 
-export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
+/** `due` is the server's count for the practice button; a delete here can only lower it,
+ *  so it is capped by the words left that fall due by the end of the study day. */
+export function WordlistClient({ initialWords, due = 0 }: { initialWords: UserWord[]; due?: number }) {
   const supabase = useMemo(() => createClient(), [])
 
   const [words, setWords] = useState<UserWord[]>(initialWords)
+  const [dueBy] = useState(() => studyDayEnd(Date.now()))
+  const dueNow = Math.min(due, words.filter((w) => w.status !== 'known' && isDueAt(w.fsrsDueAt, dueBy)).length)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
@@ -296,9 +302,32 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
 
   const allTags = tagCounts(words).map((t) => t.tag)
 
+  const empty = words.length === 0
+
   return (
     <div className="flex flex-col gap-4">
-      <WordlistToolbar
+      <div className={`${s.head} mb-2`}>
+        <h1 className={s.title}>Sổ tay</h1>
+        {!empty && (
+          <Link href="/practice" className={dueNow > 0 ? s.btn : s.ghost}>
+            Luyện tập{dueNow > 0 ? ` (${dueNow})` : ''}
+          </Link>
+        )}
+      </div>
+
+      {/* A new notebook gets the way to its first word, not filters over nothing. */}
+      {empty && (
+        <div className={s.empty}>
+          <p>Chưa có từ. Tra một từ để lưu.</p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <Link href="/dictionary" className={s.btn}>Tra từ</Link>
+            <button type="button" className={s.ghost} onClick={() => setAddOpen(true)}>Thêm từ</button>
+            <button type="button" className={s.ghost} onClick={() => setImportOpen(true)}>Nhập CSV</button>
+          </div>
+        </div>
+      )}
+
+      {!empty && <WordlistToolbar
         query={query}
         onQueryChange={setQuery}
         langFilter={langFilter}
@@ -332,7 +361,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
             onReset={resetColumns}
           />
         }
-      />
+      />}
 
       <TagFilterBar words={words} activeTags={tagFilter} onToggle={toggleTagFilter} />
 
@@ -345,13 +374,7 @@ export function WordlistClient({ initialWords }: { initialWords: UserWord[] }) {
         onBulkDelete={handleBulkDelete}
       />
 
-      {visible.length === 0 && (
-        <p className={s.empty}>
-          {words.length === 0
-            ? 'Chưa có từ. Tra một từ để lưu.'
-            : 'Không có từ nào khớp bộ lọc. Đổi bộ lọc.'}
-        </p>
-      )}
+      {!empty && visible.length === 0 && <p className={s.empty}>Không có từ nào khớp bộ lọc. Đổi bộ lọc.</p>}
 
       {view === 'table' && shown.length > 0 && (
         <WordTable

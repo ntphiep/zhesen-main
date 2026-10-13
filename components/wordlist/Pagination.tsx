@@ -1,5 +1,6 @@
 'use client'
 import { PAGE_SIZES, isPageSize, type PageSize } from '@/lib/wordlist/paginate'
+import { ArrowFirst, ArrowLast, ArrowLeft, ArrowRight } from '@/components/theory/Glyphs'
 import s from './Wordlist.module.css'
 
 interface Props {
@@ -42,11 +43,11 @@ export function Pagination({
         </label>
 
         <div className="flex items-center gap-1">
-          <button className={s.step} onClick={() => onPageChange(1)} disabled={first} aria-label="Trang đầu">«</button>
-          <button className={s.step} onClick={() => onPageChange(page - 1)} disabled={first} aria-label="Trang trước">‹</button>
+          <button className={s.step} onClick={() => onPageChange(1)} disabled={first} aria-label="Trang đầu"><ArrowFirst /></button>
+          <button className={s.step} onClick={() => onPageChange(page - 1)} disabled={first} aria-label="Trang trước"><ArrowLeft /></button>
           <span className="whitespace-nowrap px-2 font-semibold tabular-nums" aria-live="polite">Trang {page} / {pageCount}</span>
-          <button className={s.step} onClick={() => onPageChange(page + 1)} disabled={last} aria-label="Trang sau">›</button>
-          <button className={s.step} onClick={() => onPageChange(pageCount)} disabled={last} aria-label="Trang cuối">»</button>
+          <button className={s.step} onClick={() => onPageChange(page + 1)} disabled={last} aria-label="Trang sau"><ArrowRight /></button>
+          <button className={s.step} onClick={() => onPageChange(pageCount)} disabled={last} aria-label="Trang cuối"><ArrowLast /></button>
         </div>
       </div>
     </nav>

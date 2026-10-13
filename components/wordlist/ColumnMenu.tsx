@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { COLUMNS, MAX_PINNED, type ColumnDef, type ColumnKey, type ColumnPrefs } from '@/lib/wordlist/columns'
 import { useNarrowViewport } from '@/lib/hooks/useNarrowViewport'
+import { ChevronDown } from '@/components/theory/Glyphs'
 import s from './Wordlist.module.css'
 
 interface Props {
@@ -59,7 +60,8 @@ export function ColumnMenu({ prefs, columns, onToggleColumn, onTogglePin, onMove
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        Cột{hiddenCount > 0 ? ` (${COLUMNS.length - hiddenCount})` : ''} ▾
+        Cột{hiddenCount > 0 ? ` (${COLUMNS.length - hiddenCount})` : ''}
+        <ChevronDown />
       </button>
       {open && (
         <div

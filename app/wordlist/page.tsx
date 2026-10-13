@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { requirePermanentAccount } from '@/lib/auth/guard'
 import { listWords } from '@/lib/wordlist/store'
@@ -32,17 +31,7 @@ export default async function WordlistPage({
   const [words, due] = await Promise.all([listWords(supabase), countDueCards(supabase)])
   return (
     <main className={`${s.nb} ${newsreader.variable} mx-auto max-w-page px-6 pt-8 pb-16 font-ui`}>
-      <div className={s.head}>
-        <h1 className={s.title}>Sổ tay</h1>
-        {words.length > 0 && (
-          <Link href="/practice" className={due > 0 ? s.btn : s.ghost}>
-            Luyện tập{due > 0 ? ` (${due})` : ''}
-          </Link>
-        )}
-      </div>
-      <div className="mt-6">
-        <WordlistClient initialWords={words} />
-      </div>
+      <WordlistClient initialWords={words} due={due} />
     </main>
   )
 }

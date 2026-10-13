@@ -31,6 +31,7 @@
 .btn:active:not(:disabled), .ghost:active:not(:disabled), .danger:active:not(:disabled) { transform: scale(0.97); }
 .btn:disabled, .ghost:disabled, .danger:disabled { opacity: 0.45; cursor: default; }
 .sm { min-height: 2.125rem; padding: 0 0.85rem; font-size: 0.8125rem; }
+.btn svg, .ghost svg, .step svg { width: 1rem; height: 1rem; flex: none; }
 
 .field { min-height: 2.5rem; padding: 0 0.8rem; border-radius: 12px; border: 1.5px solid var(--edge); background: var(--zs-field); color: var(--zs-ink); font-size: 0.875rem; transition: border-color 150ms var(--ease-std), box-shadow 150ms var(--ease-std); }
 .field::placeholder { color: var(--zs-soft); opacity: 0.7; }

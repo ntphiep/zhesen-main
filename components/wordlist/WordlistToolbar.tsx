@@ -4,6 +4,7 @@ import { LANGUAGES, type LangCode } from '@/lib/languages'
 import type { ReviewFilter, ViewMode } from '@/lib/hooks/useWordlistFilters'
 import { STATUS_OPTIONS, type WordKind, type WordStatus } from '@/lib/wordlist/types'
 import type { PosGroup } from '@/lib/dictionary/pos'
+import { ChevronDown } from '@/components/theory/Glyphs'
 import s from './Wordlist.module.css'
 
 interface Props {
@@ -179,7 +180,8 @@ export function WordlistToolbar({
             aria-haspopup="menu"
             aria-expanded={exportOpen}
           >
-            Xuất ▾
+            Xuất
+            <ChevronDown />
           </button>
           {exportOpen && (
             <div
