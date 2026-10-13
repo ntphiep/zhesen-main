@@ -6,7 +6,7 @@ import { LinkPending } from '@/components/ui/LinkPending'
 const QUIET = 'rounded-lg px-3 py-1.5 text-sm font-semibold text-(--zs-soft) transition-colors duration-150 ease-std hover:bg-(--zs-chip) hover:text-(--zs-ink) sm:text-[0.9375rem]'
 
 /**
- * The account corner of the header: the signed-in address, or sign in and sign up.
+ * The account corner of the header: the signed-in initial, or sign in and sign up.
  *
  * Read in the browser, not in the root layout: reading the session there calls
  * `cookies()` in a layout wrapping every route, which opts the whole site into
@@ -24,14 +24,15 @@ export function AccountLink() {
       <Link
         href="/account"
         prefetch={false}
-        className={`relative ml-2 flex max-w-52 items-center gap-2 py-1! pl-1.5! ${QUIET}`}
+        aria-label="Tài khoản"
         title={email ?? undefined}
+        className="relative ml-2 grid size-10 place-items-center rounded-full transition-colors duration-150 ease-std hover:bg-(--zs-chip)"
       >
-        {/* The same initial /account draws, on the primary fill. */}
-        <span aria-hidden="true" className="grid size-7 flex-none place-items-center rounded-full bg-(--zs-btn) text-xs font-extrabold text-(--zs-btn-ink) uppercase">
+        {/* The same initial /account draws, on the primary fill. The address itself
+            stays on /account and in the tooltip, not in the header. */}
+        <span aria-hidden="true" className="grid size-8 place-items-center rounded-full bg-(--zs-btn) text-sm font-extrabold text-(--zs-btn-ink) uppercase">
           {email?.charAt(0)}
         </span>
-        <span className="truncate">{email}</span>
         <LinkPending />
       </Link>
     )

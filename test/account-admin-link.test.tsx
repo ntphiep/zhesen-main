@@ -23,7 +23,7 @@ beforeEach(() => {
 describe('the site header', () => {
   it('carries no way to /admin, even for an admin, and does not ask', async () => {
     render(<AccountLink />)
-    await screen.findByRole('link', { name: 'a@b.com' })
+    await screen.findByRole('link', { name: 'Tài khoản' })
     expect(screen.queryByRole('link', { name: /Quản trị/ })).toBeNull()
     expect(rpc).not.toHaveBeenCalled()
   })

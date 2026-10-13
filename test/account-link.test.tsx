@@ -15,11 +15,14 @@ vi.mock('@/lib/supabase/client', () => ({
 beforeEach(() => vi.clearAllMocks())
 
 describe('AccountLink', () => {
-  it('shows the address and the way to the account once signed in', async () => {
+  // The owner asked for the initial alone: the address does not belong in the header.
+  it('shows the initial, not the address, once signed in', async () => {
     getSession.mockResolvedValue({ data: { session: { user: { id: 'u1', email: 'a@b.com' } } } })
     render(<AccountLink />)
-    const link = await screen.findByRole('link', { name: 'a@b.com' })
+    const link = await screen.findByRole('link', { name: 'Tài khoản' })
     expect(link).toHaveAttribute('href', '/account')
+    expect(link).toHaveTextContent(/^a$/)
+    expect(link).toHaveAttribute('title', 'a@b.com')
   })
 
   // The notebook needs an account, so a visitor without one sees the ordinary
