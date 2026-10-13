@@ -206,6 +206,8 @@
    An anchor under extra sticky chrome adds `scroll-mt-*` on top of this. */
 html {
   scroll-padding-top: calc(var(--header-h) + 1rem);
+  /* The header shifted 15 px between pages with and without a scrollbar. */
+  scrollbar-gutter: stable;
 }
 
 :root[data-theme="dark"] {

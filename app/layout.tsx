@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Be_Vietnam_Pro, Geist } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
@@ -44,6 +44,14 @@ export const metadata: Metadata = {
   twitter: SITE_SOCIAL.twitter,
 }
 
+// --zs-bg in each scheme, so the browser bar meets the header without a seam.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+  ],
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -69,8 +77,15 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: HOME_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
+        {/* On the wrapper, not on a page's own <main>: not every route renders one. */}
+        <a
+          href="#main"
+          className="sr-only font-ui text-sm font-semibold focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-(--zs-btn) focus:px-4 focus:py-2 focus:text-(--zs-btn-ink)"
+        >
+          Bỏ qua tới nội dung
+        </a>
         <SiteHeader />
-        <div className="flex-1">{children}</div>
+        <div id="main" className="flex-1">{children}</div>
         <SiteFooter />
         {/* Asks GET /api/ai after hydration: the answer depends on the account and on
             SSM, and reading either here would make every page dynamic. */}
