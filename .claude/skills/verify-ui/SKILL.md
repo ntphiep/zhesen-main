@@ -50,7 +50,7 @@ already listening on port 9222; otherwise it fails to connect.
 
 ## Checking the deployed site instead of a local build
 
-Skip steps 1 to 3 and point the browser at `https://zhesen-main.vercel.app`. For a
+Skip steps 1 to 3 and point the browser at `https://zhesen.net`. For a
 server-side failure, read the deployment's logs through composio's Vercel toolkit rather
 than guessing from the status code; `mcp__vercel__*` is not authorised for this team.
 

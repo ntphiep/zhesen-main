@@ -64,7 +64,7 @@ Read the deployment rather than assuming it. Use composio's Vercel toolkit, not
 Find the exact slugs with `COMPOSIO_SEARCH_TOOLS` first; do not guess them.
 
 Then exercise the live site for the flow this change touched. `/verify-ui` has the
-procedure; point it at `https://zhesen-main.vercel.app` instead of a local build.
+procedure; point it at `https://zhesen.net` instead of a local build.
 
 ## 5. Leave the worktree
 
