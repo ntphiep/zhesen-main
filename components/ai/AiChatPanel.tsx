@@ -5,6 +5,7 @@ import { callAi } from '@/lib/ai/browser'
 import { useAiEnabled } from '@/lib/hooks/useAiEnabled'
 import { useModalDialog } from '@/lib/hooks/useModalDialog'
 import { onAskAi, type AskAi } from '@/lib/ai/ask'
+import { ErrorLine } from '@/components/search/ErrorLine'
 
 /** Turns are re-sent on every question, so this cap bounds the cost of one long
  *  session. Matches `chatInput` in `lib/ai/tasks.ts`. */
@@ -125,12 +126,14 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
   return (
     <>
       {/* Room under the last row of the page for the launcher: 20px offset plus its
-          44px height, so the bottom control on a phone can scroll clear of it. */}
-      <div aria-hidden="true" className="h-20 shrink-0" />
+          44px height, so the bottom control can scroll clear of it. Under 640px the
+          launcher sits in the flow after the footer instead: floating, it covered the
+          wordlist's pager as the page scrolled under it. */}
+      <div aria-hidden="true" className="h-20 shrink-0 max-sm:hidden" />
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-40 rounded-full bg-blue-700 px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-blue-800"
+        className="fixed bottom-5 right-5 z-40 rounded-full bg-(--zs-btn) px-4 py-3 font-ui text-sm font-semibold text-(--zs-btn-ink) shadow-lg transition-colors duration-150 ease-std hover:bg-(--zs-btn-hover) max-sm:static max-sm:mx-5 max-sm:mb-5 max-sm:self-end"
       >
         Hỏi AI
       </button>
@@ -141,17 +144,17 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
         // No display utility on the dialog itself: `flex` would beat the UA's
         // `display: none` for a closed dialog. `top-auto left-auto` undo the UA's
         // `inset: 0`, which otherwise pins it to the top-left corner.
-        className="fixed top-auto left-auto bottom-5 right-5 w-[min(24rem,calc(100vw-2.5rem))] rounded-2xl border border-black/10 bg-white p-0 shadow-xl"
+        className="fixed top-auto left-auto bottom-5 right-5 w-[min(24rem,calc(100vw-2.5rem))] rounded-2xl border border-(--edge) bg-(--zs-bg) p-0 font-ui text-(--zs-ink) shadow-xl"
       >
         {open && (
           <div className="flex max-h-[min(32rem,80vh)] flex-col">
-            <header className="flex items-center gap-2 border-b border-black/10 px-4 py-3">
+            <header className="flex items-center gap-2 border-b border-(--zs-line) px-4 py-3">
               <span className="mr-auto text-sm font-semibold">Hỏi AI</span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Đóng"
-                className="rounded-lg px-2 py-1 text-sm text-black/55 hover:bg-black/5"
+                className="rounded-lg px-2 py-1 text-sm text-(--zs-soft) transition-colors duration-150 ease-std hover:bg-(--tint-2) hover:text-(--zs-ink)"
               >
                 Đóng
               </button>
@@ -159,7 +162,7 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
 
             <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3 text-sm">
               {turns.length === 0 && (
-                <p className="text-black/55">
+                <p className="text-(--zs-soft)">
                   {seed
                     ? `Hỏi về ${seed.label}.`
                     : 'Hỏi về từ đang xem, nhờ sửa câu hoặc hỏi nên ôn gì.'}
@@ -170,22 +173,22 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
                   key={i}
                   className={
                     t.role === 'user'
-                      ? 'ml-6 rounded-xl bg-blue-50 px-3 py-2 whitespace-pre-wrap'
-                      : 'mr-6 rounded-xl bg-black/5 px-3 py-2 whitespace-pre-wrap'
+                      ? 'ml-6 rounded-xl bg-(--zs-chip) px-3 py-2 whitespace-pre-wrap'
+                      : 'mr-6 rounded-xl bg-(--tint-2) px-3 py-2 whitespace-pre-wrap'
                   }
                 >
                   {t.text}
                 </p>
               ))}
               {busy && (partial
-                ? <p className="mr-6 rounded-xl bg-black/5 px-3 py-2 whitespace-pre-wrap">{partial}</p>
-                : <p className="text-black/55">Đang trả lời…</p>)}
-              {error && <p className="text-red-700">{error}</p>}
+                ? <p className="mr-6 rounded-xl bg-(--tint-2) px-3 py-2 whitespace-pre-wrap">{partial}</p>
+                : <p className="text-(--zs-soft)">Đang trả lời…</p>)}
+              {error && <ErrorLine>{error}</ErrorLine>}
               <div ref={endRef} />
             </div>
 
             <form
-              className="flex items-end gap-2 border-t border-black/10 px-3 py-3"
+              className="flex items-end gap-2 border-t border-(--zs-line) px-3 py-3"
               onSubmit={(e) => { e.preventDefault(); void send() }}
             >
               <textarea
@@ -200,14 +203,14 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
                 }}
                 aria-label="Câu hỏi cho AI"
                 placeholder="Nhập câu hỏi…"
-                className="flex-1 resize-none rounded-xl border border-black/15 px-3 py-2 text-sm outline-none focus:border-blue-600"
+                className="flex-1 resize-none rounded-xl border border-(--edge) bg-(--zs-field) px-3 py-2 text-sm outline-none focus:border-sea-500"
               />
               {busy && (
                 <button
                   type="button"
                   // The button unmounts once stopped, which would drop focus to the page.
                   onClick={() => { stopRef.current?.abort(); inputRef.current?.focus() }}
-                  className="rounded-xl border border-black/15 px-3 py-2 text-sm font-medium"
+                  className="rounded-xl border border-(--edge) px-3 py-2 text-sm font-semibold transition-colors duration-150 ease-std hover:bg-(--tint-1)"
                 >
                   Dừng
                 </button>
@@ -215,7 +218,7 @@ export function AiChatPanel({ enabled: known }: { enabled?: boolean } = {}) {
               <button
                 type="submit"
                 disabled={busy || draft.trim() === ''}
-                className="rounded-xl bg-blue-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
+                className="rounded-xl bg-(--zs-btn) px-3 py-2 text-sm font-semibold text-(--zs-btn-ink) transition-colors duration-150 ease-std enabled:hover:bg-(--zs-btn-hover) disabled:opacity-40"
               >
                 Gửi
               </button>

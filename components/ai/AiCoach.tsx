@@ -4,6 +4,7 @@ import { callAi } from '@/lib/ai/browser'
 import { useAiEnabled } from '@/lib/hooks/useAiEnabled'
 import type { CoachOutput } from '@/lib/ai/tasks'
 import type { LangCode } from '@/lib/languages'
+import { ErrorLine } from '@/components/search/ErrorLine'
 
 type State =
   | { status: 'idle' }
@@ -61,13 +62,13 @@ export function AiCoach({ lang, headword, meaningVi, entryId, onSaveNote, childr
           onClick={ask}
           // The chat launcher on every page is also "Hỏi AI"; the name keeps the two apart.
           aria-label={state.status === 'error' ? undefined : `Hỏi AI về ${headword}`}
-          className="rounded-lg border border-black/15 px-3 py-1.5 text-xs font-medium text-black/70 hover:bg-black/5"
+          className="rounded-lg border border-(--edge) px-3 py-1.5 text-xs font-semibold text-(--zs-soft) transition-colors duration-150 ease-std hover:bg-(--tint-1) hover:text-(--zs-ink)"
         >
           {state.status === 'error' ? 'Thử lại' : 'Hỏi AI'}
         </button>
       )}
-      {state.status === 'error' && <span className="text-xs text-red-500">{state.message}</span>}
-      {state.status === 'loading' && <span className="text-xs text-black/55">AI đang trả lời…</span>}
+      {state.status === 'error' && <ErrorLine>{state.message}</ErrorLine>}
+      {state.status === 'loading' && <span className="text-xs text-(--zs-soft)">AI đang trả lời…</span>}
     </div>
   )
 
@@ -77,20 +78,20 @@ export function AiCoach({ lang, headword, meaningVi, entryId, onSaveNote, childr
   return (
     <div className="flex flex-col gap-3">
       {children && actions}
-      <div className="flex flex-col gap-3 rounded-lg bg-black/3 p-3 text-sm">
+      <div className="flex flex-col gap-3 rounded-lg bg-(--tint-1) p-3 text-sm">
         {mnemonic && (
           <div>
-            <h4 className="text-xs font-semibold uppercase text-black/55">Mẹo nhớ</h4>
-            <p className="mt-0.5 text-black/80">{mnemonic}</p>
+            <h4 className="text-xs font-semibold uppercase text-(--zs-soft)">Mẹo nhớ</h4>
+            <p className="mt-0.5 text-(--zs-ink)">{mnemonic}</p>
           </div>
         )}
 
         {collocations.length > 0 && (
           <div>
-            <h4 className="text-xs font-semibold uppercase text-black/55">Cụm hay đi kèm</h4>
+            <h4 className="text-xs font-semibold uppercase text-(--zs-soft)">Cụm hay đi kèm</h4>
             <ul className="mt-1 flex flex-wrap gap-1.5">
               {collocations.map((c) => (
-                <li key={c} className="rounded-full bg-black/5 px-2 py-0.5 text-xs text-black/70">{c}</li>
+                <li key={c} className="rounded-full bg-(--zs-chip) px-2 py-0.5 text-xs text-(--zs-ink)">{c}</li>
               ))}
             </ul>
           </div>
@@ -98,12 +99,12 @@ export function AiCoach({ lang, headword, meaningVi, entryId, onSaveNote, childr
 
         {examples.length > 0 && (
           <div>
-            <h4 className="text-xs font-semibold uppercase text-black/55">Ví dụ</h4>
-            <ul className="mt-1 flex flex-col gap-1.5 border-l-2 border-black/10 pl-3">
+            <h4 className="text-xs font-semibold uppercase text-(--zs-soft)">Ví dụ</h4>
+            <ul className="mt-1 flex flex-col gap-1.5 border-l-2 border-(--zs-line) pl-3">
               {examples.map((e) => (
                 <li key={e.text}>
-                  <p className="italic text-black/75">{e.text}</p>
-                  <p className="text-black/55">{e.vi}</p>
+                  <p className="italic text-(--zs-ink)">{e.text}</p>
+                  <p className="text-(--zs-soft)">{e.vi}</p>
                 </li>
               ))}
             </ul>
@@ -112,12 +113,12 @@ export function AiCoach({ lang, headword, meaningVi, entryId, onSaveNote, childr
 
         {confusables.length > 0 && (
           <div>
-            <h4 className="text-xs font-semibold uppercase text-black/55">Dễ nhầm với</h4>
+            <h4 className="text-xs font-semibold uppercase text-(--zs-soft)">Dễ nhầm với</h4>
             <ul className="mt-1 flex flex-col gap-1">
               {confusables.map((c) => (
-                <li key={c.word} className="text-black/75">
+                <li key={c.word} className="text-(--zs-ink)">
                   <span className="font-medium">{c.word}</span>
-                  <span className="text-black/55"> — {c.note}</span>
+                  <span className="text-(--zs-soft)"> — {c.note}</span>
                 </li>
               ))}
             </ul>
@@ -126,11 +127,11 @@ export function AiCoach({ lang, headword, meaningVi, entryId, onSaveNote, childr
 
         {/* The model is asked not to guess, so an answer can legitimately be empty. */}
         {!mnemonic && collocations.length === 0 && examples.length === 0 && confusables.length === 0 && (
-          <p className="text-xs text-black/55">AI không có gì thêm cho từ này.</p>
+          <p className="text-xs text-(--zs-soft)">AI không có gì thêm cho từ này.</p>
         )}
 
         {mnemonic && onSaveNote && (note === 'saved'
-          ? <p className="text-xs text-black/55">Đã lưu vào ghi chú.</p>
+          ? <p className="text-xs text-(--zs-soft)">Đã lưu vào ghi chú.</p>
           : (
             <button
               type="button"
@@ -139,7 +140,7 @@ export function AiCoach({ lang, headword, meaningVi, entryId, onSaveNote, childr
                 setNote('saving')
                 setNote((await onSaveNote(mnemonic).catch(() => false)) ? 'saved' : 'idle')
               }}
-              className="self-start rounded-lg border border-black/15 px-3 py-1.5 text-xs font-medium text-black/70 hover:bg-black/5"
+              className="self-start rounded-lg border border-(--edge) px-3 py-1.5 text-xs font-semibold text-(--zs-soft) transition-colors duration-150 ease-std hover:bg-(--tint-1) hover:text-(--zs-ink)"
             >
               {note === 'saving' ? 'Đang lưu…' : 'Lưu vào ghi chú'}
             </button>
