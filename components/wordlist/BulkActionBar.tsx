@@ -22,7 +22,9 @@ interface Props {
  * every selected word at once. */
 export function BulkActionBar({ selectedWords, allTags, onBulkTag, onAiTag, onBulkStatus, onBulkDelete }: Props) {
   const [tagInput, setTagInput] = useState('')
-  const [bulkStatus, setBulkStatus] = useState<WordStatus>('learning')
+  // The status last applied, for the hint beside the select. The select itself always
+  // rests on its prompt: a preset "Đang học" read as the rows' current status.
+  const [applied, setApplied] = useState<WordStatus | null>(null)
 
   const selectedCount = selectedWords.length
   if (selectedCount === 0) return null
@@ -58,23 +60,22 @@ export function BulkActionBar({ selectedWords, allTags, onBulkTag, onAiTag, onBu
       <AiTagButton words={selectedWords} existingTags={allTags} onTagged={onAiTag} />
 
       <select
-        value={bulkStatus}
-        onChange={(e) => setBulkStatus(e.target.value as WordStatus)}
+        value=""
+        onChange={(e) => {
+          const status = STATUS_OPTIONS.find(([value]) => value === e.target.value)?.[0]
+          if (!status) return
+          onBulkStatus(status)
+          setApplied(status)
+        }}
         className={s.field}
-        aria-label="Trạng thái cho các từ đã chọn"
+        aria-label="Đổi trạng thái các từ đã chọn"
       >
+        <option value="" disabled>Đổi trạng thái</option>
         {STATUS_OPTIONS.map(([value, label]) => (
           <option key={value} value={value}>{label}</option>
         ))}
       </select>
-      <button
-        type="button"
-        className={s.ghost}
-        onClick={() => onBulkStatus(bulkStatus)}
-      >
-        Đổi trạng thái
-      </button>
-      {bulkStatus === 'known' && <span className={s.note}>{KNOWN_HINT}</span>}
+      {applied === 'known' && <span className={s.note}>{KNOWN_HINT}</span>}
 
       <button
         type="button"
