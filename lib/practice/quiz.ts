@@ -16,6 +16,9 @@ export interface QuizWord {
  *  "nhận" offered for take is also a meaning of take, a second right answer (#112). */
 export interface LearnerDistractors {
   confusable: string[]
+  /** The Vietnamese terms of the word's own senses: "nhận" is take's sense 8, so it can
+   *  never be a wrong option for take. */
+  own?: string[]
 }
 
 export interface QuizQuestion {
@@ -72,8 +75,8 @@ export function buildQuiz(
   return targets.map((t) => {
     const others = shuffle(usable.filter((x) => x.id !== t.id), rand)
     const sameLang = others.filter((x) => x.lang === t.lang)
-    const extra = (t.entryId && learner.get(t.entryId)) || { confusable: [] }
-    const answerTerms = terms(t.meaningVi)
+    const extra: LearnerDistractors = (t.entryId && learner.get(t.entryId)) || { confusable: [] }
+    const answerTerms = [...terms(t.meaningVi), ...(extra.own ?? []).map(meaningKey).filter(Boolean)]
     const distractors = [
       ...sameLang.filter((x) => t.pos && x.pos === t.pos).map((x) => x.meaningVi),
       ...extra.confusable,

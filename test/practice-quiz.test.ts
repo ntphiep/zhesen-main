@@ -99,6 +99,19 @@ describe('buildQuiz distractor order', () => {
     expect(q.options).toEqual(expect.arrayContaining(['may mắn', 'vui lòng']))
   })
 
+  it('never offers another sense of the word itself', () => {
+    const verbs = [
+      word('take', 'Cầm, lấy, mang', 'en', 'verb'), word('receive', 'nhận', 'en', 'verb'),
+      word('choose', 'chọn', 'en', 'verb'), word('run', 'chạy', 'en', 'verb'), word('eat', 'ăn uống', 'en', 'verb'),
+    ]
+    const learner = new Map([['en:take', { confusable: [], own: ['cầm', 'nhận', 'chọn', 'ăn'] }]])
+    const q = buildQuiz(verbs, 5, () => 0, learner).find(only('take'))!
+    expect(q.options).not.toContain('nhận')
+    expect(q.options).not.toContain('chọn')
+    expect(q.options).not.toContain('ăn uống')
+    expect(q.options).toContain('chạy')
+  })
+
   it('falls back to the same language before other languages', () => {
     const q = buildQuiz(pool, 5, () => 0).find(only('dog'))!
     const distractors = q.options.filter((o) => o !== q.answer)

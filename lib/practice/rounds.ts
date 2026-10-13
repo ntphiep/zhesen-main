@@ -1,10 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { z } from '@/lib/zod'
 import { listLearnerDistractors } from '@/lib/dictionary/learner'
 import { listPracticeWords, listTraditionalForms, listWordEntries, type PracticeWord } from '@/lib/wordlist/store'
 import { clozeForms, findGap } from './cloze'
 import { pickFormQuestion } from './forms'
 import { buildPhraseGap, gapSlot, rivalPhrases } from './phraseGap'
-import { buildQuiz, type QuizQuestion } from './quiz'
+import { buildQuiz, type LearnerDistractors, type QuizQuestion } from './quiz'
 import { shuffle, type Rand } from './shuffle'
 import type { PracticeSubset } from './subset'
 import { listEntryExamples, listEntryForms, listExistingPhrases, listPracticeContext, listSavedPhrases } from './sources'
@@ -16,6 +17,20 @@ export type TypingMode = 'write' | 'dictation' | 'ipa' | 'cloze' | 'forms'
 export const ROUND_SIZE = 10
 
 const hasMeaning = (w: PracticeWord) => Boolean(w.meaningVi?.trim())
+
+const termRow = z.object({ entry_id: z.string(), term: z.string() })
+
+/** Each entry's Vietnamese terms over its first 40 senses, from `lex.gloss_terms`. take has
+ *  184 terms in all, so only the round's own words are read. */
+async function listEntryTerms(supabase: SupabaseClient, entryIds: string[]): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>()
+  if (entryIds.length === 0) return out
+  const { data, error } = await supabase.schema('lex').from('gloss_terms').select('entry_id, term')
+    .in('entry_id', entryIds).lte('sense_order', 40).limit(5000)
+  if (error) throw error
+  for (const r of termRow.array().parse(data ?? [])) out.set(r.entry_id, [...(out.get(r.entry_id) ?? []), r.term])
+  return out
+}
 
 /** One IPA transcription between slashes, as the English and Spanish entries write it. */
 const readableIpa = (ipa: string | null) => Boolean(ipa && /^\/[^/[\]]+\/$/.test(ipa.trim()))
@@ -131,7 +146,15 @@ export async function choiceRound(
   // Without these reads the distractors are drawn by language only.
   const entries = await listWordEntries(supabase, words.map((x) => x.id)).catch(() => new Map<string, { entryId: string | null; pos: string | null }>())
   const entryIds = [...entries.values()].flatMap((e) => (e.entryId ? [e.entryId] : []))
-  const learner = await listLearnerDistractors(supabase, entryIds).catch(() => undefined)
+  // The round's words are picked here, so only their own senses are read.
+  const asking = only ? askedIds : new Set(shuffle(words.map((x) => x.id), rand).slice(0, ROUND_SIZE))
+  const askingEntries = [...asking].flatMap((id) => entries.get(id)?.entryId ?? [])
+  const [confusables, own] = await Promise.all([
+    listLearnerDistractors(supabase, entryIds).catch(() => new Map<string, LearnerDistractors>()),
+    listEntryTerms(supabase, askingEntries).catch(() => new Map<string, string[]>()),
+  ])
+  const learner = new Map(confusables)
+  for (const [entryId, terms] of own) learner.set(entryId, { confusable: [], ...learner.get(entryId), own: terms })
   return buildQuiz(
     words.map((x) => ({
       id: x.id, headword: x.headword, ipa: x.ipa, lang: x.lang, meaningVi: x.meaningVi, audioUrl: x.audioUrl,
@@ -140,6 +163,6 @@ export async function choiceRound(
     ROUND_SIZE,
     rand,
     learner,
-    only ? askedIds : undefined,
+    asking,
   )
 }
