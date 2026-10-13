@@ -129,10 +129,9 @@ jobs:
     # Production only, and only for a real push: a pull request must not replace what is
     # live, and a re-run of an old commit must not roll the site back.
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    # Vercel's GitHub integration refuses these commits, because their GitHub author is not
-    # a member of the Vercel team ("the commit author doesn't have permission to create
-    # deployments for this project"). A token deploy is not subject to that check and puts
-    # the deploy behind the tests rather than beside them.
+    # The only production deploy: vercel.json turns off the GitHub integration's deploy of
+    # master, which ran beside the tests and doubled every release. Each deployment starts
+    # an empty ISR cache, so a second one re-renders every page crawlers visit.
     env:
       VERCEL_ORG_ID: team_rfK6c0vpzY7uNlCrXsnRt489
       VERCEL_PROJECT_ID: prj_7uctsKu2VekNg9E1hUI67ziDnTqT

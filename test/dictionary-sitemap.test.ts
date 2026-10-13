@@ -56,6 +56,16 @@ describe('dictionary sitemap paging', () => {
     ])
     expect(dictionarySitemapPath(2)).toBe('/dictionary/sitemap/2.xml')
   })
+
+  it('shuts out AI training bots but not AI search or Google', async () => {
+    rpc.mockResolvedValueOnce({ data: 1, error: null })
+    const rules = [(await robots()).rules].flat()
+    const blocked = rules.find((r) => r.disallow === '/')?.userAgent
+    expect(blocked).toEqual(expect.arrayContaining(['GPTBot', 'ClaudeBot', 'CCBot', 'Bytespider']))
+    expect(blocked).not.toEqual(expect.arrayContaining(['Googlebot']))
+    expect(blocked).not.toEqual(expect.arrayContaining(['OAI-SearchBot']))
+    expect(rules.find((r) => r.userAgent === '*')?.allow).toBe('/')
+  })
 })
 
 describe('hub sitemap', () => {
