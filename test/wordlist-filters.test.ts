@@ -139,6 +139,20 @@ describe('useWordlistFilters', () => {
   })
 
   // A word the pipeline never graded is not "before A1"; it belongs last either way.
+  it('finds a word by every column the table shows: pinyin, IPA, level and kind', () => {
+    const words = [
+      mk('学习', { lang: 'zh', ipa: 'xué xí', level: 'HSK1' }),
+      mk('take', { ipa: '/teɪk/', level: 'A1' }),
+      mk('give up', { kind: 'phrasal_verb' }),
+    ]
+    const { result } = renderHook(() => useWordlistFilters(words))
+    const found = (q: string) => { act(() => result.current.setQuery(q)); return result.current.visible.map((w) => w.id) }
+    expect(found('xue xi')).toEqual(['学习'])
+    expect(found('hsk1')).toEqual(['学习'])
+    expect(found('teɪk')).toEqual(['take'])
+    expect(found('cụm động')).toEqual(['give up'])
+  })
+
   it('filters by kind, reading a missing kind from the headword', () => {
     const words = [
       mk('give up', { kind: 'phrasal_verb' }),

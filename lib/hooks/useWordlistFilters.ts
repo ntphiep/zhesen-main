@@ -28,10 +28,12 @@ function fold(s: string): string {
     .toLowerCase()
 }
 
-/** Every field worth searching. `notes` and `example` are here because a learner
- *  who wrote "gặp trong hợp đồng" on a word expects to find it by that note. */
+/** Every field worth searching, every column the table shows among them: pinyin, IPA, the
+ *  level and the kind. `notes` and `example` are here because a learner who wrote "gặp trong
+ *  hợp đồng" on a word expects to find it by that note. */
 function haystack(w: UserWord): string {
-  return fold([w.headword, w.reading, w.meaningVi, w.meaningEn, w.example, w.notes, ...w.tags]
+  const kind = wordKind(w)
+  return fold([w.headword, w.reading, w.ipa, w.level, kind === 'word' ? null : KIND_LABEL[kind], w.meaningVi, w.meaningEn, w.example, w.notes, ...w.tags]
     .filter(Boolean).join(' '))
 }
 
