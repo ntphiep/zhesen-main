@@ -63,11 +63,15 @@ export function WordlistReview() {
   }
 
   const at = ready !== -1 ? ready : ahead ? soonest : -1
+  // A card on a minute step stays in the queue, so its length never fell after a "Tốt" on a
+  // new card. The count is the cards that can show now; the rest are named apart.
+  const waiting = queue.filter((c) => onStep(c.state) && c.state.dueAt > now).length
+  const left = `Còn lại: ${queue.length - waiting}${waiting > 0 ? ` · Chờ: ${waiting}` : ''}`
 
   if (at === -1 && wakeAt !== null) {
     return (
       <Stage>
-        <SessionBar label={`Còn lại: ${queue.length}`} done={reviewed} total={reviewed + queue.length} />
+        <SessionBar label={left} done={reviewed} total={reviewed + queue.length} />
         <div className={`${p.card} ${p.end}`}>
           <h1>Từ tiếp theo đến hạn sau {waitLabel(wakeAt - now)}.</h1>
           {reviewed > 0 && <p>Đã ôn {reviewed} từ trong phiên này.</p>}
@@ -112,7 +116,7 @@ export function WordlistReview() {
 
   return (
     <Stage>
-      <SessionBar label={`Còn lại: ${queue.length}`} done={reviewed} total={reviewed + queue.length} />
+      <SessionBar label={left} done={reviewed} total={reviewed + queue.length} />
       <WordReviewCard
         key={`${current.id}-${reviewed}`}
         card={current}
