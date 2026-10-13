@@ -81,45 +81,48 @@ export function PersonalStrip() {
         </div>
       )}
 
-      <div>
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Sổ tay</h2>
-          {saved && book.due > 0 && (
-            <span className="text-sm font-bold text-(--zs-ink)">{book.due} từ đến hạn ôn</span>
+      {/* Only a session has a notebook; a visitor without one cannot save a word. */}
+      {book && (
+        <div>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-xs font-bold tracking-[0.02em] text-(--zs-soft)">Sổ tay</h2>
+            {saved && book.due > 0 && (
+              <span className="text-sm font-bold text-(--zs-ink)">{book.due} từ đến hạn ôn</span>
+            )}
+          </div>
+          {saved ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {book.words.map((w) => (
+                <Link
+                  key={w.id}
+                  href={w.entryId ? entryPath(w.entryId) : '/wordlist'}
+                  // /wordlist reads the session, so only an entry page is prefetched.
+                  prefetch={Boolean(w.entryId) && intent === w.id ? null : false}
+                  onMouseEnter={() => setIntent(w.id)}
+                  onFocus={() => setIntent(w.id)}
+                  onTouchStart={() => setIntent(w.id)}
+                  className={`${s.chip} px-3 py-1 text-base`}
+                  title={w.meaningVi ?? undefined}
+                >
+                  <span data-hw="" lang={w.lang}>{w.headword}</span>
+                  <LinkPending />
+                </Link>
+              ))}
+              <Link
+                href="/practice"
+                prefetch={false}
+                className="inline-flex min-h-9 items-center rounded-full bg-(--zs-btn) px-4 text-sm font-bold text-(--zs-btn-ink) transition-colors duration-150 ease-std hover:bg-(--zs-btn-hover)"
+              >
+                Luyện tập
+              </Link>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-(--zs-soft)">
+              Chưa có từ. Tra một từ để lưu.
+            </p>
           )}
         </div>
-        {saved ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {book.words.map((w) => (
-              <Link
-                key={w.id}
-                href={w.entryId ? entryPath(w.entryId) : '/wordlist'}
-                // /wordlist reads the session, so only an entry page is prefetched.
-                prefetch={Boolean(w.entryId) && intent === w.id ? null : false}
-                onMouseEnter={() => setIntent(w.id)}
-                onFocus={() => setIntent(w.id)}
-                onTouchStart={() => setIntent(w.id)}
-                className={`${s.chip} px-3 py-1 text-base`}
-                title={w.meaningVi ?? undefined}
-              >
-                <span data-hw="" lang={w.lang}>{w.headword}</span>
-                <LinkPending />
-              </Link>
-            ))}
-            <Link
-              href="/practice"
-              prefetch={false}
-              className="inline-flex min-h-9 items-center rounded-full bg-(--zs-btn) px-4 text-sm font-bold text-(--zs-btn-ink) transition-colors duration-150 ease-std hover:bg-(--zs-btn-hover)"
-            >
-              Luyện tập
-            </Link>
-          </div>
-        ) : (
-          <p className="mt-3 text-sm text-(--zs-soft)">
-            Chưa có từ. Tra một từ để lưu.
-          </p>
-        )}
-      </div>
+      )}
     </div>
   )
 }

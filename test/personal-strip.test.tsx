@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { PersonalStrip } from '@/components/search/PersonalStrip'
 import { recentEntries } from '@/lib/dictionary/recent'
 
@@ -24,10 +24,18 @@ beforeEach(() => {
 })
 
 describe('PersonalStrip', () => {
-  it('invites the reader to save a word while the notebook is empty', async () => {
+  it('invites an account to save a word while its notebook is empty', async () => {
+    m.getSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } })
     render(<PersonalStrip />)
     expect(await screen.findByText(/Tra một từ để lưu/i)).toBeInTheDocument()
     expect(screen.queryByText('Tra gần đây')).toBeNull()
+  })
+
+  it('shows no notebook to a visitor without an account', async () => {
+    render(<PersonalStrip />)
+    await waitFor(() => expect(m.getSession).toHaveBeenCalled())
+    expect(screen.queryByText('Sổ tay')).toBeNull()
+    expect(screen.queryByText(/Tra một từ để lưu/i)).toBeNull()
   })
 
   it('lists the words this browser has opened, newest first', () => {
