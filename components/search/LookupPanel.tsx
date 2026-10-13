@@ -41,6 +41,13 @@ const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
  * ca, can and called. The box the learner types in is the answer, and it costs one round
  * trip instead of two.
  */
+function remember(e: DictEntryPreview) {
+  recentQueries.push(e.headword)
+  // The query goes in the box's own "Tra gần đây" row; the word goes in the strip under
+  // the boxes, which links back to the word page rather than refilling the box.
+  recentEntries.record({ id: e.id, headword: e.headword, lang: e.lang, glossVi: e.glossVi ?? null })
+}
+
 export function LookupPanel({ direction, label, autoFocus = false, initialQuery = '', lang }: {
   direction: Direction
   label: string
@@ -222,13 +229,6 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
   const total = shown.reduce((n, [, list, more]) => n + list.length + more.length, 0)
   const first = shown.flatMap(([, list, more]) => [...list, ...more])[0]
 
-  function remember(e: DictEntryPreview) {
-    recentQueries.push(e.headword)
-    // The query goes in the box's own "Tra gần đây" row; the word goes in the strip under
-    // the boxes, which links back to the word page rather than refilling the box.
-    recentEntries.record({ id: e.id, headword: e.headword, lang: e.lang, glossVi: e.glossVi ?? null })
-  }
-
   // `prefetch={false}` on every result, then one prefetch when a result is pointed at.
   // Link's own prefetch fires as soon as a link enters the viewport, and a keystroke here
   // can put twenty-four of them there at once, which would fetch twenty-four entry pages
@@ -244,19 +244,29 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
   // Enter opens the top hit, as it did when the box was an `<input>`. Shift+Enter and a
   // passage longer than a phrase both fall through to the textarea's own behaviour,
   // because a paragraph needs its line breaks and has no single word to open.
+  // `first` answers the previous query until the search for this one lands, so an Enter
+  // typed before it waits for it: otherwise "take" opened "tak".
+  const currentKey = searchQueryString(trimmed.toLowerCase(), { langs: targets, dir: direction })
+  const answered = dataKey === currentKey
+  const pendingEnter = useRef<string | null>(null)
   function onKeyDown(ev: React.KeyboardEvent) {
-    if (ev.key !== 'Enter' || ev.shiftKey || (isPassage && !isPhrase) || !first) return
+    if (ev.key !== 'Enter' || ev.shiftKey || (isPassage && !isPhrase) || !searches) return
+    if (answered && !first) return
     ev.preventDefault()
-    remember(first)
-    router.push(entryPath(first.id))
+    if (answered && first) { remember(first); router.push(entryPath(first.id)) }
+    else pendingEnter.current = currentKey
   }
+  useEffect(() => {
+    if (!answered || pendingEnter.current !== currentKey) return
+    pendingEnter.current = null
+    if (first) { remember(first); router.push(entryPath(first.id)) }
+  }, [answered, currentKey, first, router])
 
   // Shown whenever the box is empty, not only while it holds focus. Tied to focus the row
   // appeared and vanished on every click anywhere on the page, moving everything under it.
   const showRecent = !trimmed && recent.length > 0
   // A whole sentence has no single headword, so neither a trigram suggestion nor the
   // assistant has anything to add to the translation PassageBlock already shows.
-  const answered = dataKey === searchQueryString(trimmed.toLowerCase(), { langs: targets, dir: direction })
   const showEmpty =
     answered && !loading && !refusal && !isPassage && trimmed.length > 0 && allShown.length === 0
   const showFilteredEmpty = !loading && allShown.length > 0 && total === 0
@@ -330,7 +340,7 @@ export function LookupPanel({ direction, label, autoFocus = false, initialQuery 
         rows={3}
         autoFocus={autoFocus}
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => { pendingEnter.current = null; setQuery(e.target.value) }}
         onKeyDown={onKeyDown}
         autoComplete="off"
         spellCheck={false}

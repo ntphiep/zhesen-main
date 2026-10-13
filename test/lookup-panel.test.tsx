@@ -240,6 +240,22 @@ describe('LookupPanel', () => {
     expect(push).toHaveBeenCalledWith(entryPath('en:dog'))
   })
 
+  it('opens the result for what is in the box when Enter beats the search', async () => {
+    const fetchMock = vi.fn<typeof fetch>(async (url) => {
+      const q = new URL(String(url), 'http://x').searchParams.get('q') ?? ''
+      const body = { entries: { ...EMPTY, en: [entry({ id: `en:${q}`, headword: q, glossVi: q })] }, suggestions: [] }
+      return { ok: true, json: async () => body } as Response
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<LookupPanel direction="fw" label="FW" />)
+    const input = screen.getByLabelText('FW')
+    await userEvent.type(input, 'tak')
+    await screen.findByRole('link', { name: /tak/ })
+    await userEvent.type(input, 'e{Enter}')
+    await vi.waitFor(() => expect(push).toHaveBeenCalledWith(entryPath('en:take')))
+    expect(push).not.toHaveBeenCalledWith(entryPath('en:tak'))
+  })
+
   // A phrase is both a passage and a possible headword, so three routes answer it.
   function stubRoutes(search: unknown) {
     const fetchMock = vi.fn<typeof fetch>(async (url) => {
