@@ -38,6 +38,7 @@ const RULES: [string, RegExp][] = [
   ['glossary: file, not tệp', /(?<!\p{L})tệp(?!\p{L})/iu],
   ['glossary: ôn, not ôn tập', /ôn tập/i],
   ['glossary: tra, not tra cứu', /tra cứu/i],
+  ['glossary: no phiên for a review session', /phiên(?! âm| bản| đăng nhập)/i],
 ]
 
 function sourceFiles(): string[] {

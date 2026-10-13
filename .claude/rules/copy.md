@@ -28,6 +28,8 @@ enforces the rules it can measure; the rest are on the writer.
 7. Do not name internals: "máy chủ", "bản triển khai", "hệ thống", "FSRS", "RPC", "cache".
 8. One word per concept, from the glossary. Write it as a Vietnamese learner says it, not as
    a translation of an English string.
+9. A placeholder carries format only, as "Ít nhất 8 ký tự". No made-up example such as an
+   email or a sample word: the label already says what goes in the field.
 
 ## Glossary
 
@@ -42,6 +44,12 @@ enforces the rules it can measure; the rest are on the writer.
 | A tag on a word | thẻ | nhãn |
 | The card grid view of the wordlist | lưới | thẻ |
 | The AI assistant | AI | trợ lý |
+| Streak | ngày học liên tiếp | chuỗi ngày, ngày học liền |
+| Streak freeze | ngày nghỉ | lượt giữ chuỗi |
+| A review session | no noun: "Ôn hôm nay", "Đã ôn 12 từ." | phiên, phiên ôn |
+| A word ready for review | đến hạn | đến lượt |
+| The page's table of contents | mục lục | mục trong trang, trên trang này |
+| Adding a word by hand | tự nhập | thủ công |
 
 ## Before and after
 
