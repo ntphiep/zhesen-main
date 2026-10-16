@@ -150,6 +150,10 @@
   --zs-btn: var(--sea-600);
   --zs-btn-ink: #fff;
   --zs-btn-hover: var(--sea-700);
+  /* The three bands of the brand mark (components/layout/ZMark.tsx), top to bottom. */
+  --zs-logo-1: var(--sea-300);
+  --zs-logo-2: var(--sea-500);
+  --zs-logo-3: var(--sea-700);
 
   --tint-1: color-mix(in srgb, var(--sea-50) 22%, #fff);
   --tint-2: color-mix(in srgb, var(--sea-50) 45%, #fff);
@@ -274,6 +278,10 @@ html {
   --zs-btn: #fff;
   --zs-btn-ink: var(--sea-700);
   --zs-btn-hover: var(--sea-100);
+  /* As public/brand/zhesen-mark-dark.svg: --sea-700 vanishes on black. */
+  --zs-logo-1: var(--sea-200);
+  --zs-logo-2: var(--sea-400);
+  --zs-logo-3: var(--sea-600);
 
   --tint-1: #050d20;
   --tint-2: #081733;

@@ -5,6 +5,7 @@ import { clip, headwordPinyin, joinedCase, vietnameseGlosses } from '@/lib/dicti
 import { percentDecode } from '@/lib/http/percentDecode'
 import { getLanguage, isLangCode } from '@/lib/languages'
 import { googleFont, type OgFont } from '@/lib/og/googleFont'
+import { ZMark } from '@/components/layout/ZMark'
 
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
@@ -29,6 +30,7 @@ export const revalidate = 604800
 // Satori reads no CSS variables: the `--sea-*` ramp of app/globals.css, written out.
 const SEA_50 = '#c3e7ef'
 const SEA_300 = '#45c2db'
+const SEA_500 = '#0090bf'
 const SEA_600 = '#0172b6'
 const SEA_700 = '#023c85'
 const TINT_2 = '#e4f4f8'
@@ -92,12 +94,7 @@ export default async function Image({ params }: { params: Promise<Params> }) {
           {gloss && <div style={{ display: 'flex', marginTop: 28, maxWidth: 1000, color: '#000', fontSize: 42, fontWeight: 500, lineHeight: 1.35 }}>{gloss}</div>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: SEA_700, fontSize: 40, fontWeight: 800, letterSpacing: -0.8 }}>
-          {/* The brand mark of app/icon.svg. */}
-          <svg width="40" height="40" viewBox="10 10 44 44">
-            <rect x="12" y="11" width="40" height="10" rx="2.5" fill={SEA_700} />
-            <path d="M37 23.5 H53 L27 40.5 H11 Z" fill={SEA_600} />
-            <rect x="12" y="43" width="40" height="10" rx="2.5" fill={SEA_300} />
-          </svg>
+          <ZMark fills={[SEA_300, SEA_500, SEA_700]} height={35} />
           {BRAND}
         </div>
       </div>

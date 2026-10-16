@@ -1,10 +1,11 @@
 import type { MetadataRoute } from 'next'
+import { SITE_DESCRIPTION } from '@/lib/site'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Zhesen',
     short_name: 'Zhesen',
-    description: 'Tra từ tiếng Anh, Trung, Tây Ban Nha với tiếng Việt rồi lưu vào sổ tay để ôn.',
+    description: SITE_DESCRIPTION,
     start_url: '/',
     display: 'standalone',
     // --zs-bg and --sea-700 (--zs-ink) in app/globals.css.

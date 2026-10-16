@@ -9,7 +9,7 @@ describe('pageMetadata', () => {
       type: 'website', siteName: 'Zhesen', locale: 'vi_VN',
       title: 'take · Zhesen', description: 'd', url: '/dictionary/en/take',
     })
-    expect(m.twitter).toEqual({ card: 'summary' })
+    expect(m.twitter).toEqual({ card: 'summary_large_image' })
     expect(m.alternates).toEqual({ canonical: '/dictionary/en/take' })
   })
 

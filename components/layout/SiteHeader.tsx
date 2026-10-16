@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AccountLink } from '@/components/account/AccountLink'
 import { LinkPending } from '@/components/ui/LinkPending'
+import { ZMark } from '@/components/layout/ZMark'
 
 /**
  * `prefetch` is off for every route rendered per request. A Link prefetches as soon as
@@ -58,18 +59,15 @@ export function SiteHeader() {
   )
 }
 
-/** The mark and the name, shared with the footer. The mark is app/icon.svg: a Z made of
- *  three bars, one per language colour (en, zh, es). The top bar takes --zs-ink so it
- *  stays visible on the dark theme. Owner's choice, 2026-10-14. */
+/** The mark and the name, shared with the footer, in the proportions of public/brand/zhesen-logo.svg:
+ *  the mark 1.2 cap heights tall. --zs-logo-* step one shade lighter on the dark theme. */
 export function BrandMark() {
   return (
-    <span className="flex items-center gap-2 text-[1.3125rem] font-extrabold tracking-[-0.02em] text-(--zs-ink)">
-      <svg aria-hidden="true" viewBox="10 10 44 44" className="size-6 flex-none">
-        <rect x="12" y="11" width="40" height="10" rx="2.5" className="fill-(--zs-ink)" />
-        <path d="M37 23.5 H53 L27 40.5 H11 Z" className="fill-sea-600" />
-        <rect x="12" y="43" width="40" height="10" rx="2.5" className="fill-sea-300" />
-      </svg>
+    <span className="flex items-center gap-1.5 text-[1.3125rem] font-extrabold tracking-[-0.02em] text-(--zs-ink)">
+      <ZMark fills={LOGO_FILLS} height={19} className="flex-none" />
       Zhesen
     </span>
   )
 }
+
+const LOGO_FILLS = ['var(--zs-logo-1)', 'var(--zs-logo-2)', 'var(--zs-logo-3)'] as const

@@ -16,15 +16,22 @@ export const SITE_URL =
       ? PRODUCTION_ORIGIN
       : 'http://localhost:3000')
 
+export const SITE_DESCRIPTION = 'Tra từ tiếng Anh, Trung, Tây Ban Nha với tiếng Việt rồi lưu vào sổ tay để ôn.'
+export const SITE_CARD_ALT = 'Zhesen: từ điển Trung, Tây Ban Nha, Anh'
+
 /**
  * The site-level Open Graph and Twitter fields. Next merges metadata shallowly, so a page that
  * sets `openGraph` replaces the layout's whole object and loses these unless it spreads them in.
  */
 export const SITE_SOCIAL = {
-  openGraph: { type: 'website', siteName: 'Zhesen', locale: 'vi_VN' },
-  // `summary` for a page with no image of its own. The word page draws one in its
-  // opengraph-image and sets `summary_large_image` (lib/dictionary/entryMetadata.ts).
-  twitter: { card: 'summary' },
+  // Named here as well as in app/opengraph-image.tsx: a page that sets its own `openGraph`
+  // otherwise loses the root card (measured on /theory). A segment's own card file still wins.
+  openGraph: {
+    type: 'website', siteName: 'Zhesen', locale: 'vi_VN',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: SITE_CARD_ALT }],
+  },
+  // Every page has a wide card: app/opengraph-image.tsx, or the word page's own.
+  twitter: { card: 'summary_large_image' },
 } satisfies Pick<Metadata, 'openGraph' | 'twitter'>
 
 /**

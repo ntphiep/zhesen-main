@@ -6,7 +6,7 @@ import './globals.css'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { AiChatPanel } from '@/components/ai/AiChatPanel'
-import { SITE_SOCIAL, SITE_URL } from '@/lib/site'
+import { SITE_DESCRIPTION, SITE_SOCIAL, SITE_URL } from '@/lib/site'
 import { THEME_BOOT_SCRIPT } from '@/lib/theme'
 import { WORD_LAYOUT_BOOT_SCRIPT } from '@/lib/dictionary/wordLayout'
 import { HOME_BOOT_SCRIPT } from '@/lib/home/homeLayout'
@@ -23,8 +23,6 @@ const beVietnamPro = Be_Vietnam_Pro({
   weight: ['400', '600', '700', '800'],
 })
 
-const DESCRIPTION = 'Tra từ tiếng Anh, Trung, Tây Ban Nha với tiếng Việt rồi lưu vào sổ tay để ôn.'
-
 export const metadata: Metadata = {
   // Without it every relative URL in a metadata field is a build error, and the
   // Open Graph tags would have to repeat the host in each route.
@@ -33,13 +31,13 @@ export const metadata: Metadata = {
   // `template` is what the others are wrapped in, so a page declares only its own
   // name and the suffix stays consistent.
   title: { default: 'Zhesen · Từ điển Trung, Tây Ban Nha, Anh', template: '%s · Zhesen' },
-  description: DESCRIPTION,
+  description: SITE_DESCRIPTION,
   applicationName: 'Zhesen',
   openGraph: {
     ...SITE_SOCIAL.openGraph,
     url: '/',
     title: 'Zhesen · Từ điển Trung, Tây Ban Nha, Anh',
-    description: DESCRIPTION,
+    description: SITE_DESCRIPTION,
   },
   twitter: SITE_SOCIAL.twitter,
 }
