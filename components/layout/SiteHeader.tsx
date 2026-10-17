@@ -61,11 +61,11 @@ export function SiteHeader() {
 
 /** The name with the mark as its Z, as in public/brand/zhesen-logo.svg: the mark one cap height
  *  tall (0.74em in Be Vietnam Pro), "hesen" in the mark's three blues. `collapsed` shows the mark
- *  alone until the enclosing `group` link is hovered or focused. --zs-logo-* step one shade
- *  lighter on the dark theme. */
+ *  alone until the enclosing `group` link is hovered or focused, a size up because it stands
+ *  alone. --zs-logo-* step one shade lighter on the dark theme. */
 export function BrandMark({ collapsed = false }: { collapsed?: boolean }) {
   return (
-    <span className="flex items-baseline text-[1.625rem] leading-none font-extrabold tracking-[-0.02em]">
+    <span className={`flex items-baseline leading-none font-extrabold tracking-[-0.02em] ${collapsed ? 'text-[1.875rem]' : 'text-[1.625rem]'}`}>
       <ZMark fills={LOGO_FILLS} height={19} className="h-[0.74em] w-auto flex-none" />
       <span className={collapsed ? 'max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity] duration-200 ease-std group-hover:max-w-[4em] group-hover:opacity-100 group-focus-visible:max-w-[4em] group-focus-visible:opacity-100 motion-reduce:transition-none' : undefined}>
         {/* The Z's right side bearing less the tracking. */}
