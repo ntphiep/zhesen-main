@@ -29,8 +29,8 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 bg-(--zs-bg)/88 font-ui backdrop-blur-[10px]">
       <nav className="mx-auto flex max-w-page flex-wrap items-center gap-1 px-6 py-2.5 sm:h-16 sm:py-0">
-        <Link href="/" className="mr-auto" aria-label="Về trang chủ Zhesen">
-          <BrandMark />
+        <Link href="/" className="group mr-auto" aria-label="Về trang chủ Zhesen">
+          <BrandMark collapsed />
         </Link>
         {/* One row holds the brand, the four sections and the account corner down to
             640px. Below that they need 449px against 390px of screen, so the sections
@@ -59,13 +59,18 @@ export function SiteHeader() {
   )
 }
 
-/** The mark and the name, shared with the footer, in the proportions of public/brand/zhesen-logo.svg:
- *  the mark 1.2 cap heights tall. --zs-logo-* step one shade lighter on the dark theme. */
-export function BrandMark() {
+/** The name with the mark as its Z, as in public/brand/zhesen-logo.svg: the mark one cap height
+ *  tall (0.74em in Be Vietnam Pro), "hesen" in the mark's three blues. `collapsed` shows the mark
+ *  alone until the enclosing `group` link is hovered or focused. --zs-logo-* step one shade
+ *  lighter on the dark theme. */
+export function BrandMark({ collapsed = false }: { collapsed?: boolean }) {
   return (
-    <span className="flex items-center gap-1.5 text-[1.3125rem] font-extrabold tracking-[-0.02em] text-(--zs-ink)">
-      <ZMark fills={LOGO_FILLS} height={19} className="flex-none" />
-      Zhesen
+    <span className="flex items-baseline text-[1.625rem] leading-none font-extrabold tracking-[-0.02em]">
+      <ZMark fills={LOGO_FILLS} height={19} className="h-[0.74em] w-auto flex-none" />
+      <span className={collapsed ? 'max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity] duration-200 ease-std group-hover:max-w-[4em] group-hover:opacity-100 group-focus-visible:max-w-[4em] group-focus-visible:opacity-100 motion-reduce:transition-none' : undefined}>
+        {/* The Z's right side bearing less the tracking. */}
+        <span className="ml-[0.025em] bg-linear-to-r from-(--zs-logo-1) via-(--zs-logo-2) to-(--zs-logo-3) bg-clip-text text-transparent">hesen</span>
+      </span>
     </span>
   )
 }

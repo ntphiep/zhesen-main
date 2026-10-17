@@ -35,7 +35,8 @@ const SEA_600 = '#0172b6'
 const SEA_700 = '#023c85'
 const TINT_2 = '#e4f4f8'
 
-const BRAND = 'Zhesen'
+// The name after the mark, which stands in for its Z.
+const BRAND = 'hesen'
 
 /** Shorter headwords draw larger; a Han character is about two Latin letters wide. */
 function headwordSize(headword: string, han: boolean): number {
@@ -93,9 +94,12 @@ export default async function Image({ params }: { params: Promise<Params> }) {
           {pinyin && <div style={{ display: 'flex', marginTop: 12, color: SEA_600, fontFamily: 'Noto Sans', fontSize: 44, fontWeight: 500 }}>{pinyin}</div>}
           {gloss && <div style={{ display: 'flex', marginTop: 28, maxWidth: 1000, color: '#000', fontSize: 42, fontWeight: 500, lineHeight: 1.35 }}>{gloss}</div>}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: SEA_700, fontSize: 40, fontWeight: 800, letterSpacing: -0.8 }}>
-          <ZMark fills={[SEA_300, SEA_500, SEA_700]} height={35} />
-          {BRAND}
+        {/* Placed as on app/opengraph-image.tsx: the cap top is 0.1275em under the box top. */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', fontSize: 40, fontWeight: 800, letterSpacing: -0.8, lineHeight: 1 }}>
+          <div style={{ display: 'flex', marginTop: 5 }}><ZMark fills={[SEA_300, SEA_500, SEA_700]} height={30} /></div>
+          <div style={{ display: 'flex', marginLeft: 1, backgroundImage: `linear-gradient(90deg, ${SEA_300}, ${SEA_500}, ${SEA_700})`, backgroundClip: 'text', color: 'transparent' }}>
+            {BRAND}
+          </div>
         </div>
       </div>
     ),

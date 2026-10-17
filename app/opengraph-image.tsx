@@ -21,9 +21,14 @@ export default async function Image() {
     (
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%', height: '100%', padding: '0 96px', background: '#fff', fontFamily: 'Be Vietnam Pro', position: 'relative' }}>
         <div style={{ position: 'absolute', top: -180, right: -160, width: 560, height: 560, borderRadius: 9999, background: TINT_2 }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 36, color: SEA_700, fontSize: 168, fontWeight: 800, letterSpacing: -3.4, lineHeight: 1 }}>
-          <ZMark fills={[SEA_300, SEA_500, SEA_700]} height={148} />
-          Zhesen
+        {/* The mark as the Z, one cap height (0.74em) tall, as in components/layout/SiteHeader.tsx.
+            Satori does not baseline-align an svg: at line-height 1 Be Vietnam Pro's cap top
+            sits 0.1275em below the box top (ascent 1, descent 0.265). */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', fontSize: 168, fontWeight: 800, letterSpacing: -3.4, lineHeight: 1 }}>
+          <div style={{ display: 'flex', marginTop: 21 }}><ZMark fills={[SEA_300, SEA_500, SEA_700]} height={124} /></div>
+          <div style={{ display: 'flex', marginLeft: 4, backgroundImage: `linear-gradient(90deg, ${SEA_300}, ${SEA_500}, ${SEA_700})`, backgroundClip: 'text', color: 'transparent' }}>
+            hesen
+          </div>
         </div>
         <div style={{ display: 'flex', marginTop: 48, maxWidth: 940, color: '#000', fontSize: 44, fontWeight: 500, lineHeight: 1.35 }}>
           {SITE_DESCRIPTION}
