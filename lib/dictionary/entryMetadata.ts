@@ -89,6 +89,7 @@ export function entryMetadata(detail: DictEntryDetail, lemma: { id: string; head
         : `Tra nghĩa của ${detail.headword}.`,
       canonical: entryPath(lemma?.id ?? detail.id),
       noindex: !detail.senses.some((s) => indexableMeaning(s, detail)),
+      ownCard: true,
     }),
     twitter: { card: 'summary_large_image' },
   }

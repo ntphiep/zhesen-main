@@ -13,6 +13,14 @@ describe('pageMetadata', () => {
     expect(m.alternates).toEqual({ canonical: '/dictionary/en/take' })
   })
 
+  // Next attaches a segment's own opengraph-image only when its openGraph has no `images` key.
+  it('names the site card unless the page draws its own', () => {
+    const site = pageMetadata({ title: 't', description: 'd' }).openGraph
+    expect(site).toMatchObject({ images: [{ url: '/opengraph-image', width: 1200, height: 630 }] })
+    const own = pageMetadata({ title: 't', description: 'd', ownCard: true }).openGraph ?? {}
+    expect(Object.hasOwn(own, 'images')).toBe(false)
+  })
+
   it('sets noindex, follow only when asked', () => {
     expect(pageMetadata({ title: 't', description: 'd' }).robots).toBeUndefined()
     expect(pageMetadata({ title: 't', description: 'd', noindex: true }).robots).toEqual({ index: false, follow: true })

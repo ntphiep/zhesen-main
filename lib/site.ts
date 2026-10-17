@@ -24,12 +24,7 @@ export const SITE_CARD_ALT = 'Zhesen: từ điển Trung, Tây Ban Nha, Anh'
  * sets `openGraph` replaces the layout's whole object and loses these unless it spreads them in.
  */
 export const SITE_SOCIAL = {
-  // Named here as well as in app/opengraph-image.tsx: a page that sets its own `openGraph`
-  // otherwise loses the root card (measured on /theory). A segment's own card file still wins.
-  openGraph: {
-    type: 'website', siteName: 'Zhesen', locale: 'vi_VN',
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: SITE_CARD_ALT }],
-  },
+  openGraph: { type: 'website', siteName: 'Zhesen', locale: 'vi_VN' },
   // Every page has a wide card: app/opengraph-image.tsx, or the word page's own.
   twitter: { card: 'summary_large_image' },
 } satisfies Pick<Metadata, 'openGraph' | 'twitter'>
@@ -40,16 +35,21 @@ export const SITE_SOCIAL = {
  * untouched, so a page setting only `title` is shared as the site's generic card. The
  * suffix is spelled out because `title.template` never reaches the Open Graph object.
  * `noindex` keeps the page out of search results while its links are still followed.
+ *
+ * A page that sets `openGraph` loses app/opengraph-image.tsx (measured on /theory), so the
+ * site card is named here. `ownCard` leaves it out: Next attaches a segment's own card file
+ * only when that segment's `openGraph` has no `images` key at all.
  */
 export function pageMetadata(
-  { title, description, canonical, noindex }:
-    { title: string; description: string; canonical?: string; noindex?: boolean },
+  { title, description, canonical, noindex, ownCard }:
+    { title: string; description: string; canonical?: string; noindex?: boolean; ownCard?: boolean },
 ): Metadata {
   return {
     title,
     description,
     openGraph: {
       ...SITE_SOCIAL.openGraph,
+      ...(ownCard ? {} : { images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: SITE_CARD_ALT }] }),
       title: `${title} · Zhesen`,
       description,
       ...(canonical ? { url: canonical } : {}),
